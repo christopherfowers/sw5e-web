@@ -1,0 +1,25 @@
+.DS_Store
+.env
+/node_modules/
+
+# React Router
+/.react-router/
+/build/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Tooling directories that must never be published
+.claude/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.aider*
+.github/copilot-instructions.md
+
+# Test output
+/playwright-report/
+/test-results/
+/coverage/
