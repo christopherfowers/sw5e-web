@@ -36,8 +36,20 @@ The prerender path list lives in `react-router.config.ts`.
 
 ## Accessibility
 
-Target is WCAG 2.1 AA, verified by automated checks and keyboard-navigation
-end-to-end paths in CI.
+WCAG 2.1 AA is the target this project is built against. It is **not** yet
+enforced automatically: CI currently runs end-to-end smoke, prerendering, and
+self-hosted-asset checks, with no automated accessibility scanning and no
+keyboard-navigation coverage. Adding an axe-based audit and keyboard-path
+end-to-end tests is outstanding work, and until it lands, conformance is a
+goal rather than a verified property.
+
+## Fonts
+
+Inter is self-hosted from `app/fonts` and declared in `app/app.css`. It is not
+loaded from Google Fonts: doing so leaks every visitor's IP address to a third
+party and would permanently require `fonts.googleapis.com` and
+`fonts.gstatic.com` in this app's Content-Security-Policy. The font files are
+licensed under the [SIL Open Font License 1.1](app/fonts/LICENSE).
 
 ## License
 

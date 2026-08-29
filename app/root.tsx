@@ -10,18 +10,13 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 
-export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-  },
-];
+// Inter is self-hosted: its @font-face rules live in app.css and the woff2
+// files in app/fonts, so nothing here reaches out to a third-party origin.
+// Do not reintroduce the Google Fonts <link> elements that used to sit here.
+// They leaked every visitor's IP address to Google and would force
+// style-src https://fonts.googleapis.com and font-src https://fonts.gstatic.com
+// into this app's Content-Security-Policy for as long as they existed.
+export const links: Route.LinksFunction = () => [];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
