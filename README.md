@@ -4,7 +4,7 @@ Frontend for the SW5e community platform.
 
 ## Requirements
 
-- Node 22.16.0 (see `.nvmrc`)
+- Node 22.23.2 (see `.nvmrc`); minimum supported 22.22.0
 
 ## Getting started
 
