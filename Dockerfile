@@ -1,15 +1,32 @@
 # syntax=docker/dockerfile:1
 
 # ---------------------------------------------------------------------------
+# Content stage
+#
+# The canonical game content is maintained in the sibling sw5e-database
+# repository and published as an image whose only job is to carry it: content
+# at /opt/sw5e/content, schemas at /opt/sw5e/schemas. Building from that image
+# rather than from a vendored copy is what makes this site render the same
+# corpus the API serves; a clean clone alone cannot, because the generated
+# dataset is gitignored and the committed fixture is four items per type.
+#
+# This does mean the site's build depends on another repository's published
+# image. SW5E_CONTENT_TAG is how a build pins a specific content revision:
+# `latest` follows that repository's default branch, and a
+# `sha-<40 characters>` tag freezes the content at one commit, which is what a
+# build that has to be reproducible later should pass:
+#
+#   docker build --build-arg SW5E_CONTENT_TAG=sha-<commit> .
+# ---------------------------------------------------------------------------
+ARG SW5E_CONTENT_TAG=latest
+FROM ghcr.io/christopherfowers/sw5e-database:${SW5E_CONTENT_TAG} AS content
+
+# ---------------------------------------------------------------------------
 # Build stage
 #
 # Node is pinned to the exact version in .nvmrc so the image, CI and a
 # developer's machine all run the same toolchain. `engines.node` floors the
 # project at 22.22.0; this is the version it is actually developed against.
-#
-# Note on the dataset: app/data/generated is gitignored and is not present in a
-# clean clone, so this build renders from the committed sample in
-# app/data/fixture. See "Content data" in the README.
 # ---------------------------------------------------------------------------
 FROM node:22.23.2-alpine AS build
 
@@ -24,7 +41,34 @@ ENV CI=true
 COPY package.json package-lock.json ./
 RUN npm ci
 
+# Read-only input to the generator below. Kept out of the runtime image: what
+# ships is the normalized dataset baked into the prerendered pages, not the
+# canonical documents themselves.
+COPY --from=content /opt/sw5e/content /content
+
 COPY . .
+
+# Builds app/data/generated from the canonical content, which the app and the
+# prerender list both prefer over the committed fixture when it exists.
+#
+# Every step here fails the build rather than continuing, because the failure
+# this replaces was silent: a container that renders four items per type looks
+# exactly like a working site until someone counts. An empty content stage, a
+# content set with no source documents, and a dataset with no items are all
+# indistinguishable from "the copy did not happen", so none of them may pass.
+RUN set -eu; \
+    if [ ! -d /content/species ]; then \
+      echo "the content stage carries no /content/species directory" >&2; \
+      exit 1; \
+    fi; \
+    documents=$(find /content -name '*.json' | wc -l); \
+    if [ "$documents" -eq 0 ]; then \
+      echo "the content stage is empty: no JSON documents under /content" >&2; \
+      exit 1; \
+    fi; \
+    echo "canonical content: $documents documents"; \
+    node scripts/build-content-fixture.mjs --content /content --out app/data/generated; \
+    node -e 'const m = require("/app/app/data/generated/manifest.json"); const total = m.types.reduce((sum, type) => sum + type.count, 0); if (total === 0) { console.error("the generated dataset holds no items"); process.exit(1); } console.log("generated dataset: " + total + " items");'
 
 # Prerenders every content route to static HTML plus the SPA fallback shell.
 # Output lands in build/client; build/server is not used, there is no runtime

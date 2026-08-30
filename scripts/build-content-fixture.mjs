@@ -1,21 +1,28 @@
 #!/usr/bin/env node
 /**
- * Builds the site's content dataset from the legacy SW5e archive.
+ * Builds the site's content dataset, from either of the two sources that can
+ * supply one.
  *
- * The archive itself is six megabytes of unmaintained JSON with known
- * corruption and belongs in its own repository, so it is never committed here.
- * This script reads it from a configurable path and emits a compact, normalized
- * dataset into a gitignored directory.
- *
+ *   node scripts/build-content-fixture.mjs --content ../sw5e-database/content
  *   node scripts/build-content-fixture.mjs --archive ../sw5e-legacy-archive/api
  *   node scripts/build-content-fixture.mjs --curated
  *
- * The default run writes the full dataset to `app/data/generated/`. The
- * `--curated` run writes a handful of items per type to `app/data/fixture/`,
- * which IS committed, so that tests and CI pass for a contributor who does not
- * have the archive. The app renders from whichever dataset is present.
+ * `--content` reads the canonical, schema-validated content set maintained in
+ * the sw5e-database repository — one JSON document per item. This is what the
+ * container image builds from, so the site publishes the same corpus the API
+ * serves.
  *
- * Emitted per content type:
+ * `--archive` reads the 2022 legacy archive: six megabytes of unmaintained
+ * JSON with known encoding corruption, one dump per type. It is never
+ * committed here and is kept working because it is still the only source for
+ * the types the canonical set has not reached yet.
+ *
+ * Either run writes the full dataset to `app/data/generated/`. The `--curated`
+ * run writes a handful of items per type to `app/data/fixture/`, which IS
+ * committed, so that tests and CI pass for a contributor who has neither
+ * source to hand. The app renders from whichever dataset is present.
+ *
+ * Emitted per content type, identically whichever source was read:
  *   <type>.summaries.json   list-page rows, small enough to ship to a browser
  *   <type>.items.json       full detail records, read at build time only
  * Plus:
@@ -27,6 +34,11 @@ import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
+import {
+  CANONICAL_DIRECTORIES,
+  indexSources,
+  normalizeAllCanonical,
+} from "./lib/canonical.mjs";
 import { CONTENT_TYPES, normalizeAll, slugify } from "./lib/normalize.mjs";
 import { REPLACEMENT, countRepairs } from "./lib/repair-text.mjs";
 
@@ -48,16 +60,33 @@ const CURATED_PER_TYPE = 4;
 const SEARCH_EXCERPT_LENGTH = 240;
 
 function parseArguments(argv) {
-  const options = { curated: false, archive: null, out: null };
+  const options = { curated: false, archive: null, content: null, out: null };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--curated") options.curated = true;
     else if (argument === "--archive") options.archive = argv[++index];
     else if (argument.startsWith("--archive=")) options.archive = argument.slice(10);
+    else if (argument === "--content") options.content = argv[++index];
+    else if (argument.startsWith("--content=")) options.content = argument.slice(10);
     else if (argument === "--out") options.out = argv[++index];
     else if (argument.startsWith("--out=")) options.out = argument.slice(6);
     else throw new Error(`Unrecognized argument: ${argument}`);
   }
+
+  if (options.content && options.archive) {
+    throw new Error(
+      "Pass either --content or --archive, not both: they read different " +
+        "sources and the dataset has to come from one of them.",
+    );
+  }
+  if (options.content && options.curated) {
+    throw new Error(
+      "--curated builds the committed sample in app/data/fixture from the " +
+        "legacy archive, which is where every item in it came from. Use " +
+        "--content --out <dir> to write a canonical dataset somewhere else.",
+    );
+  }
+
   return options;
 }
 
@@ -151,15 +180,152 @@ async function writeJson(directory, name, value) {
   return file;
 }
 
+/**
+ * Writes one complete dataset: two files per content type, plus the manifest
+ * and the search index.
+ *
+ * Both sources funnel through here, which is what guarantees that a canonical
+ * build and an archive build are interchangeable as far as the app, the tests
+ * and the prerender list are concerned. A type with no items still gets its
+ * files, so `getSummaries` finds an empty list rather than throwing.
+ */
+async function writeDataset(outputDirectory, types, { curated }) {
+  await rm(outputDirectory, { recursive: true, force: true });
+  await mkdir(outputDirectory, { recursive: true });
+
+  const manifest = { generatedAt: new Date().toISOString(), curated, types: [] };
+  const searchIndex = [];
+
+  for (const { id, items } of types) {
+    await writeJson(outputDirectory, `${id}.items.json`, items);
+    await writeJson(outputDirectory, `${id}.summaries.json`, items.map(toSummary));
+    searchIndex.push(...items.map(toSearchRecord));
+
+    manifest.types.push({ id, ...TYPE_LABELS[id], count: items.length });
+    process.stdout.write(`${id.padEnd(12)} ${String(items.length).padStart(4)} items\n`);
+  }
+
+  await writeJson(outputDirectory, "search-index.json", searchIndex);
+  await writeJson(outputDirectory, "manifest.json", manifest);
+}
+
 async function main() {
   const options = parseArguments(process.argv.slice(2));
+  const outputDirectory = path.resolve(
+    options.out ?? (options.curated ? "app/data/fixture" : "app/data/generated"),
+  );
+
+  if (options.content) {
+    await buildFromCanonicalContent(
+      path.resolve(options.content),
+      outputDirectory,
+    );
+    return;
+  }
+
+  await buildFromArchive(options, outputDirectory);
+}
+
+/**
+ * The canonical path: one JSON document per item, under a directory per type.
+ *
+ * Nothing here repairs text or strips legacy fields, because the canonical set
+ * has neither problem. What it does have is a shape of its own, mapped in
+ * `scripts/lib/canonical.mjs`.
+ */
+async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
+  const present = await readDirectoryNames(contentDirectory);
+  if (present === null) {
+    throw new Error(
+      `Cannot read the canonical content set at ${contentDirectory}. Pass ` +
+        "--content <dir> pointing at the `content` directory of a " +
+        "sw5e-database checkout, or at /opt/sw5e/content inside the " +
+        "published content image.",
+    );
+  }
+
+  // An empty or wrong directory has to fail here rather than three steps
+  // later as a site that renders nothing. This is the failure the container
+  // build exists to catch: a copy that silently produced no content.
+  const sourceRecords = await readCanonicalType(contentDirectory, "source");
+  if (sourceRecords.length === 0) {
+    throw new Error(
+      `${contentDirectory} holds no content/source documents, so no item in ` +
+        "it could be attributed to a book. It is not a canonical content set.",
+    );
+  }
+  const sources = indexSources(sourceRecords);
+
+  const types = [];
+  for (const type of CONTENT_TYPES) {
+    const directory = CANONICAL_DIRECTORIES[type.id];
+    // A type the canonical set does not carry still gets its files and its
+    // manifest entry, so the site keeps the route and renders an empty index
+    // instead of 404ing on a link its own navigation offers.
+    if (!directory) {
+      types.push({ id: type.id, items: [] });
+      continue;
+    }
+
+    const records = await readCanonicalType(contentDirectory, directory);
+    const items = normalizeAllCanonical(type.id, records, sources).sort(
+      (left, right) => left.name.localeCompare(right.name, "en"),
+    );
+    types.push({ id: type.id, items });
+  }
+
+  const total = types.reduce((sum, type) => sum + type.items.length, 0);
+  if (total === 0) {
+    throw new Error(
+      `${contentDirectory} produced no items at all. Nothing downstream can ` +
+        "tell that apart from a site with no content, so it fails here.",
+    );
+  }
+
+  await writeDataset(outputDirectory, types, { curated: false });
+
+  process.stdout.write(
+    `\n${total} items written to ${path.relative(process.cwd(), outputDirectory)}\n`,
+  );
+  process.stdout.write(
+    `read from the canonical content set at ${contentDirectory}, ` +
+      `covering ${sources.size} sources\n`,
+  );
+}
+
+/** Every JSON document in one canonical type directory. */
+async function readCanonicalType(contentDirectory, directory) {
+  const typeDirectory = path.join(contentDirectory, directory);
+  const names = await readDirectoryNames(typeDirectory);
+  if (names === null) return [];
+
+  const records = [];
+  for (const name of names.filter((each) => each.endsWith(".json")).sort()) {
+    const file = path.join(typeDirectory, name);
+    const parsed = JSON.parse(await readFile(file, "utf8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error(`${file} is not a JSON object`);
+    }
+    records.push(parsed);
+  }
+  return records;
+}
+
+/** The names in a directory, or null when there is no such directory. */
+async function readDirectoryNames(directory) {
+  try {
+    return await readdir(directory);
+  } catch {
+    return null;
+  }
+}
+
+/** The legacy path, unchanged: one dump per type, repaired on the way through. */
+async function buildFromArchive(options, outputDirectory) {
   const archiveDirectory = path.resolve(
     options.archive ??
       process.env.SW5E_ARCHIVE ??
       "../sw5e-legacy-archive/api",
-  );
-  const outputDirectory = path.resolve(
-    options.out ?? (options.curated ? "app/data/fixture" : "app/data/generated"),
   );
 
   try {
@@ -177,9 +343,6 @@ async function main() {
   const powerRecords = await readArchiveType(archiveDirectory, "Power");
   const powerSlugs = new Set(powerRecords.map((record) => slugify(record.name)));
 
-  await rm(outputDirectory, { recursive: true, force: true });
-  await mkdir(outputDirectory, { recursive: true });
-
   const repairs = {
     quotes: 0,
     apostrophes: 0,
@@ -188,9 +351,8 @@ async function main() {
     unrepaired: 0,
     totalLoss: 0,
   };
-  const manifest = { generatedAt: new Date().toISOString(), curated: options.curated, types: [] };
-  const searchIndex = [];
 
+  const types = [];
   for (const type of CONTENT_TYPES) {
     const records = await readArchiveType(archiveDirectory, type.file);
     countRepairsDeep(records, repairs);
@@ -201,24 +363,15 @@ async function main() {
     const normalized = normalizeAll(type.id, records, powerSlugs).sort(
       (left, right) => left.name.localeCompare(right.name, "en"),
     );
-    const items = options.curated ? selectCurated(normalized) : normalized;
-
-    await writeJson(outputDirectory, `${type.id}.items.json`, items);
-    await writeJson(outputDirectory, `${type.id}.summaries.json`, items.map(toSummary));
-    searchIndex.push(...items.map(toSearchRecord));
-
-    manifest.types.push({
+    types.push({
       id: type.id,
-      ...TYPE_LABELS[type.id],
-      count: items.length,
+      items: options.curated ? selectCurated(normalized) : normalized,
     });
-    process.stdout.write(`${type.id.padEnd(12)} ${String(items.length).padStart(4)} items\n`);
   }
 
-  await writeJson(outputDirectory, "search-index.json", searchIndex);
-  await writeJson(outputDirectory, "manifest.json", manifest);
+  await writeDataset(outputDirectory, types, { curated: options.curated });
 
-  const total = manifest.types.reduce((sum, type) => sum + type.count, 0);
+  const total = types.reduce((sum, type) => sum + type.items.length, 0);
   process.stdout.write(
     `\n${total} items written to ${path.relative(process.cwd(), outputDirectory)}\n`,
   );
