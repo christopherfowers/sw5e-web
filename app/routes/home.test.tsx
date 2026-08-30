@@ -9,6 +9,7 @@ const loaderData = {
   counts: { species: 141, monsters: 271, powers: 465 },
   total: 1820,
   curated: false,
+  sourceTotals: { PHB: 900, EC: 700, WH: 120, SnV: 271 },
 };
 
 function renderHome(data: typeof loaderData = loaderData) {

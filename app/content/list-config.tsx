@@ -1,14 +1,30 @@
 /**
- * What each content type's index page shows, filters on, and sorts by.
+ * What each content type's index page shows, filters on, sorts by — and what
+ * shape it takes.
  *
  * A creature list needs challenge rating; a power list needs level and casting
  * time; an equipment list needs cost and damage. Rendering one generic table
  * eight times would bury exactly the columns a reader is scanning for at the
  * table mid-game, so every type declares its own.
+ *
+ * Two of the declarations here are about form rather than fields. `layout`
+ * turns species into a gallery, because a portrait identifies a species faster
+ * than its name does and the archive's art exists to be used. `rowMedia` puts
+ * a class illustration beside every archetype, which sorts 137 rows into ten
+ * recognisable families before a reader has read a word.
  */
 
 import type { ReactNode } from "react";
 
+import {
+  Badge,
+  SourceBadge,
+  alignmentAccent,
+  challengeAccent,
+  maneuverAccent,
+  powerTypeAccent,
+} from "~/components/badges";
+import { classArt, speciesThumbnail, type ImageSource } from "./imagery";
 import type {
   AnySummary,
   ArchetypeSummary,
@@ -42,10 +58,32 @@ export interface Facet<Row> {
   compare?: (left: string, right: string) => number;
 }
 
+/** The picture and meta line for one tile of a gallery layout. */
+export interface Tile {
+  image: ImageSource | null;
+  /** Describes the picture. Omit only when the row's name already does. */
+  alt?: string;
+  meta?: ReactNode;
+}
+
+/** A small picture rendered beside a table row's name. */
+export interface RowMedia {
+  image: ImageSource | null;
+  alt: string;
+}
+
 export interface ListConfig<Row> {
   columns: Column<Row>[];
   facets: Facet<Row>[];
   defaultSort: string;
+  /** "table" unless a type is better read as pictures. */
+  layout?: "table" | "gallery";
+  /** Zebra stripes, for tables long and wide enough to lose your place in. */
+  striped?: boolean;
+  /** Required by the gallery layout, ignored by the table one. */
+  tile?: (row: Row) => Tile;
+  /** Optional picture beside the name in a table row. */
+  rowMedia?: (row: Row) => RowMedia | null;
   /**
    * A one-line digest shown under the name on narrow screens, where most
    * columns are hidden. Without it a phone shows a list of bare names.
@@ -62,6 +100,10 @@ const em = <span aria-hidden="true">—</span>;
 
 function textOr(value: string | null | undefined): ReactNode {
   return value ? value : em;
+}
+
+function mutedOr(value: string | null | undefined): ReactNode {
+  return value ? <span className="cell-muted">{value}</span> : em;
 }
 
 function joinParts(parts: (string | null | undefined)[]): string | null {
@@ -88,6 +130,14 @@ const nameColumn = <Row extends { name: string }>(): Column<Row> => ({
   render: (row) => row.name,
 });
 
+const sourceColumn = <Row extends { source: string | null }>(): Column<Row> => ({
+  key: "source",
+  header: "Source",
+  className: FROM_LARGE,
+  sortValue: (row) => row.source,
+  render: (row) => <SourceBadge code={row.source} />,
+});
+
 const sourceFacet = <Row extends { source: string | null }>(): Facet<Row> => ({
   key: "source",
   label: "Source",
@@ -95,8 +145,22 @@ const sourceFacet = <Row extends { source: string | null }>(): Facet<Row> => ({
 });
 
 const species: ListConfig<SpeciesSummary> = {
+  layout: "gallery",
   defaultSort: "name",
   compactLine: (row) => joinParts([row.size, row.homeworld]),
+  tile: (row) => ({
+    image: speciesThumbnail(row.slug),
+    // A portrait's job on this page is to show what the species looks like, so
+    // that is what the alt text says. "Abyssin" alone would be a caption, not
+    // a description of the picture.
+    alt: `Illustration of the ${row.name} species`,
+    meta: (
+      <>
+        {row.size ? <Badge accent="teal">{row.size}</Badge> : null}
+        {row.homeworld ? <span>{row.homeworld}</span> : null}
+      </>
+    ),
+  }),
   columns: [
     nameColumn(),
     {
@@ -129,6 +193,13 @@ const species: ListConfig<SpeciesSummary> = {
 const archetypes: ListConfig<ArchetypeSummary> = {
   defaultSort: "name",
   compactLine: (row) => joinParts([row.className, row.casterType]),
+  rowMedia: (row) =>
+    row.className
+      ? {
+          image: classArt(row.className),
+          alt: `Illustration of a ${row.className}`,
+        }
+      : null,
   columns: [
     nameColumn(),
     {
@@ -136,14 +207,21 @@ const archetypes: ListConfig<ArchetypeSummary> = {
       header: "Class",
       className: FROM_SMALL,
       sortValue: (row) => row.className,
-      render: (row) => textOr(row.className),
+      render: (row) =>
+        row.className ? <Badge accent="indigo">{row.className}</Badge> : em,
     },
     {
       key: "casterType",
       header: "Casting",
       className: FROM_MEDIUM,
-      render: (row) => textOr(row.casterType),
+      render: (row) =>
+        row.casterType ? (
+          <Badge accent={powerTypeAccent(row.casterType)}>{row.casterType}</Badge>
+        ) : (
+          em
+        ),
     },
+    sourceColumn(),
   ],
   facets: [
     { key: "className", label: "Class", valueOf: (row) => row.className },
@@ -168,8 +246,9 @@ const backgrounds: ListConfig<BackgroundSummary> = {
       key: "skillProficiencies",
       header: "Skill proficiencies",
       className: FROM_LARGE,
-      render: (row) => textOr(row.skillProficiencies),
+      render: (row) => mutedOr(row.skillProficiencies),
     },
+    sourceColumn(),
   ],
   facets: [sourceFacet()],
 };
@@ -185,14 +264,20 @@ const feats: ListConfig<FeatSummary> = {
       header: "Prerequisite",
       className: FROM_SMALL,
       sortValue: (row) => row.prerequisite,
-      render: (row) => textOr(row.prerequisite),
+      render: (row) => mutedOr(row.prerequisite),
     },
     {
       key: "abilityIncreases",
       header: "Ability increases",
       className: FROM_MEDIUM,
-      render: (row) => textOr(row.abilityIncreases),
+      render: (row) =>
+        row.abilityIncreases ? (
+          <Badge accent="amber">{row.abilityIncreases}</Badge>
+        ) : (
+          em
+        ),
     },
+    sourceColumn(),
   ],
   facets: [
     {
@@ -208,6 +293,7 @@ const CASTING_ORDER = ["Reaction", "Bonus action", "Action", "Minute", "Hour"];
 
 const powers: ListConfig<PowerSummary> = {
   defaultSort: "name",
+  striped: true,
   compactLine: (row) =>
     joinParts([
       row.level === 0 ? "At-will" : `Level ${row.level}`,
@@ -221,14 +307,26 @@ const powers: ListConfig<PowerSummary> = {
       header: "Level",
       numeric: true,
       sortValue: (row) => row.level,
-      render: (row) => (row.level === 0 ? "At-will" : row.level),
+      render: (row) =>
+        row.level == null ? (
+          em
+        ) : (
+          <Badge className="badge-numeric" accent={powerTypeAccent(row.powerType)}>
+            {row.level === 0 ? "At-will" : row.level}
+          </Badge>
+        ),
     },
     {
       key: "powerType",
       header: "Type",
       className: FROM_SMALL,
       sortValue: (row) => row.powerType,
-      render: (row) => textOr(row.powerType),
+      render: (row) =>
+        row.powerType ? (
+          <Badge accent={powerTypeAccent(row.powerType)}>{row.powerType}</Badge>
+        ) : (
+          em
+        ),
     },
     {
       key: "castingPeriod",
@@ -241,7 +339,20 @@ const powers: ListConfig<PowerSummary> = {
       key: "range",
       header: "Range",
       className: FROM_LARGE,
-      render: (row) => textOr(row.range),
+      render: (row) => mutedOr(row.range),
+    },
+    {
+      key: "forceAlignment",
+      header: "Alignment",
+      className: FROM_LARGE,
+      render: (row) =>
+        row.forceAlignment ? (
+          <Badge accent={alignmentAccent(row.forceAlignment)}>
+            {row.forceAlignment}
+          </Badge>
+        ) : (
+          em
+        ),
     },
     {
       key: "concentration",
@@ -285,14 +396,16 @@ const maneuvers: ListConfig<ManeuverSummary> = {
       header: "Type",
       className: FROM_SMALL,
       sortValue: (row) => row.kind,
-      render: (row) => textOr(row.kind),
+      render: (row) =>
+        row.kind ? <Badge accent={maneuverAccent(row.kind)}>{row.kind}</Badge> : em,
     },
     {
       key: "prerequisite",
       header: "Prerequisite",
       className: FROM_MEDIUM,
-      render: (row) => textOr(row.prerequisite),
+      render: (row) => mutedOr(row.prerequisite),
     },
+    sourceColumn(),
   ],
   facets: [
     { key: "kind", label: "Type", valueOf: (row) => row.kind },
@@ -302,6 +415,7 @@ const maneuvers: ListConfig<ManeuverSummary> = {
 
 const equipment: ListConfig<EquipmentSummary> = {
   defaultSort: "name",
+  striped: true,
   compactLine: (row) =>
     joinParts([
       row.category,
@@ -315,7 +429,7 @@ const equipment: ListConfig<EquipmentSummary> = {
       header: "Category",
       className: FROM_SMALL,
       sortValue: (row) => row.category,
-      render: (row) => textOr(row.category),
+      render: (row) => (row.category ? <Badge>{row.category}</Badge> : em),
     },
     creditsColumn<EquipmentSummary>(),
     {
@@ -332,6 +446,7 @@ const equipment: ListConfig<EquipmentSummary> = {
       className: FROM_MEDIUM,
       render: (row) => textOr(row.damage),
     },
+    sourceColumn(),
   ],
   facets: [
     { key: "category", label: "Category", valueOf: (row) => row.category },
@@ -341,6 +456,7 @@ const equipment: ListConfig<EquipmentSummary> = {
 
 const monsters: ListConfig<MonsterSummary> = {
   defaultSort: "name",
+  striped: true,
   compactLine: (row) =>
     joinParts([
       row.challengeRating ? `CR ${row.challengeRating}` : null,
@@ -354,7 +470,17 @@ const monsters: ListConfig<MonsterSummary> = {
       header: "CR",
       numeric: true,
       sortValue: (row) => row.challengeRatingValue,
-      render: (row) => textOr(row.challengeRating),
+      render: (row) =>
+        row.challengeRating ? (
+          <Badge
+            className="badge-numeric"
+            accent={challengeAccent(row.challengeRatingValue)}
+          >
+            {row.challengeRating}
+          </Badge>
+        ) : (
+          em
+        ),
     },
     {
       key: "kind",
@@ -368,7 +494,7 @@ const monsters: ListConfig<MonsterSummary> = {
       header: "Size",
       className: FROM_MEDIUM,
       sortValue: (row) => row.size,
-      render: (row) => textOr(row.size),
+      render: (row) => mutedOr(row.size),
     },
     {
       key: "armorClass",

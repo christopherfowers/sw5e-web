@@ -1,14 +1,22 @@
 /**
  * A content type's index: filter, sort, and scan.
  *
+ * Two layouts share one set of controls, because the eight types are not one
+ * kind of thing. A table is right for 507 pieces of equipment that a reader
+ * compares by cost and damage. It is wrong for 141 species, which a reader
+ * recognises by silhouette long before they read a name — those get a gallery
+ * of portraits. Which layout a type uses is declared in its list config, so
+ * this component holds the behaviour and the config holds the judgement.
+ *
  * The table is a real `<table>` with a `<caption>`, `<th scope="col">` headers
  * and `aria-sort` on the active column, because that is what lets a screen
  * reader announce "Challenge rating, column 2, sorted ascending" instead of
  * reading a wall of unlabelled cells. Sorting is triggered by a `<button>`
  * inside the header cell, so it is reachable by keyboard without any custom
- * key handling.
+ * key handling. The gallery has no columns to click, so it gets an equivalent
+ * pair of controls — a sort field and a direction button — in the toolbar.
  *
- * On a phone most columns are hidden and their values are folded into a
+ * On a phone most table columns are hidden and their values are folded into a
  * compact second line under each name, which keeps one DOM tree rather than
  * shipping a duplicate card layout that a screen reader would have to skip.
  */
@@ -18,6 +26,8 @@ import { Link } from "react-router";
 
 import type { Column, ListConfig } from "~/content/list-config";
 import type { AnySummary, ContentTypeId } from "~/content/types";
+import { TYPE_META } from "~/content/type-meta";
+import { AssetImage, MonogramPlate } from "./media";
 import { SourceText } from "./source-text";
 
 type SortDirection = "ascending" | "descending";
@@ -70,6 +80,7 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
   const [direction, setDirection] = useState<SortDirection>("ascending");
 
   const facets = useMemo(() => facetOptions(config, rows), [config, rows]);
+  const isGallery = config.layout === "gallery";
 
   const visible = useMemo(() => {
     const needle = nameFilter.trim().toLowerCase();
@@ -108,10 +119,11 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
 
   const hasFilters =
     nameFilter.trim() !== "" || Object.values(facetValues).some(Boolean);
+  const sortableColumns = config.columns.filter((column) => column.sortValue);
 
   return (
     <>
-      <div className="filter-bar">
+      <div className="list-toolbar">
         <div className="filter-field">
           <label htmlFor={`${filterId}-name`}>Filter by name</label>
           <input
@@ -146,6 +158,45 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
           </div>
         ))}
 
+        {/*
+          A gallery has no column headers to click, so sorting moves into the
+          toolbar as a labelled select and a direction button. Both are native
+          controls: no key handling, no roles to get wrong.
+        */}
+        {isGallery && sortableColumns.length > 1 ? (
+          <>
+            <div className="filter-field">
+              <label htmlFor={`${filterId}-sort`}>Sort by</label>
+              <select
+                id={`${filterId}-sort`}
+                value={sortKey}
+                onChange={(event) => setSortKey(event.target.value)}
+              >
+                {sortableColumns.map((column) => (
+                  <option key={column.key} value={column.key}>
+                    {column.header}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              className="sort-direction"
+              aria-pressed={direction === "descending"}
+              onClick={() =>
+                setDirection((current) =>
+                  current === "ascending" ? "descending" : "ascending",
+                )
+              }
+            >
+              <span aria-hidden="true">
+                {direction === "ascending" ? "↑" : "↓"}
+              </span>{" "}
+              {direction === "ascending" ? "A–Z" : "Z–A"}
+            </button>
+          </>
+        ) : null}
+
         {hasFilters ? (
           <button
             type="button"
@@ -170,98 +221,190 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
         <p className="empty-state">
           Nothing matches those filters. Try clearing one.
         </p>
+      ) : isGallery ? (
+        <Gallery type={type} typeLabel={typeLabel} rows={visible} config={config} />
       ) : (
-        <div className="table-scroll">
-          <table className="content-table">
-            <caption className="sr-only">
-              {typeLabel}, sortable by column
-            </caption>
-            <thead>
-              <tr>
-                {config.columns.map((column) => {
-                  const isSorted = column.key === sortKey;
-                  return (
-                    <th
-                      key={column.key}
-                      scope="col"
-                      className={[
-                        column.className,
-                        column.numeric ? "is-numeric" : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      aria-sort={
-                        column.sortValue
-                          ? isSorted
-                            ? direction
-                            : "none"
-                          : undefined
-                      }
+        <ContentTable
+          type={type}
+          typeLabel={typeLabel}
+          rows={visible}
+          config={config}
+          sortKey={sortKey}
+          direction={direction}
+          onSort={toggleSort}
+        />
+      )}
+    </>
+  );
+}
+
+/**
+ * How many tiles are asked for eagerly. Everything past this is lazy, which is
+ * what keeps a 141-portrait index from costing a megabyte before a reader has
+ * scrolled: only the tiles near the viewport are ever fetched.
+ */
+const EAGER_TILES = 8;
+
+function Gallery({
+  type,
+  typeLabel,
+  rows,
+  config,
+}: {
+  type: ContentTypeId;
+  typeLabel: string;
+  rows: AnySummary[];
+  config: ListConfig<AnySummary>;
+}) {
+  const accent = TYPE_META[type].accent;
+
+  return (
+    <ul className="gallery" aria-label={typeLabel}>
+      {rows.map((row, index) => {
+        const tile = config.tile?.(row);
+        return (
+          <li className="gallery-tile" key={row.slug} data-accent={accent}>
+            {tile?.image ? (
+              <AssetImage
+                className="gallery-tile-media"
+                image={tile.image}
+                alt={tile.alt ?? row.name}
+                sizes="(min-width: 48rem) 168px, 45vw"
+                loading={index < EAGER_TILES ? "eager" : "lazy"}
+              />
+            ) : (
+              <MonogramPlate name={row.name} />
+            )}
+            <div className="gallery-tile-body">
+              <p className="gallery-tile-name">
+                <Link to={`/${type}/${row.slug}`}>
+                  <SourceText value={row.name} />
+                </Link>
+              </p>
+              {tile?.meta ? (
+                <p className="gallery-tile-meta">{tile.meta}</p>
+              ) : null}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ContentTable({
+  type,
+  typeLabel,
+  rows,
+  config,
+  sortKey,
+  direction,
+  onSort,
+}: {
+  type: ContentTypeId;
+  typeLabel: string;
+  rows: AnySummary[];
+  config: ListConfig<AnySummary>;
+  sortKey: string;
+  direction: SortDirection;
+  onSort: (column: Column<AnySummary>) => void;
+}) {
+  return (
+    <div className="table-scroll">
+      <table
+        className="content-table"
+        data-striped={config.striped ? "true" : undefined}
+      >
+        <caption className="sr-only">{typeLabel}, sortable by column</caption>
+        <thead>
+          <tr>
+            {config.columns.map((column) => {
+              const isSorted = column.key === sortKey;
+              return (
+                <th
+                  key={column.key}
+                  scope="col"
+                  className={[
+                    column.className,
+                    column.numeric ? "is-numeric" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  aria-sort={
+                    column.sortValue ? (isSorted ? direction : "none") : undefined
+                  }
+                >
+                  {column.sortValue ? (
+                    <button
+                      type="button"
+                      className="sort-button"
+                      onClick={() => onSort(column)}
                     >
-                      {column.sortValue ? (
-                        <button
-                          type="button"
-                          className="sort-button"
-                          onClick={() => toggleSort(column)}
-                        >
-                          {column.header}
-                          <span aria-hidden="true" className="sort-indicator">
-                            {isSorted
-                              ? direction === "ascending"
-                                ? "↑"
-                                : "↓"
-                              : "↕"}
-                          </span>
-                          <span className="sr-only">
-                            {isSorted
-                              ? `, sorted ${direction}. Activate to reverse.`
-                              : ", not sorted. Activate to sort by this column."}
-                          </span>
-                        </button>
-                      ) : (
-                        column.header
-                      )}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((row) => {
-                const compact = config.compactLine(row);
-                return (
-                  <tr key={row.slug}>
-                    {config.columns.map((column, columnIndex) =>
-                      columnIndex === 0 ? (
-                        <th key={column.key} scope="row" className="name-cell">
+                      {column.header}
+                      <span aria-hidden="true" className="sort-indicator">
+                        {isSorted ? (direction === "ascending" ? "↑" : "↓") : "↕"}
+                      </span>
+                      <span className="sr-only">
+                        {isSorted
+                          ? `, sorted ${direction}. Activate to reverse.`
+                          : ", not sorted. Activate to sort by this column."}
+                      </span>
+                    </button>
+                  ) : (
+                    column.header
+                  )}
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const compact = config.compactLine(row);
+            const media = config.rowMedia?.(row);
+            return (
+              <tr key={row.slug}>
+                {config.columns.map((column, columnIndex) =>
+                  columnIndex === 0 ? (
+                    <th key={column.key} scope="row" className="name-cell">
+                      <span className={media ? "row-media" : undefined}>
+                        {media?.image ? (
+                          <AssetImage
+                            className="row-thumb"
+                            image={media.image}
+                            alt={media.alt}
+                            sizes="28px"
+                          />
+                        ) : null}
+                        <span>
                           <Link to={`/${type}/${row.slug}`}>
                             <SourceText value={row.name} />
                           </Link>
                           {compact ? (
                             <span className="compact-line">{compact}</span>
                           ) : null}
-                        </th>
-                      ) : (
-                        <td
-                          key={column.key}
-                          className={[
-                            column.className,
-                            column.numeric ? "is-numeric" : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                        >
-                          {column.render(row)}
-                        </td>
-                      ),
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </>
+                        </span>
+                      </span>
+                    </th>
+                  ) : (
+                    <td
+                      key={column.key}
+                      className={[
+                        column.className,
+                        column.numeric ? "is-numeric" : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    >
+                      {column.render(row)}
+                    </td>
+                  ),
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   );
 }

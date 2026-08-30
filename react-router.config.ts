@@ -50,7 +50,14 @@ export default {
    */
   async prerender() {
     const directory = datasetDirectory();
-    const paths = ["/", "/search"];
+    const paths = ["/", "/search", "/sources"];
+
+    // Kept in step with SOURCE_META in app/content/source-meta.ts. A source
+    // page is a static page over the whole dataset, so it costs four routes
+    // rather than one per entry.
+    for (const slug of ["phb", "ec", "wh", "snv"]) {
+      paths.push(`/sources/${slug}`);
+    }
 
     for (const type of CONTENT_TYPES) {
       paths.push(`/${type}`);

@@ -6,18 +6,74 @@
  * than a fixed field list: key/value stats, prose sections, named entries
  * (traits, actions, features) and roll tables. A type that has none of a given
  * collection simply renders nothing for it.
+ *
+ * Some types also have a picture. A species has its portrait, an archetype has
+ * its class illustration, and both come from `itemFigure` below rather than
+ * from the caller, so a route does not have to know which types are
+ * illustrated. Types with no art render no figure at all and the page falls
+ * back to a single column — there is no empty frame and no broken icon,
+ * because an `<img>` is only ever emitted for a file this build contains.
  */
 
+import { Badge, SourceBadge } from "./badges";
+import { AssetImage, MonogramPlate } from "./media";
+import { classArt, speciesPortrait } from "~/content/imagery";
+import { TYPE_META } from "~/content/type-meta";
 import type { ContentItem, Entry } from "~/content/types";
-import { SOURCE_NAMES } from "~/content/types";
 import { LostValue, SourceText } from "./source-text";
 import { Prose } from "./prose";
 
+/** The picture for an item, and what to say about it. */
+interface Figure {
+  image: ReturnType<typeof speciesPortrait>;
+  alt: string;
+  caption: string;
+  /** Shown in place of the picture when the archive has none. */
+  fallbackNote: string;
+}
+
+function itemFigure(item: ContentItem): Figure | null {
+  if (item.type === "species") {
+    return {
+      image: speciesPortrait(item.slug),
+      alt: `Illustration of the ${item.name} species`,
+      caption: `${item.name} — illustration from the Star Wars 5e archive`,
+      fallbackNote: `No illustration of the ${item.name} exists in the archive.`,
+    };
+  }
+
+  if (item.type === "archetypes") {
+    const className = item.summary.className;
+    if (typeof className !== "string") return null;
+    return {
+      image: classArt(className),
+      alt: `Illustration of a ${className}`,
+      caption: `${className} — the class this archetype branches from`,
+      fallbackNote: `No illustration of the ${className} class exists in the archive.`,
+    };
+  }
+
+  return null;
+}
+
 export function ItemDetail({ item }: { item: ContentItem }) {
   const groups = groupEntries(item.entries);
+  const figure = itemFigure(item);
+  const accent = TYPE_META[item.type].accent;
 
+  /*
+    Order matters more than columns here. On a phone the heading comes first,
+    the picture second and the reference text third, because a reader who has
+    just tapped a search result needs to know they landed on the right page
+    before they look at anything. On a wide screen the picture moves into a
+    column of its own beside the text and stays there while the text scrolls.
+    One grid, two area maps, no duplicated markup.
+  */
   return (
-    <article className="item-detail">
+    <article
+      className={figure ? "item-layout has-figure" : "item-layout"}
+      data-accent={accent}
+    >
       <header className="item-header">
         <h1>
           <SourceText value={item.name} />
@@ -27,123 +83,145 @@ export function ItemDetail({ item }: { item: ContentItem }) {
             <SourceText value={item.tagline} />
           </p>
         ) : null}
-        {item.source ? (
-          <p className="item-source">
-            <span className="source-badge">{item.source}</span>
-            {SOURCE_NAMES[item.source] ?? item.sourceName ?? item.source}
-          </p>
-        ) : null}
+        <p className="item-badges badge-row">
+          <Badge accent={accent}>{TYPE_META[item.type].singular}</Badge>
+          {item.source ? <SourceBadge code={item.source} linked /> : null}
+        </p>
       </header>
 
-      {item.stats.length > 0 ? (
-        <div className="stat-block">
-          <h2 className="sr-only">At a glance</h2>
-          <dl>
-            {item.stats.map((stat) => (
-              <div className="stat-row" key={stat.label}>
-                <dt>{stat.label}</dt>
-                <dd>
-                  {stat.lost || stat.value == null ? (
-                    <LostValue />
-                  ) : (
-                    <SourceText value={stat.value} />
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </div>
+      {figure ? (
+        <figure className="item-figure">
+          {figure.image ? (
+            <AssetImage
+              image={figure.image}
+              alt={figure.alt}
+              sizes="(min-width: 58rem) 256px, 288px"
+              loading="eager"
+            />
+          ) : (
+            <MonogramPlate name={item.name} />
+          )}
+          <figcaption>
+            {figure.image ? figure.caption : figure.fallbackNote}
+          </figcaption>
+        </figure>
       ) : null}
 
-      {item.abilityScores && item.abilityScores.length > 0 ? (
-        <section aria-labelledby="ability-scores" className="ability-scores">
-          <h2 id="ability-scores">Ability scores</h2>
-          <ul>
-            {item.abilityScores.map((ability) => (
-              <li key={ability.ability}>
-                <span className="ability-name">{ability.ability.slice(0, 3)}</span>
-                <span className="ability-score">{ability.score}</span>
-                <span className="ability-modifier">
-                  {ability.modifier >= 0 ? `+${ability.modifier}` : ability.modifier}
-                </span>
-                <span className="sr-only">
-                  {ability.ability} {ability.score}, modifier{" "}
-                  {ability.modifier >= 0 ? "plus" : "minus"}{" "}
-                  {Math.abs(ability.modifier)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <div className="item-body">
+        {item.stats.length > 0 ? (
+          <div className="stat-block">
+            <h2 className="sr-only">At a glance</h2>
+            <dl>
+              {item.stats.map((stat) => (
+                <div className="stat-row" key={stat.label}>
+                  <dt>{stat.label}</dt>
+                  <dd>
+                    {stat.lost || stat.value == null ? (
+                      <LostValue />
+                    ) : (
+                      <SourceText value={stat.value} />
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
 
-      {item.sections.map((section, index) =>
-        section.heading ? (
-          <section key={index} className="item-section">
-            <h2>{section.heading}</h2>
-            <Prose markdown={section.body} startLevel={3} />
+        {item.abilityScores && item.abilityScores.length > 0 ? (
+          <section aria-labelledby="ability-scores" className="ability-scores">
+            <h2 id="ability-scores">Ability scores</h2>
+            <ul>
+              {item.abilityScores.map((ability) => (
+                <li key={ability.ability}>
+                  <span className="ability-name">{ability.ability.slice(0, 3)}</span>
+                  <span className="ability-score">{ability.score}</span>
+                  <span className="ability-modifier">
+                    {ability.modifier >= 0 ? `+${ability.modifier}` : ability.modifier}
+                  </span>
+                  <span className="sr-only">
+                    {ability.ability} {ability.score}, modifier{" "}
+                    {ability.modifier >= 0 ? "plus" : "minus"}{" "}
+                    {Math.abs(ability.modifier)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </section>
-        ) : (
-          <section key={index} className="item-section">
-            <Prose markdown={section.body} startLevel={2} />
+        ) : null}
+
+        {item.sections.map((section, index) =>
+          section.heading ? (
+            <section key={index} className="item-section">
+              <h2>{section.heading}</h2>
+              <Prose markdown={section.body} startLevel={3} />
+            </section>
+          ) : (
+            <section key={index} className="item-section">
+              <Prose markdown={section.body} startLevel={2} />
+            </section>
+          ),
+        )}
+
+        {groups.map((group) => (
+          <section
+            key={group.name}
+            className="item-section"
+            aria-labelledby={`group-${slugifyLabel(group.name)}`}
+          >
+            <h2 id={`group-${slugifyLabel(group.name)}`}>{group.name}</h2>
+            <dl className="entry-list">
+              {group.entries.map((entry, index) => (
+                <div className="entry" key={`${entry.name ?? "entry"}-${index}`}>
+                  {entry.name ? (
+                    <dt>
+                      <SourceText value={entry.name} />
+                    </dt>
+                  ) : null}
+                  <dd>
+                    {entry.body ? (
+                      <Prose markdown={entry.body} startLevel={3} />
+                    ) : (
+                      <LostValue />
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </section>
-        ),
-      )}
+        ))}
 
-      {groups.map((group) => (
-        <section key={group.name} className="item-section" aria-labelledby={`group-${slugifyLabel(group.name)}`}>
-          <h2 id={`group-${slugifyLabel(group.name)}`}>{group.name}</h2>
-          <dl className="entry-list">
-            {group.entries.map((entry, index) => (
-              <div className="entry" key={`${entry.name ?? "entry"}-${index}`}>
-                {entry.name ? (
-                  <dt>
-                    <SourceText value={entry.name} />
-                  </dt>
-                ) : null}
-                <dd>
-                  {entry.body ? (
-                    <Prose markdown={entry.body} startLevel={3} />
-                  ) : (
-                    <LostValue />
-                  )}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ))}
-
-      {item.tables.map((table) => (
-        <section key={table.caption} className="item-section">
-          <div className="table-scroll">
-            <table className="roll-table">
-              <caption>{table.caption}</caption>
-              <thead>
-                <tr>
-                  {table.columns.map((column) => (
-                    <th key={column} scope="col">
-                      {column}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {table.rows.map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    <th scope="row">{row[0]}</th>
-                    {row.slice(1).map((cell, cellIndex) => (
-                      <td key={cellIndex}>
-                        <SourceText value={cell} />
-                      </td>
+        {item.tables.map((table) => (
+          <section key={table.caption} className="item-section">
+            <div className="table-scroll">
+              <table className="roll-table">
+                <caption>{table.caption}</caption>
+                <thead>
+                  <tr>
+                    {table.columns.map((column) => (
+                      <th key={column} scope="col">
+                        {column}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ))}
+                </thead>
+                <tbody>
+                  {table.rows.map((row, rowIndex) => (
+                    <tr key={rowIndex}>
+                      <th scope="row">{row[0]}</th>
+                      {row.slice(1).map((cell, cellIndex) => (
+                        <td key={cellIndex}>
+                          <SourceText value={cell} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ))}
+      </div>
     </article>
   );
 }

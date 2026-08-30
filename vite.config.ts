@@ -67,6 +67,19 @@ export default defineConfig({
     !isVitest && reactRouter(),
     serveDirectoryIndexBeforeSpaFallback(),
   ].filter(Boolean),
+  build: {
+    /**
+     * Never inline an image as a data URI.
+     *
+     * Vite's default inlines any asset under 4 KB, and the species gallery's
+     * thumbnails sit right around that line. Inlined, they would be base64'd
+     * into the JavaScript bundle every page loads — 133 pictures paid for on
+     * the home page, on a feat page, everywhere — and they could never be
+     * lazy-loaded or cached separately. As files they are fetched only when a
+     * tile scrolls near the viewport, and cached under a content hash.
+     */
+    assetsInlineLimit: 0,
+  },
   resolve: {
     tsconfigPaths: true,
   },

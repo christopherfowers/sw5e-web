@@ -9,8 +9,11 @@
 
 import { NavLink, Link } from "react-router";
 
+import { brandImage } from "~/content/imagery";
 import { TYPE_META, TYPE_ORDER } from "~/content/type-meta";
+import { AssetImage } from "./media";
 import { SiteSearch } from "./site-search";
+import { TypeIcon } from "./type-icon";
 
 export function SkipLink() {
   return (
@@ -21,12 +24,28 @@ export function SkipLink() {
 }
 
 export function SiteHeader() {
+  // The logo sits inside the link that already says "Star Wars 5e" in text, so
+  // it is decorative here: giving it an alt would make a screen reader read
+  // the site's name twice on every page.
+  const logo = brandImage("logo", 240);
+
   return (
     <header className="site-header">
       <div className="site-header-inner">
         <Link to="/" className="site-wordmark">
-          <span className="site-wordmark-name">Star Wars 5e</span>
-          <span className="site-wordmark-tag">Community reference</span>
+          {logo ? (
+            <AssetImage
+              className="site-wordmark-logo"
+              image={logo}
+              alt=""
+              sizes="44px"
+              loading="eager"
+            />
+          ) : null}
+          <span className="site-wordmark-text">
+            <span className="site-wordmark-name">Star Wars 5e</span>
+            <span className="site-wordmark-tag">Community reference</span>
+          </span>
         </Link>
         <SiteSearch />
       </div>
@@ -40,10 +59,21 @@ export function SiteHeader() {
                   isActive ? "site-nav-link is-current" : "site-nav-link"
                 }
               >
+                <TypeIcon type={type} />
                 {TYPE_META[type].plural}
               </NavLink>
             </li>
           ))}
+          <li>
+            <NavLink
+              to="/sources"
+              className={({ isActive }) =>
+                isActive ? "site-nav-link is-current" : "site-nav-link"
+              }
+            >
+              Sources
+            </NavLink>
+          </li>
         </ul>
       </nav>
     </header>
@@ -53,10 +83,21 @@ export function SiteHeader() {
 export function SiteFooter() {
   return (
     <footer className="site-footer">
-      <p>
-        A community reference for the Star Wars 5e tabletop roleplaying game.
-        Game content belongs to its authors; this site is unofficial.
-      </p>
+      <div className="site-footer-inner">
+        <p>
+          A community reference for the Star Wars 5e tabletop roleplaying game.
+          Game content and artwork belong to their authors; this site is
+          unofficial.
+        </p>
+        <ul className="site-footer-links">
+          <li>
+            <Link to="/sources">Source books</Link>
+          </li>
+          <li>
+            <Link to="/search">Search everything</Link>
+          </li>
+        </ul>
+      </div>
     </footer>
   );
 }

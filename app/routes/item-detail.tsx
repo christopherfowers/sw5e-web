@@ -66,7 +66,7 @@ export default function ItemDetailRoute({ loaderData }: Route.ComponentProps) {
   const meta = TYPE_META[type];
 
   return (
-    <div className="page">
+    <div className="page" data-accent={meta.accent}>
       <Breadcrumbs
         trail={[
           { label: meta.plural, to: `/${type}` },
