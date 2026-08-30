@@ -49,9 +49,22 @@ jobs:
   # the image without pushing, then runs it and checks the routing rules that
   # nothing else can catch: a prerendered page must answer with its own markup
   # rather than with the SPA shell.
+  #
+  # It is also the only place that can catch the image rendering the wrong
+  # dataset. The Dockerfile builds the site from the canonical content image,
+  # and a failed copy or a reverted generator would fall back to the committed
+  # four-per-type fixture without erroring, so the assertions below compare
+  # what the container actually publishes against the content it was built
+  # from.
   image:
     name: Container image
     runs-on: ubuntu-latest
+    env:
+      # The one place the content revision is named. Both the build and the
+      # assertions read it, so they can never check the site against a
+      # different content set than the one it was built from.
+      SW5E_CONTENT_IMAGE: ghcr.io/christopherfowers/sw5e-database
+      SW5E_CONTENT_TAG: latest
     steps:
       - uses: actions/checkout@v7
 
@@ -64,8 +77,18 @@ jobs:
           push: false
           load: true
           tags: sw5e-web:ci
+          build-args: |
+            SW5E_CONTENT_TAG=${{ env.SW5E_CONTENT_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Take the canonical content the image was built from
+        run: |
+          docker create --name sw5e-content \
+            "$SW5E_CONTENT_IMAGE:$SW5E_CONTENT_TAG" > /dev/null
+          docker cp sw5e-content:/opt/sw5e/content ./canonical-content
+          docker rm sw5e-content > /dev/null
+          find canonical-content -name '*.json' | wc -l
 
       - name: Start container
         run: |
@@ -80,12 +103,75 @@ jobs:
           docker logs sw5e-web
           exit 1
 
+      - name: The rendered catalogue is the canonical one, not the fixture
+        run: |
+          # This is the assertion the whole job exists for. The site used to
+          # ship the committed fixture — four species — while the API served
+          # the canonical set, and nothing failed. A count that is merely
+          # "more than zero" would pass on both, so this compares the rendered
+          # index against the content the image was built from, and refuses
+          # anything at or below fixture size outright.
+          canonical=$(ls canonical-content/species/*.json | wc -l)
+          rendered=$(curl --fail --silent http://127.0.0.1:8080/species \
+            | grep -o 'href="/species/[a-z0-9-]*"' | sort -u | wc -l)
+
+          echo "canonical species: $canonical, rendered species: $rendered"
+
+          # An absolute floor as well as the derived count: if the content
+          # image itself ever shrank, the two numbers would still agree, and
+          # this job must not agree with a fixture-sized catalogue.
+          if [ "$canonical" -lt 14 ]; then
+            echo "the canonical content set has shrunk to $canonical species"
+            exit 1
+          fi
+          if [ "$rendered" -ne "$canonical" ]; then
+            echo "the image renders $rendered species; the content it was" \
+              "built from has $canonical. A fixture-sized catalogue (4) means" \
+              "the canonical content never reached the build."
+            exit 1
+          fi
+
+      - name: Every canonical item is prerendered as its own route
+        run: |
+          # One page per document, plus the home page, the search page, the
+          # sources index, four source pages and eight type indexes. The
+          # canonical set has no maneuvers, and `feature` and `source` are not
+          # browsable types, so only the seven mapped directories contribute
+          # item pages.
+          items=0
+          for type in species archetype background feat power equipment monster; do
+            items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
+          done
+          expected=$((items + 15))
+
+          rendered=$(docker exec sw5e-web \
+            find /usr/share/nginx/html -name index.html | wc -l)
+
+          echo "expected $expected prerendered routes, found $rendered"
+          if [ "$rendered" -ne "$expected" ]; then
+            echo "the prerendered route count does not match the canonical set"
+            exit 1
+          fi
+
+      - name: A type with no canonical content still has an index page
+        run: |
+          # The canonical set carries no maneuvers. The type keeps its place
+          # in the site's navigation, so its index has to exist and render
+          # rather than 404 on a link the header offers.
+          body=$(curl --fail --silent http://127.0.0.1:8080/maneuvers)
+          grep -q '<h1>Maneuvers</h1>' <<< "$body"
+          grep -q 'No maneuvers in this build' <<< "$body"
+
       - name: A prerendered content page serves its own markup
         run: |
-          # Taken from the committed fixture rather than hard-coded, so this
-          # keeps working when the sample is regenerated.
-          slug=$(jq -r '.[0].slug' app/data/fixture/species.summaries.json)
-          name=$(jq -r '.[0].name' app/data/fixture/species.summaries.json)
+          # Taken from the canonical content the image was built from rather
+          # than hard-coded, so this keeps working as the content set grows.
+          # The slug is derived the same way the generator derives it: the
+          # display name, lowercased, with every run of other characters
+          # collapsed to a hyphen.
+          name=$(jq -r .name canonical-content/species/*.json | sort | head -1)
+          slug=$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
 
           body=$(curl --fail --silent "http://127.0.0.1:8080/species/$slug")
 
@@ -108,7 +194,9 @@ jobs:
 
       - name: A single-fetch payload is served next to its route
         run: |
-          slug=$(jq -r '.[0].slug' app/data/fixture/species.summaries.json)
+          name=$(jq -r .name canonical-content/species/*.json | sort | head -1)
+          slug=$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
           curl --fail --silent --head "http://127.0.0.1:8080/species/$slug.data" > /dev/null
 
       - name: An unpublished path answers 404 with the app shell

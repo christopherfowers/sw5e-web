@@ -10,6 +10,12 @@ node_modules
 build
 .react-router
 
+# The dataset the image renders is generated inside the build, from the
+# canonical content stage. A local app/data/generated — which may have been
+# built from the legacy archive — must never travel in the context and become
+# what the image publishes.
+app/data/generated
+
 # Test and coverage output
 test-results
 playwright-report

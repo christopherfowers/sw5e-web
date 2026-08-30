@@ -219,7 +219,15 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
 
       {visible.length === 0 ? (
         <p className="empty-state">
-          Nothing matches those filters. Try clearing one.
+          {/*
+            A type can be empty for two different reasons, and telling a
+            reader to clear a filter they never set is a dead end. The
+            canonical content set does not carry every type the site
+            publishes, so a type index can legitimately have nothing in it.
+          */}
+          {rows.length === 0
+            ? `No ${typeLabel.toLowerCase()} in this build of the reference yet.`
+            : "Nothing matches those filters. Try clearing one."}
         </p>
       ) : isGallery ? (
         <Gallery type={type} typeLabel={typeLabel} rows={visible} config={config} />

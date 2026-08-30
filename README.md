@@ -20,41 +20,79 @@ site runs, builds and tests without any further setup. See
 
 ## Content data
 
-The site renders from a normalized dataset under `app/data`:
+The site renders from a normalized dataset under `app/data`. Two directories
+can hold one, and three different sources can produce one.
 
 | Directory | Committed? | Contents |
 |---|---|---|
+| `app/data/generated` | no, gitignored | Whatever the generator last built: the canonical library, or the legacy one |
 | `app/data/fixture` | yes | Four items per content type, enough to run every page and every test |
-| `app/data/generated` | no, gitignored | The full library, roughly 1,800 items |
 
 `app/data/generated` wins when it is present; otherwise the fixture is used.
 Both directories hold the same file shapes, so the app, the tests and the
 prerender list behave identically against either.
 
-To build the full library you need a checkout of the legacy content archive —
-JSON dumps of the retired API, one file per type. It is not vendored here: it
-is several megabytes of unmaintained data with known encoding corruption, and
-it belongs in its own repository.
+### Canonical content — what the container builds from
+
+The canonical library is maintained in the sibling
+[sw5e-database](https://github.com/christopherfowers/sw5e-database) repository:
+one schema-validated JSON document per item, under a directory per type. This
+is the source of truth, and it is what the released container image renders,
+so the site publishes the same corpus the API serves.
 
 ```bash
-# Full library into the gitignored app/data/generated
-node scripts/build-content-fixture.mjs --archive ../sw5e-legacy-archive/api
+node scripts/build-content-fixture.mjs \
+  --content ../sw5e-database/content --out app/data/generated
+```
 
-# Regenerate the committed sample in app/data/fixture
+The container does not need a checkout. It copies the content out of
+`ghcr.io/christopherfowers/sw5e-database`, an image published by that
+repository whose only job is to carry it — see [Container
+image](#container-image).
+
+The canonical set is still growing, and the mapping records where it does not
+yet reach: it has no maneuvers, so that type renders an empty index rather
+than disappearing from the navigation, and its `feature` and `source`
+directories are deliberately not published as browsable types — features are
+already written out in the prose of the archetype that grants them, and the
+books are described in `app/content/source-meta.ts`, which carries a blurb,
+a colour and a cover that a data file cannot. The mapping and its reasoning
+live in `scripts/lib/canonical.mjs`.
+
+### The committed fixture — what a clean clone falls back to
+
+`app/data/fixture` is four items per type, committed so that `npm test`,
+`npm run build` and CI all work for a contributor with neither of the other
+two sources to hand. It is built from the legacy archive:
+
+```bash
 node scripts/build-content-fixture.mjs --archive ../sw5e-legacy-archive/api --curated
+```
+
+### The legacy archive — local only, historical
+
+The archive is JSON dumps of the retired API, one file per type. It is not
+vendored here and exists in no repository: it is several megabytes of
+unmaintained data with known encoding corruption. It remains supported because
+it is still the only source for the types the canonical set has not reached.
+
+```bash
+node scripts/build-content-fixture.mjs --archive ../sw5e-legacy-archive/api
 ```
 
 The archive path also reads from `SW5E_ARCHIVE`, and defaults to
 `../sw5e-legacy-archive/api`.
 
-The script does more than copy. It drops the archive's storage plumbing
+Reading it is not a copy. The script drops the archive's storage plumbing
 (`partitionKey`, `rowKey`, `timestamp`, `eTag`), its stringified `*Json`
 duplicates and its `*Enum` integers; it repairs the encoding damage baked into
 the 2022 scrape where the original character can be deduced from context, and
 deliberately leaves it alone where it cannot; and it reshapes each type into
 the props the UI consumes, so no legacy field name reaches a component. The
 repair rules and the cases they refuse to guess at are documented in
-`scripts/lib/repair-text.mjs`.
+`scripts/lib/repair-text.mjs`. None of that applies to the canonical content,
+which is clean and carries no legacy vocabulary — which is why the two sources
+have separate mappings onto one shared output shape.
 
 ## How rendering works
 
@@ -73,8 +111,9 @@ embedded in its own HTML, rather than the whole library. The one exception is
 search, which needs the whole corpus in the browser and so fetches a compact
 index on first use.
 
-With the full library that is **1,830 prerendered routes in about 3m20s** on a
-warm cache; with the committed fixture it is 43 routes in about 25 seconds.
+With the canonical content that is **132 prerendered routes in about 10
+seconds**; with the legacy archive's full library it is 1,835 routes in about
+3m20s on a warm cache, and with the committed fixture 47 routes.
 
 Deployment note: the static host must resolve `/species/wookiee` to
 `species/wookiee/index.html`, which Netlify, Cloudflare Pages, GitHub Pages and
@@ -84,7 +123,8 @@ same way.
 
 ## Container image
 
-The site ships as a container: a Node stage runs the prerender build, and the
+The site ships as a container: a content stage carries the canonical library,
+a Node stage builds the dataset from it and runs the prerender build, and the
 runtime stage is `nginxinc/nginx-unprivileged` serving the resulting static
 files. There is no Node process at runtime.
 
@@ -111,10 +151,20 @@ Or pull a published build:
 docker run --rm -p 8080:8080 ghcr.io/christopherfowers/sw5e-web:latest
 ```
 
-The image is built from a clean checkout, so — as described under
-[Content data](#content-data) — it renders the committed fixture: four items
-per content type, 47 prerendered routes. Building the full library into an
-image needs the legacy archive mounted into the build context.
+The image renders the canonical content, not the committed fixture. A build
+stage pulls `ghcr.io/christopherfowers/sw5e-database`, which carries the
+canonical documents at `/opt/sw5e/content`, and the generator runs over them
+before the prerender — 132 routes, matching what the API serves. The build
+fails rather than falling back if that content does not arrive.
+
+That makes this image's build depend on another repository's published one.
+`SW5E_CONTENT_TAG` is how a build pins the content revision: it defaults to
+`latest`, which follows that repository's default branch.
+
+```bash
+# Freeze the content at one commit of sw5e-database
+docker build --build-arg SW5E_CONTENT_TAG=sha-<40-character-commit> -t sw5e-web .
+```
 
 ### Behind Traefik
 
