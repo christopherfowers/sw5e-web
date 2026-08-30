@@ -24,3 +24,8 @@ AGENTS.md
 /playwright-report/
 /test-results/
 /coverage/
+
+# Generated content dataset. Built from the legacy archive by
+# scripts/build-content-fixture.mjs; the committed fixture in app/data/fixture
+# is what CI and contributors without the archive render from.
+/app/data/generated/
