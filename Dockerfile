@@ -38,7 +38,7 @@ RUN npm run build
 # here needs root or a privileged port. It is the stock nginx build: no brotli
 # module ships with it, which is why the config compresses with gzip only.
 # ---------------------------------------------------------------------------
-FROM nginxinc/nginx-unprivileged:1.30.4-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:1.31.4-alpine AS runtime
 
 # The stock welcome page and error page would otherwise stay reachable at / and
 # /50x.html. Removing them needs root, so drop back to the image's own
