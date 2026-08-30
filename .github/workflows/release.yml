@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    # Tag pushes are what produce the semver tags below. Without them the
+    # semver patterns in the metadata step would never match anything.
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: Publish container image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      # Pushing to GitHub Container Registry.
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/christopherfowers/sw5e-web
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            # The full 40-character SHA, not the 7-character default. The
+            # homelab deploy contract calls deploy.sh "sha-${GITHUB_SHA}" and
+            # rejects anything that is not a full SHA, so a short tag would
+            # have it ask for an image that was never pushed. `latest` is a
+            # convenience fallback and is never what a deploy resolves.
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          # Full SLSA provenance and an SPDX SBOM, both attached to the image
+          # as OCI attestations, so what is running in a stack can be traced
+          # back to the commit and the packages it was built from.
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

@@ -82,12 +82,90 @@ S3 website hosting all do. `vite preview` does not, so this repository adds a
 small preview middleware (`vite.config.ts`) to make local preview behave the
 same way.
 
+## Container image
+
+The site ships as a container: a Node stage runs the prerender build, and the
+runtime stage is `nginxinc/nginx-unprivileged` serving the resulting static
+files. There is no Node process at runtime.
+
+| | |
+|---|---|
+| Image | `ghcr.io/christopherfowers/sw5e-web` |
+| Tags | `sha-<full 40-character commit SHA>` on every push to `main`, `latest` alongside it, and `X.Y.Z` / `X.Y` on a `v*.*.*` tag push |
+| Port | `8080` |
+| User | non-root, uid `101` |
+| Volumes | none — the content is baked into the image, and nothing is written at runtime |
+| Health | `GET /healthz` returns `200 ok`; the image also declares a `HEALTHCHECK` against it |
+
+### Run it locally
+
+```bash
+docker build -t sw5e-web .
+docker run --rm -p 8080:8080 sw5e-web
+# http://localhost:8080
+```
+
+Or pull a published build:
+
+```bash
+docker run --rm -p 8080:8080 ghcr.io/christopherfowers/sw5e-web:latest
+```
+
+The image is built from a clean checkout, so — as described under
+[Content data](#content-data) — it renders the committed fixture: four items
+per content type, 47 prerendered routes. Building the full library into an
+image needs the legacy archive mounted into the build context.
+
+### Behind Traefik
+
+TLS terminates at the proxy; the container serves plain HTTP on 8080 and never
+redirects, so it needs no knowledge of its public hostname.
+
+```yaml
+services:
+  sw5e-web:
+    image: ghcr.io/christopherfowers/sw5e-web:latest
+    restart: unless-stopped
+    networks: [web]
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.sw5e-web.rule: Host(`sw5e.example.com`)
+      traefik.http.routers.sw5e-web.entrypoints: websecure
+      traefik.http.routers.sw5e-web.tls.certresolver: letsencrypt
+      traefik.http.services.sw5e-web.loadbalancer.server.port: "8080"
+
+networks:
+  web:
+    external: true
+```
+
+A real deploy pins `ghcr.io/christopherfowers/sw5e-web:sha-<full commit SHA>`
+rather than `latest`, so what is running is traceable to a commit and a
+redeploy is deliberate.
+
+The container sets its own `Content-Security-Policy`, `X-Content-Type-Options`,
+`X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` and cross-origin
+isolation headers (`docker/default.conf`). It deliberately does **not** set
+`Strict-Transport-Security`: that describes the origin the browser talks to,
+which is the proxy, so it belongs on the proxy.
+
+### Serving it somewhere else
+
+The one rule a static host has to follow is the one `docker/default.conf`
+documents at length: resolve `/species/wookiee` to
+`species/wookiee/index.html` **before** falling back to
+`__spa-fallback.html`. Netlify, Cloudflare Pages, GitHub Pages and S3 website
+hosting all do this. A host that reaches for the SPA fallback first still
+looks correct in a browser — hydration paints the page — while serving nothing
+at all to a crawler that does not run JavaScript.
+
 ## Scripts
 
 | Script | Purpose |
 |---|---|
 | `npm run dev` | Development server |
 | `npm run build` | Production build with prerendering |
+| `npm run preview` | Serve the production build locally on port 4173 |
 | `npm run typecheck` | Route typegen plus TypeScript check |
 | `npm run lint` | ESLint |
 | `npm test` | Unit tests (Vitest) |

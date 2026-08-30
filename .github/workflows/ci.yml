@@ -43,3 +43,126 @@ jobs:
 
       - name: Audit dependencies
         run: npm audit --audit-level=high
+
+  # The container is not built anywhere else before it is released, so this is
+  # the only place the Dockerfile and the nginx config are exercised. It builds
+  # the image without pushing, then runs it and checks the routing rules that
+  # nothing else can catch: a prerendered page must answer with its own markup
+  # rather than with the SPA shell.
+  image:
+    name: Container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: sw5e-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start container
+        run: |
+          docker run --detach --name sw5e-web --publish 8080:8080 sw5e-web:ci
+          for _ in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the container never became healthy"
+          docker logs sw5e-web
+          exit 1
+
+      - name: A prerendered content page serves its own markup
+        run: |
+          # Taken from the committed fixture rather than hard-coded, so this
+          # keeps working when the sample is regenerated.
+          slug=$(jq -r '.[0].slug' app/data/fixture/species.summaries.json)
+          name=$(jq -r '.[0].name' app/data/fixture/species.summaries.json)
+
+          body=$(curl --fail --silent "http://127.0.0.1:8080/species/$slug")
+
+          # nginx has to resolve /species/<slug> to species/<slug>/index.html
+          # before reaching for the SPA fallback. If it falls back instead, the
+          # response is the shell: still a 200, still fine once JavaScript
+          # runs, and completely empty to a crawler that does not run it.
+          if ! grep -q "<h1>$name</h1>" <<< "$body"; then
+            echo "expected the prerendered <h1>$name</h1>; got the SPA shell"
+            exit 1
+          fi
+
+      - name: A prerendered index page serves its own markup
+        run: |
+          curl --fail --silent http://127.0.0.1:8080/species | grep -q "<h1>Species</h1>"
+
+      - name: The home page serves its own markup
+        run: |
+          curl --fail --silent http://127.0.0.1:8080/ | grep -q "<h1>Star Wars 5e</h1>"
+
+      - name: A single-fetch payload is served next to its route
+        run: |
+          slug=$(jq -r '.[0].slug' app/data/fixture/species.summaries.json)
+          curl --fail --silent --head "http://127.0.0.1:8080/species/$slug.data" > /dev/null
+
+      - name: An unpublished path answers 404 with the app shell
+        run: |
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            http://127.0.0.1:8080/not-a-published-path)
+          if [ "$status" != "404" ]; then
+            echo "expected 404 for an unpublished path, got $status"
+            exit 1
+          fi
+
+      - name: Assets are immutable and HTML is not
+        run: |
+          asset=$(curl --fail --silent http://127.0.0.1:8080/ \
+            | grep -o '/assets/[A-Za-z0-9._-]*\.css' | head -1)
+          curl --fail --silent --head "http://127.0.0.1:8080$asset" \
+            | grep -qi 'cache-control: public, max-age=31536000, immutable'
+          curl --fail --silent --head http://127.0.0.1:8080/ \
+            | grep -qi 'cache-control: no-cache'
+
+      - name: Security headers are present and name no external origin
+        run: |
+          headers=$(curl --fail --silent --head http://127.0.0.1:8080/)
+          grep -qi 'content-security-policy:' <<< "$headers"
+          grep -qi 'x-content-type-options: nosniff' <<< "$headers"
+          grep -qi 'referrer-policy:' <<< "$headers"
+          grep -qi 'x-frame-options: DENY' <<< "$headers"
+
+          # The project rule is that nothing is loaded from a third party, so
+          # no host may appear in the policy at all.
+          csp=$(grep -i 'content-security-policy:' <<< "$headers")
+          if grep -qiE '(https?:)?//[a-z0-9.-]+' <<< "$csp"; then
+            echo "the CSP names an external origin: $csp"
+            exit 1
+          fi
+
+          # nginx must not advertise its version.
+          if grep -qiE '^server: nginx/' <<< "$headers"; then
+            echo "server_tokens is not off"
+            exit 1
+          fi
+
+      - name: Container runs as a non-root user on 8080
+        run: |
+          uid=$(docker exec sw5e-web id -u)
+          if [ "$uid" = "0" ]; then
+            echo "the container is running as root"
+            exit 1
+          fi
+
+      - name: Container logs
+        if: always()
+        run: docker logs sw5e-web || true
+
+      - name: Stop container
+        if: always()
+        run: docker rm --force sw5e-web || true

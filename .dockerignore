@@ -1,0 +1,40 @@
+# Keeps the build context small and keeps anything local out of the image.
+# The build stage runs `npm ci` and `npm run build` from a copy of this tree,
+# so everything the build does not read is dead weight in the context.
+
+.git
+.gitattributes
+.gitignore
+
+node_modules
+build
+.react-router
+
+# Test and coverage output
+test-results
+playwright-report
+coverage
+
+# Local environment. .env.example is documentation and carries no values, but
+# nothing in the image reads it either.
+.env
+.env.*
+
+# Tooling directories that must never be published (mirrors .gitignore)
+.claude
+CLAUDE.md
+AGENTS.md
+.agents
+.cursor
+.aider*
+.github/copilot-instructions.md
+
+# Not read by the build
+.github
+.vscode
+.idea
+Dockerfile
+.dockerignore
+*.md
+
+.DS_Store

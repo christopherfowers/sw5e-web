@@ -14,3 +14,11 @@ updates:
     directory: "/"
     schedule:
       interval: weekly
+
+  # Both base images in the Dockerfile. Node is pinned to the exact version in
+  # .nvmrc, so a bump here has to be matched there and in the README before it
+  # can be merged.
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
