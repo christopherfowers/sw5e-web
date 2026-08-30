@@ -8,7 +8,7 @@
  * ever exercise.
  */
 
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -197,6 +197,13 @@ describe("when the device has no built-in authenticator", () => {
 });
 
 describe("two-factor authentication", () => {
+  /**
+   * The literal the server sends is `mfaRequired` — camelCase, no hyphen — and
+   * the branch carries `user: null` and nothing else. A client comparing
+   * against `mfa-required` falls through to the authenticated branch and reads
+   * a user that is not there, so these tests are as much about the spelling as
+   * about the flow.
+   */
   it("asks for a code instead of signing in, and does not navigate first", async () => {
     const authenticator = installAuthenticator();
     restore = authenticator.uninstall;
@@ -281,32 +288,39 @@ describe("an already signed-in reader", () => {
   });
 });
 
-describe("the optional email field", () => {
-  it("is tucked behind a disclosure rather than asked for up front", async () => {
+describe("no email is asked for, and none is sent", () => {
+  /**
+   * The API ignores the request body on `passkey/login/begin`, never accepts
+   * an address, and always answers with an empty `allowCredentials` — so an
+   * email field here is a control that cannot change the outcome, and asking
+   * for one on a sign-in page implies the answer depends on it.
+   *
+   * It is also what keeps this page from being an account-existence oracle:
+   * with no input, there is nothing whose answer could differ between a
+   * registered address and an unregistered one.
+   */
+  it("offers no address field anywhere on the page", async () => {
     const authenticator = installAuthenticator();
     restore = authenticator.uninstall;
     mount(new AuthApiContract({ session: null }));
 
-    const disclosure = screen.getByText(/my passkey is not being offered/i);
-    expect(disclosure.tagName).toBe("SUMMARY");
+    await waitFor(() => expect(passkeyButton()).toBeEnabled());
+    expect(screen.queryByLabelText(/email/i)).toBeNull();
+    expect(screen.queryByText(/my passkey is not being offered/i)).toBeNull();
   });
 
-  it("is sent to the server when it is filled in", async () => {
+  it("starts the ceremony with no request body at all", async () => {
     const authenticator = installAuthenticator();
     restore = authenticator.uninstall;
     const contract = new AuthApiContract({ session: null });
     mount(contract);
 
-    await userEvent.type(
-      within(screen.getByRole("group")).getByLabelText(/email address/i),
-      "reader@example.com",
-    );
     await userEvent.click(passkeyButton());
 
     await waitFor(() =>
       expect(screen.getByText(ACCOUNT_MARKER)).toBeInTheDocument(),
     );
     const begin = contract.calls.find((call) => call.path === "/passkey/login/begin");
-    expect(begin?.body).toEqual({ email: "reader@example.com" });
+    expect(begin?.body).toBeUndefined();
   });
 });

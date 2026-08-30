@@ -14,10 +14,12 @@
  * of those is a thing to get subtly wrong; an inline confirmation needs none
  * of it and cannot strand a keyboard user behind a layer they cannot leave.
  *
- * The label field is offered before the ceremony, not after. Asking afterwards
+ * The name field is offered before the ceremony, not after. Asking afterwards
  * means asking someone to name a thing while a system prompt is dismissing
  * itself, and it means a failed naming step leaves a credential registered
- * with no name at all.
+ * with no name at all. It is genuinely optional: the server stores `null`
+ * rather than inventing a name, so the list below has to have an answer for a
+ * credential that has none.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -39,8 +41,7 @@ import { Banner, SubmitButton, TextField } from "~/components/auth-ui";
 import type { AccountContext } from "./account";
 
 /** Reads as a date rather than as a timestamp, and never as "Invalid Date". */
-function readableDate(value: string | null): string {
-  if (!value) return "never used";
+function readableDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "unknown";
   return date.toLocaleDateString(undefined, {
@@ -53,7 +54,7 @@ function readableDate(value: string | null): string {
 export default function AccountPasskeys() {
   const { user, refresh } = useOutletContext<AccountContext>();
 
-  const [label, setLabel] = useState("");
+  const [name, setName] = useState("");
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -92,6 +93,19 @@ export default function AccountPasskeys() {
       return;
     }
     if (error instanceof ApiError) {
+      // The server refuses to remove an account's last credential, because
+      // doing so would strand it. That is a deliberate answer rather than a
+      // failure, and it deserves the sentence that says what to do about it —
+      // the warning shown before confirming says removal *will* happen, so
+      // reporting this as "that could not be completed" would leave the reader
+      // unsure whether it did.
+      if (error.kind === "conflict" && error.code === "last-credential") {
+        setFailure({
+          title: "That is your only passkey, so it was kept.",
+          body: "Removing it would leave you no way to sign in. Add another passkey first, then remove this one.",
+        });
+        return;
+      }
       setFailure({ title: "That could not be completed.", body: error.message });
       return;
     }
@@ -112,13 +126,17 @@ export default function AccountPasskeys() {
 
     try {
       const options = await beginPasskeyRegistration();
-      const credential = await createPasskey(options.publicKey, controller.signal);
+      const credential = await createPasskey(options, controller.signal);
       const result = await completePasskeyRegistration(
         credential,
-        label.trim() || undefined,
+        name.trim() || null,
       );
-      setLabel("");
-      setSuccess(`“${result.credential.label}” can now sign you in.`);
+      setName("");
+      setSuccess(
+        result.name
+          ? `“${result.name}” can now sign you in.`
+          : "Your new passkey can now sign you in.",
+      );
       // The list lives on the session's user, so it comes back from the server
       // rather than being patched locally — otherwise this page and the header
       // would disagree about the same account.
@@ -131,14 +149,18 @@ export default function AccountPasskeys() {
     }
   }
 
-  async function confirmRemoval(id: string, name: string) {
+  async function confirmRemoval(id: string, shownAs: string | null) {
     setFailure(null);
     setSuccess(null);
     setRemoving(id);
     try {
       await removePasskey(id);
       setConfirming(null);
-      setSuccess(`“${name}” can no longer sign you in.`);
+      setSuccess(
+        shownAs
+          ? `“${shownAs}” can no longer sign you in.`
+          : "That passkey can no longer sign you in.",
+      );
       await refresh();
     } catch (error) {
       report(error);
@@ -173,68 +195,80 @@ export default function AccountPasskeys() {
           </p>
         ) : (
           <ul className="credential-list">
-            {user.passkeys.map((passkey) => (
-              <li key={passkey.id} className="credential">
-                <div className="credential-body">
-                  <p className="credential-name">{passkey.label}</p>
-                  <p className="credential-meta">
-                    Added {readableDate(passkey.createdAt)} · Last used{" "}
-                    {readableDate(passkey.lastUsedAt)}
-                  </p>
-                </div>
-
-                {confirming === passkey.id ? (
-                  <div className="credential-confirm" role="group"
-                    aria-label={`Confirm removing ${passkey.label}`}>
-                    <p>
-                      {onlyCredential
-                        ? "This is your only passkey. Removing it leaves email as your only way back in."
-                        : "Remove this passkey?"}
+            {user.passkeys.map((passkey) => {
+              // `name` is genuinely nullable: the server stores exactly what
+              // the reader typed and invents nothing when they typed nothing.
+              // Every place that shows it needs this fallback, or the row
+              // renders an empty heading with a Remove button beside it and no
+              // way to tell which credential it belongs to.
+              const shownAs = passkey.name ?? "Unnamed passkey";
+              return (
+                <li key={passkey.id} className="credential">
+                  <div className="credential-body">
+                    <p className="credential-name">{shownAs}</p>
+                    {/* Added, and nothing else. The API tracks no last-used
+                        instant, and a "last used" line filled with a guess
+                        would be worse than the fact being absent — it is
+                        exactly the line somebody would revoke a credential
+                        on. */}
+                    <p className="credential-meta">
+                      Added {readableDate(passkey.createdAt)}
                     </p>
-                    <div className="auth-actions">
-                      <SubmitButton
-                        type="button"
-                        variant="danger"
-                        pending={removing === passkey.id}
-                        pendingLabel="Removing…"
-                        onClick={() =>
-                          void confirmRemoval(passkey.id, passkey.label)
-                        }
-                      >
-                        Yes, remove it
-                      </SubmitButton>
-                      <button
-                        type="button"
-                        className="button"
-                        disabled={removing === passkey.id}
-                        onClick={() => setConfirming(null)}
-                      >
-                        Keep it
-                      </button>
-                    </div>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="button button-danger"
-                    // The row has to fit "Remove", but a screen reader user
-                    // moving through a list of buttons would hear "Remove"
-                    // three times with nothing to tell them apart. The
-                    // accessible name still starts with the visible word, so
-                    // "click Remove" remains a usable instruction for speech
-                    // control (WCAG 2.5.3, Label in Name).
-                    aria-label={`Remove the passkey “${passkey.label}”`}
-                    onClick={() => {
-                      setConfirming(passkey.id);
-                      setFailure(null);
-                      setSuccess(null);
-                    }}
-                  >
-                    Remove
-                  </button>
-                )}
-              </li>
-            ))}
+
+                  {confirming === passkey.id ? (
+                    <div className="credential-confirm" role="group"
+                      aria-label={`Confirm removing ${shownAs}`}>
+                      <p>
+                        {onlyCredential
+                          ? "This is your only passkey, and the server will refuse to remove it — that would leave you no way to sign in."
+                          : "Remove this passkey?"}
+                      </p>
+                      <div className="auth-actions">
+                        <SubmitButton
+                          type="button"
+                          variant="danger"
+                          pending={removing === passkey.id}
+                          pendingLabel="Removing…"
+                          onClick={() =>
+                            void confirmRemoval(passkey.id, passkey.name)
+                          }
+                        >
+                          Yes, remove it
+                        </SubmitButton>
+                        <button
+                          type="button"
+                          className="button"
+                          disabled={removing === passkey.id}
+                          onClick={() => setConfirming(null)}
+                        >
+                          Keep it
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="button button-danger"
+                      // The row has to fit "Remove", but a screen reader user
+                      // moving through a list of buttons would hear "Remove"
+                      // three times with nothing to tell them apart. The
+                      // accessible name still starts with the visible word, so
+                      // "click Remove" remains a usable instruction for speech
+                      // control (WCAG 2.5.3, Label in Name).
+                      aria-label={`Remove the passkey “${shownAs}”`}
+                      onClick={() => {
+                        setConfirming(passkey.id);
+                        setFailure(null);
+                        setSuccess(null);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -261,12 +295,12 @@ export default function AccountPasskeys() {
         <div className="auth-form">
           <TextField
             label="Name this passkey"
-            name="label"
-            value={label}
-            onChange={setLabel}
+            name="name"
+            value={name}
+            onChange={setName}
             maxLength={60}
             disabled={adding || unsupported}
-            hint="For your own reference — “Work laptop”, “iPhone”. Left blank, your device is asked to name itself."
+            hint="For your own reference — “Work laptop”, “iPhone”. Left blank, it is listed as an unnamed passkey."
           />
           <div className="auth-actions">
             <SubmitButton

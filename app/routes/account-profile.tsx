@@ -27,7 +27,7 @@ export default function AccountProfile() {
   const role = effectiveRole(user);
 
   const passkeys = user.passkeys.length;
-  const protectedByTotp = user.mfa.totp;
+  const protectedByTotp = user.twoFactorEnabled;
 
   return (
     <>

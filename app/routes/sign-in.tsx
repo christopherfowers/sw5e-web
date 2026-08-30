@@ -75,7 +75,6 @@ export default function SignIn() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>("passkey");
-  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
@@ -157,15 +156,12 @@ export default function SignIn() {
     ceremony.current = controller;
 
     try {
-      const trimmed = email.trim();
-      const options = await beginPasskeyLogin(trimmed ? { email: trimmed } : {});
-      const credential = await getPasskeyAssertion(
-        options.publicKey,
-        controller.signal,
-      );
+      // No argument: the API ignores any body here and never takes an address.
+      const options = await beginPasskeyLogin();
+      const credential = await getPasskeyAssertion(options, controller.signal);
       const result = await completePasskeyLogin(credential);
 
-      if (result.status === "mfa-required") {
+      if (result.status === "mfaRequired") {
         setStep("totp");
         return;
       }
@@ -195,7 +191,7 @@ export default function SignIn() {
     try {
       const result = await verifyTotp(digits);
       if (result.status !== "authenticated") {
-        // Enrolment and challenge share an endpoint; an "enrolled" reply to a
+        // Enrolment and challenge share an endpoint; an "enabled" reply to a
         // sign-in means the session is not what either side thought it was.
         setFailure({
           title: "That code did not complete sign-in.",
@@ -316,25 +312,15 @@ export default function SignIn() {
           </SubmitButton>
         </div>
 
-        <details className="auth-disclosure">
-          <summary>My passkey is not being offered</summary>
-          <p className="auth-note">
-            Some passkeys are tied to an address rather than discoverable on
-            their own. Enter yours and try again — it changes which credentials
-            your device is asked for, and nothing else.
-          </p>
-          <TextField
-            label="Email address"
-            name="email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            autoComplete="username webauthn"
-            inputMode="email"
-            disabled={pending || unsupported}
-          />
-        </details>
-
+        {/* There is deliberately no email field here, and adding one back
+            would be offering a control that cannot do anything. The API
+            ignores the request body on `passkey/login/begin`, never accepts an
+            address, and always answers with an empty `allowCredentials` — so
+            the challenge is identical for every caller. That is also what
+            stops this page from being an account-existence oracle: there is no
+            input whose answer could differ. Every passkey the site issues is
+            discoverable, so the authenticator already knows which account it
+            is speaking for. */}
         <p className="auth-note">
           A passkey is your device's own unlock — a fingerprint, your face, or
           the PIN you already use. It never leaves the device, cannot be reused

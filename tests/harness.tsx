@@ -21,23 +21,23 @@ import { AuthProvider } from "../app/auth/session";
 import {
   AuthApiContract,
   contractFetch,
-  CSRF_COOKIE,
-  CSRF_TOKEN,
+  type FetchAdapterOptions,
 } from "./auth-api-contract";
 
 /**
- * Points `fetch` at the contract fixture and plants the readable half of the
- * CSRF pair, the way the server would have on a previous response.
+ * Points `fetch` at the contract fixture.
  *
- * Tests that want to prove the client actually reads that cookie call this
- * with `withCsrfCookie: false` and assert the request is refused.
+ * There is nothing to plant beforehand. The API's cross-site protection is an
+ * `Origin` allow-list, and `Origin` is written by the browser on every unsafe
+ * method — so the adapter supplies it and the client sends nothing of its own.
+ * A test that wants to prove the check is real passes a foreign `origin`, or
+ * `null` for a request that carries none, and asserts the 403.
  */
 export function serveApiContract(
   contract: AuthApiContract,
-  { withCsrfCookie = true }: { withCsrfCookie?: boolean } = {},
+  options: FetchAdapterOptions = {},
 ): void {
-  vi.stubGlobal("fetch", contractFetch(contract));
-  document.cookie = `${CSRF_COOKIE}=${withCsrfCookie ? CSRF_TOKEN : ""}; path=/`;
+  vi.stubGlobal("fetch", contractFetch(contract, options));
 }
 
 type StubRoutes = Parameters<typeof createRoutesStub>[0];

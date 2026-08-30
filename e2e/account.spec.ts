@@ -2,9 +2,12 @@ import { expect, test } from "@playwright/test";
 
 import {
   attachVirtualAuthenticator,
+  passkey,
   serveAccountApi,
   user,
   VALID_TOTP_CODE,
+  VALID_VERIFICATION_EMAIL,
+  VALID_VERIFICATION_TOKEN,
 } from "./account-mock";
 
 /**
@@ -120,16 +123,48 @@ test.describe("passkeys, end to end", () => {
   });
 
   test("an enrolled passkey can be revoked", async ({ page, context }) => {
-    const contract = await serveAccountApi(page, context, { session: user() });
+    // Two credentials, because the server refuses to remove the last one —
+    // see the test below. A single-credential fixture here would be asserting
+    // the wrong rule.
+    const contract = await serveAccountApi(page, context, {
+      session: user({
+        passkeys: [
+          passkey({ id: "a", name: "Work laptop" }),
+          passkey({ id: "b", name: "iPhone" }),
+        ],
+      }),
+    });
 
     await page.goto("/account/passkeys");
-    await expect(page.locator(".credential-name", { hasText: "Work laptop" })).toBeVisible();
+    await expect(page.locator(".credential-name", { hasText: "iPhone" })).toBeVisible();
 
+    await page.getByRole("button", { name: /remove the passkey “iPhone”/i }).click();
+    await page.getByRole("button", { name: /yes, remove it/i }).click();
+
+    await expect(page.locator(".credential-name", { hasText: "iPhone" })).toHaveCount(0);
+    expect(contract.session?.passkeys.map((entry) => entry.id)).toEqual(["a"]);
+  });
+
+  test("the last passkey is kept, and the reader is told so", async ({
+    page,
+    context,
+  }) => {
+    // Removing it would strand the account, so the server answers 409. The
+    // page has already said "yes, remove it", so the outcome it must never
+    // produce is a list with the credential quietly missing.
+    const contract = await serveAccountApi(page, context, {
+      session: user({ passkeys: [passkey({ id: "a", name: "Work laptop" })] }),
+    });
+
+    await page.goto("/account/passkeys");
     await page.getByRole("button", { name: /remove the passkey/i }).click();
     await page.getByRole("button", { name: /yes, remove it/i }).click();
 
-    await expect(page.locator(".credential-name", { hasText: "Work laptop" })).toHaveCount(0);
-    expect(contract.session?.passkeys).toHaveLength(0);
+    await expect(page.getByRole("alert")).toContainText(/only passkey, so it was kept/i);
+    await expect(
+      page.locator(".credential-name", { hasText: "Work laptop" }),
+    ).toBeVisible();
+    expect(contract.session?.passkeys).toHaveLength(1);
   });
 });
 
@@ -176,7 +211,7 @@ test.describe("two-factor authentication", () => {
     context,
   }) => {
     const contract = await serveAccountApi(page, context, {
-      session: user({ displayName: "Jen Ordo", mfa: { totp: true } }),
+      session: user({ displayName: "Jen Ordo", twoFactorEnabled: true }),
       mfaRequired: true,
     });
     await attachVirtualAuthenticator(page);
@@ -214,7 +249,7 @@ test.describe("two-factor authentication", () => {
     page,
     context,
   }) => {
-    await serveAccountApi(page, context, { session: user({ mfa: { totp: false } }) });
+    await serveAccountApi(page, context, { session: user({ twoFactorEnabled: false }) });
 
     await page.goto("/account/security");
     await page.getByRole("button", { name: /set up an authenticator app/i }).click();
@@ -242,7 +277,7 @@ test.describe("roles", () => {
     context,
   }) => {
     await serveAccountApi(page, context, {
-      session: user({ roles: ["community"] }),
+      session: user({ roles: ["Community"] }),
     });
 
     await page.goto("/account");
@@ -255,7 +290,7 @@ test.describe("roles", () => {
   test("and cannot reach it by typing the address", async ({ page, context }) => {
     // Hiding a link is not protection. This is what someone actually meets.
     await serveAccountApi(page, context, {
-      session: user({ roles: ["community"] }),
+      session: user({ roles: ["Community"] }),
     });
 
     await page.goto("/account/contributions");
@@ -270,7 +305,7 @@ test.describe("roles", () => {
 
   test("a contributor gets both the link and the page", async ({ page, context }) => {
     await serveAccountApi(page, context, {
-      session: user({ roles: ["contributor"] }),
+      session: user({ roles: ["Contributor"] }),
     });
 
     await page.goto("/account");
@@ -296,9 +331,47 @@ test.describe("registration", () => {
     await page.getByRole("button", { name: /send verification link/i }).click();
 
     await expect(page.locator("main").getByRole("status")).toContainText(/on its way/i);
-    // The CSRF token really was echoed: the fixture rejects a state-changing
-    // request without it, and this call succeeded.
+    // The browser's own `Origin` really did travel and really was accepted:
+    // the fixture answers a bodiless 403 to any unsafe method that arrives
+    // without this page's origin, so a call that succeeded proves the real
+    // cross-site mechanism end to end.
     expect(contract.calls.some((call) => call.path === "/register")).toBe(true);
+  });
+
+  test("the emailed link verifies, then enrols the first passkey in place", async ({
+    page,
+    context,
+  }) => {
+    // The whole point of the enrolment ticket, end to end. There is no session
+    // at any point here: verifying does not create one, and the account area
+    // is guarded — so if this page did not run the ceremony itself, a new
+    // account could never get its first credential.
+    const contract = await serveAccountApi(page, context, { session: null });
+    await attachVirtualAuthenticator(page);
+
+    await page.goto(
+      `/verify-email?email=${encodeURIComponent(VALID_VERIFICATION_EMAIL)}` +
+        `&token=${VALID_VERIFICATION_TOKEN}`,
+    );
+
+    await expect(
+      page.getByRole("heading", { name: /your email address is verified/i }),
+    ).toBeVisible();
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      /next 10 minutes/i,
+    );
+
+    await page.getByLabel(/name this passkey/i).fill("Test device");
+    await page.getByRole("button", { name: /set up a passkey/i }).click();
+
+    await expect(
+      page.getByRole("heading", { name: /your passkey is ready/i }),
+    ).toBeVisible();
+    // Still nobody: enrolling is not signing in.
+    expect(contract.session).toBeNull();
+    expect(
+      contract.calls.filter((call) => call.path === "/passkey/register/complete"),
+    ).toHaveLength(1);
   });
 
   test("keeps a mistyped address on the page instead of sending it", async ({
@@ -324,7 +397,7 @@ test.describe("keyboard operation", () => {
     page,
     context,
   }) => {
-    await serveAccountApi(page, context, { session: user({ roles: ["community"] }) });
+    await serveAccountApi(page, context, { session: user({ roles: ["Community"] }) });
 
     await page.goto("/account");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

@@ -22,12 +22,35 @@
  * cannot see it, and code that tries teaches the next reader that the cookie
  * is readable. `getCurrentUser()` — a round trip — is how this client learns
  * whether it has a session.
+ *
+ * ## Cross-site request protection, and why there is no token in this file
+ *
+ * There is no CSRF token here and there must not be one. The API does not use
+ * double-submit; it checks provenance directly. Every unsafe method is required
+ * to arrive with `Sec-Fetch-Site: same-origin` or with an `Origin` on the
+ * service's allow-list, and anything else is refused with a bodiless 403. That
+ * was confirmed against the running service: no `Origin` header answers 403, a
+ * foreign `Origin` answers 403, and the site's own origin answers 200.
+ *
+ * The browser writes both of those headers itself on every state-changing
+ * fetch, and script cannot forge or suppress either — they are forbidden header
+ * names. So a same-origin client has nothing to do, which is the whole appeal
+ * of the scheme. A readable CSRF cookie would only hand JavaScript a credential
+ * to look after, and buy nothing in exchange: the case double-submit is usually
+ * defended for, a hostile same-site subdomain, is covered here too, because a
+ * subdomain is a different origin and a different origin is not on the
+ * allow-list.
+ *
+ * The practical consequence for this module is that a 403 is a real answer
+ * rather than a bug to paper over. It means the request did not look like it
+ * came from this site, and no header this code can set would change that.
  */
 
 import type {
+  AssignableRole,
+  AssignRolesResponse,
   CurrentUser,
   PasskeyAuthenticationCredential,
-  PasskeyLoginBeginRequest,
   PasskeyLoginBeginResponse,
   PasskeyLoginCompleteResponse,
   PasskeyRegisterBeginResponse,
@@ -42,37 +65,6 @@ import type {
 } from "./types";
 
 const API_ROOT = "/api/auth";
-
-/**
- * The readable half of the double-submit CSRF pair.
- *
- * The session cookie is HttpOnly and `SameSite`, which stops a cross-site form
- * post from carrying it in every browser that honours `SameSite` — but
- * `SameSite` is a defence this client cannot verify and does not control, and
- * it does nothing about a same-site subdomain. So the server also sets a
- * second, deliberately readable cookie, and every state-changing request
- * echoes it back in a header. An attacker on another origin can cause the
- * browser to *send* cookies; it cannot *read* them, so it cannot produce the
- * header.
- *
- * CONTRACT GAP: the specification does not mention CSRF at all. Cookie
- * authentication is not finished without it, so this is the shape assumed
- * here — cookie `sw5e_csrf`, header `X-CSRF-Token`.
- */
-const CSRF_COOKIE = "sw5e_csrf";
-const CSRF_HEADER = "X-CSRF-Token";
-
-export function readCsrfToken(): string | null {
-  if (typeof document === "undefined") return null;
-  for (const part of document.cookie.split(";")) {
-    const separator = part.indexOf("=");
-    if (separator === -1) continue;
-    if (part.slice(0, separator).trim() !== CSRF_COOKIE) continue;
-    const value = decodeURIComponent(part.slice(separator + 1).trim());
-    return value.length > 0 ? value : null;
-  }
-  return null;
-}
 
 /**
  * Everything this UI needs to tell a reader why a request failed, without
@@ -133,7 +125,10 @@ function failureFor(status: number): ApiFailure {
  *
  * A server message is preferred when one arrives, but there has to be
  * something sensible to say when it does not — an empty error region is how a
- * form ends up looking like it did nothing.
+ * form ends up looking like it did nothing. These defaults carry more weight
+ * than they look like they should: the API answers several of its most common
+ * failures with no body at all, deliberately, so this table is what the reader
+ * actually sees for a signed-out session and for a refused cross-site request.
  */
 const DEFAULT_MESSAGE: Record<ApiFailure, string> = {
   unauthenticated: "You are not signed in.",
@@ -146,10 +141,16 @@ const DEFAULT_MESSAGE: Record<ApiFailure, string> = {
     "The account service could not be reached. Check your connection and try again.",
 };
 
+/**
+ * An RFC 9457 problem document, plus the two properties this client also
+ * accepts. The API sends `detail`; `message` is kept because a proxy or an
+ * older build may still answer with one, and reading both costs nothing.
+ */
 interface ErrorBody {
   code?: unknown;
+  detail?: unknown;
+  title?: unknown;
   message?: unknown;
-  error?: unknown;
   fieldErrors?: unknown;
 }
 
@@ -162,8 +163,28 @@ function readFieldErrors(value: unknown): Record<string, string> {
   return out;
 }
 
+/**
+ * Whether a body is worth parsing as JSON.
+ *
+ * `application/problem+json` is the content type every error from this API
+ * carries, and it does not contain the substring `application/json` — so the
+ * obvious check silently classified every 400, 409 and 429 as "the service is
+ * not there". Matching the structured-syntax suffix as well is what stops that.
+ */
+function isJsonContentType(contentType: string): boolean {
+  return contentType.includes("application/json") || contentType.includes("+json");
+}
+
+/** The first usable sentence out of a problem document, or null. */
+function readMessage(body: ErrorBody): string | null {
+  for (const candidate of [body.detail, body.message, body.title]) {
+    if (typeof candidate === "string" && candidate.trim().length > 0) return candidate;
+  }
+  return null;
+}
+
 interface RequestOptions {
-  method?: "GET" | "POST" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
   signal?: AbortSignal;
 }
@@ -173,13 +194,6 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const headers: Record<string, string> = { Accept: "application/json" };
 
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
-
-  // Safe methods do not change state, so they neither need nor should carry a
-  // CSRF token. Sending one anyway would make GET look like it mutates.
-  if (method !== "GET") {
-    const token = readCsrfToken();
-    if (token) headers[CSRF_HEADER] = token;
-  }
 
   let response: Response;
   try {
@@ -204,30 +218,52 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   if (response.status === 204) return undefined as T;
 
   const contentType = response.headers.get("content-type") ?? "";
-  const isJson = contentType.includes("application/json");
+  const isJson = isJsonContentType(contentType);
 
   if (!response.ok) {
-    // A non-JSON error body means something other than the API answered:
-    // the static host's 404 page, or a proxy's error page. Reporting its
-    // status would blame the API for not being there.
-    if (!isJson) {
+    /*
+     * The status decides what the failure *is*; the body only decides how it
+     * is worded. That ordering is the whole point of this branch, and getting
+     * it backwards is what made a signed-out visitor look like an outage.
+     *
+     * Several of this API's most common refusals carry no body whatsoever. The
+     * anonymous 401 from `/me` is the cookie scheme's own challenge, written
+     * before any handler runs, so it has no content-type and zero bytes; the
+     * 403 from the cross-site filter is deliberately mute, because the service
+     * will not say which header it disliked. Deriving the kind from the body
+     * meant both fell through to `unavailable`, and every signed-out reader was
+     * told the account service was down instead of simply being offered a way
+     * to sign in.
+     *
+     * The one thing a body still decides is whether this was the API at all. A
+     * 404 or a 5xx carrying HTML is the static host or a proxy answering in the
+     * API's place during a partial deploy, and reporting its status would blame
+     * the API for not being mounted. An authentication status is never that:
+     * nothing but the API has any reason to answer 401 or 403.
+     */
+    const kind = failureFor(response.status);
+    const speaksForTheApi = kind === "unauthenticated" || kind === "forbidden";
+
+    if (!isJson && !speaksForTheApi) {
       throw new ApiError("unavailable", DEFAULT_MESSAGE.unavailable, {
         status: response.status,
       });
     }
-    const body = (await response.json().catch(() => ({}))) as ErrorBody;
-    const kind = failureFor(response.status);
-    const message =
-      typeof body.message === "string" && body.message.trim().length > 0
-        ? body.message
-        : DEFAULT_MESSAGE[kind];
-    throw new ApiError(kind, message, {
+
+    const body = isJson
+      ? ((await response.json().catch(() => ({}))) as ErrorBody)
+      : ({} as ErrorBody);
+
+    throw new ApiError(kind, readMessage(body) ?? DEFAULT_MESSAGE[kind], {
       status: response.status,
       code: typeof body.code === "string" ? body.code : null,
       fieldErrors: readFieldErrors(body.fieldErrors),
     });
   }
 
+  // A success that is not JSON is the partial-deploy case in its purest form:
+  // the static host answered 200 with the SPA shell for a path the API was
+  // supposed to own.
   if (!isJson) {
     throw new ApiError("unavailable", DEFAULT_MESSAGE.unavailable, {
       status: response.status,
@@ -243,15 +279,16 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
  * Who the browser is, according to the server.
  *
  * `null` means "definitely nobody": a 401, which is the API's documented
- * answer for an unauthenticated caller. Every other failure is re-thrown,
+ * answer for an unauthenticated caller — bodiless, since the cookie scheme
+ * challenges before any handler runs. Every other failure is re-thrown,
  * because "the service is down" and "you are signed out" must not look the
  * same to the caller — treating an outage as a sign-out would throw a
  * signed-in reader back to the sign-in page for a network blip.
  */
 export async function getCurrentUser(signal?: AbortSignal): Promise<CurrentUser | null> {
   try {
-    const body = await request<{ user: CurrentUser }>("/me", { signal });
-    return body.user;
+    // No envelope. The account object is the entire response body.
+    return await request<CurrentUser>("/me", { signal });
   } catch (error) {
     if (error instanceof ApiError && error.kind === "unauthenticated") return null;
     throw error;
@@ -268,10 +305,15 @@ export function register(body: RegisterRequest): Promise<RegisterResponse> {
   return request<RegisterResponse>("/register", { method: "POST", body });
 }
 
-export function verifyEmail(token: string): Promise<VerifyEmailResponse> {
+/**
+ * Both halves of the emailed link are required. The token is scoped to the
+ * address it was issued for, so a link that arrived without its `email`
+ * parameter cannot be completed at all.
+ */
+export function verifyEmail(email: string, token: string): Promise<VerifyEmailResponse> {
   return request<VerifyEmailResponse>("/email/verify", {
     method: "POST",
-    body: { token },
+    body: { email, token },
   });
 }
 
@@ -285,20 +327,22 @@ export function beginPasskeyRegistration(): Promise<PasskeyRegisterBeginResponse
 
 export function completePasskeyRegistration(
   credential: PasskeyRegistrationCredential,
-  label?: string,
+  name?: string | null,
 ): Promise<PasskeyRegisterCompleteResponse> {
   return request<PasskeyRegisterCompleteResponse>("/passkey/register/complete", {
     method: "POST",
-    body: { credential, label },
+    body: { credential, name: name ?? null },
   });
 }
 
-export function beginPasskeyLogin(
-  body: PasskeyLoginBeginRequest = {},
-): Promise<PasskeyLoginBeginResponse> {
+/**
+ * No argument and no body. The API ignores anything sent here and never takes
+ * an email address, so accepting one would be offering the caller a parameter
+ * that cannot affect the answer.
+ */
+export function beginPasskeyLogin(): Promise<PasskeyLoginBeginResponse> {
   return request<PasskeyLoginBeginResponse>("/passkey/login/begin", {
     method: "POST",
-    body,
   });
 }
 
@@ -311,7 +355,11 @@ export function completePasskeyLogin(
   });
 }
 
-/** See the `CONTRACT GAP` note on `PasskeyRemoveResponse`. */
+/**
+ * Revokes one credential. The server answers 409 with `code:
+ * "last-credential"` rather than stranding an account with no way back in, so
+ * callers have to be ready for a refusal as well as a 404.
+ */
 export function removePasskey(id: string): Promise<PasskeyRemoveResponse> {
   return request<PasskeyRemoveResponse>(
     `/passkey/${encodeURIComponent(id)}`,
@@ -330,4 +378,27 @@ export function verifyTotp(code: string): Promise<TotpVerifyResponse> {
     method: "POST",
     body: { code },
   });
+}
+
+/* ----------------------------------------------------------------- admin */
+
+/**
+ * Sets an account's roles, for an administrator.
+ *
+ * `PUT` rather than `POST` because the call is declarative: `roles` is the
+ * complete set the account should end up holding, and anything left out of it
+ * is revoked. A caller granting one role has to send the ones already held
+ * alongside it.
+ *
+ * `AssignableRole` rather than `Role`: `Community` is the floor every account
+ * already stands on, and the API answers 400 to any attempt to assign it.
+ */
+export function assignRoles(
+  userId: string,
+  roles: AssignableRole[],
+): Promise<AssignRolesResponse> {
+  return request<AssignRolesResponse>(
+    `/admin/users/${encodeURIComponent(userId)}/roles`,
+    { method: "PUT", body: { roles } },
+  );
 }

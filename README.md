@@ -140,7 +140,7 @@ phish. An account may add a **TOTP second factor** on top.
 | Route | What it is |
 |---|---|
 | `/register` | Email address and display name; triggers verification |
-| `/verify-email` | The other end of the emailed link |
+| `/verify-email` | The other end of the emailed link, and the first passkey |
 | `/sign-in` | Passkey sign-in, plus the TOTP challenge when one is set |
 | `/account` | Profile, role, and how well protected the account is |
 | `/account/passkeys` | Add and revoke credentials |
@@ -152,11 +152,20 @@ phish. An account may add a **TOTP second factor** on top.
 Three, each including everything below it — `app/auth/roles.ts` is the only
 place that decides:
 
+The names below are the wire strings, spelled as the service spells them —
+capitalised, and the highest one is `Administrator`. They are case-sensitive,
+and getting one wrong is silent: an unrecognised role falls back to `Community`,
+so a misspelled list quietly demotes everybody rather than failing.
+
 | Role | May |
 |---|---|
-| Community | Read everything, and manage their own account. The default. |
-| Contributor | …and upload or correct base game content. |
-| Admin | …and manage other accounts and their roles. |
+| `Community` | Read everything, and manage their own account. The default. |
+| `Contributor` | …and upload or correct base game content. |
+| `Administrator` | …and manage other accounts and their roles. |
+
+Only `Contributor` and `Administrator` can be granted through
+`PUT /api/auth/admin/users/{userId}/roles`; `Community` is the floor every
+account already stands on, and the API rejects it as an assignable role.
 
 ### Authenticated state on a site with no server
 
@@ -229,10 +238,18 @@ Cookie-based, and every part of that has a consequence:
 - `credentials: "same-origin"`, not `"include"`. The two behave alike here and
   fail differently: `"include"` would keep sending the session cookie if a path
   ever became absolute.
-- CSRF is a double-submit pair: the server sets a readable `sw5e_csrf` cookie
-  alongside the HttpOnly session, and every state-changing request echoes it in
-  `X-CSRF-Token`. An attacker on another origin can make a browser *send*
-  cookies; it cannot *read* them, so it cannot produce the header.
+- Cross-site requests are refused by provenance, not by a token. The API
+  requires every unsafe method to arrive with `Sec-Fetch-Site: same-origin` or
+  an allow-listed `Origin`, and answers a bodiless **403** to anything else.
+  The browser writes both headers itself and script cannot forge either, so
+  this client sends nothing extra — no `X-CSRF-Token`, and no readable CSRF
+  cookie to look after. The same-site-subdomain case double-submit is usually
+  defended for is covered too: a subdomain is a different origin, and a
+  different origin is not on the allow-list.
+- Errors are RFC 9457 problem documents (`application/problem+json`, message in
+  `detail`), and several refusals carry no body at all — the anonymous 401 and
+  the cross-site 403 among them. `app/auth/api.ts` therefore decides *what* a
+  failure is from the status and only *how to word it* from the body.
 
 `docker/default.conf` allows `publickey-credentials-create=(self)` and
 `publickey-credentials-get=(self)` in `Permissions-Policy`, and CI asserts it.
@@ -243,27 +260,45 @@ with the same opaque `NotAllowedError` a reader gets for dismissing the prompt,
 so it reads as though everyone cancelled, and nothing served without that
 header can reproduce it.
 
-### The API does not exist yet
+### The contract, and the fixture that models it
 
-It is being built to a fixed contract in the sibling repository. Until it
-lands, both test suites drive `tests/auth-api-contract.ts` — one object,
-wrapped as a `fetch` implementation for Vitest and as a `page.route` handler
-for Playwright, so the two cannot drift into testing different servers. It is
-mocked at the **network** boundary rather than over `app/auth/api.ts`, because
-a mock one layer higher would let the credentials mode, the CSRF echo and the
-error decoding all go untested.
+`docs/account-api-contract.md` is the reconciled wire contract, verified
+against the running QA deployment and the API source. It is the authority; if
+this client and that document disagree, the client is wrong.
 
-The fixture is strict on purpose: it rejects a state-changing request with no
-CSRF header, answers 401 rather than an empty 200 for an unauthenticated
-`/me`, and refuses any WebAuthn assertion whose challenge it did not issue.
-Replacing it with the real service means deleting two adapters.
+It is worth saying why it exists. This client was first written from a written
+specification while the service was built separately, and it turned out to
+disagree with the service on nearly everything that mattered — an envelope on
+`/me` that was not there, `mfa.totp` for what the API calls `twoFactorEnabled`,
+a `publicKey` wrapper around WebAuthn options that arrive unwrapped, `label`
+where the field is `name`, `mfa-required` where the literal is `mfaRequired`,
+lowercase role names where the service sends `Community`, `Contributor` and
+`Administrator`, and a CSRF scheme the API does not implement. All of it
+type-checked. All of it passed a full test suite — because the fixture had been
+written from the same assumptions as the client, so the two agreed with each
+other and neither was ever compared with the server.
 
-Where the contract as specified could not answer a question this UI had to ask,
-the gap is marked `CONTRACT GAP` in `app/auth/types.ts` rather than quietly
-invented. Four of them: verification has to establish the session (there is no
-other way for a brand-new account to reach passkey enrolment), `/me` has to
-return MFA state and the credential list, credentials need a revocation
-endpoint, and TOTP enrolment needs to return recovery codes.
+That is the failure mode a shared fixture has to be built against. Both test
+suites drive `tests/auth-api-contract.ts` — one object, wrapped as a `fetch`
+implementation for Vitest and as a `page.route` handler for Playwright, so the
+two cannot drift into testing different servers. It is mocked at the **network**
+boundary rather than over `app/auth/api.ts`, because a mock one layer higher
+would let the credentials mode, the header set and the error decoding all go
+untested. And it is a model of the *server*: the moment it starts being written
+to match the client, it loses the ability to fail.
+
+It is strict on purpose. It answers a bodiless 403 to any unsafe method whose
+`Origin` is not the page's, answers 401 rather than an empty 200 for an
+unauthenticated `/me`, refuses any WebAuthn assertion whose challenge it did not
+issue, and refuses to remove an account's last credential. Replacing it with the
+real service means deleting two adapters.
+
+One consequence worth knowing before reading the flow: **verifying an email
+address does not sign anybody in.** It sets a ten-minute HttpOnly enrolment
+ticket that authorises passkey registration and nothing else, so
+`app/routes/verify-email.tsx` runs the enrolment ceremony itself rather than
+linking into the account area — which is guarded on having a session the reader
+does not yet have.
 
 ### Passkeys in the real world
 

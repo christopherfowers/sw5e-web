@@ -12,8 +12,8 @@
  * Recovery codes are shown once, at the end, and never again. Enrolling a
  * second factor without them is how people lose accounts: passkey on a phone
  * plus authenticator app on the same phone means one dropped phone and no way
- * back in. They are not part of the API contract as written; see the note in
- * `app/auth/types.ts`.
+ * back in. The API returns them from this one endpoint and from nowhere else,
+ * so if this screen does not show them nothing ever will.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -25,12 +25,12 @@ import { QrCode } from "~/components/qr-code";
 import type { AccountContext } from "./account";
 
 /** "JBSWY3DPEHPK3PXP" reads far better as "JBSW Y3DP EHPK 3PXP". */
-function grouped(secret: string): string {
+function grouped(sharedKey: string): string {
   return (
-    secret
+    sharedKey
       .replace(/\s+/g, "")
       .match(/.{1,4}/g)
-      ?.join(" ") ?? secret
+      ?.join(" ") ?? sharedKey
   );
 }
 
@@ -41,8 +41,8 @@ export default function AccountSecurity() {
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [enrolment, setEnrolment] = useState<{
-    secret: string;
-    otpauthUri: string;
+    sharedKey: string;
+    authenticatorUri: string;
   } | null>(null);
   const [code, setCode] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
@@ -96,7 +96,9 @@ export default function AccountSecurity() {
     setPhase("verifying");
     try {
       const result = await verifyTotp(digits);
-      if (result.status !== "enrolled") {
+      // The literal is `enabled`. An `authenticated` reply here would mean the
+      // server thought this was a sign-in rather than an enrolment.
+      if (result.status !== "enabled") {
         setFailure({
           title: "Setup did not complete.",
           body: "Start again from the beginning.",
@@ -142,7 +144,7 @@ export default function AccountSecurity() {
     );
   }
 
-  if (user.mfa.totp && phase === "idle") {
+  if (user.twoFactorEnabled && phase === "idle") {
     return (
       <section className="account-section" aria-labelledby="mfa-heading">
         <h2 id="mfa-heading">Two-factor authentication</h2>
@@ -161,7 +163,7 @@ export default function AccountSecurity() {
   }
 
   if (phase === "enrolling" || phase === "verifying") {
-    const secret = enrolment?.secret ?? "";
+    const sharedKey = enrolment?.sharedKey ?? "";
     return (
       <section className="account-section" aria-labelledby="enrol-heading">
         <h2 id="enrol-heading" tabIndex={-1} ref={enrolHeadingRef}>
@@ -184,7 +186,7 @@ export default function AccountSecurity() {
             </p>
             <div className="enrol-pairing">
               {enrolment ? (
-                <QrCode value={enrolment.otpauthUri} size={196} />
+                <QrCode value={enrolment.authenticatorUri} size={196} />
               ) : null}
               <div className="enrol-secret">
                 <p className="enrol-secret-label" id="setup-key-label">
@@ -193,7 +195,7 @@ export default function AccountSecurity() {
                 {/* Selectable, copyable, readable aloud, and grouped so it can
                     be transcribed without losing your place. */}
                 <p className="enrol-secret-value" aria-labelledby="setup-key-label">
-                  <code>{grouped(secret)}</code>
+                  <code>{grouped(sharedKey)}</code>
                 </p>
                 <p className="auth-note">
                   Time-based, six digits, 30-second period — the defaults every

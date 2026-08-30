@@ -59,7 +59,7 @@ export interface Session {
   status: SessionStatus;
   /** Non-null exactly when `status` is `"authenticated"`. */
   user: CurrentUser | null;
-  /** The account's most privileged role; `community` when signed out. */
+  /** The account's most privileged role; `Community` when signed out. */
   role: Role;
   /** Why the session could not be resolved, when `status` is `unavailable`. */
   error: string | null;
@@ -76,7 +76,7 @@ export interface Session {
 const LOADING: Session = {
   status: "loading",
   user: null,
-  role: "community",
+  role: "Community",
   error: null,
   refresh: async () => {},
   adopt: () => {},

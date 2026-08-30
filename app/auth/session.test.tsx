@@ -11,7 +11,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AuthApiContract, contractFetch, CSRF_TOKEN, user } from "../../tests/auth-api-contract";
+import { AuthApiContract, contractFetch, user } from "../../tests/auth-api-contract";
 import { AuthProvider, useSession } from "./session";
 
 function Probe() {
@@ -33,8 +33,9 @@ function Probe() {
 }
 
 function mount(contract: AuthApiContract) {
+  // Nothing to plant beforehand: the API's cross-site check reads `Origin`,
+  // which the browser writes and the fetch adapter stands in for.
   vi.stubGlobal("fetch", contractFetch(contract));
-  document.cookie = `sw5e_csrf=${CSRF_TOKEN}; path=/`;
   return render(
     <AuthProvider>
       <Probe />
@@ -62,7 +63,7 @@ describe("AuthProvider", () => {
 
   it("resolves to the signed-in account once the server answers", async () => {
     const contract = new AuthApiContract({
-      session: user({ displayName: "Jen Ordo", roles: ["contributor"] }),
+      session: user({ displayName: "Jen Ordo", roles: ["Contributor"] }),
     });
 
     mount(contract);
@@ -71,16 +72,21 @@ describe("AuthProvider", () => {
       expect(screen.getByTestId("status")).toHaveTextContent("authenticated"),
     );
     expect(screen.getByTestId("name")).toHaveTextContent("Jen Ordo");
-    expect(screen.getByTestId("role")).toHaveTextContent("contributor");
+    expect(screen.getByTestId("role")).toHaveTextContent("Contributor");
   });
 
-  it("resolves to anonymous on a 401", async () => {
+  it("resolves to anonymous on the bodiless 401 the API really sends", async () => {
+    // The anonymous challenge carries no problem document and no content type.
+    // Reading the kind of failure from the body rather than from the status
+    // turned every signed-out visitor into an outage — the header offered no
+    // way in and the guard never redirected.
     mount(new AuthApiContract({ session: null }));
 
     await waitFor(() =>
       expect(screen.getByTestId("status")).toHaveTextContent("anonymous"),
     );
-    expect(screen.getByTestId("role")).toHaveTextContent("community");
+    expect(screen.getByTestId("status")).not.toHaveTextContent("unavailable");
+    expect(screen.getByTestId("role")).toHaveTextContent("Community");
   });
 
   it("distinguishes an unreachable service from a signed-out reader", async () => {

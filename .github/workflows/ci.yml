@@ -56,6 +56,108 @@ jobs:
   # four-per-type fixture without erroring, so the assertions below compare
   # what the container actually publishes against the content it was built
   # from.
+  # The job that exists because both repositories were green while disagreeing.
+  #
+  # Everything else in this workflow tests this client against
+  # tests/auth-api-contract.ts, which is our own idea of the account API. The
+  # service was tested against its own idea of us. Two mocks agreeing with the
+  # code that wrote them proves nothing, and it is exactly how a client that
+  # read `body.user` from an unenveloped response, compared roles against the
+  # wrong capitalisation, and treated every problem document as an outage went
+  # to main with a full green tick.
+  #
+  # So this job pulls the API image that the sibling repository publishes from
+  # its own main, runs it against a real PostgreSQL, points the shipped client
+  # module at it, and asserts on the bytes that come back — including a direct
+  # comparison of the fixture's answers against the service's. When the two
+  # sides drift apart again, this is what goes red.
+  contract:
+    name: Contract against the published API
+    runs-on: ubuntu-latest
+
+    env:
+      # The image the sibling repository publishes from main. Deliberately a
+      # moving tag: this job is meant to notice when the service changes shape
+      # under us, and pinning a digest would defeat the entire purpose.
+      SW5E_API_IMAGE: ghcr.io/christopherfowers/sw5e-api:latest
+
+      # The origin the client pretends to be served from. It has to be on the
+      # API's allow-list, or every state-changing request is refused by the
+      # cross-site filter — which is itself one of the things under test.
+      SW5E_CONTRACT_ORIGIN: http://localhost:4173
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Start the account API and its database
+        run: |
+          set -euo pipefail
+
+          docker network create sw5e-contract
+
+          docker run --detach --name sw5e-contract-db --network sw5e-contract \
+            --env POSTGRES_DB=sw5e_identity \
+            --env POSTGRES_USER=sw5e \
+            --env POSTGRES_PASSWORD=ci-only-not-a-secret \
+            postgres:17-alpine
+
+          for _ in $(seq 1 30); do
+            if docker exec sw5e-contract-db pg_isready -U sw5e >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          docker exec sw5e-contract-db pg_isready -U sw5e
+
+          # Production configuration in every respect that this test is about:
+          # the real cross-site filter, the real cookie policy, the real problem
+          # documents. Only the mail provider is stood down, because nothing
+          # here follows an emailed link.
+          docker run --detach --name sw5e-contract-api --network sw5e-contract \
+            --publish 127.0.0.1:8080:8080 \
+            --env 'ConnectionStrings__Sw5eIdentity=Host=sw5e-contract-db;Port=5432;Database=sw5e_identity;Username=sw5e;Password=ci-only-not-a-secret' \
+            --env Identity__InitializeDatabaseAtStartup=true \
+            --env Identity__RelyingPartyId=localhost \
+            --env "Identity__PublicSiteUrl=${SW5E_CONTRACT_ORIGIN}" \
+            --env "Identity__AllowedOrigins__0=${SW5E_CONTRACT_ORIGIN}" \
+            --env Email__Provider=Capture \
+            --env Email__FromAddress=noreply@sw5e.test \
+            "${SW5E_API_IMAGE}"
+
+          for _ in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:8080/health/ready >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl --fail --silent --show-error http://127.0.0.1:8080/health/ready
+          echo
+
+      - name: Contract tests
+        run: npm run test:contract
+        env:
+          SW5E_CONTRACT_API: http://127.0.0.1:8080
+
+      - name: API logs
+        if: always()
+        run: docker logs sw5e-contract-api 2>&1 | tail -100
+
+      - name: Stop the API
+        if: always()
+        run: |
+          docker rm --force sw5e-contract-api sw5e-contract-db >/dev/null 2>&1 || true
+          docker network rm sw5e-contract >/dev/null 2>&1 || true
+
   image:
     name: Container image
     runs-on: ubuntu-latest

@@ -7,22 +7,29 @@
  * cannot drift into testing different servers, and when the real service
  * arrives both are pointed at it by deleting one adapter each.
  *
- * The CSRF cookie is planted through the browser's own cookie jar rather than
- * faked, so the client really has to read it back out of `document.cookie` and
- * echo it — the contract rejects any state-changing request that does not.
+ * Nothing has to be planted before a test runs. The API's cross-site
+ * protection is an `Origin` allow-list, and Chrome writes `Origin` itself on
+ * every state-changing fetch — so this suite exercises the real mechanism for
+ * free, and the contract refuses anything that arrives without it. That is
+ * worth more than the cookie this used to plant: a header the browser controls
+ * cannot be faked into passing by a client that has stopped doing its job.
  */
 
 import type { BrowserContext, Page } from "@playwright/test";
 
 import {
   AuthApiContract,
-  CSRF_COOKIE,
-  CSRF_TOKEN,
   type ContractOptions,
 } from "../tests/auth-api-contract";
 
 export { AuthApiContract } from "../tests/auth-api-contract";
-export { user, passkey, VALID_TOTP_CODE } from "../tests/auth-api-contract";
+export {
+  user,
+  passkey,
+  VALID_TOTP_CODE,
+  VALID_VERIFICATION_EMAIL,
+  VALID_VERIFICATION_TOKEN,
+} from "../tests/auth-api-contract";
 
 export const ORIGIN = "http://localhost:4173";
 
@@ -37,11 +44,10 @@ export async function serveAccountApi(
   context: BrowserContext,
   options: ContractOptions = {},
 ): Promise<AuthApiContract> {
-  const contract = new AuthApiContract(options);
-
-  await context.addCookies([
-    { name: CSRF_COOKIE, value: CSRF_TOKEN, url: ORIGIN },
-  ]);
+  // The preview server's address, not jsdom's: this is the origin the browser
+  // will really stamp on every unsafe method, and the contract refuses
+  // anything else.
+  const contract = new AuthApiContract({ origin: ORIGIN, ...options });
 
   await page.route("**/api/auth/**", async (route) => {
     const request = route.request();
@@ -62,13 +68,16 @@ export async function serveAccountApi(
       return;
     }
 
-    if (reply.status === 204) {
-      await route.fulfill({ status: 204, body: "" });
+    // A bodiless refusal is genuinely bodiless — no content type either, which
+    // is the shape the client has to read from the status alone.
+    if (reply.status === 204 || reply.body === undefined) {
+      await route.fulfill({ status: reply.status, body: "" });
       return;
     }
     await route.fulfill({
       status: reply.status,
-      contentType: "application/json",
+      contentType:
+        reply.status >= 400 ? "application/problem+json" : "application/json",
       body: JSON.stringify(reply.body),
     });
   });

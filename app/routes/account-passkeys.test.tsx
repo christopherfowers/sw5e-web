@@ -41,13 +41,13 @@ afterEach(() => {
 });
 
 describe("the list", () => {
-  it("names each credential and when it was last used", async () => {
+  it("names each credential and says when it was added", async () => {
     mount(
       new AuthApiContract({
         session: user({
           passkeys: [
-            passkey({ id: "a", label: "Work laptop" }),
-            passkey({ id: "b", label: "iPhone", lastUsedAt: null }),
+            passkey({ id: "a", name: "Work laptop" }),
+            passkey({ id: "b", name: "iPhone" }),
           ],
         }),
       }),
@@ -55,7 +55,40 @@ describe("the list", () => {
 
     expect(await screen.findByText("Work laptop")).toBeInTheDocument();
     const iphone = screen.getByText("iPhone").closest("li");
-    expect(within(iphone as HTMLElement).getByText(/never used/i)).toBeInTheDocument();
+    expect(within(iphone as HTMLElement).getByText(/^Added /)).toBeInTheDocument();
+  });
+
+  it("gives an unnamed credential something to be called", async () => {
+    // `name` is genuinely nullable — the server invents nothing when the
+    // reader types nothing — so a row for one has to be identifiable anyway.
+    // Without this the row is an empty heading with a Remove button beside it.
+    mount(
+      new AuthApiContract({
+        session: user({ passkeys: [passkey({ id: "a", name: null })] }),
+      }),
+    );
+
+    // Scoped to the row: the hint under the name field mentions the same
+    // phrase, and an unscoped query would pass on that alone.
+    const row = await screen.findByText("Unnamed passkey", {
+      selector: ".credential-name",
+    });
+    expect(row).toBeInTheDocument();
+    expect(screen.queryByText(/null|undefined/)).toBeNull();
+    expect(
+      screen.getByRole("button", { name: /remove the passkey/i }),
+    ).toHaveAccessibleName(/unnamed passkey/i);
+  });
+
+  it("claims nothing about when a credential was last used", async () => {
+    // The API tracks no such instant. A "last used" line could only ever have
+    // been filled with a guess, and it is exactly the line somebody would
+    // revoke a credential on.
+    mount(new AuthApiContract({ session: user() }));
+
+    await screen.findByText("Work laptop");
+    expect(screen.queryByText(/last used/i)).toBeNull();
+    expect(screen.queryByText(/never used/i)).toBeNull();
   });
 
   it("says so plainly when there are none, rather than showing an empty box", async () => {
@@ -80,14 +113,35 @@ describe("adding a passkey", () => {
       expect(screen.getByRole("status")).toHaveTextContent(/can now sign you in/i),
     );
     expect(authenticator.create).toHaveBeenCalledTimes(1);
-    // The label the reader typed has to reach the server, not just the screen.
+    // The name the reader typed has to reach the server, in the field the
+    // server reads. Sending it as `label` is silently ignored, and every
+    // credential enrolled that way arrives nameless.
     const complete = contract.calls.find(
       (call) => call.path === "/passkey/register/complete",
     );
-    expect((complete?.body as { label?: string })?.label).toBe("Work laptop");
-    expect(contract.session?.passkeys.map((entry) => entry.label)).toContain(
+    expect((complete?.body as { name?: string })?.name).toBe("Work laptop");
+    expect(complete?.body).not.toHaveProperty("label");
+    expect(contract.session?.passkeys.map((entry) => entry.name)).toContain(
       "Work laptop",
     );
+  });
+
+  it("sends a null name when the reader leaves the field blank", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    const contract = new AuthApiContract({ session: user({ passkeys: [] }) });
+    mount(contract);
+
+    await screen.findByText(/no passkeys yet/i);
+    await userEvent.click(screen.getByRole("button", { name: /add a passkey/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(/can now sign you in/i),
+    );
+    const complete = contract.calls.find(
+      (call) => call.path === "/passkey/register/complete",
+    );
+    expect((complete?.body as { name?: string | null })?.name).toBeNull();
   });
 
   it("passes the account's existing credentials so the device can spot a duplicate", async () => {
@@ -181,7 +235,12 @@ describe("removing a passkey", () => {
 
   it("revokes the credential on the server, not just in the list", async () => {
     const contract = new AuthApiContract({
-      session: user({ passkeys: [passkey({ id: "a", label: "Work laptop" }), passkey({ id: "b", label: "iPhone" })] }),
+      session: user({
+        passkeys: [
+          passkey({ id: "a", name: "Work laptop" }),
+          passkey({ id: "b", name: "iPhone" }),
+        ],
+      }),
     });
     mountWithAuthenticator(contract);
 
@@ -221,6 +280,34 @@ describe("removing a passkey", () => {
     await userEvent.click(screen.getByRole("button", { name: /remove the passkey/i }));
 
     expect(screen.getByText(/this is your only passkey/i)).toBeInTheDocument();
+  });
+
+  it("reports the server keeping the last credential, rather than showing it gone", async () => {
+    // The server refuses with 409 `last-credential` rather than letting an
+    // account strand itself. The page has already said "yes, remove it", so
+    // the one outcome it must never produce is a list with the credential
+    // missing and no explanation — the reader would believe they had revoked
+    // their only way in.
+    const contract = new AuthApiContract({
+      session: user({ passkeys: [passkey({ id: "a", name: "Work laptop" })] }),
+    });
+    mountWithAuthenticator(contract);
+
+    await screen.findByText("Work laptop");
+    await userEvent.click(screen.getByRole("button", { name: /remove the passkey/i }));
+    await userEvent.click(screen.getByRole("button", { name: /yes, remove it/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/only passkey, so it was kept/i);
+    // Still listed, and still on the account.
+    expect(screen.getByText("Work laptop")).toBeInTheDocument();
+    expect(contract.session?.passkeys).toHaveLength(1);
+    // It genuinely asked, rather than refusing locally: the rule belongs to
+    // the server, and a client that guessed it would drift from it.
+    expect(
+      contract.calls.some(
+        (call) => call.method === "DELETE" && call.path === "/passkey/a",
+      ),
+    ).toBe(true);
   });
 
   it("reports a server refusal instead of pretending it worked", async () => {
