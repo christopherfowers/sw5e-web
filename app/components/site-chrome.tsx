@@ -11,6 +11,7 @@ import { NavLink, Link } from "react-router";
 
 import { brandImage } from "~/content/imagery";
 import { TYPE_META, TYPE_ORDER } from "~/content/type-meta";
+import { AccountControl } from "./account-control";
 import { AssetImage } from "./media";
 import { SiteSearch } from "./site-search";
 import { TypeIcon } from "./type-icon";
@@ -48,6 +49,7 @@ export function SiteHeader() {
           </span>
         </Link>
         <SiteSearch />
+        <AccountControl />
       </div>
       <nav aria-label="Content types" className="site-nav">
         <ul>

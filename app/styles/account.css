@@ -1,0 +1,562 @@
+/* ============================================== the account screens
+ *
+ * Split out of app.css and imported from the account route modules rather than
+ * from the root, so Vite emits it as its own stylesheet and the seven pages
+ * that need it are the only ones that fetch it.
+ *
+ * That is worth doing here specifically. This site prerenders around 1,800
+ * pages, every one of which loads the root stylesheet; carrying ten kilobytes
+ * of sign-in and credential-management CSS on a creature stat block is ten
+ * kilobytes spent on every page view of a reference nobody signs in to read.
+ * e2e/imagery.spec.ts holds the species index to a byte budget and caught this
+ * as a regression rather than letting it become the new normal.
+ *
+ * The header account control stays in app.css, because that one genuinely does
+ * appear on every page.
+ *
+ * Same tokens as everything else: nothing below introduces a colour, a radius
+ * or a spacing value that the reference pages do not already use.
+ */
+
+/* --- the signed-out screens --- */
+
+.auth-shell {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) 0;
+}
+
+.auth-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-sm);
+}
+
+.auth-card h1 {
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+}
+
+.auth-card .lede {
+  font-size: 0.9375rem;
+}
+
+.auth-aside {
+  margin-top: var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.auth-note {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  max-width: var(--measure);
+}
+
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  color: var(--accent-hover);
+}
+
+.auth-disclosure {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: var(--space-3);
+}
+
+.auth-disclosure > summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.auth-disclosure > * + * {
+  margin-top: var(--space-3);
+}
+
+/* --- fields --- */
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.auth-field label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+
+.auth-field-optional {
+  font-weight: 500;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.auth-field input {
+  padding: 0.5625rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+}
+
+.auth-field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* The invalid state is a border colour *and* the message below it, never the
+ * colour alone: colour is not information (WCAG 1.4.1). */
+.auth-field input[aria-invalid="true"] {
+  border-color: var(--hue-red);
+}
+
+.auth-field-hint {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.auth-field-error {
+  color: var(--hue-red);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* --- banners --- */
+
+.auth-banner {
+  --banner-accent: var(--hue-steel);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--banner-accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--banner-accent) var(--hue-fill), var(--surface));
+  font-size: 0.875rem;
+}
+
+.auth-banner[data-tone="error"] { --banner-accent: var(--hue-red); }
+.auth-banner[data-tone="success"] { --banner-accent: var(--hue-green); }
+.auth-banner[data-tone="info"] { --banner-accent: var(--hue-cyan); }
+
+.auth-banner-title {
+  font-weight: 700;
+}
+
+.auth-banner-body {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+}
+
+/* --- the pending state --- */
+
+.auth-pending {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.auth-pending-spinner {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 999px;
+  animation: auth-spin 700ms linear infinite;
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- the account area --- */
+
+.account-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.account-layout {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+  align-items: start;
+}
+
+@media (min-width: 56rem) {
+  .account-layout {
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* Horizontal on a phone, vertical beside the content on a desktop. Same
+ * markup, same order, no second copy of the navigation to keep in step. */
+.account-nav ul {
+  display: flex;
+  gap: 0.125rem;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-nav ul::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 56rem) {
+  .account-nav ul {
+    flex-direction: column;
+    overflow: visible;
+    border-bottom: 0;
+    position: sticky;
+    top: 7rem;
+  }
+}
+
+.account-nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.5rem 0.6875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+
+.account-nav-link:hover {
+  color: var(--text);
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+}
+
+.account-nav-link.is-current {
+  color: var(--text);
+  border-bottom-color: var(--brand);
+}
+
+@media (min-width: 56rem) {
+  .account-nav-link {
+    border-bottom: 0;
+    border-left: 2px solid transparent;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .account-nav-link.is-current {
+    border-left-color: var(--brand);
+    background: var(--surface);
+  }
+}
+
+.account-nav-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--text-faint);
+}
+
+.account-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.account-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  padding: var(--space-5);
+}
+
+.account-section > h2 {
+  font-size: 1.125rem;
+  font-weight: 720;
+  letter-spacing: -0.015em;
+}
+
+.account-section > h2:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.account-section-lede {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  max-width: var(--measure);
+}
+
+.account-section > * + * {
+  margin-top: var(--space-4);
+}
+
+.account-facts {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.account-facts > div {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.account-facts dt {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.account-facts dd {
+  font-size: 0.9375rem;
+}
+
+.account-role-summary {
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
+
+/* --- the protection checklist --- */
+
+.account-checklist {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.account-checklist > li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  font-size: 0.9375rem;
+}
+
+/* The state is carried by the mark's shape and by the wording of the item
+ * beside it, never by colour on its own. */
+.account-check-mark {
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.2rem;
+  border-radius: 999px;
+  border: 2px solid var(--border-strong);
+}
+
+.account-checklist > li[data-state="done"] .account-check-mark {
+  position: relative;
+  border-color: var(--hue-green);
+  background: var(--hue-green);
+}
+
+/* A tick, drawn as two sides of a rotated box. Deliberately a tick rather than
+ * the cross that two crossed gradients would produce: a green cross reads as a
+ * failure, which is the opposite of what this row is saying. */
+.account-checklist > li[data-state="done"] .account-check-mark::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 0.28rem;
+  height: 0.55rem;
+  border: solid var(--bg);
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.account-check-detail {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.125rem;
+}
+
+/* --- credentials --- */
+
+.credential-list {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.credential {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.credential-name {
+  font-weight: 650;
+}
+
+.credential-meta {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.credential-confirm {
+  flex: 1;
+  min-width: 15rem;
+  display: grid;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+}
+
+.button-danger {
+  border-color: color-mix(in oklab, var(--hue-red) 50%, transparent);
+  color: var(--hue-red);
+}
+
+.button-danger:hover {
+  border-color: var(--hue-red);
+  background: color-mix(in oklab, var(--hue-red) 12%, transparent);
+  color: var(--hue-red);
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* --- authenticator enrolment --- */
+
+/* The numbers are restored explicitly: the base stylesheet strips list markers
+ * everywhere, and here the order is the instruction — add the account, then
+ * confirm it works. */
+.enrol-steps {
+  display: grid;
+  gap: var(--space-5);
+  padding-left: 1.5rem;
+  list-style: decimal;
+}
+
+.enrol-steps > li::marker {
+  color: var(--text-faint);
+  font-weight: 700;
+}
+
+.enrol-steps > li > h3 {
+  font-size: 1rem;
+  font-weight: 680;
+  margin-bottom: var(--space-2);
+}
+
+.enrol-steps > li > * + * {
+  margin-top: var(--space-3);
+}
+
+.enrol-pairing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+/* The code is painted on white in both themes. A QR code inverted for a dark
+ * background is unreadable to a large share of scanners, and this one has
+ * exactly one job. */
+.qr-code {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.enrol-secret {
+  flex: 1;
+  min-width: 14rem;
+}
+
+.enrol-secret-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.enrol-secret-value {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.enrol-secret-value code {
+  display: inline-block;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  padding: 0.375rem 0.5rem;
+  user-select: all;
+}
+
+.recovery-codes {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--space-2);
+}
+
+.recovery-codes code {
+  display: block;
+  text-align: center;
+  font-size: 0.9375rem;
+  letter-spacing: 0.06em;
+  padding: 0.375rem;
+  user-select: all;
+}

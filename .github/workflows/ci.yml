@@ -133,16 +133,23 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus the home page, the search page, the
-          # sources index, four source pages and eight type indexes. The
-          # canonical set has no maneuvers, and `feature` and `source` are not
-          # browsable types, so only the seven mapped directories contribute
-          # item pages.
+          # One page per document, plus 22 pages that do not come from content:
+          # the home page, the search page, the sources index, four source
+          # pages, eight type indexes, and the seven account routes listed in
+          # ACCOUNT_PATHS in react-router.config.ts. The canonical set has no
+          # maneuvers, and `feature` and `source` are not browsable types, so
+          # only the seven mapped directories contribute item pages.
+          #
+          # The account routes are prerendered deliberately, as signed-out
+          # skeletons: nothing in that area has a loader, so there is no
+          # identity for the build to bake into a file every visitor shares.
+          # Leaving them out would send them through the SPA fallback below,
+          # which answers 404.
           items=0
           for type in species archetype background feat power equipment monster; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 15))
+          expected=$((items + 22))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
@@ -236,6 +243,34 @@ jobs:
           # nginx must not advertise its version.
           if grep -qiE '^server: nginx/' <<< "$headers"; then
             echo "server_tokens is not off"
+            exit 1
+          fi
+
+      - name: WebAuthn is permitted for this origin and nobody else
+        run: |
+          # Permissions-Policy denies every feature this site does not use, and
+          # `publickey-credentials-get=()` was among them until passkeys
+          # landed. Restoring that value would break every sign-in in
+          # production and nowhere else: the browser refuses the ceremony with
+          # the same NotAllowedError it raises when a reader dismisses the
+          # prompt, so it reads as "everyone cancelled". Nothing served without
+          # this header — dev, `vite preview`, the e2e suite — can catch it,
+          # which is why it is asserted against the running container.
+          policy=$(curl --fail --silent --head http://127.0.0.1:8080/ \
+            | grep -i 'permissions-policy:')
+
+          for feature in publickey-credentials-create publickey-credentials-get; do
+            if ! grep -qF "$feature=(self)" <<< "$policy"; then
+              echo "$feature must be allowed for 'self'; passkeys cannot work" \
+                "without it. Policy was: $policy"
+              exit 1
+            fi
+          done
+
+          # `(self)` and nothing wider: no third-party origin may run a
+          # credential ceremony on this site's behalf.
+          if grep -qE 'publickey-credentials-[a-z]+=\(\*|publickey-credentials-[a-z]+=\*' <<< "$policy"; then
+            echo "WebAuthn must not be delegated beyond 'self': $policy"
             exit 1
           fi
 

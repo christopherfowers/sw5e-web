@@ -16,8 +16,23 @@ import { expect, test } from "@playwright/test";
 /** A gallery thumbnail that costs more than this is not a thumbnail. */
 const THUMBNAIL_BUDGET = 40 * 1024;
 
-/** The whole species index, first load, before any scrolling. */
-const SPECIES_INDEX_BUDGET = 1024 * 1024;
+/**
+ * The whole species index, first load, before any scrolling: a megabyte for
+ * the page, plus 16 KB of headroom for the site shell.
+ *
+ * The headroom is new, and it is worth saying why rather than letting the
+ * number drift. Putting an account control in the header added about 900 bytes
+ * of CSS to every page of the site — and the budget, written as a flat
+ * megabyte, happened to sit within a kilobyte of the measured total, so *any*
+ * site-wide addition would have broken it. Raising it by an ounce rather than
+ * shaving 900 bytes off a header keeps the test measuring what it was written
+ * to measure.
+ *
+ * That is still the images: 141 portraits at their full size would put this
+ * page into the megabytes, and `THUMBNAIL_BUDGET` above catches a single one
+ * regenerated at full quality independently of this figure.
+ */
+const SPECIES_INDEX_BUDGET = 1024 * 1024 + 16 * 1024;
 
 /** The widest variant the gallery is allowed to ask for. */
 const GALLERY_THUMB_MAX = 176;
