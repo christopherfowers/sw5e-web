@@ -15,6 +15,7 @@
  * one build work in both situations.
  */
 
+import { CONTENT_TYPE_IDS } from "./types";
 import type {
   AnySummary,
   ContentItem,
@@ -77,6 +78,26 @@ export function getItem(
   slug: string,
 ): ContentItem | undefined {
   return getItems(type).find((item) => item.slug === slug);
+}
+
+/**
+ * How many entries each content type contributes to one source book.
+ *
+ * Read at build time from the summaries rather than stored anywhere, so a
+ * source page can never claim a count the dataset does not actually hold.
+ */
+export function countsBySource(code: string): Record<ContentTypeId, number> {
+  const counts = {} as Record<ContentTypeId, number>;
+  for (const type of CONTENT_TYPE_IDS) {
+    const summaries = getSummaries(type) as AnySummary[];
+    counts[type] = summaries.filter((summary) => summary.source === code).length;
+  }
+  return counts;
+}
+
+/** The total number of entries drawn from one source book. */
+export function totalForSource(code: string): number {
+  return Object.values(countsBySource(code)).reduce((sum, count) => sum + count, 0);
 }
 
 /**

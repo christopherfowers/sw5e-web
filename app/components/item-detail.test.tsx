@@ -139,3 +139,71 @@ describe("an item detail page", () => {
     expect(screen.getByText("Player's Handbook")).toBeInTheDocument();
   });
 });
+
+/** A species that has art in the archive, and one of the eight that does not. */
+function speciesItem(slug: string, name: string): ContentItem {
+  return {
+    type: "species",
+    slug,
+    name,
+    source: "PHB",
+    sourceName: "Player's Handbook",
+    tagline: "Medium · Kashyyyk",
+    summary: { size: "Medium" },
+    stats: [{ label: "Size", value: "Medium" }],
+    sections: [],
+    entries: [],
+    tables: [],
+  };
+}
+
+describe("an item's picture", () => {
+  it("shows a species portrait described by what it depicts", () => {
+    renderItem(speciesItem("wookiee", "Wookiee"));
+
+    const portrait = screen.getByRole("img");
+    expect(portrait).toHaveAccessibleName("Illustration of the Wookiee species");
+    expect(portrait).toHaveAttribute("width");
+    expect(portrait).toHaveAttribute("height");
+  });
+
+  /**
+   * 133 of 141 species have art. The other eight must not produce a broken
+   * image, an empty frame, or a page that has lost its second column.
+   */
+  it("says so plainly when the archive has no portrait", () => {
+    renderItem(speciesItem("quermian", "Quermian"));
+
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(
+      screen.getByText(/no illustration of the quermian exists in the archive/i),
+    ).toBeInTheDocument();
+  });
+
+  it("draws a class illustration for an archetype", () => {
+    renderItem({
+      type: "archetypes",
+      slug: "aqinos-form",
+      name: "Aqinos Form",
+      source: "EC",
+      sourceName: "Expanded Content",
+      tagline: "Guardian archetype",
+      summary: { className: "Guardian" },
+      stats: [{ label: "Class", value: "Guardian" }],
+      sections: [],
+      entries: [],
+      tables: [],
+    });
+
+    expect(screen.getByRole("img")).toHaveAccessibleName(
+      "Illustration of a Guardian",
+    );
+  });
+
+  it("renders no picture at all for a type that has none", () => {
+    renderItem(feat);
+
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.queryByText(/exists in the archive/i)).toBeNull();
+  });
+});

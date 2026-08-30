@@ -1,5 +1,6 @@
 import { ContentList } from "~/components/content-list";
 import { Breadcrumbs } from "~/components/site-chrome";
+import { TypeIcon } from "~/components/type-icon";
 import { getSummaries } from "~/content/dataset.server";
 import { getListConfig } from "~/content/list-config";
 import { TYPE_META } from "~/content/type-meta";
@@ -54,10 +55,16 @@ export default function TypeIndex({ loaderData }: Route.ComponentProps) {
   const config = getListConfig(type);
 
   return (
-    <div className="page">
+    <div className="page" data-accent={meta.accent}>
       <Breadcrumbs trail={[{ label: meta.plural }]} />
-      <h1>{meta.plural}</h1>
-      <p className="lede">{meta.blurb}</p>
+      <div className="page-head">
+        <p className="page-eyebrow">
+          <TypeIcon type={type} />
+          {rows.length.toLocaleString("en-US")} entries
+        </p>
+        <h1>{meta.plural}</h1>
+        <p className="lede">{meta.blurb}</p>
+      </div>
       <ContentList
         type={type}
         typeLabel={meta.plural}

@@ -5,7 +5,11 @@ import { describe, expect, it } from "vitest";
 
 import { ContentList } from "./content-list";
 import { getListConfig } from "~/content/list-config";
-import type { AnySummary, MonsterSummary } from "~/content/types";
+import type {
+  AnySummary,
+  MonsterSummary,
+  SpeciesSummary,
+} from "~/content/types";
 
 const creatures: MonsterSummary[] = [
   {
@@ -224,5 +228,133 @@ describe("a content type index", () => {
 
     const table = screen.getByRole("table");
     expect(within(table).getByText(/sortable by column/i)).toBeInTheDocument();
+  });
+});
+
+/**
+ * Species are the one type shown as a gallery rather than a table, because a
+ * portrait identifies a species faster than its name does. Two of these rows
+ * have art in the archive and one does not, which is the case that has to
+ * degrade without a broken icon or a collapsed tile.
+ */
+const speciesRows: SpeciesSummary[] = [
+  {
+    slug: "wookiee",
+    name: "Wookiee",
+    source: "PHB",
+    tagline: "Medium · Kashyyyk",
+    size: "Medium",
+    homeworld: "Kashyyyk",
+    language: "Shyriiwook",
+    abilityIncreases: "Strength +2, Constitution +1",
+  },
+  {
+    slug: "aleena",
+    name: "Aleena",
+    source: "PHB",
+    tagline: "Small · Aleen",
+    size: "Small",
+    homeworld: "Aleen",
+    language: "Aleena",
+    abilityIncreases: "Dexterity +2",
+  },
+  {
+    slug: "quermian",
+    name: "Quermian",
+    source: "EC",
+    tagline: "Medium · Quermia",
+    size: "Medium",
+    homeworld: "Quermia",
+    language: "Quermian",
+    abilityIncreases: "Intelligence +2",
+  },
+];
+
+function renderGallery(rows: AnySummary[] = speciesRows) {
+  const Stub = createRoutesStub([
+    {
+      path: "/",
+      Component: () => (
+        <ContentList
+          type="species"
+          typeLabel="Species"
+          rows={rows}
+          config={getListConfig("species")}
+        />
+      ),
+    },
+  ]);
+  return render(<Stub initialEntries={["/"]} />);
+}
+
+describe("a species index", () => {
+  it("shows portraits rather than a table of names", () => {
+    renderGallery();
+
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(
+      screen.getByRole("img", { name: /illustration of the wookiee species/i }),
+      "a species tile must carry its portrait, described by what it shows",
+    ).toBeInTheDocument();
+  });
+
+  it("gives every portrait explicit dimensions so nothing reflows around it", () => {
+    renderGallery();
+
+    for (const image of screen.getAllByRole("img")) {
+      expect(image).toHaveAttribute("width");
+      expect(image).toHaveAttribute("height");
+    }
+  });
+
+  it("offers more than one width for a portrait, so a phone can take the small one", () => {
+    renderGallery();
+
+    const portrait = screen.getByRole("img", {
+      name: /illustration of the aleena species/i,
+    });
+    expect(portrait.getAttribute("srcset")).toMatch(/\d+w,.+\d+w/);
+    expect(portrait).toHaveAttribute("sizes");
+  });
+
+  it("loads everything below the first row lazily", () => {
+    // 141 species is far more art than a first paint should pay for.
+    const many = Array.from({ length: 20 }, (_, index) => ({
+      ...speciesRows[0],
+      slug: index === 0 ? "wookiee" : `aleena`,
+      name: `Species ${String(index).padStart(2, "0")}`,
+    }));
+    renderGallery(many);
+
+    const images = screen.getAllByRole("img");
+    expect(images.at(-1)).toHaveAttribute("loading", "lazy");
+  });
+
+  it("draws a species with no portrait instead of leaving a broken image", () => {
+    renderGallery();
+
+    // Nothing points at a file that does not exist...
+    for (const image of screen.getAllByRole("img")) {
+      expect(image.getAttribute("src")).not.toContain("quermian");
+    }
+    // ...and the tile is still a tile: its name is there and reachable.
+    expect(screen.getByRole("link", { name: "Quermian" })).toHaveAttribute(
+      "href",
+      "/species/quermian",
+    );
+  });
+
+  it("can be sorted without column headers to click", async () => {
+    const user = userEvent.setup();
+    renderGallery();
+
+    const names = () =>
+      screen.getAllByRole("link").map((link) => link.textContent?.trim());
+
+    expect(names()).toEqual(["Aleena", "Quermian", "Wookiee"]);
+
+    await user.click(screen.getByRole("button", { name: /A–Z/ }));
+
+    expect(names()).toEqual(["Wookiee", "Quermian", "Aleena"]);
   });
 });

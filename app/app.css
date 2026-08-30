@@ -70,52 +70,155 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
-/* Design tokens.
+/* ============================================================ design tokens
  *
- * Two palettes, chosen so that every text and background pair in use clears
- * WCAG 2.1 AA: 4.5:1 for body text, 3:1 for large text and interface borders.
+ * Two palettes, not one palette inverted.
+ *
+ * Dark is the default because that is how this reference gets read: a phone at
+ * a table, in a room someone has dimmed. Its ground is a near-black with a
+ * blue cast, and every surface above it is a step up in lightness rather than
+ * a border drawn on the same colour.
+ *
+ * Light is warm paper — #faf8f4 rather than #ffffff, with warm greys and warm
+ * borders. It is designed against the printed books this material comes from,
+ * not produced by flipping the dark values, which is why the two blocks below
+ * share no arithmetic relationship.
+ *
+ * Every text-and-background pair in use clears WCAG 2.1 AA: 4.5:1 for body
+ * text and 3:1 for large text, interface borders and focus rings. The `--hue-*`
+ * ramp is the one place a component may take a colour from, and every value in
+ * it is checked against `--surface`, the ground a badge most often sits on.
+ *
  * The site follows the reader's system setting rather than shipping a theme
  * toggle, because a toggle that avoids a flash of the wrong theme on first
  * paint needs an inline script, and this app's Content-Security-Policy story
  * is worth more than that convenience.
  */
 :root {
-  --bg: #ffffff;
-  --surface: #f5f7fa;
+  /* Grounds and surfaces */
+  --bg: #faf8f4;
+  --bg-deep: #efeade;
+  --surface: #f2eee7;
   --surface-raised: #ffffff;
-  --border: #d3d9e3;
-  --border-strong: #9aa5b5;
-  --text: #14181f;
-  --text-muted: #4c5462;
-  --accent: #1a4fc4;
-  --accent-hover: #12379a;
-  --focus: #1a4fc4;
-  --mark-bg: #fde68a;
-  --mark-text: #14181f;
-  --shadow: 0 1px 2px rgb(20 24 31 / 0.08), 0 8px 24px rgb(20 24 31 / 0.08);
+  --surface-sunken: #ece7dd;
+  --border: #ded7ca;
+  --border-strong: #a89e8c;
+
+  /* Text */
+  --text: #1a1814;
+  --text-muted: #575043;
+  --text-faint: #6e6759;
+
+  /* The mark this site inherited: the SW5e red. */
+  --brand: #b91120;
+  --brand-text: #a30f1c;
+  --brand-contrast: #ffffff;
+
+  /* Interactive */
+  --accent: #1148b8;
+  --accent-hover: #0c3486;
+  --focus: #1148b8;
+
+  --mark-bg: #ffe08a;
+  --mark-text: #1a1814;
+
+  /* The information ramp. Nothing outside this list may be a hue. */
+  --hue-amber: #8a5a06;
+  --hue-cyan: #0d6273;
+  --hue-green: #1f6b34;
+  --hue-indigo: #3a45a8;
+  --hue-red: #ab1c26;
+  --hue-steel: #4b5769;
+  --hue-teal: #0c6a58;
+  --hue-violet: #6a35b5;
+
+  --shadow-sm: 0 1px 2px rgb(60 50 30 / 0.09);
+  --shadow-md: 0 1px 2px rgb(60 50 30 / 0.07), 0 6px 18px rgb(60 50 30 / 0.09);
+  --shadow-lg: 0 2px 4px rgb(60 50 30 / 0.08), 0 18px 40px rgb(60 50 30 / 0.14);
+
+  /* How much of a hue is allowed into a badge's fill and edge. Dark and light
+   * need different amounts to land on the same perceived weight. */
+  --hue-fill: 11%;
+  --hue-edge: 34%;
+
+  /* How much ground colour is laid over the hero photograph, left to right.
+   * Light and dark need different amounts: the photograph is a pale wooden
+   * table, so it needs veiling to sit under dark text and almost none to sit
+   * under light text. */
+  --hero-veil-near: 96%;
+  --hero-veil-mid: 76%;
+  --hero-veil-far: 26%;
+
+  /* Rhythm. One scale, used everywhere, so a page has a beat. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.875rem;
+
+  --measure: 68ch;
+  --page: 78rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0b0f14;
-    --surface: #131a23;
-    --surface-raised: #18212c;
-    --border: #2b3745;
-    --border-strong: #55647a;
-    --text: #e8edf4;
-    --text-muted: #a5b0c0;
-    --accent: #8ab6ff;
-    --accent-hover: #b3d0ff;
-    --focus: #8ab6ff;
-    --mark-bg: #4a3a00;
-    --mark-text: #ffe08a;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.45);
+    --bg: #0a0e14;
+    --bg-deep: #05080c;
+    --surface: #111823;
+    --surface-raised: #17202d;
+    --surface-sunken: #0c1219;
+    --border: #222e3d;
+    --border-strong: #3d4d61;
+
+    --text: #e7edf5;
+    --text-muted: #9aa8bb;
+    --text-faint: #7d8ca3;
+
+    --brand: #ef2b39;
+    --brand-text: #ff6b76;
+    --brand-contrast: #ffffff;
+
+    --accent: #7cc0ff;
+    --accent-hover: #a9d6ff;
+    --focus: #7cc0ff;
+
+    --mark-bg: #4d3a00;
+    --mark-text: #ffdf8a;
+
+    --hue-amber: #f5b53d;
+    --hue-cyan: #56cfe1;
+    --hue-green: #6ede8a;
+    --hue-indigo: #9fb0ff;
+    --hue-red: #ff8288;
+    --hue-steel: #adbacc;
+    --hue-teal: #52d0b6;
+    --hue-violet: #c6a6ff;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.55), 0 24px 48px rgb(0 0 0 / 0.55);
+
+    --hue-fill: 16%;
+    --hue-edge: 42%;
+
+    --hero-veil-near: 100%;
+    --hero-veil-mid: 93%;
+    --hero-veil-far: 62%;
   }
 
   html {
     color-scheme: dark;
   }
 }
+
+/* ===================================================================== base */
 
 html {
   background: var(--bg);
@@ -127,7 +230,7 @@ html {
 body {
   background: var(--bg);
   color: var(--text);
-  line-height: 1.55;
+  line-height: 1.6;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -152,10 +255,14 @@ main:focus {
 }
 
 /* One visible focus style for everything, never removed. */
-:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 28%, transparent);
 }
 
 .sr-only {
@@ -172,110 +279,229 @@ main:focus {
 
 .skip-link {
   position: absolute;
-  left: 0.5rem;
-  top: -3rem;
-  z-index: 50;
+  left: var(--space-2);
+  top: -3.5rem;
+  z-index: 60;
   background: var(--surface-raised);
   color: var(--text);
   border: 1px solid var(--border-strong);
-  border-radius: 0.375rem;
-  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
   font-weight: 600;
+  box-shadow: var(--shadow-md);
   transition: top 120ms ease-out;
 }
 
 .skip-link:focus {
-  top: 0.5rem;
+  top: var(--space-2);
 }
 
-/* ------------------------------------------------------------- site frame */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================== site frame */
 
 .site-header {
-  border-bottom: 1px solid var(--border);
   background: var(--surface);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 30;
 }
 
+/* The one place the inherited red is structural: a hairline that says which
+ * site this is before anything else has painted. */
+.site-header::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--brand) 0%,
+    var(--brand) 38%,
+    color-mix(in oklab, var(--brand) 30%, transparent) 100%
+  );
+}
+
 .site-header-inner {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  max-width: 76rem;
+  gap: var(--space-4);
+  max-width: var(--page);
   margin: 0 auto;
-  padding: 0.625rem 1rem;
+  padding: var(--space-2) var(--space-4);
 }
 
 .site-wordmark {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.625rem;
   color: var(--text);
   text-decoration: none;
-  line-height: 1.15;
   flex-shrink: 0;
 }
 
+.site-wordmark-logo {
+  width: 2.25rem;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.site-wordmark-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
 .site-wordmark-name {
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-weight: 750;
+  letter-spacing: -0.02em;
   font-size: 1.0625rem;
 }
 
 .site-wordmark-tag {
   color: var(--text-muted);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
+@media (max-width: 34rem) {
+  .site-wordmark-text {
+    display: none;
+  }
+
+  .site-wordmark-logo {
+    width: 2.75rem;
+  }
+}
+
+/* Nine destinations will not fit across a phone, so the nav scrolls sideways.
+ * What it must never do is look broken while doing it: a raw scrollbar under
+ * the bar and a word sliced in half reads as a layout bug rather than as
+ * "there is more this way". So the scrollbar is hidden and the last inch of
+ * the strip fades out, which is the affordance people already recognise. The
+ * fade sits over empty space and is invisible when everything fits. */
 .site-nav {
   border-top: 1px solid var(--border);
   overflow-x: auto;
-  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-padding-inline: var(--space-4);
+  mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(100% - 2.5rem),
+    transparent 100%
+  );
+}
+
+.site-nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* Once there is room for the whole strip, the fade has nothing to do and the
+ * mask is dropped so it cannot clip a focus ring on the last item. */
+@media (min-width: 64rem) {
+  .site-nav {
+    mask-image: none;
+  }
 }
 
 .site-nav ul {
   display: flex;
-  gap: 0.25rem;
-  max-width: 76rem;
+  gap: 0.125rem;
+  max-width: var(--page);
   margin: 0 auto;
-  padding: 0 0.5rem;
+  padding: 0 var(--space-2);
   list-style: none;
 }
 
 .site-nav-link {
-  display: block;
-  padding: 0.5rem 0.625rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.5625rem;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 550;
   color: var(--text-muted);
   text-decoration: none;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
 }
 
+/* The marks are a nicety, not a label — every one of them sits beside its own
+ * word. Below the width where all nine destinations fit they are the first
+ * thing to go, which buys back about 200 pixels and is the difference between
+ * a strip that fits and one that has to be scrolled. */
+.site-nav-link .type-icon {
+  display: none;
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.7;
+}
+
+@media (min-width: 64rem) {
+  .site-nav-link .type-icon {
+    display: block;
+  }
+}
+
 .site-nav-link:hover {
   color: var(--text);
+  background: color-mix(in oklab, var(--text) 6%, transparent);
 }
 
 .site-nav-link.is-current {
   color: var(--text);
-  border-bottom-color: var(--accent);
+  border-bottom-color: var(--brand);
+}
+
+.site-nav-link.is-current .type-icon {
+  opacity: 1;
+  color: var(--brand-text);
 }
 
 .site-footer {
   border-top: 1px solid var(--border);
-  margin-top: 3rem;
-  padding: 1.5rem 1rem 2.5rem;
+  background: var(--surface);
+  margin-top: var(--space-8);
+  padding: var(--space-5) var(--space-4) var(--space-7);
   color: var(--text-muted);
   font-size: 0.8125rem;
 }
 
-.site-footer p {
-  max-width: 76rem;
+.site-footer-inner {
+  max-width: var(--page);
   margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  align-items: baseline;
+  justify-content: space-between;
 }
 
-/* ----------------------------------------------------------------- search */
+.site-footer p {
+  max-width: 54ch;
+}
+
+.site-footer-links {
+  display: flex;
+  gap: var(--space-4);
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+/* =================================================================== search */
 
 .site-search {
   position: relative;
@@ -293,13 +519,17 @@ main:focus {
 
 .site-search input {
   width: 100%;
-  padding: 0.4375rem 2rem 0.4375rem 0.75rem;
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
   border: 1px solid var(--border-strong);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
   color: var(--text);
   font: inherit;
   font-size: 0.875rem;
+}
+
+.site-search input::placeholder {
+  color: var(--text-faint);
 }
 
 .site-search kbd {
@@ -308,8 +538,9 @@ main:focus {
   font-size: 0.6875rem;
   color: var(--text-muted);
   border: 1px solid var(--border);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   padding: 0 0.25rem;
+  background: var(--surface);
 }
 
 .site-search-panel {
@@ -321,9 +552,9 @@ main:focus {
   overflow-y: auto;
   background: var(--surface-raised);
   border: 1px solid var(--border-strong);
-  border-radius: 0.5rem;
-  box-shadow: var(--shadow);
-  padding: 0.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
   z-index: 40;
 }
 
@@ -332,30 +563,36 @@ main:focus {
 }
 
 .site-search-empty {
-  padding: 0.5rem;
+  padding: var(--space-2);
   color: var(--text-muted);
   font-size: 0.875rem;
 }
 
 .site-search-all {
   display: block;
-  padding: 0.5rem;
+  padding: var(--space-2);
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 650;
   border-top: 1px solid var(--border);
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
 }
 
 .search-group-heading {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
+  gap: var(--space-2);
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  margin: 0.75rem 0 0.25rem;
+  color: var(--text-faint);
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.search-group-heading .type-icon {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  color: var(--type-accent, currentColor);
 }
 
 .search-group-count {
@@ -370,8 +607,8 @@ main:focus {
 }
 
 .search-group-list > li {
-  padding: 0.3125rem 0.5rem;
-  border-radius: 0.375rem;
+  padding: 0.3125rem var(--space-2);
+  border-radius: var(--radius-sm);
 }
 
 .search-group-list > li:hover {
@@ -381,7 +618,7 @@ main:focus {
 .result-link {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: var(--space-2);
   text-decoration: none;
   font-weight: 600;
 }
@@ -390,29 +627,20 @@ main:focus {
   text-decoration: underline;
 }
 
-.result-source {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: 0.25rem;
-  padding: 0 0.25rem;
-}
-
 .result-evidence {
   font-size: 0.8125rem;
   color: var(--text-muted);
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   margin-top: 0.125rem;
 }
 
 .result-evidence-label {
   flex-shrink: 0;
-  font-weight: 600;
+  font-weight: 650;
   text-transform: uppercase;
   font-size: 0.6875rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   padding-top: 0.125rem;
 }
 
@@ -426,68 +654,93 @@ mark {
 .search-page-form {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--space-1);
   max-width: 34rem;
-  margin: 1rem 0;
+  margin: var(--space-4) 0;
 }
 
 .search-page-form label {
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .search-page-form input {
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--border-strong);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
   color: var(--text);
   font: inherit;
 }
 
-/* ------------------------------------------------------------------ pages */
+/* =========================================================== page scaffold */
 
 .page {
-  max-width: 76rem;
+  max-width: var(--page);
   margin: 0 auto;
-  padding: 1.5rem 1rem 0;
+  padding: var(--space-5) var(--space-4) 0;
 }
 
-.page h1 {
-  font-size: clamp(1.625rem, 1.3rem + 1.4vw, 2.25rem);
+.page-head {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+/* A page says what kind of thing it is before it says its name. */
+.page-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--type-accent, var(--text-faint));
+  margin-bottom: 0.375rem;
+}
+
+.page-eyebrow .type-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+h1 {
+  font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.5rem);
+  font-weight: 780;
+  letter-spacing: -0.028em;
+  line-height: 1.1;
+  text-wrap: balance;
 }
 
 .lede {
   color: var(--text-muted);
-  margin-top: 0.375rem;
-  max-width: 60ch;
+  margin-top: var(--space-2);
+  max-width: 62ch;
+  font-size: 1.0625rem;
 }
 
 .notice {
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--border-strong);
-  border-left-width: 3px;
-  border-left-color: var(--accent);
-  border-radius: 0.375rem;
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--hue-amber);
+  border-radius: var(--radius-md);
   background: var(--surface);
   font-size: 0.875rem;
+  max-width: var(--measure);
 }
 
 code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.875em;
-  background: var(--surface);
+  background: var(--surface-sunken);
   border: 1px solid var(--border);
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   padding: 0.0625rem 0.25rem;
 }
 
 .breadcrumbs {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--space-3);
   font-size: 0.8125rem;
 }
 
@@ -506,22 +759,23 @@ code {
 }
 
 .section-heading {
-  margin-top: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+  margin-bottom: var(--space-3);
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-faint);
 }
 
-.home-intro {
-  padding: 1rem 0 0.5rem;
-}
-
-.home-total {
-  margin-top: 0.75rem;
-  font-size: 0.9375rem;
-  color: var(--text-muted);
+.section-heading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 
 kbd {
@@ -529,66 +783,406 @@ kbd {
   font-size: 0.8125em;
   border: 1px solid var(--border-strong);
   border-bottom-width: 2px;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   padding: 0 0.3125rem;
   background: var(--surface-raised);
 }
 
+/* =================================================================== badges */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.55;
+  padding: 0.0625rem 0.4375rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: var(--hue-steel);
+  background: color-mix(in oklab, currentColor var(--hue-fill), transparent);
+  border: 1px solid color-mix(in oklab, currentColor var(--hue-edge), transparent);
+}
+
+.badge[data-accent="amber"] { color: var(--hue-amber); }
+.badge[data-accent="cyan"] { color: var(--hue-cyan); }
+.badge[data-accent="green"] { color: var(--hue-green); }
+.badge[data-accent="indigo"] { color: var(--hue-indigo); }
+.badge[data-accent="red"] { color: var(--hue-red); }
+.badge[data-accent="steel"] { color: var(--hue-steel); }
+.badge[data-accent="teal"] { color: var(--hue-teal); }
+.badge[data-accent="violet"] { color: var(--hue-violet); }
+
+.badge-link {
+  text-decoration: none;
+}
+
+.badge-link:hover {
+  background: color-mix(in oklab, currentColor 26%, transparent);
+}
+
+.badge-numeric {
+  font-variant-numeric: tabular-nums;
+  min-width: 2.5rem;
+  justify-content: center;
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3125rem;
+  align-items: center;
+}
+
+/* ============================================================ monogram plate
+ *
+ * The stand-in for a picture that does not exist. It fills the same box as the
+ * image it replaces so nothing reflows, and it is hidden from assistive
+ * technology because the name it abbreviates is already beside it.
+ */
+.monogram-plate {
+  --plate-colour: var(--hue-steel);
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--plate-colour) 12%, transparent) 0 6px,
+      transparent 6px 12px
+    ),
+    color-mix(in oklab, var(--plate-colour) 13%, var(--surface-sunken));
+  color: color-mix(in oklab, var(--plate-colour) 70%, var(--text));
+}
+
+.monogram-plate[data-plate-hue="0"] { --plate-colour: var(--hue-teal); }
+.monogram-plate[data-plate-hue="1"] { --plate-colour: var(--hue-indigo); }
+.monogram-plate[data-plate-hue="2"] { --plate-colour: var(--hue-amber); }
+.monogram-plate[data-plate-hue="3"] { --plate-colour: var(--hue-violet); }
+.monogram-plate[data-plate-hue="4"] { --plate-colour: var(--hue-green); }
+.monogram-plate[data-plate-hue="5"] { --plate-colour: var(--hue-cyan); }
+.monogram-plate[data-plate-hue="6"] { --plate-colour: var(--hue-red); }
+.monogram-plate[data-plate-hue="7"] { --plate-colour: var(--hue-steel); }
+
+.monogram-plate-mark {
+  font-weight: 780;
+  letter-spacing: 0.02em;
+  font-size: clamp(1.25rem, 30cqw, 4rem);
+}
+
+/* ================================================================ home page */
+
+.home-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+}
+
+.home-hero-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 62%;
+  z-index: -2;
+}
+
+/* The photograph is a ground, not a subject: it has to hand every bit of
+ * contrast back to the text sitting on it, in both themes. */
+.home-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(in oklab, var(--bg) var(--hero-veil-near), transparent) 0%,
+      color-mix(in oklab, var(--bg) var(--hero-veil-mid), transparent) 45%,
+      color-mix(in oklab, var(--bg) var(--hero-veil-far), transparent) 100%
+    ),
+    linear-gradient(to top, var(--bg) 0%, transparent 60%);
+}
+
+.home-hero-inner {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-4) var(--space-6);
+}
+
+.home-hero-logo {
+  width: clamp(7rem, 20vw, 9.5rem);
+  height: auto;
+  margin-bottom: var(--space-4);
+  filter: drop-shadow(0 2px 10px rgb(0 0 0 / 0.3));
+}
+
+.home-hero h1 {
+  font-size: clamp(2.25rem, 1.4rem + 3.6vw, 3.75rem);
+  letter-spacing: -0.035em;
+}
+
+.home-hero .lede {
+  font-size: clamp(1rem, 0.95rem + 0.4vw, 1.1875rem);
+  max-width: 46ch;
+  color: var(--text);
+  margin-top: var(--space-3);
+}
+
+.home-hero-meta {
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5625rem 1.125rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.button-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-contrast);
+}
+
+.button-primary:hover {
+  background: color-mix(in oklab, var(--brand) 82%, #000);
+  border-color: transparent;
+  color: var(--brand-contrast);
+}
+
+.button .type-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.home-section {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+/* --- category cards --- */
+
 .type-grid {
   list-style: none;
   display: grid;
-  gap: 0.75rem;
-  margin-top: 0.75rem;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
 }
 
 .type-card {
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.25rem 0.75rem;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "icon name count"
+    "blurb blurb blurb";
+  align-items: center;
+  gap: 0.375rem 0.6875rem;
   height: 100%;
-  padding: 0.875rem 1rem;
+  padding: var(--space-4);
+  padding-left: calc(var(--space-4) + 3px);
   border: 1px solid var(--border);
-  border-radius: 0.625rem;
+  border-radius: var(--radius-lg);
   background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+  overflow: hidden;
+  transition:
+    border-color 120ms ease-out,
+    transform 120ms ease-out,
+    background 120ms ease-out;
+}
+
+/* The accent is a bar on the leading edge, not a tint over the whole card:
+ * eight tinted cards would fight each other and the reading text. */
+.type-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--type-accent);
+}
+
+.type-card:hover {
+  border-color: var(--type-accent);
+  background: var(--surface-raised);
+  transform: translateY(-1px);
+}
+
+.type-card .type-icon {
+  grid-area: icon;
+  width: 1.375rem;
+  height: 1.375rem;
+  color: var(--type-accent);
+}
+
+.type-card-name {
+  grid-area: name;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: -0.012em;
+}
+
+.type-card-count {
+  grid-area: count;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+.type-card-blurb {
+  grid-area: blurb;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.type-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* Accent plumbing: one attribute on an element, one variable for its subtree. */
+[data-accent="amber"] { --type-accent: var(--hue-amber); }
+[data-accent="cyan"] { --type-accent: var(--hue-cyan); }
+[data-accent="green"] { --type-accent: var(--hue-green); }
+[data-accent="indigo"] { --type-accent: var(--hue-indigo); }
+[data-accent="red"] { --type-accent: var(--hue-red); }
+[data-accent="steel"] { --type-accent: var(--hue-steel); }
+[data-accent="teal"] { --type-accent: var(--hue-teal); }
+[data-accent="violet"] { --type-accent: var(--hue-violet); }
+
+/* --- the books strip --- */
+
+.page-head + .book-grid {
+  margin-top: var(--space-5);
+}
+
+.book-grid {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.book-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  height: 100%;
+}
+
+.book-card:hover {
+  border-color: var(--type-accent, var(--accent));
+  background: var(--surface-raised);
+}
+
+.book-card:has(a:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.book-cover,
+.book-plate {
+  width: 4.25rem;
+  aspect-ratio: 176 / 228;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  object-fit: cover;
+  background: var(--surface-sunken);
+  flex-shrink: 0;
+}
+
+.book-plate {
+  container-type: inline-size;
+}
+
+.book-card-title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+
+.book-card-title a {
   text-decoration: none;
   color: var(--text);
 }
 
-.type-card:hover {
-  border-color: var(--accent);
-  background: var(--surface-raised);
+/* One card, one target: the whole tile is clickable, but only the title is a
+ * link, so a keyboard user does not tab past several copies of the same URL. */
+.book-card-title a::after,
+.gallery-tile-name a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
 }
 
-.type-card-name {
-  font-weight: 700;
-  font-size: 1.0625rem;
-}
-
-.type-card-count {
-  font-variant-numeric: tabular-nums;
+.book-card-blurb {
   color: var(--text-muted);
-  font-weight: 600;
-}
-
-.type-card-blurb {
-  grid-column: 1 / -1;
-  color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   line-height: 1.45;
+  margin-top: 0.25rem;
 }
 
-/* --------------------------------------------------------- filters, lists */
+.book-card-count {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
+  font-variant-numeric: tabular-nums;
+}
 
-.filter-bar {
+/* ================================================= filters and list chrome */
+
+.list-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 0.75rem;
-  margin-top: 1.25rem;
-  padding: 0.875rem;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-3);
   border: 1px solid var(--border);
-  border-radius: 0.625rem;
+  border-radius: var(--radius-lg);
   background: var(--surface);
 }
 
@@ -601,56 +1195,67 @@ kbd {
 }
 
 .filter-field label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
 }
 
 .filter-field input,
 .filter-field select {
-  padding: 0.375rem 0.5rem;
+  padding: 0.4375rem 0.5rem;
   border: 1px solid var(--border-strong);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
   color: var(--text);
   font: inherit;
   font-size: 0.875rem;
 }
 
-.filter-reset {
-  padding: 0.4375rem 0.75rem;
+.filter-reset,
+.sort-direction {
+  padding: 0.5rem 0.8125rem;
   border: 1px solid var(--border-strong);
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
   color: var(--text);
   font: inherit;
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 650;
   cursor: pointer;
 }
 
-.filter-reset:hover {
+.filter-reset:hover,
+.sort-direction:hover {
   border-color: var(--accent);
 }
 
 .result-count {
-  margin: 0.875rem 0 0.5rem;
+  margin: var(--space-4) 0 var(--space-2);
   font-size: 0.8125rem;
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 
 .empty-state {
-  padding: 2rem 1rem;
+  padding: var(--space-6) var(--space-4);
   text-align: center;
   color: var(--text-muted);
   border: 1px dashed var(--border-strong);
-  border-radius: 0.625rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
 }
+
+/* =================================================================== tables */
 
 .table-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
 }
 
 .content-table {
@@ -662,27 +1267,37 @@ kbd {
 .content-table th,
 .content-table td {
   text-align: left;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5625rem 0.875rem;
   border-bottom: 1px solid var(--border);
-  vertical-align: top;
+  vertical-align: middle;
+}
+
+.content-table tbody tr:last-child > * {
+  border-bottom: 0;
 }
 
 .content-table thead th {
   position: sticky;
   top: 0;
-  background: var(--bg);
-  border-bottom: 2px solid var(--border-strong);
-  font-size: 0.75rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-strong);
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-faint);
   padding: 0;
   z-index: 1;
 }
 
+/* Zebra striping earns its keep on a 500-row equipment table read sideways on
+ * a phone, and is noise on a 60-row one. Types opt in. */
+.content-table[data-striped="true"] tbody tr:nth-child(even) {
+  background: color-mix(in oklab, var(--text) 3.5%, transparent);
+}
+
 .content-table tbody tr:hover {
-  background: var(--surface);
+  background: color-mix(in oklab, var(--accent) 9%, transparent);
 }
 
 .sort-button {
@@ -690,7 +1305,7 @@ kbd {
   align-items: center;
   gap: 0.3125rem;
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5625rem 0.875rem;
   background: none;
   border: 0;
   color: inherit;
@@ -713,9 +1328,14 @@ kbd {
   font-size: 0.875em;
 }
 
+th[aria-sort="ascending"],
+th[aria-sort="descending"] {
+  color: var(--text);
+}
+
 th[aria-sort="ascending"] .sort-indicator,
 th[aria-sort="descending"] .sort-indicator {
-  color: var(--accent);
+  color: var(--brand-text);
 }
 
 .is-numeric {
@@ -724,7 +1344,7 @@ th[aria-sort="descending"] .sort-indicator {
 }
 
 .name-cell {
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .name-cell a {
@@ -735,11 +1355,35 @@ th[aria-sort="descending"] .sort-indicator {
   text-decoration: underline;
 }
 
+/* An archetype's class art, small enough to be a wayfinding cue rather than a
+ * picture: at 28px it says "this is a Guardian one" before the word does. */
+.row-media {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.row-thumb,
+.row-plate {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  object-position: 50% 12%;
+  background: var(--surface-sunken);
+  flex-shrink: 0;
+}
+
+.row-plate {
+  container-type: inline-size;
+}
+
 .compact-line {
   display: block;
   font-weight: 400;
   font-size: 0.8125rem;
   color: var(--text-muted);
+  margin-top: 0.0625rem;
 }
 
 @media (min-width: 40rem) {
@@ -748,85 +1392,314 @@ th[aria-sort="descending"] .sort-indicator {
   }
 }
 
-/* ----------------------------------------------------------- item details */
-
-.item-detail {
-  max-width: 68ch;
+.cell-muted {
+  color: var(--text-muted);
 }
 
-.item-header {
-  padding-bottom: 0.75rem;
+/* ========================================================== species gallery
+ *
+ * A species index is not a spreadsheet. 141 portraits laid out as tiles can be
+ * scanned by shape and silhouette in a way a column of names cannot, which is
+ * the whole reason the archive's art was worth recovering.
+ */
+.gallery {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+}
+
+@media (min-width: 48rem) {
+  .gallery {
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  }
+}
+
+.gallery-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  transition:
+    border-color 120ms ease-out,
+    transform 120ms ease-out;
+}
+
+.gallery-tile:hover {
+  border-color: var(--type-accent, var(--accent));
+  transform: translateY(-1px);
+}
+
+.gallery-tile:has(a:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.gallery-tile-media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  /* Portraits are full figures of wildly different proportions. Anchoring the
+   * crop near the top keeps the head in frame on a tall one without cutting a
+   * squat one in half. */
+  object-position: 50% 16%;
+  background:
+    radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in oklab, var(--type-accent, var(--hue-teal)) 13%, var(--surface-sunken)),
+      var(--surface-sunken)
+    );
   border-bottom: 1px solid var(--border);
 }
 
-.item-tagline {
-  margin-top: 0.25rem;
-  color: var(--text-muted);
-  font-style: italic;
+.gallery-tile .monogram-plate {
+  aspect-ratio: 4 / 3;
+  height: auto;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  container-type: inline-size;
 }
 
-.item-source {
-  margin-top: 0.5rem;
+.gallery-tile-body {
+  padding: 0.5rem 0.6875rem 0.6875rem;
   display: flex;
-  align-items: center;
-  gap: 0.4375rem;
-  font-size: 0.8125rem;
+  flex-direction: column;
+  gap: 0.1875rem;
+  flex: 1;
+}
+
+.gallery-tile-name {
+  font-weight: 650;
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.gallery-tile-name a {
+  text-decoration: none;
+  color: var(--text);
+}
+
+.gallery-tile:hover .gallery-tile-name a {
+  color: var(--accent);
+}
+
+.gallery-tile-meta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.gallery-tile-meta {
+  font-size: 0.75rem;
   color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1875rem 0.375rem;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.3125rem;
 }
 
-.source-badge {
-  font-weight: 700;
-  font-size: 0.6875rem;
-  border: 1px solid var(--border-strong);
-  border-radius: 0.25rem;
-  padding: 0 0.3125rem;
+/* ============================================================ item details */
+
+/* Heading, picture, text — in that order on a phone, and in two columns on a
+ * wide screen with the picture staying put while the text scrolls. One grid,
+ * two area maps, no duplicated markup and no reordered tab sequence. */
+.item-layout {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+  grid-template-areas:
+    "head"
+    "body";
 }
 
-.stat-block {
-  margin-top: 1rem;
-  padding: 0.875rem 1rem;
+.item-layout.has-figure {
+  grid-template-areas:
+    "head"
+    "figure"
+    "body";
+}
+
+.item-header {
+  grid-area: head;
+}
+
+.item-figure {
+  grid-area: figure;
+}
+
+.item-body {
+  grid-area: body;
+  max-width: var(--measure);
+  min-width: 0;
+}
+
+@media (min-width: 58rem) {
+  .item-layout.has-figure {
+    /* The text column is capped at its measure rather than filling the page,
+     * so the picture sits beside the words instead of drifting to the far edge
+     * of a wide monitor. */
+    grid-template-columns: minmax(0, var(--measure)) 16rem;
+    grid-template-areas:
+      "head figure"
+      "body figure";
+    justify-content: start;
+    column-gap: var(--space-6);
+    row-gap: var(--space-4);
+  }
+
+  .item-layout.has-figure .item-figure {
+    position: sticky;
+    top: 8rem;
+  }
+}
+
+.item-header {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.item-header h1 {
+  font-size: clamp(1.875rem, 1.4rem + 2vw, 2.625rem);
+}
+
+.item-tagline {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: 1.0625rem;
+}
+
+.item-badges {
+  margin-top: var(--space-3);
+}
+
+/* --- the picture --- */
+
+.item-figure {
+  margin: 0;
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      115% 80% at 50% 0%,
+      color-mix(in oklab, var(--type-accent, var(--hue-steel)) 15%, var(--surface)),
+      var(--surface)
+    );
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.item-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 22rem;
+  object-fit: contain;
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.item-figure .monogram-plate {
+  aspect-ratio: 3 / 4;
+  height: auto;
+  border-radius: 0;
+}
+
+.item-figure figcaption {
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-4);
+}
+
+.item-figure .monogram-plate + figcaption {
+  margin-top: 0;
+}
+
+@media (max-width: 57.99rem) {
+  .item-figure {
+    max-width: 16rem;
+  }
+}
+
+/* --- the stat block ---
+ *
+ * A reference is read in glances, so the block a reader glances at gets its
+ * own frame: a heavier ground, a rule in the type's colour along the top, and
+ * label/value pairs on a fixed grid so the eye can drop straight down the
+ * values. Deliberately not the cream-and-red plate of another publisher's
+ * books — this is the site's own frame in its own palette.
+ */
+.stat-block {
+  margin-top: var(--space-4);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--type-accent, var(--brand));
+  border-radius: var(--radius-md);
   background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .stat-row {
   display: grid;
   grid-template-columns: minmax(7.5rem, 12rem) 1fr;
-  gap: 0.25rem 0.75rem;
-  padding: 0.1875rem 0;
+  gap: 0.25rem var(--space-4);
+  padding: 0.4375rem var(--space-4);
   font-size: 0.9375rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 65%, transparent);
 }
 
-@media (max-width: 30rem) {
+.stat-block dl > div:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 32rem) {
   .stat-row {
     grid-template-columns: 1fr;
+    gap: 0;
+    padding: var(--space-2) var(--space-3);
   }
 }
 
 .stat-row dt {
   font-weight: 700;
-  color: var(--text-muted);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding-top: 0.25rem;
 }
 
+.stat-row dd {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- ability scores --- */
+
 .ability-scores {
-  margin-top: 1rem;
+  margin-top: var(--space-5);
 }
 
 .ability-scores h2 {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 0.375rem;
+  color: var(--text-faint);
+  margin-bottom: var(--space-2);
 }
 
 .ability-scores ul {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(4.25rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
   gap: 0.375rem;
 }
 
@@ -834,24 +1707,25 @@ th[aria-sort="descending"] .sort-indicator {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.4375rem 0.25rem;
+  padding: 0.5rem 0.25rem;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 
 .ability-name {
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-faint);
 }
 
 .ability-score {
-  font-size: 1.125rem;
-  font-weight: 700;
+  font-size: 1.375rem;
+  font-weight: 750;
   font-variant-numeric: tabular-nums;
+  line-height: 1.15;
 }
 
 .ability-modifier {
@@ -860,21 +1734,24 @@ th[aria-sort="descending"] .sort-indicator {
   font-variant-numeric: tabular-nums;
 }
 
+/* --- prose sections --- */
+
 .item-section {
-  margin-top: 1.75rem;
+  margin-top: var(--space-6);
 }
 
 .item-section > h2 {
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 0.625rem;
+  font-size: 1.1875rem;
+  font-weight: 720;
+  letter-spacing: -0.015em;
+  padding-bottom: 0.3125rem;
+  border-bottom: 2px solid
+    color-mix(in oklab, var(--type-accent, var(--brand)) 45%, transparent);
+  margin-bottom: var(--space-3);
 }
 
 .entry-list .entry {
-  padding: 0.5rem 0;
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -884,6 +1761,7 @@ th[aria-sort="descending"] .sort-indicator {
 
 .entry-list dt {
   font-weight: 700;
+  margin-bottom: 0.125rem;
 }
 
 .roll-table,
@@ -891,18 +1769,18 @@ th[aria-sort="descending"] .sort-indicator {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.9375rem;
-  margin: 0.75rem 0;
+  margin: var(--space-3) 0;
 }
 
 .roll-table caption,
 .prose-body table caption {
   text-align: left;
   font-weight: 700;
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
-  padding-bottom: 0.375rem;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  padding-bottom: var(--space-2);
 }
 
 .roll-table th,
@@ -910,30 +1788,39 @@ th[aria-sort="descending"] .sort-indicator {
 .prose-body th,
 .prose-body td {
   text-align: left;
-  padding: 0.375rem 0.625rem;
+  padding: 0.4375rem 0.625rem;
   border-bottom: 1px solid var(--border);
   vertical-align: top;
 }
 
 .roll-table thead th,
 .prose-body thead th {
-  border-bottom: 2px solid var(--border-strong);
-  font-size: 0.75rem;
+  border-bottom: 1px solid var(--border-strong);
+  font-size: 0.6875rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
 }
 
 .roll-table tbody th {
-  width: 3rem;
+  width: 3.5rem;
   font-variant-numeric: tabular-nums;
   color: var(--text-muted);
 }
 
-/* ------------------------------------------------------------------ prose */
+.roll-table tbody tr:nth-child(even),
+.prose-body tbody tr:nth-child(even) {
+  background: color-mix(in oklab, var(--text) 3.5%, transparent);
+}
+
+/* ==================================================================== prose */
+
+.prose-body {
+  max-width: var(--measure);
+}
 
 .prose-body > * + * {
-  margin-top: 0.75rem;
+  margin-top: var(--space-3);
 }
 
 .prose-body h2,
@@ -943,11 +1830,12 @@ th[aria-sort="descending"] .sort-indicator {
 .prose-body h6 {
   font-weight: 700;
   line-height: 1.3;
-  margin-top: 1.25rem;
+  margin-top: var(--space-5);
+  letter-spacing: -0.01em;
 }
 
 .prose-body h2 {
-  font-size: 1.125rem;
+  font-size: 1.0625rem;
 }
 
 .prose-body h3 {
@@ -975,22 +1863,22 @@ th[aria-sort="descending"] .sort-indicator {
 }
 
 .prose-body li + li {
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
 }
 
 .prose-body blockquote {
   border-left: 3px solid var(--border-strong);
-  padding-left: 0.875rem;
+  padding-left: var(--space-4);
   color: var(--text-muted);
 }
 
 .prose-body hr {
   border: 0;
   border-top: 1px solid var(--border);
-  margin: 1rem 0;
+  margin: var(--space-4) 0;
 }
 
-/* ---------------------------------------------------- corruption markers */
+/* ====================================================== corruption markers */
 
 .lost-character {
   display: inline-block;
@@ -1008,14 +1896,14 @@ th[aria-sort="descending"] .sort-indicator {
   cursor: help;
 }
 
-/* ------------------------------------------------------------------ pager */
+/* ==================================================================== pager */
 
 .pager {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin: 2.5rem 0 1rem;
-  padding-top: 1rem;
+  gap: var(--space-3);
+  margin: var(--space-7) 0 var(--space-4);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--border);
 }
 
@@ -1023,15 +1911,16 @@ th[aria-sort="descending"] .sort-indicator {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
-  padding: 0.625rem 0.875rem;
+  padding: var(--space-3) var(--space-4);
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
   text-decoration: none;
   background: var(--surface);
 }
 
 .pager-link:hover {
   border-color: var(--accent);
+  background: var(--surface-raised);
 }
 
 .pager-next {
@@ -1039,14 +1928,85 @@ th[aria-sort="descending"] .sort-indicator {
 }
 
 .pager-direction {
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-faint);
 }
 
 .pager-name {
-  font-weight: 600;
+  font-weight: 650;
   color: var(--text);
+}
+
+/* ============================================================ source pages */
+
+.source-hero {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+  margin-top: var(--space-5);
+}
+
+@media (min-width: 46rem) {
+  .source-hero {
+    grid-template-columns: 12rem minmax(0, 1fr);
+  }
+}
+
+.source-cover,
+.source-plate {
+  width: 100%;
+  max-width: 12rem;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  background: var(--surface-sunken);
+}
+
+/* Expanded Content has no cover anywhere in the archive, so it gets a plate
+ * drawn from its own initials rather than an empty rectangle. */
+.source-plate {
+  aspect-ratio: 176 / 228;
+  container-type: inline-size;
+}
+
+.source-breakdown {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  margin-top: var(--space-4);
+}
+
+.source-breakdown a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.9375rem;
+}
+
+.source-breakdown a:hover {
+  border-color: var(--type-accent, var(--accent));
+  background: var(--surface-raised);
+}
+
+.source-breakdown .type-icon {
+  color: var(--type-accent);
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.source-breakdown-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: var(--text-muted);
 }

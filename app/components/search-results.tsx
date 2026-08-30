@@ -7,7 +7,9 @@ import { Link } from "react-router";
 
 import { excerptAround, groupByType, type SearchMatch } from "~/content/search";
 import { TYPE_META } from "~/content/type-meta";
+import { SourceBadge } from "./badges";
 import { SourceText } from "./source-text";
+import { TypeIcon } from "./type-icon";
 
 /**
  * The matched fragment with the matching run marked. `<mark>` is the element
@@ -68,8 +70,10 @@ export function SearchResults({
             <Label
               id={isHeading ? headingId : undefined}
               className="search-group-heading"
+              data-accent={TYPE_META[group.type].accent}
               aria-hidden={isHeading ? undefined : true}
             >
+              <TypeIcon type={group.type} />
               {label}
               <span className="search-group-count">{group.matches.length}</span>
             </Label>
@@ -84,9 +88,7 @@ export function SearchResults({
                     <span className="result-name">
                       <SourceText value={match.record.name} />
                     </span>
-                    {match.record.source ? (
-                      <span className="result-source">{match.record.source}</span>
-                    ) : null}
+                    <SourceBadge code={match.record.source} />
                   </Link>
                   <Evidence match={match} />
                 </li>
