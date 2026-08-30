@@ -52,8 +52,19 @@ const ORIGIN = process.env.SW5E_CONTRACT_ORIGIN ?? "http://localhost:4173";
  * sniffing, problem-document decoding, the 401-means-anonymous rule — is the
  * shipped code running over real bytes.
  */
+/**
+ * The untouched platform `fetch`, captured once at module load.
+ *
+ * Deliberately not read inside {@link useRealApi}: calling that twice — which
+ * the foreign-origin tests do — would otherwise wrap the previous wrapper, and
+ * the inner one would overwrite the `Origin` the outer one had just set. The
+ * cross-site tests then silently pass a well-formed same-origin request and
+ * assert nothing at all.
+ */
+const platformFetch = globalThis.fetch;
+
 function useRealApi(origin = ORIGIN): void {
-  const realFetch = globalThis.fetch;
+  const realFetch = platformFetch;
 
   globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
     const path = typeof input === "string" ? input : String(input);

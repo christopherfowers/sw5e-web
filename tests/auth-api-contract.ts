@@ -356,6 +356,12 @@ export class AuthApiContract {
           body: {
             challenge: this.issueChallenge(),
             timeout: 120_000,
+            // The relying party the assertion is bound to. The service always
+            // sends it and `webauthn.ts` reads it straight through to
+            // navigator.credentials.get(); leaving it out here meant the
+            // fixture was quietly exercising a code path with one fewer field
+            // than production ever produces.
+            rpId: new URL(this.origin).hostname,
             allowCredentials: [],
             userVerification: "required",
           },
