@@ -153,3 +153,86 @@ test.describe("with JavaScript disabled", () => {
     await expect(page.getByLabel(/display name/i)).toBeVisible();
   });
 });
+
+/**
+ * Every account address names itself, before hydration and without scripts.
+ *
+ * These four files spend their first moments — and their entire life for a
+ * reader whose scripts never run — in the `loading` state, because identity is
+ * resolved after hydration and must never be written into a file that every
+ * visitor shares. That state is allowed to say nothing about *who* the reader
+ * is. It is not allowed to say nothing at all.
+ *
+ * Two things were missing, and both are only visible from outside a browser:
+ *
+ *   a `<main>` landmark with no heading anywhere inside it, so a screen reader
+ *   moving by heading finds the page empty and a reader without JavaScript is
+ *   told nothing about where they are
+ *
+ *   one `<title>` shared by all four, so a tab strip, a window list and a
+ *   history entry have nothing to tell them apart
+ */
+const ACCOUNT_SECTIONS = [
+  { path: "/account", title: "Your account — Star Wars 5e" },
+  { path: "/account/passkeys", title: "Passkeys — Your account — Star Wars 5e" },
+  {
+    path: "/account/security",
+    title: "Two-factor authentication — Your account — Star Wars 5e",
+  },
+  {
+    path: "/account/contributions",
+    title: "Contributions — Your account — Star Wars 5e",
+  },
+];
+
+test.describe("every account route names itself in its own markup", () => {
+  for (const section of ACCOUNT_SECTIONS) {
+    test(`${section.path} prerenders a heading`, async ({ request }) => {
+      const html = await (await request.get(section.path)).text();
+
+      // Deliberately not asserting the wording: what matters is that the
+      // landmark is not headingless. A heading that only appears once the
+      // session resolves is not in the file nginx serves.
+      expect(
+        /<h1[^>]*>\s*\S[^<]*<\/h1>/.test(html),
+        `${section.path} must prerender a level-one heading; without one the ` +
+          "page presents a main landmark with no heading structure at all",
+      ).toBe(true);
+    });
+
+    test(`${section.path} prerenders its own title`, async ({ request }) => {
+      const html = await (await request.get(section.path)).text();
+
+      expect(/<title>([^<]*)<\/title>/.exec(html)?.[1]).toBe(section.title);
+    });
+  }
+
+  test("no two of them share a title", async ({ request }) => {
+    const titles = await Promise.all(
+      ACCOUNT_SECTIONS.map(async ({ path }) => {
+        const html = await (await request.get(path)).text();
+        return /<title>([^<]*)<\/title>/.exec(html)?.[1] ?? "";
+      }),
+    );
+
+    expect(
+      new Set(titles).size,
+      `the account routes answer with ${new Set(titles).size} distinct titles ` +
+        `for ${titles.length} addresses`,
+    ).toBe(titles.length);
+  });
+
+  test("the headings survive with JavaScript turned off", async ({ browser }) => {
+    // The same assertion through a browser that will never hydrate, which is
+    // what a crawler and a reader on a failed script load actually get.
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+
+    for (const { path } of ACCOUNT_SECTIONS) {
+      await page.goto(path);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    }
+
+    await context.close();
+  });
+});

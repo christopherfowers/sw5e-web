@@ -92,6 +92,52 @@ describe("a signed-out reader", () => {
   });
 });
 
+describe("the account's own heading", () => {
+  /**
+   * The heading is the one piece of this page that does not depend on who is
+   * reading it, so it is the one piece that may be in the file.
+   *
+   * `/account` is prerendered to static HTML and served, byte for byte, to
+   * everybody; that file is frozen in `loading`, because identity is only
+   * resolved after hydration. A heading that waited for the session would
+   * therefore be absent from the markup nginx serves — leaving a `<main>`
+   * landmark with no heading structure in it for every reader before hydration
+   * and every reader without JavaScript — and it would differ between the
+   * prerendered markup and the first client render, which is a hydration
+   * mismatch. So it is asserted in each state the page can be in.
+   */
+  it("is there before the session has resolved", () => {
+    // Synchronous: this is the first render, the state the static file holds.
+    mount(new AuthApiContract({ session: user() }));
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: /your account/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("is still there once a signed-in reader has been recognised", async () => {
+    mount(new AuthApiContract({ session: user({ displayName: "Jen Ordo" }) }));
+
+    await screen.findByRole("button", { name: /sign out/i });
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: /your account/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("is still there when the account service cannot be reached", async () => {
+    mount(new AuthApiContract({ session: user(), offline: true }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(/could not be loaded/i),
+    );
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: /your account/i }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe("while the session is still loading", () => {
   it("does not redirect, and does not paint account content either", () => {
     // Synchronous: this is the first render, before any answer. Redirecting
@@ -108,11 +154,14 @@ describe("a signed-in reader", () => {
   it("sees their account rather than a redirect", async () => {
     mount(new AuthApiContract({ session: user({ displayName: "Jen Ordo" }) }));
 
+    // Sign-out belongs to the resolved frame and to nothing else, so it is
+    // what separates "recognised" from any of the guard's states. The name is
+    // no longer the page's heading — that is "Your account", drawn before the
+    // session resolves — and it appears in the header chip as well as here.
     await waitFor(() =>
-      expect(
-        screen.getByRole("heading", { level: 1, name: "Jen Ordo" }),
-      ).toBeInTheDocument(),
+      expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument(),
     );
+    expect(screen.getAllByText("Jen Ordo").length).toBeGreaterThan(0);
     expect(screen.queryByText(new RegExp(SIGN_IN_MARKER))).toBeNull();
   });
 

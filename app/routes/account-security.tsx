@@ -22,7 +22,7 @@ import { useOutletContext } from "react-router";
 import { ApiError, enrollTotp, verifyTotp } from "~/auth/api";
 import { Banner, SubmitButton, TextField } from "~/components/auth-ui";
 import { QrCode } from "~/components/qr-code";
-import type { AccountContext } from "./account";
+import { accountMeta, type AccountContext } from "./account";
 
 /** "JBSWY3DPEHPK3PXP" reads far better as "JBSW Y3DP EHPK 3PXP". */
 function grouped(sharedKey: string): string {
@@ -35,6 +35,10 @@ function grouped(sharedKey: string): string {
 }
 
 type Phase = "idle" | "starting" | "enrolling" | "verifying" | "done";
+
+export function meta() {
+  return accountMeta("Two-factor authentication");
+}
 
 export default function AccountSecurity() {
   const { user, refresh } = useOutletContext<AccountContext>();
