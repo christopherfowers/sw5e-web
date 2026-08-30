@@ -1,6 +1,42 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
+import type { PluginOption } from "vite";
 import { defineConfig } from "vitest/config";
+
+/**
+ * Makes `vite preview` resolve `/species/wookiee` to the pre-rendered
+ * `species/wookiee/index.html`, the way a static host does.
+ *
+ * Vite's preview server reaches for the SPA fallback as soon as a URL has no
+ * trailing slash, so every content page would answer with the shell instead of
+ * its own pre-rendered markup — invisible to a crawler and impossible to test
+ * honestly. Netlify, Cloudflare Pages, GitHub Pages and S3 website hosting all
+ * do this directory-index lookup before falling back; this makes preview agree
+ * with them, and leaves the SPA fallback in place for paths that really were
+ * not pre-rendered.
+ */
+function serveDirectoryIndexBeforeSpaFallback(): PluginOption {
+  const buildDirectory = path.resolve("build/client");
+
+  return {
+    name: "sw5e-preview-directory-index",
+    configurePreviewServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        const [pathname = "/", query] = (request.url ?? "/").split("?");
+        if (!pathname.endsWith("/") && !path.extname(pathname)) {
+          const candidate = path.join(buildDirectory, pathname, "index.html");
+          if (existsSync(candidate)) {
+            request.url = `${pathname}/index.html${query ? `?${query}` : ""}`;
+          }
+        }
+        next();
+      });
+    },
+  };
+}
 
 // Vitest transforms route modules through Vite's "serve"-mode pipeline, which
 // makes the React Router plugin wrap components with a React Fast Refresh
@@ -26,7 +62,11 @@ import { defineConfig } from "vitest/config";
 const isVitest = process.env.VITEST === "true";
 
 export default defineConfig({
-  plugins: [tailwindcss(), !isVitest && reactRouter()].filter(Boolean),
+  plugins: [
+    tailwindcss(),
+    !isVitest && reactRouter(),
+    serveDirectoryIndexBeforeSpaFallback(),
+  ].filter(Boolean),
   resolve: {
     tsconfigPaths: true,
   },
@@ -34,6 +74,6 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./tests/setup.ts"],
-    include: ["app/**/*.test.{ts,tsx}"],
+    include: ["app/**/*.test.{ts,tsx}", "scripts/**/*.test.mjs"],
   },
 });

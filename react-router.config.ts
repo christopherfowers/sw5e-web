@@ -1,4 +1,39 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+
 import type { Config } from "@react-router/dev/config";
+
+const CONTENT_TYPES = [
+  "species",
+  "archetypes",
+  "backgrounds",
+  "feats",
+  "powers",
+  "maneuvers",
+  "equipment",
+  "monsters",
+] as const;
+
+/**
+ * The dataset this build renders from. `app/data/generated` is the full
+ * archive-derived library and is gitignored; `app/data/fixture` is the small
+ * committed sample that lets a contributor without the archive build the site.
+ * Whichever the app resolves at build time, the prerender list has to match,
+ * so both read the same directories in the same order.
+ */
+function datasetDirectory(): string {
+  const generated = path.resolve("app/data/generated");
+  return existsSync(path.join(generated, "manifest.json"))
+    ? generated
+    : path.resolve("app/data/fixture");
+}
+
+function slugsFor(directory: string, type: string): string[] {
+  const file = path.join(directory, `${type}.summaries.json`);
+  if (!existsSync(file)) return [];
+  const summaries = JSON.parse(readFileSync(file, "utf8")) as { slug: string }[];
+  return summaries.map((summary) => summary.slug);
+}
 
 export default {
   // No runtime Node server. Content pages are prerendered to static HTML for
@@ -6,8 +41,24 @@ export default {
   // the SPA fallback.
   ssr: false,
 
-  // Plan D extends this list with one path per published content item.
+  /**
+   * Every content page is prerendered: the home page, the eight type indexes,
+   * the search page, and one page per item. That is what makes the library
+   * visible to crawlers that do not run JavaScript, and it is also what keeps
+   * the dataset out of the browser — each page ships only its own data,
+   * serialized into its own static HTML.
+   */
   async prerender() {
-    return ["/"];
+    const directory = datasetDirectory();
+    const paths = ["/", "/search"];
+
+    for (const type of CONTENT_TYPES) {
+      paths.push(`/${type}`);
+      for (const slug of slugsFor(directory, type)) {
+        paths.push(`/${type}/${slug}`);
+      }
+    }
+
+    return paths;
   },
 } satisfies Config;
