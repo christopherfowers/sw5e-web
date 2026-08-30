@@ -2010,3 +2010,74 @@ th[aria-sort="descending"] .sort-indicator {
   font-weight: 650;
   color: var(--text-muted);
 }
+
+/* ====================================================== account and sign-in
+ *
+ * The account area is built from the same tokens as everything else â€” the same
+ * surfaces, the same border weights, the same card shapes â€” because it is the
+ * same site. Nothing below introduces a colour, a radius or a spacing value
+ * that the reference pages do not already use.
+ */
+
+/* --- the header control ---
+ *
+ * The three states share a box on purpose. `is-pending` is what the
+ * prerendered HTML carries for every visitor, and the moment the session
+ * resolves it is replaced by a link; if the two were different sizes, the
+ * search field beside them would jump sideways on every page load. See
+ * app/components/account-control.tsx.
+ */
+.account-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  flex-shrink: 0;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.account-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.account-chip.is-pending {
+  border-style: dashed;
+  border-color: var(--border);
+  background: var(--surface);
+  /* No spinner and no shimmer: this sits on every page of the site, and a
+   * permanent animation in the corner of a reference someone is reading at a
+   * table is a distraction that buys nothing. */
+  opacity: 0.5;
+}
+
+.account-avatar {
+  display: block;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 999px;
+  overflow: hidden;
+  container-type: inline-size;
+  flex-shrink: 0;
+}
+
+.account-chip-name {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 48rem) {
+  .account-chip-name {
+    display: none;
+  }
+}

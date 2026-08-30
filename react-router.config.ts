@@ -15,6 +15,33 @@ const CONTENT_TYPES = [
 ] as const;
 
 /**
+ * The account routes, prerendered like everything else.
+ *
+ * It would be tempting to leave these out and let the SPA fallback serve them,
+ * since none of them has any content to prerender. That would be a bug: the
+ * fallback is wired to nginx's `error_page 404`, so every one of these
+ * addresses would answer with an HTTP 404 that happens to render correctly —
+ * fine in a browser, wrong to anything reading the status line, and wrong in a
+ * shared link.
+ *
+ * What gets written to disk for each is the signed-out skeleton: the account
+ * area has no `loader` anywhere in it, so there is nothing identity-shaped for
+ * the build to bake in. See `app/routes/account.tsx`.
+ *
+ * `.github/workflows/ci.yml` asserts the total number of prerendered routes
+ * against the canonical content set, so this list is part of that arithmetic.
+ */
+const ACCOUNT_PATHS = [
+  "/register",
+  "/verify-email",
+  "/sign-in",
+  "/account",
+  "/account/passkeys",
+  "/account/security",
+  "/account/contributions",
+] as const;
+
+/**
  * The dataset this build renders from. `app/data/generated` is the full
  * archive-derived library and is gitignored; `app/data/fixture` is the small
  * committed sample that lets a contributor without the archive build the site.
@@ -50,7 +77,7 @@ export default {
    */
   async prerender() {
     const directory = datasetDirectory();
-    const paths = ["/", "/search", "/sources"];
+    const paths = ["/", "/search", "/sources", ...ACCOUNT_PATHS];
 
     // Kept in step with SOURCE_META in app/content/source-meta.ts. A source
     // page is a static page over the whole dataset, so it costs four routes

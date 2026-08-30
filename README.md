@@ -103,7 +103,9 @@ SPA fallback.
 
 The prerender path list lives in `react-router.config.ts` and is derived from
 the dataset: the home page, the search page, one index per content type, and one
-page per item.
+page per item. Seven fixed paths join them for the account area — those carry no
+data at all, only a signed-out skeleton, and the reasoning is in
+[Accounts](#accounts).
 
 Because every content route is prerendered, its `loader` runs only at build time
 (`app/content/dataset.server.ts`). A page therefore ships only its own data,
@@ -111,15 +113,180 @@ embedded in its own HTML, rather than the whole library. The one exception is
 search, which needs the whole corpus in the browser and so fetches a compact
 index on first use.
 
-With the canonical content that is **132 prerendered routes in about 10
-seconds**; with the legacy archive's full library it is 1,835 routes in about
-3m20s on a warm cache, and with the committed fixture 47 routes.
+With the canonical content that is **139 prerendered routes in about 10
+seconds**; with the legacy archive's full library it is 1,842 routes in about
+3m20s on a warm cache, and with the committed fixture 54 routes. Seven of each
+of those totals are the account pages, which do not vary with the dataset.
 
 Deployment note: the static host must resolve `/species/wookiee` to
 `species/wookiee/index.html`, which Netlify, Cloudflare Pages, GitHub Pages and
 S3 website hosting all do. `vite preview` does not, so this repository adds a
 small preview middleware (`vite.config.ts`) to make local preview behave the
 same way.
+
+## Accounts
+
+The reference is public and stays public. An account exists so that a person
+can hold a profile and, for contributors, upload base game content; nothing
+under `/species`, `/powers`, `/monsters` or any other content route is gated,
+and no route protection touches them.
+
+Accounts are **passwordless**. Registration takes an email address and a
+display name, verification arrives as a link, and the credential is a
+**passkey** — WebAuthn, backed by the device's own fingerprint, face or PIN.
+There is nothing to remember, nothing to reuse across sites, and nothing to
+phish. An account may add a **TOTP second factor** on top.
+
+| Route | What it is |
+|---|---|
+| `/register` | Email address and display name; triggers verification |
+| `/verify-email` | The other end of the emailed link |
+| `/sign-in` | Passkey sign-in, plus the TOTP challenge when one is set |
+| `/account` | Profile, role, and how well protected the account is |
+| `/account/passkeys` | Add and revoke credentials |
+| `/account/security` | Enrol an authenticator app |
+| `/account/contributions` | Contributor-only |
+
+### Roles
+
+Three, each including everything below it — `app/auth/roles.ts` is the only
+place that decides:
+
+| Role | May |
+|---|---|
+| Community | Read everything, and manage their own account. The default. |
+| Contributor | …and upload or correct base game content. |
+| Admin | …and manage other accounts and their roles. |
+
+### Authenticated state on a site with no server
+
+This is the part worth reading before changing anything in `app/auth`.
+
+Every page here is prerendered to static HTML at build time and served by
+nginx. There is no runtime Node process, no per-request rendering, and no
+session available to a `loader` — a `loader` runs **once, on a build machine,
+months before anybody visits**, and whatever it returns is written into a file
+that every visitor is then served and every cache in between is free to keep.
+
+So identity is never part of the build. Three rules follow.
+
+**No route in the account area exports a `loader` or an `action`.**
+`app/auth/prerender-safety.test.ts` fails the build if one appears, because the
+failure it would cause is invisible: the page still renders, the flows still
+work in a browser, and the leak is in a cache.
+
+**The session is resolved once per document load, in the browser, by
+`GET /api/auth/me`.** `AuthProvider` (`app/auth/session.tsx`) sits in
+`app/root.tsx` above both the header and the outlet, so the account control and
+the page it frames can never disagree about who is signed in.
+
+**Session state is a four-state machine, not a nullable user.**
+
+```
+loading ──► authenticated
+        ├─► anonymous
+        └─► unavailable
+```
+
+`loading` is the only state the prerendered HTML and the first client render
+are allowed to be in — that is what makes the markup React hydrates onto the
+markup the build produced. It is also what prevents a flash of the wrong state:
+modelling this as `user | null` would make "not loaded yet" and "signed out"
+the same value, so every signed-in reader would see **Sign in** in the header
+for the length of a round trip, on every page they opened. The header instead
+draws a neutral placeholder of the same width, which claims nothing and moves
+nothing when the answer arrives.
+
+`unavailable` is kept separate from `anonymous` for the same reason at a larger
+scale: a failed request is not a sign-out, and treating it as one would throw a
+signed-in reader out of their account over a dropped connection.
+
+The account routes are still prerendered, and must be. What they prerender is
+the signed-out skeleton — which is exactly what a static file shared by every
+visitor is allowed to contain. Leaving them out of the prerender list would
+send them through nginx's SPA fallback, which is wired to `error_page 404`: the
+page would render correctly in a browser while answering **404** to a shared
+link, a crawler or a monitor. `e2e/account-prerender.spec.ts` asserts both
+halves — that the files exist, and that they hold nobody's identity.
+
+Route protection is therefore a **usability** boundary, not a security one.
+`/account` is a static file nginx hands to anyone who asks; `app/auth/guard.tsx`
+decides what it draws. Everything behind it is empty until the API answers, so
+what a determined visitor gets by bypassing the check is the same skeleton the
+crawler gets. **The API authorises every request itself**, and has to: this code
+runs on hardware the reader controls.
+
+### Talking to the API
+
+Cookie-based, and every part of that has a consequence:
+
+- The session cookie is `HttpOnly`, so JavaScript cannot read it and this code
+  never tries. `GET /api/auth/me` is the only way the client learns who it is.
+- Every request is same-origin and relative. The API is served under `/api` by
+  the same reverse proxy, which is what lets the Content-Security-Policy keep
+  `connect-src 'self'` with no host named — CI fails the build if an external
+  origin ever appears in it.
+- `credentials: "same-origin"`, not `"include"`. The two behave alike here and
+  fail differently: `"include"` would keep sending the session cookie if a path
+  ever became absolute.
+- CSRF is a double-submit pair: the server sets a readable `sw5e_csrf` cookie
+  alongside the HttpOnly session, and every state-changing request echoes it in
+  `X-CSRF-Token`. An attacker on another origin can make a browser *send*
+  cookies; it cannot *read* them, so it cannot produce the header.
+
+`docker/default.conf` allows `publickey-credentials-create=(self)` and
+`publickey-credentials-get=(self)` in `Permissions-Policy`, and CI asserts it.
+Everything else stays denied. This matters more than it looks: the policy
+previously disabled `publickey-credentials-get` outright, which would have
+broken every sign-in **in production only** — the browser refuses the ceremony
+with the same opaque `NotAllowedError` a reader gets for dismissing the prompt,
+so it reads as though everyone cancelled, and nothing served without that
+header can reproduce it.
+
+### The API does not exist yet
+
+It is being built to a fixed contract in the sibling repository. Until it
+lands, both test suites drive `tests/auth-api-contract.ts` — one object,
+wrapped as a `fetch` implementation for Vitest and as a `page.route` handler
+for Playwright, so the two cannot drift into testing different servers. It is
+mocked at the **network** boundary rather than over `app/auth/api.ts`, because
+a mock one layer higher would let the credentials mode, the CSRF echo and the
+error decoding all go untested.
+
+The fixture is strict on purpose: it rejects a state-changing request with no
+CSRF header, answers 401 rather than an empty 200 for an unauthenticated
+`/me`, and refuses any WebAuthn assertion whose challenge it did not issue.
+Replacing it with the real service means deleting two adapters.
+
+Where the contract as specified could not answer a question this UI had to ask,
+the gap is marked `CONTRACT GAP` in `app/auth/types.ts` rather than quietly
+invented. Four of them: verification has to establish the session (there is no
+other way for a brand-new account to reach passkey enrolment), `/me` has to
+return MFA state and the credential list, credentials need a revocation
+endpoint, and TOTP enrolment needs to return recovery codes.
+
+### Passkeys in the real world
+
+`app/auth/webauthn.ts` exists mostly to translate failures. WebAuthn reports
+almost everything as `NotAllowedError` — a dismissed prompt, a timeout, and no
+authenticator able to answer are one indistinguishable exception with an empty
+message, because saying which would let a hostile page probe what hardware
+someone owns. The module narrows that with what it legitimately knows (is the
+API present, is the origin secure, is there a platform authenticator) and, where
+ambiguity genuinely remains, says both possibilities plainly rather than
+accusing a reader of cancelling something they did not.
+
+Handled explicitly, and covered by tests: no WebAuthn at all; no platform
+authenticator (warned about, never disabled — a security key or a phone still
+answers); dismissed or timed-out prompt; a device that already holds a passkey
+for the account; an authenticator with no user verification; an insecure
+origin; and the API being unreachable, which must never be reported as "your
+passkey was rejected".
+
+`e2e/account.spec.ts` drives Chrome's virtual authenticator over the DevTools
+protocol rather than stubbing `navigator.credentials`, so a credential is
+really created, really signed, and really verified against the challenge that
+issued it.
 
 ## Container image
 
@@ -154,8 +321,9 @@ docker run --rm -p 8080:8080 ghcr.io/christopherfowers/sw5e-web:latest
 The image renders the canonical content, not the committed fixture. A build
 stage pulls `ghcr.io/christopherfowers/sw5e-database`, which carries the
 canonical documents at `/opt/sw5e/content`, and the generator runs over them
-before the prerender — 132 routes, matching what the API serves. The build
-fails rather than falling back if that content does not arrive.
+before the prerender — 139 routes: the 132 content pages the API serves, plus
+the seven account pages, which are the same in every build. The build fails
+rather than falling back if that content does not arrive.
 
 That makes this image's build depend on another repository's published one.
 `SW5E_CONTENT_TAG` is how a build pins the content revision: it defaults to
@@ -232,6 +400,16 @@ following a result with Enter, escaping the results panel without a trap,
 sorting a table from the keyboard, and focus visibility while tabbing a content
 page. Unit tests cover heading order on item pages and `aria-sort` on sortable
 columns.
+
+The account area adds its own coverage (`e2e/account.spec.ts`, and the unit
+tests beside each route): navigating the account sections and following one
+with Enter alone, a focus ring on every control while tabbing through
+credential management, focus moving to the new step at each stage of sign-in
+and enrolment rather than being dropped on the body, each field's error
+reachable from the field through `aria-describedby`, error messages announced
+as `role="alert"` and confirmations as `role="status"`, and the TOTP secret
+available as selectable text — a QR code cannot be read aloud, focused, or
+scanned by the phone that is displaying it.
 
 What it still does not verify: there is no automated axe scan, so contrast,
 ARIA correctness and landmark structure across every page remain reviewed by

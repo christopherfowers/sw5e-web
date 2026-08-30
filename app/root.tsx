@@ -8,6 +8,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import { AuthProvider } from "./auth/session";
 import {
   SiteFooter,
   SiteHeader,
@@ -34,12 +35,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <SkipLink />
-        <SiteHeader />
-        <main id="main" tabIndex={-1}>
-          {children}
-        </main>
-        <SiteFooter />
+        {/*
+          The session is resolved once per document load, here, rather than by
+          each page that happens to care. It wraps the header as well as the
+          outlet because the account control in the header needs the same
+          answer every page does, and two consumers must never be able to
+          disagree about who is signed in.
+
+          On this site that provider does nothing at all during the build: it
+          starts in a `loading` state and only asks the server who the reader
+          is after hydration. That is what keeps identity out of the ~130
+          static HTML files nginx serves to everybody — see
+          app/auth/session.tsx.
+        */}
+        <AuthProvider>
+          <SkipLink />
+          <SiteHeader />
+          <main id="main" tabIndex={-1}>
+            {children}
+          </main>
+          <SiteFooter />
+        </AuthProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
