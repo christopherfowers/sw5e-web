@@ -48,7 +48,12 @@ test.describe("route protection", () => {
 
     await page.goto("/account");
 
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Jen Ordo");
+    // Sign-out is drawn only once the session has resolved to an account, so
+    // it separates "recognised" from the guard's states. The heading is not:
+    // it reads "Your account" in every one of them, including the state the
+    // static file is frozen in.
+    await expect(page.getByRole("button", { name: /sign out/i })).toBeVisible();
+    await expect(page.locator(".account-identity-name")).toHaveText("Jen Ordo");
     await expect(page).toHaveURL(/\/account$/);
   });
 
@@ -114,7 +119,7 @@ test.describe("passkeys, end to end", () => {
     await page.getByRole("button", { name: /continue with a passkey/i }).click();
 
     await expect(page).toHaveURL(/\/account$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Jen Ordo");
+    await expect(page.locator(".account-identity-name")).toHaveText("Jen Ordo");
     // The assertion really was verified: the fixture rejects any challenge it
     // did not issue, and consumes the one it did.
     expect(

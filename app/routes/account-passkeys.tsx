@@ -38,7 +38,7 @@ import {
   WebAuthnError,
 } from "~/auth/webauthn";
 import { Banner, SubmitButton, TextField } from "~/components/auth-ui";
-import type { AccountContext } from "./account";
+import { accountMeta, type AccountContext } from "./account";
 
 /** Reads as a date rather than as a timestamp, and never as "Invalid Date". */
 function readableDate(value: string): string {
@@ -49,6 +49,10 @@ function readableDate(value: string): string {
     month: "short",
     day: "numeric",
   });
+}
+
+export function meta() {
+  return accountMeta("Passkeys");
 }
 
 export default function AccountPasskeys() {

@@ -214,12 +214,34 @@
 
 /* --- the account area --- */
 
-.account-head {
+/* The guard's own states are drawn inside this wrapper, under the page
+ * heading, so they must not lay out as pages in their own right and must not
+ * add the gutter a second time. */
+.account-page > .page,
+.account-page > .auth-pending {
+  max-width: none;
+  padding-inline: 0;
+}
+
+/* Who the reader is, below the heading that says what the page is. Separate
+ * blocks because they resolve at different moments: the heading is in the
+ * prerendered file and this is not. */
+.account-identity {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-4);
   align-items: flex-start;
   justify-content: space-between;
+  margin-top: var(--space-4);
+}
+
+/* Was an h1 until the heading above it became the page's own. Same weight and
+ * tracking as one, a step down in size. */
+.account-identity-name {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .account-layout {

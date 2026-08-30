@@ -37,13 +37,37 @@ import type { CurrentUser } from "~/auth/types";
 
 import "~/styles/account.css";
 
-export function meta() {
+/**
+ * The document title for one section of the account area.
+ *
+ * Every account address used to answer "Your account — Star Wars 5e", because
+ * only this module exported `meta` and the sections beneath it inherited it.
+ * Three tabs, three entries in a window list and three history entries were
+ * therefore indistinguishable — to a screen-reader user moving between
+ * windows, and to anybody reading a tab strip. Each section names itself
+ * first, then the area, then the site, which is the order the rest of the site
+ * already uses.
+ *
+ * `robots` rides along rather than being left to the caller. React Router uses
+ * the descriptors of the deepest matching route and discards the ancestors'
+ * entirely, so a section that exported a title alone would silently drop the
+ * `noindex` this area depends on.
+ */
+export function accountMeta(section?: string) {
   return [
-    { title: "Your account — Star Wars 5e" },
+    {
+      title: section
+        ? `${section} — Your account — Star Wars 5e`
+        : "Your account — Star Wars 5e",
+    },
     // An account page has nothing to offer a search engine, and every one of
     // them indexed is another target handed to credential-stuffing traffic.
     { name: "robots", content: "noindex" },
   ];
+}
+
+export function meta() {
+  return accountMeta();
 }
 
 /** What the account pages receive through the outlet. */
@@ -73,11 +97,17 @@ function AccountFrame({ user }: { user: CurrentUser }) {
   const context: AccountContext = { user, refresh: session.refresh };
 
   return (
-    <div className="page account-page">
-      <div className="page-head account-head">
+    <>
+      {/*
+        Who the reader is, rather than what the page is. The page says what it
+        is in the heading above, which is drawn whether or not any of this has
+        resolved; none of it may be, so the display name is a paragraph here
+        rather than the heading it used to be.
+      */}
+      <div className="account-identity">
         <div>
           <p className="page-eyebrow">{ROLE_META[session.role].label} account</p>
-          <h1>{user.displayName}</h1>
+          <p className="account-identity-name">{user.displayName}</p>
           <p className="lede">{user.email}</p>
         </div>
         <button type="button" className="button" onClick={() => void signOut()}>
@@ -120,7 +150,7 @@ function AccountFrame({ user }: { user: CurrentUser }) {
           <Outlet context={context} />
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -129,5 +159,30 @@ function navClass({ isActive }: { isActive: boolean }): string {
 }
 
 export default function Account() {
-  return <RequireSession>{(user) => <AccountFrame user={user} />}</RequireSession>;
+  return (
+    <div className="page account-page">
+      {/*
+        The heading is drawn above the guard, so it is in the markup in every
+        state the area can be in — including the one the prerendered file is
+        frozen in.
+
+        This page is a static file, served byte for byte to everybody, and its
+        session is always `loading` at the moment it is written: identity is
+        resolved after hydration and must never be baked in. A heading that
+        waited for that answer would be absent from the file nginx serves,
+        leaving a `<main>` landmark with no heading structure at all for every
+        reader before hydration and every reader without JavaScript — and it
+        would differ between the prerendered markup and the first client
+        render, which is a hydration mismatch.
+
+        So the heading says the one thing that is true in all four states, and
+        says it unconditionally. What the reader may *see* still depends
+        entirely on the session; what the page *is* does not.
+      */}
+      <div className="page-head">
+        <h1>Your account</h1>
+      </div>
+      <RequireSession>{(user) => <AccountFrame user={user} />}</RequireSession>
+    </div>
+  );
 }

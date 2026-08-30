@@ -18,7 +18,11 @@ import { useOutletContext } from "react-router";
 
 import { RequireSession } from "~/auth/guard";
 import { ROLE_META } from "~/auth/roles";
-import type { AccountContext } from "./account";
+import { accountMeta, type AccountContext } from "./account";
+
+export function meta() {
+  return accountMeta("Contributions");
+}
 
 export default function AccountContributions() {
   // Read here rather than inside the guard so this page fails to compile if it
