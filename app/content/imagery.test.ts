@@ -16,9 +16,16 @@ import {
  * dropped, or emitted at a size the renderer cannot read, and a stub would be
  * blind to every one of those.
  */
+
+function srcSetWidths(srcSet: string): number[] {
+  return srcSet
+    .split(", ")
+    .map((candidate) => Number(candidate.split(" ")[1].replace("w", "")));
+}
+
 describe("the image set", () => {
   it("carries a portrait for the great majority of species", () => {
-    // 133 of 141 species have art in the archive. A build that has lost the
+    // 134 of 141 species have art in the archive. A build that has lost the
     // asset directory would resolve zero and still render — silently going
     // back to the wall of text this work replaced.
     expect(speciesPortraitCount()).toBeGreaterThan(100);
@@ -34,41 +41,13 @@ describe("the image set", () => {
   });
 
   /**
-   * A guessed path would produce a broken-image icon on eight species pages.
+   * A guessed path would produce a broken-image icon on seven species pages.
    * Returning null is what lets every caller draw a fallback instead.
    */
   it("returns nothing at all for a species with no art", () => {
     expect(speciesPortrait("quermian")).toBeNull();
     expect(speciesThumbnail("quermian")).toBeNull();
     expect(speciesPortrait("not-a-species")).toBeNull();
-  });
-
-  it("offers every rendered width in the srcset, smallest first", () => {
-    const portrait = speciesPortrait("wookiee")!;
-    const widths = portrait.srcSet
-      .split(", ")
-      .map((candidate) => Number(candidate.split(" ")[1].replace("w", "")));
-
-    expect(widths.length).toBeGreaterThan(1);
-    expect([...widths].sort((a, b) => a - b)).toEqual(widths);
-    expect(Math.max(...widths)).toBe(portrait.width);
-  });
-
-  /**
-   * The species index shows 141 thumbnails. If a high-density screen were
-   * allowed to pull the full-size portrait for each one, that page would cost
-   * several megabytes instead of a few hundred kilobytes.
-   */
-  it("never offers a gallery thumbnail wider than the gallery needs", () => {
-    // Aleena's portrait is 310px wide, comfortably past the gallery cap, so
-    // this is a species where capping actually has to do something.
-    const thumbnail = speciesThumbnail("aleena")!;
-    const widths = thumbnail.srcSet
-      .split(", ")
-      .map((candidate) => Number(candidate.split(" ")[1].replace("w", "")));
-
-    expect(Math.max(...widths)).toBeLessThanOrEqual(GALLERY_THUMB_MAX);
-    expect(thumbnail.width).toBeLessThan(speciesPortrait("aleena")!.width);
   });
 
   it("resolves class art by class name, whatever its case", () => {
@@ -91,5 +70,73 @@ describe("the image set", () => {
     expect(brandImage("logo")).not.toBeNull();
     expect(brandImage("hero-light")).not.toBeNull();
     expect(brandImage("hero-dark")).not.toBeNull();
+  });
+});
+
+describe("what a srcset offers", () => {
+  it("lists its widths smallest first, with the widest as the fallback src", () => {
+    for (const slug of ["aleena", "wookiee", "abyssin"]) {
+      const portrait = speciesPortrait(slug)!;
+      const widths = srcSetWidths(portrait.srcSet);
+
+      expect([...widths].sort((left, right) => left - right), slug).toEqual(widths);
+      expect(Math.max(...widths), slug).toBe(portrait.width);
+    }
+  });
+
+  /**
+   * The archive's art is small and uneven — portraits run from 112 pixels wide
+   * to over 360 — so sizes are derived from each source rather than taken off
+   * a fixed ladder. A wide source has room for a candidate a low-density
+   * screen can use.
+   */
+  it("gives a wide portrait a smaller candidate a low-density screen can take", () => {
+    const widths = srcSetWidths(speciesPortrait("aleena")!.srcSet);
+
+    expect(widths.length).toBeGreaterThan(1);
+    expect(Math.min(...widths)).toBeLessThan(Math.max(...widths) / 1.5);
+  });
+
+  /**
+   * A narrow source has no such room, because the detail figure is displayed
+   * at around 224 CSS pixels. A 98-pixel copy of a 171-pixel portrait is a
+   * file no browser would ever choose and one this repository would carry
+   * forever.
+   */
+  it("gives a narrow portrait one file rather than an unusable copy", () => {
+    const widths = srcSetWidths(speciesPortrait("abyssin")!.srcSet);
+
+    expect(widths).toHaveLength(1);
+    expect(widths[0]).toBeLessThan(224);
+  });
+
+  /**
+   * Thumbnails are the opposite case: they are shown at about 190 pixels, so
+   * nearly every source is wide enough to be worth offering twice — and 141 of
+   * them are on one page, which is where halving a candidate actually pays.
+   */
+  it("gives a gallery thumbnail two candidates wherever the source allows", () => {
+    const single = ["aleena", "wookiee", "abyssin"].filter(
+      (slug) => srcSetWidths(speciesThumbnail(slug)!.srcSet).length < 2,
+    );
+
+    expect(single).toEqual([]);
+  });
+
+  /**
+   * Thumbnails and portraits are separate sets in separate directories, which
+   * is what makes it structurally impossible for the species index to reach
+   * for a full-size portrait — 141 of them at once is how that page would
+   * become several megabytes.
+   */
+  it("never offers a gallery thumbnail wider than the gallery needs", () => {
+    // Aleena's portrait is 310 pixels wide, comfortably past the gallery
+    // ceiling, so this is a species where the separation has to do something.
+    const thumbnail = speciesThumbnail("aleena")!;
+
+    expect(Math.max(...srcSetWidths(thumbnail.srcSet))).toBeLessThanOrEqual(
+      GALLERY_THUMB_MAX,
+    );
+    expect(thumbnail.width).toBeLessThan(speciesPortrait("aleena")!.width);
   });
 });

@@ -27,7 +27,7 @@ export function SiteHeader() {
   // The logo sits inside the link that already says "Star Wars 5e" in text, so
   // it is decorative here: giving it an alt would make a screen reader read
   // the site's name twice on every page.
-  const logo = brandImage("logo", 240);
+  const logo = brandImage("logo");
 
   return (
     <header className="site-header">

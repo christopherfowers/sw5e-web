@@ -19,6 +19,22 @@ const SPECIES_FILES = import.meta.glob("../assets/species/*.webp", {
   import: "default",
 }) as Record<string, string>;
 
+/*
+ * Gallery thumbnails are a separate set, not small copies of the portraits.
+ * They are flattened onto an opaque plate, and that one difference is worth
+ * about 40% of the species index's weight: these cutouts have soft,
+ * complicated edges — fur, spines, tendrils — and an alpha channel that
+ * detailed costs more to encode than the picture itself does. At 190px on a
+ * tile with a solid ground behind it the transparency buys nothing. On the
+ * detail page, where the portrait sits in a tinted frame, it buys the whole
+ * effect and costs one image per page.
+ */
+const SPECIES_THUMB_FILES = import.meta.glob("../assets/species-thumbs/*.webp", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
+
 const CLASS_FILES = import.meta.glob("../assets/classes/*.webp", {
   eager: true,
   query: "?url",
@@ -73,6 +89,7 @@ function indexVariants(files: Record<string, string>): Map<string, Variant[]> {
 }
 
 const SPECIES = indexVariants(SPECIES_FILES);
+const SPECIES_THUMBS = indexVariants(SPECIES_THUMB_FILES);
 const CLASSES = indexVariants(CLASS_FILES);
 const SOURCES = indexVariants(SOURCE_FILES);
 const BRAND = indexVariants(BRAND_FILES);
@@ -80,42 +97,35 @@ const BRAND = indexVariants(BRAND_FILES);
 /**
  * Turns a set of variants into an `<img>`'s attributes.
  *
- * `maxWidth` caps which variants are offered. A 112px gallery thumbnail should
- * never be allowed to pull the 330px portrait just because a device has a
- * high pixel ratio, so the gallery passes a cap and the detail page does not.
- * The largest offered variant is the `src`, which is what a browser too old
- * for `srcset` gets, and its dimensions are what reserve the layout box — the
+ * The largest variant is the `src`, which is what a browser too old for
+ * `srcset` gets, and its dimensions are what reserve the layout box — the
  * aspect ratio is identical across variants, so any of them would do.
  */
-function toImageSource(
-  variants: Variant[] | undefined,
-  maxWidth?: number,
-): ImageSource | null {
+function toImageSource(variants: Variant[] | undefined): ImageSource | null {
   if (!variants || variants.length === 0) return null;
-  const offered =
-    maxWidth === undefined
-      ? variants
-      : (variants.filter((variant) => variant.width <= maxWidth).length > 0
-          ? variants.filter((variant) => variant.width <= maxWidth)
-          : [variants[0]]);
-  const largest = offered[offered.length - 1];
+  const largest = variants[variants.length - 1];
   return {
     src: largest.url,
-    srcSet: offered.map((variant) => `${variant.url} ${variant.width}w`).join(", "),
+    srcSet: variants.map((variant) => `${variant.url} ${variant.width}w`).join(", "),
     width: largest.width,
     height: largest.height,
   };
 }
 
-/** The widest thumbnail a species gallery tile is ever allowed to request. */
-export const GALLERY_THUMB_MAX = 240;
+/**
+ * The widest gallery thumbnail the generator emits. A tile is around 190 CSS
+ * pixels; nothing on the species index should ever be able to reach for the
+ * full-size portrait, and keeping the two sets in separate directories is what
+ * makes that structural rather than a rule someone has to remember.
+ */
+export const GALLERY_THUMB_MAX = 176;
 
 export function speciesPortrait(slug: string): ImageSource | null {
   return toImageSource(SPECIES.get(slug));
 }
 
 export function speciesThumbnail(slug: string): ImageSource | null {
-  return toImageSource(SPECIES.get(slug), GALLERY_THUMB_MAX);
+  return toImageSource(SPECIES_THUMBS.get(slug));
 }
 
 export function hasSpeciesPortrait(slug: string): boolean {
@@ -142,6 +152,6 @@ export function sourceCover(code: string | null): ImageSource | null {
   return toImageSource(SOURCES.get(code.toLowerCase()));
 }
 
-export function brandImage(key: string, maxWidth?: number): ImageSource | null {
-  return toImageSource(BRAND.get(key), maxWidth);
+export function brandImage(key: string): ImageSource | null {
+  return toImageSource(BRAND.get(key));
 }

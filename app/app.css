@@ -384,11 +384,37 @@ main:focus {
   }
 }
 
+/* Nine destinations will not fit across a phone, so the nav scrolls sideways.
+ * What it must never do is look broken while doing it: a raw scrollbar under
+ * the bar and a word sliced in half reads as a layout bug rather than as
+ * "there is more this way". So the scrollbar is hidden and the last inch of
+ * the strip fades out, which is the affordance people already recognise. The
+ * fade sits over empty space and is invisible when everything fits. */
 .site-nav {
   border-top: 1px solid var(--border);
   overflow-x: auto;
-  scrollbar-width: thin;
   overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-padding-inline: var(--space-4);
+  mask-image: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(100% - 2.5rem),
+    transparent 100%
+  );
+}
+
+.site-nav::-webkit-scrollbar {
+  display: none;
+}
+
+/* Once there is room for the whole strip, the fade has nothing to do and the
+ * mask is dropped so it cannot clip a focus ring on the last item. */
+@media (min-width: 64rem) {
+  .site-nav {
+    mask-image: none;
+  }
 }
 
 .site-nav ul {
@@ -404,7 +430,7 @@ main:focus {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.5rem 0.625rem;
+  padding: 0.5rem 0.5625rem;
   font-size: 0.875rem;
   font-weight: 550;
   color: var(--text-muted);
@@ -413,10 +439,21 @@ main:focus {
   border-bottom: 2px solid transparent;
 }
 
+/* The marks are a nicety, not a label — every one of them sits beside its own
+ * word. Below the width where all nine destinations fit they are the first
+ * thing to go, which buys back about 200 pixels and is the difference between
+ * a strip that fits and one that has to be scrolled. */
 .site-nav-link .type-icon {
+  display: none;
   width: 1rem;
   height: 1rem;
   opacity: 0.7;
+}
+
+@media (min-width: 64rem) {
+  .site-nav-link .type-icon {
+    display: block;
+  }
 }
 
 .site-nav-link:hover {

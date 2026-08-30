@@ -51,14 +51,36 @@ const MAGICK = process.env.MAGICK ?? "magick";
 const OUT_ROOT = "app/assets";
 
 /**
- * Widths emitted per image role. The renderer builds a `srcset` from whatever
- * actually exists, so a source narrower than a target simply yields fewer
- * candidates rather than a blurry upscale.
+ * What each image role is rendered at.
+ *
+ * `max` is the widest file this role ever needs; `min` is the narrowest one
+ * that could still be chosen by a real layout. The ladder between them steps
+ * down by `RATIO`, so the sizes are proportional to each source rather than
+ * pulled off a fixed list.
+ *
+ * That distinction matters here because the archive's art is small and wildly
+ * uneven: portraits run from 112 to well over 360 pixels wide. Against a fixed
+ * ladder, a 310px source emits a 224 and a 310 — nearly the same picture
+ * twice — while a 171px source emits nothing but itself. Against a
+ * proportional one, the wide source gets a candidate a low-density screen can
+ * actually use and the narrow source correctly emits a single file, because
+ * anything smaller would be below the size the layout displays it at and could
+ * never be chosen.
+ *
+ * Nothing is ever upscaled, in either direction: the top of every ladder is
+ * `min(max, source width)`.
  */
+const RATIO = 1.75;
+
 const RECIPES = {
-  species: { widths: [360], quality: 70, alphaQuality: 78, trim: true },
+  species: { max: 360, min: 150, quality: 70, alphaQuality: 78, trim: true },
   speciesThumb: {
-    widths: [112, 192],
+    // A tile is about 190 CSS pixels on a desktop and about 165 on a phone.
+    // 176 is deliberately just under that: the difference is invisible at
+    // thumbnail size, and multiplied by the ~90 tiles a desktop browser
+    // speculatively fetches it is worth about 80 KB on the page.
+    max: 176,
+    min: 96,
     quality: 62,
     trim: true,
     // The tile's ground, baked in. It reads as a plate the portrait is
@@ -66,10 +88,10 @@ const RECIPES = {
     // tile below it carries the theme's own surface.
     flatten: "#131b26",
   },
-  classes: { widths: [180, 360], quality: 72, alphaQuality: 80, trim: true },
-  sources: { widths: [176, 352], quality: 74, alphaQuality: 100, trim: false },
-  brand: { widths: [240, 480], quality: 82, alphaQuality: 100, trim: true },
-  hero: { widths: [960, 1600], quality: 62, alphaQuality: 100, trim: false },
+  classes: { max: 360, min: 150, quality: 72, alphaQuality: 80, trim: true },
+  sources: { max: 352, min: 160, quality: 74, alphaQuality: 100, trim: false },
+  brand: { max: 480, min: 200, quality: 82, alphaQuality: 100, trim: true },
+  hero: { max: 1600, min: 900, quality: 62, alphaQuality: 100, trim: false },
 };
 
 /**
@@ -186,18 +208,33 @@ function encode(source, outDir, stem, width, recipe) {
 /**
  * Renders every size for one source image. Returns the emitted file names.
  */
+/**
+ * The ladder of widths for one source: its own width capped at the role's
+ * maximum, then each step down by RATIO for as long as the result is still a
+ * size the layout could choose. A source too small for even one step down
+ * emits a single file, which is the right answer — a narrower copy of a
+ * 120px portrait is a file no browser would ever pick.
+ */
+function ladder(naturalWidth, recipe) {
+  const widths = [];
+  for (
+    let width = Math.min(naturalWidth, recipe.max);
+    width >= recipe.min;
+    width /= RATIO
+  ) {
+    widths.push(Math.round(width));
+  }
+  if (widths.length === 0) widths.push(Math.min(naturalWidth, recipe.max));
+  return [...new Set(widths)].sort((left, right) => left - right);
+}
+
 async function renderVariants(source, outDir, stem, recipeName) {
   const recipe = RECIPES[recipeName];
   const natural = measure(source, recipe.trim);
-
-  // Never upscale: keep the targets narrower than the source, and add the
-  // source's own width when it is narrower than every target so that at least
-  // one full-fidelity file exists.
-  const targets = recipe.widths.filter((width) => width < natural.width);
-  if (targets.length < recipe.widths.length) targets.push(natural.width);
+  const targets = ladder(natural.width, recipe);
 
   const emitted = [];
-  for (const width of [...new Set(targets)].sort((a, b) => a - b)) {
+  for (const width of targets) {
     const { name, temporary } = encode(source, outDir, stem, width, recipe);
     await rm(temporary, { force: true });
     emitted.push(name);

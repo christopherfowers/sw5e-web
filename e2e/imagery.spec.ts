@@ -20,7 +20,7 @@ const THUMBNAIL_BUDGET = 40 * 1024;
 const SPECIES_INDEX_BUDGET = 1024 * 1024;
 
 /** The widest variant the gallery is allowed to ask for. */
-const GALLERY_THUMB_MAX = 240;
+const GALLERY_THUMB_MAX = 176;
 
 test.describe("pictures in the pre-rendered HTML", () => {
   test("a species page ships its portrait in the served document", async ({
@@ -34,7 +34,9 @@ test.describe("pictures in the pre-rendered HTML", () => {
         "appears after hydration is invisible to a crawler and to a reader " +
         "whose JavaScript has not arrived yet",
     ).toMatch(/<img[^>]+alt="Illustration of the Abyssin species"/);
-    expect(html).toMatch(/<img[^>]+srcset="[^"]+\d+w/);
+    // React serialises the prop as `srcSet`; HTML attribute names are
+    // case-insensitive, so the assertion has to be too.
+    expect(html).toMatch(/<img[^>]+srcset="[^"]+\d+w/i);
     expect(html).toMatch(/<img[^>]+width="\d+"[^>]*height="\d+"/);
   });
 
@@ -60,7 +62,9 @@ test.describe("pictures in the pre-rendered HTML", () => {
   test("a source page ships its cover art", async ({ request }) => {
     const html = await (await request.get("/sources/phb")).text();
 
-    expect(html).toMatch(/<img[^>]+alt="Cover of Player's Handbook"/);
+    // The apostrophe arrives HTML-escaped, which is correct and easy to
+    // write a regex that quietly never matches.
+    expect(html).toMatch(/<img[^>]+alt="Cover of Player(?:&#x27;|')s Handbook"/);
   });
 });
 
@@ -94,24 +98,31 @@ test.describe("what a species index actually costs", () => {
     }
   });
 
-  test("the gallery never asks for a full-size portrait", async ({ page }) => {
-    const oversized: string[] = [];
+  test("the gallery never offers a full-size portrait", async ({ page }) => {
+    await page.goto("/species");
 
-    page.on("request", (request) => {
-      // Built file names carry the pixel size and then Vite's content hash:
-      // `aleena-224x332-B1fgoeht.webp`. The size is what matters here.
-      const match = /-(\d+)x\d+(?:-[\w-]+)?\.webp/.exec(request.url());
-      if (match && Number(match[1]) > GALLERY_THUMB_MAX) {
-        oversized.push(request.url());
-      }
+    // Built file names carry the pixel size and then Vite's content hash:
+    // `aleena-176x261-B1fgoeht.webp`. The size is what matters here.
+    const candidates = await page.$$eval(".gallery-tile-media", (images) =>
+      images.flatMap((image) =>
+        (image.getAttribute("srcset") ?? "")
+          .split(",")
+          .map((candidate) => candidate.trim())
+          .filter(Boolean),
+      ),
+    );
+
+    expect(candidates.length).toBeGreaterThan(0);
+
+    const oversized = candidates.filter((candidate) => {
+      const match = /-(\d+)x\d+(?:-[\w-]+)?\.webp/.exec(candidate);
+      return match !== null && Number(match[1]) > GALLERY_THUMB_MAX;
     });
-
-    await page.goto("/species", { waitUntil: "networkidle" });
 
     expect(
       oversized,
-      "a species tile is about 112 CSS pixels wide; pulling the 300px " +
-        "portrait for each of 141 of them is how this page becomes megabytes",
+      "a species tile is under 200 CSS pixels wide; offering the full-size " +
+        "portrait to 141 of them is how this page becomes megabytes",
     ).toEqual([]);
   });
 
