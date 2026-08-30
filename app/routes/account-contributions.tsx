@@ -26,12 +26,12 @@ export default function AccountContributions() {
   const { user } = useOutletContext<AccountContext>();
 
   return (
-    <RequireSession role="contributor">
+    <RequireSession role="Contributor">
       {() => (
         <section className="account-section" aria-labelledby="contributions-heading">
           <h2 id="contributions-heading">Contributions</h2>
           <p className="account-section-lede">
-            {ROLE_META.contributor.summary}
+            {ROLE_META.Contributor.summary}
           </p>
 
           <dl className="account-facts">

@@ -2,7 +2,7 @@
  * Enrolling an authenticator app.
  *
  * The tests that matter most here are about what is *not* only a QR code. A
- * picture of a secret is useless to a screen reader, and useless to anyone
+ * picture of a shared key is useless to a screen reader, and useless to anyone
  * whose authenticator app is on the same device as the browser — which is most
  * people, most of the time.
  */
@@ -13,7 +13,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   AuthApiContract,
-  TOTP_SECRET,
+  TOTP_SHARED_KEY,
   user,
   VALID_TOTP_CODE,
 } from "../../tests/auth-api-contract";
@@ -48,7 +48,7 @@ afterEach(() => {
 
 describe("before enrolment", () => {
   it("offers to set two-factor authentication up", async () => {
-    mount(new AuthApiContract({ session: user({ mfa: { totp: false } }) }));
+    mount(new AuthApiContract({ session: user({ twoFactorEnabled: false }) }));
 
     expect(
       await screen.findByRole("button", { name: /set up an authenticator app/i }),
@@ -56,7 +56,7 @@ describe("before enrolment", () => {
   });
 
   it("says so when it is already on, and does not offer to set it up again", async () => {
-    mount(new AuthApiContract({ session: user({ mfa: { totp: true } }) }));
+    mount(new AuthApiContract({ session: user({ twoFactorEnabled: true }) }));
 
     expect(
       await screen.findByText(/an authenticator app is protecting this account/i),
@@ -68,7 +68,7 @@ describe("before enrolment", () => {
 });
 
 describe("enrolment", () => {
-  it("shows the secret as readable text, not only as a QR code", async () => {
+  it("shows the shared key as readable text, not only as a QR code", async () => {
     // The accessibility requirement this feature most often fails: a QR code
     // cannot be read aloud, focused, or scanned by the phone it is displayed
     // on.
@@ -77,13 +77,13 @@ describe("enrolment", () => {
     await screen.findByRole("button", { name: /set up an authenticator app/i });
     await startEnrolment();
 
-    const secret = await screen.findByText(/JBSW Y3DP EHPK 3PXP/);
-    expect(secret).toBeInTheDocument();
-    // Grouped for transcription, but still the same secret the server sent.
-    expect(secret.textContent?.replace(/\s/g, "")).toBe(TOTP_SECRET);
+    const sharedKey = await screen.findByText(/JBSW Y3DP EHPK 3PXP/);
+    expect(sharedKey).toBeInTheDocument();
+    // Grouped for transcription, but still the same shared key the server sent.
+    expect(sharedKey.textContent?.replace(/\s/g, "")).toBe(TOTP_SHARED_KEY);
   });
 
-  it("draws the QR code from the otpauth URI without leaving this origin", async () => {
+  it("draws the QR code from the authenticator URI without leaving this origin", async () => {
     mount(new AuthApiContract({ session: user() }));
 
     await screen.findByRole("button", { name: /set up an authenticator app/i });
@@ -113,9 +113,14 @@ describe("enrolment", () => {
     expect(
       await screen.findByRole("heading", { name: /two-factor authentication is on/i }),
     ).toBeInTheDocument();
-    // Enrolling without a way back in is how people lose accounts.
+    // Enrolling without a way back in is how people lose accounts. The API
+    // returns these exactly once, from this endpoint and no other, so a screen
+    // that dropped them would be losing the only copy that will ever exist.
     expect(screen.getByText("AAAA-1111")).toBeInTheDocument();
-    expect(contract.session?.mfa.totp).toBe(true);
+    expect(screen.getAllByRole("listitem").filter((item) =>
+      /^[A-Z]{4}-\d{4}$/.test(item.textContent ?? ""),
+    )).toHaveLength(10);
+    expect(contract.session?.twoFactorEnabled).toBe(true);
   });
 
   it("rejects a wrong code and keeps the reader on the step", async () => {
@@ -131,7 +136,7 @@ describe("enrolment", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/not correct/i);
     expect(screen.queryByText("AAAA-1111")).toBeNull();
-    expect(contract.session?.mfa.totp).toBe(false);
+    expect(contract.session?.twoFactorEnabled).toBe(false);
     expect(screen.getByLabelText(/six-digit code/i)).toBeInTheDocument();
   });
 
@@ -162,7 +167,7 @@ describe("enrolment", () => {
     expect(
       await screen.findByRole("button", { name: /set up an authenticator app/i }),
     ).toBeInTheDocument();
-    expect(contract.session?.mfa.totp).toBe(false);
+    expect(contract.session?.twoFactorEnabled).toBe(false);
   });
 
   it("moves focus to the new step so a screen reader follows the change", async () => {

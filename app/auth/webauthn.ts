@@ -253,7 +253,7 @@ function toDescriptors(
  * previous one first.
  */
 export async function createPasskey(
-  options: PasskeyRegisterBeginResponse["publicKey"],
+  options: PasskeyRegisterBeginResponse,
   signal?: AbortSignal,
 ): Promise<PasskeyRegistrationCredential> {
   assertUsable();
@@ -321,7 +321,7 @@ export async function createPasskey(
  * response to something the reader just did.
  */
 export async function getPasskeyAssertion(
-  options: PasskeyLoginBeginResponse["publicKey"],
+  options: PasskeyLoginBeginResponse,
   signal?: AbortSignal,
 ): Promise<PasskeyAuthenticationCredential> {
   assertUsable();

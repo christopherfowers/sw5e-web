@@ -134,7 +134,7 @@ describe("role awareness", () => {
   }
 
   it("does not offer contributor navigation to a community account", async () => {
-    mount(new AuthApiContract({ session: user({ roles: ["community"] }) }));
+    mount(new AuthApiContract({ session: user({ roles: ["Community"] }) }));
 
     const nav = await accountNav();
 
@@ -144,7 +144,7 @@ describe("role awareness", () => {
   });
 
   it("offers contributor navigation to a contributor", async () => {
-    mount(new AuthApiContract({ session: user({ roles: ["contributor"] }) }));
+    mount(new AuthApiContract({ session: user({ roles: ["Contributor"] }) }));
 
     const nav = await accountNav();
 
@@ -153,8 +153,8 @@ describe("role awareness", () => {
     ).toBeInTheDocument();
   });
 
-  it("offers it to an admin too, because admin includes contributor", async () => {
-    mount(new AuthApiContract({ session: user({ roles: ["admin"] }) }));
+  it("offers it to an administrator too, because Administrator includes Contributor", async () => {
+    mount(new AuthApiContract({ session: user({ roles: ["Administrator"] }) }));
 
     const nav = await accountNav();
 
@@ -167,7 +167,7 @@ describe("role awareness", () => {
     // Hiding the link is not protection: this asserts the page itself refuses,
     // which is what someone typing the URL actually meets.
     mount(
-      new AuthApiContract({ session: user({ roles: ["community"] }) }),
+      new AuthApiContract({ session: user({ roles: ["Community"] }) }),
       "/account/contributions",
     );
 
@@ -181,7 +181,7 @@ describe("role awareness", () => {
 
   it("shows the contributor page to a contributor", async () => {
     mount(
-      new AuthApiContract({ session: user({ roles: ["contributor"] }) }),
+      new AuthApiContract({ session: user({ roles: ["Contributor"] }) }),
       "/account/contributions",
     );
 
@@ -191,7 +191,7 @@ describe("role awareness", () => {
   });
 
   it("keeps the upload affordance off a community profile", async () => {
-    mount(new AuthApiContract({ session: user({ roles: ["community"] }) }));
+    mount(new AuthApiContract({ session: user({ roles: ["Community"] }) }));
 
     await screen.findByRole("heading", { name: /what this account can do/i });
 

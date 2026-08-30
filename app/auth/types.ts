@@ -1,12 +1,17 @@
 /**
  * The shape of the account API, written down.
  *
- * The service that serves these endpoints is built in the sibling repository
- * and did not exist when this client was written, so every type here is the
- * contract as specified rather than something observed from a live response.
- * Where the specification stopped short and this UI could not be built without
- * an answer, the gap is marked with a `CONTRACT GAP` note so the two sides can
- * be reconciled deliberately instead of by whoever ships first.
+ * These types are no longer a guess. The service is built in the sibling
+ * repository, and every shape below has been checked against the running QA
+ * deployment and against the API source; `docs/account-api-contract.md` is the
+ * reconciled contract this file implements, endpoint by endpoint. Where the two
+ * ever disagree, that document is the one that was verified.
+ *
+ * The reason to say so plainly is that an earlier version of this file was
+ * written from a specification alone, and was wrong about most of it — the
+ * envelope on `/me`, the name of the two-factor flag, the shape of the WebAuthn
+ * options, the spelling of the MFA literal. All of it type-checked, and all of
+ * it passed a test suite that had been written from the same wrong assumptions.
  *
  * Nothing in here is a session token. The session lives in an HttpOnly cookie
  * that this code cannot read and must never try to; `GET /api/auth/me` is the
@@ -20,10 +25,33 @@
  * least a contributor" as a comparison rather than as a list of every role
  * that qualifies — a list is the thing that gets forgotten when a role is
  * added.
+ *
+ * These are wire strings, and they are spelled exactly as the service spells
+ * them: capitalised, and the highest one is `Administrator` rather than
+ * `admin`. That is not a style choice this repository gets to make. These
+ * names are seeded into the identity database and named by the API's
+ * authorization policies, and `/api/auth/me` returns them verbatim.
+ *
+ * Getting this wrong is silent, which is why it is worth the paragraph. When
+ * this list held lowercase names, `isRole` rejected every role the server
+ * actually sent, `effectiveRole` discarded the lot, and every signed-in reader
+ * — contributor and administrator alike — was quietly treated as the base
+ * role. Nothing errored. The upload affordance simply never appeared, and it
+ * looked like a permissions decision rather than a typo.
  */
-export const ROLES = ["community", "contributor", "admin"] as const;
+export const ROLES = ["Community", "Contributor", "Administrator"] as const;
 
 export type Role = (typeof ROLES)[number];
+
+/**
+ * The roles an administrator may grant.
+ *
+ * `Community` is the floor every account already stands on rather than
+ * something conferred, and the API rejects it outright in a role assignment —
+ * so it is excluded here, where the compiler can say so, instead of being
+ * discovered as a 400 at runtime.
+ */
+export type AssignableRole = Exclude<Role, "Community">;
 
 export function isRole(value: unknown): value is Role {
   return typeof value === "string" && (ROLES as readonly string[]).includes(value);
@@ -34,20 +62,28 @@ export interface PasskeyCredential {
   /** The credential id, base64url, as the authenticator reported it. */
   id: string;
   /**
-   * What the reader called it, or what the server inferred from the
-   * authenticator's AAGUID. Always present; never the raw id, which is
-   * meaningless to a person deciding which credential to revoke.
+   * What the reader called it when they enrolled it, or `null` when they left
+   * the field blank. It is genuinely nullable — the server does not invent a
+   * name from the AAGUID — so every place that shows this has to have an answer
+   * for the empty case rather than rendering "null" at somebody.
    */
-  label: string;
+  name: string | null;
   /** ISO-8601. */
   createdAt: string;
-  /** ISO-8601, or null if it has never been used to sign in. */
-  lastUsedAt: string | null;
+  /*
+   * There is deliberately no `lastUsedAt`. The API does not track one: the
+   * framework's passkey record has no such column, and the field this client
+   * used to declare could only ever have been filled with a value somebody made
+   * up. "Last used: never" printed against a credential that signs someone in
+   * every morning is worse than not offering the fact at all.
+   */
 }
 
 /**
  * The body of `GET /api/auth/me`, and the single source of truth for
  * everything this UI knows about the reader.
+ *
+ * There is no envelope: the account object is the whole response body.
  */
 export interface CurrentUser {
   id: string;
@@ -55,13 +91,13 @@ export interface CurrentUser {
   displayName: string;
   roles: Role[];
   /**
-   * CONTRACT GAP. `/api/auth/me` is specified as "current user + roles". The
-   * account area cannot be built without also knowing whether TOTP is already
-   * enrolled and which passkeys exist — otherwise the credentials page has to
-   * guess, or the client needs two more round trips before it can paint. Both
-   * are read-only projections of state the server already has to hold.
+   * Whether an authenticator app is enrolled. A flat boolean, spelled exactly
+   * this way — it is not nested under an `mfa` object, and TOTP is the only
+   * second factor the service offers, so there is nothing for a nested shape
+   * to hold.
    */
-  mfa: { totp: boolean };
+  twoFactorEnabled: boolean;
+  /** Every credential on the account, not a count. May be empty. */
   passkeys: PasskeyCredential[];
 }
 
@@ -76,57 +112,80 @@ export interface RegisterRequest {
  * was already registered, so this endpoint cannot be used to enumerate
  * accounts. The UI therefore says "check your inbox" in both cases, which is
  * why there is nothing account-shaped in this response.
+ *
+ * `message` is the server's own wording for that non-answer. It is carried
+ * here so the client can show it rather than paraphrase it, but the client has
+ * to work when it is empty.
  */
 export interface RegisterResponse {
-  status: "verification-sent";
+  status: "pending";
+  message: string;
 }
 
-/** `POST /api/auth/email/verify` */
+/**
+ * `POST /api/auth/email/verify`
+ *
+ * Both fields are required. The token alone is not enough: the server pairs it
+ * with the address it was issued for, so a link that lost its `email`
+ * parameter cannot be completed and must be reported as a truncated link
+ * rather than as a rejected token.
+ */
 export interface VerifyEmailRequest {
+  email: string;
   token: string;
 }
 
 /**
- * CONTRACT GAP. Registration takes no password and issues no credential, so
- * following the verification link is the only moment at which a brand-new
- * account can be authenticated at all. Verification must therefore establish
- * the session cookie itself; otherwise there is no way to reach
- * `passkey/register/begin`, which requires a session, and the account can
- * never enrol its first passkey. The `user` here is the same projection
- * `/api/auth/me` returns, so the client can seed its session state without a
- * second request.
+ * Verification does **not** sign anybody in, and this is the part of the flow
+ * most worth understanding before changing anything near it.
+ *
+ * Registration takes no password and issues no credential, so a brand-new
+ * account has nothing it could authenticate with — which is exactly why an
+ * earlier version of this file assumed verification had to establish a session.
+ * It does not. It sets a short-lived HttpOnly enrolment ticket instead, and
+ * that ticket authorises `passkey/register/begin` and
+ * `passkey/register/complete` for roughly ten minutes and nothing else at all.
+ * `GET /api/auth/me` still answers 401 throughout.
+ *
+ * So there is no dead end: the reader arrives from their inbox holding a ticket
+ * that is good for precisely one thing, enrols their first passkey with it, and
+ * then signs in with that passkey like anybody else. `enrollmentExpiresAt` is
+ * when the ticket stops working, and the page after verification says so,
+ * because a window that expires silently is a window people walk away from.
  */
 export interface VerifyEmailResponse {
   status: "verified";
-  user: CurrentUser;
+  /** ISO-8601, roughly ten minutes out. */
+  enrollmentExpiresAt: string;
 }
 
 /**
  * `POST /api/auth/passkey/register/begin`
  *
- * The binary fields arrive base64url-encoded, because JSON has no bytes.
- * `webauthn.ts` is the only place that decodes them.
+ * The creation options arrive **unwrapped** — the response body *is* the
+ * options document, with no `publicKey` envelope around it. It is what
+ * `PublicKeyCredential.parseCreationOptionsFromJSON()` accepts, and the binary
+ * fields are base64url because JSON has no bytes. `webauthn.ts` is the only
+ * place that decodes them.
  */
 export interface PasskeyRegisterBeginResponse {
-  publicKey: {
-    challenge: string;
-    rp: { id?: string; name: string };
-    user: { id: string; name: string; displayName: string };
-    pubKeyCredParams: { type: "public-key"; alg: number }[];
-    timeout?: number;
-    attestation?: AttestationConveyancePreference;
-    /**
-     * Credentials this account already holds. Passing them through is what
-     * makes an authenticator answer `InvalidStateError` instead of silently
-     * enrolling a second passkey for the same account on the same device.
-     */
-    excludeCredentials?: { type: "public-key"; id: string; transports?: string[] }[];
-    authenticatorSelection?: {
-      authenticatorAttachment?: AuthenticatorAttachment;
-      residentKey?: ResidentKeyRequirement;
-      requireResidentKey?: boolean;
-      userVerification?: UserVerificationRequirement;
-    };
+  challenge: string;
+  rp: { id?: string; name: string };
+  user: { id: string; name: string; displayName: string };
+  pubKeyCredParams: { type: "public-key"; alg: number }[];
+  timeout?: number;
+  attestation?: AttestationConveyancePreference;
+  /**
+   * Credentials this account already holds. Passing them through is what
+   * makes an authenticator answer `InvalidStateError` instead of silently
+   * enrolling a second passkey for the same account on the same device.
+   */
+  excludeCredentials?: { type: "public-key"; id: string; transports?: string[] }[];
+  authenticatorSelection?: {
+    authenticatorAttachment?: AuthenticatorAttachment;
+    residentKey?: ResidentKeyRequirement;
+    requireResidentKey?: boolean;
+    userVerification?: UserVerificationRequirement;
   };
 }
 
@@ -147,34 +206,42 @@ export interface PasskeyRegistrationCredential {
 /** `POST /api/auth/passkey/register/complete` */
 export interface PasskeyRegisterCompleteRequest {
   credential: PasskeyRegistrationCredential;
-  /** What the reader typed to name this passkey, if anything. */
-  label?: string;
+  /**
+   * What the reader typed to name this passkey. The field is `name` — the
+   * server ignores anything called `label`, which is what this client used to
+   * send, so every credential enrolled through it arrived nameless.
+   */
+  name?: string | null;
 }
 
+/**
+ * Note that this is not a `PasskeyCredential`: the id comes back as
+ * `credentialId` rather than `id`, so the two shapes cannot be interchanged
+ * even though they carry the same three facts.
+ */
 export interface PasskeyRegisterCompleteResponse {
-  credential: PasskeyCredential;
+  credentialId: string;
+  name: string | null;
+  createdAt: string;
 }
 
 /**
  * `POST /api/auth/passkey/login/begin`
  *
- * The email is optional: with a discoverable credential the authenticator
- * already knows which account it is speaking for, and asking for an address
- * first would both slow the common path down and confirm to an unauthenticated
- * caller whether an address is registered.
+ * There is no request type, because there is no request body. The API ignores
+ * anything sent, never accepts an email address, and always answers with an
+ * empty `allowCredentials` — so the response is byte-identical for every
+ * caller and cannot be used to probe whether an address is registered. A client
+ * that offers an email field here is offering a field that does nothing.
+ *
+ * The options arrive unwrapped, like the creation options above.
  */
-export interface PasskeyLoginBeginRequest {
-  email?: string;
-}
-
 export interface PasskeyLoginBeginResponse {
-  publicKey: {
-    challenge: string;
-    rpId?: string;
-    timeout?: number;
-    userVerification?: UserVerificationRequirement;
-    allowCredentials?: { type: "public-key"; id: string; transports?: string[] }[];
-  };
+  challenge: string;
+  rpId?: string;
+  timeout?: number;
+  userVerification?: UserVerificationRequirement;
+  allowCredentials?: { type: "public-key"; id: string; transports?: string[] }[];
 }
 
 /** The wire form of an authentication assertion. Bytes are base64url. */
@@ -198,29 +265,37 @@ export interface PasskeyLoginCompleteRequest {
 
 /**
  * Sign-in is two-legged when the account has a second factor. The server does
- * not hand out a full session in that case; the reply says what it still
- * wants, and the cookie it set carries only enough to finish the challenge.
+ * not hand out a full session in that case; the reply says only that it wants
+ * more, and the cookie it set carries enough to finish the challenge.
+ *
+ * Two details are load-bearing. The literal is `mfaRequired` — camelCase, no
+ * hyphen — and the branch carries `user: null` and nothing else: no `methods`
+ * array, no display name, no hint about the account. That silence is
+ * deliberate, because a half-authenticated caller is still an unauthenticated
+ * one and must not be told anything it did not already know.
  */
 export type PasskeyLoginCompleteResponse =
   | { status: "authenticated"; user: CurrentUser }
-  | { status: "mfa-required"; methods: "totp"[] };
+  | { status: "mfaRequired"; user: null };
 
 /** `POST /api/auth/mfa/totp/enroll` */
 export interface TotpEnrollResponse {
-  /** Base32, grouped for reading. The manual-entry path, and the fallback
+  /**
+   * Base32, grouped for reading. The manual-entry path, and the fallback
    * whenever a camera is not the right answer — which includes every reader
-   * using the site on the same device as their authenticator app. */
-  secret: string;
+   * using the site on the same device as their authenticator app.
+   */
+  sharedKey: string;
   /** `otpauth://totp/...`, the string the QR code encodes. */
-  otpauthUri: string;
+  authenticatorUri: string;
 }
 
 /**
  * `POST /api/auth/mfa/totp/verify`
  *
- * One endpoint, two jobs, distinguished by what the session already is:
- * finishing enrolment for a signed-in account, and answering the second-factor
- * challenge during sign-in.
+ * One endpoint, two jobs, chosen by the server from cookie state rather than
+ * from anything in the body: finishing enrolment for a signed-in account, and
+ * answering the second-factor challenge during sign-in.
  */
 export interface TotpVerifyRequest {
   code: string;
@@ -228,26 +303,47 @@ export interface TotpVerifyRequest {
 
 export type TotpVerifyResponse =
   | {
-      status: "enrolled";
+      /** The literal is `enabled`, not `enrolled`. */
+      status: "enabled";
       /**
-       * CONTRACT GAP. Not in the specification, and enrolling a second factor
-       * without one is how people lose their accounts: a passkey plus TOTP on
-       * a single phone means one lost phone locks the account out forever.
-       * Shown once, at enrolment, and never again.
+       * Confirmed present: the API returns ten of these, exactly once, and
+       * only here. They matter because enrolling a second factor without them
+       * is how people lose accounts — a passkey plus TOTP on one phone means
+       * one lost phone locks the account out forever. Shown once, at
+       * enrolment, and never again.
        */
       recoveryCodes: string[];
     }
   | { status: "authenticated"; user: CurrentUser };
 
 /**
- * CONTRACT GAP. The specification has no way to revoke a credential, and an
- * account area that can only ever add passkeys is a security problem rather
- * than a missing feature: a reader who loses a device has no way to cut it
- * off. `DELETE /api/auth/passkey/:id` is the shape this client assumes.
+ * `DELETE /api/auth/passkey/{credentialId}`
  *
- * The server has to refuse to remove the last remaining credential of an
- * account that has no other way in, since that would strand the account.
+ * The server refuses with 409 and `code: "last-credential"` when the
+ * credential named is the only one the account has, since removing it would
+ * strand the account. The client has to render that refusal rather than treat
+ * it as a generic conflict.
  */
 export interface PasskeyRemoveResponse {
   status: "removed";
+}
+
+/**
+ * `PUT /api/auth/admin/users/{userId}/roles`
+ *
+ * Declarative rather than incremental: the request names the complete set the
+ * account should end up with, and anything absent from it is revoked. There is
+ * no "add one role" call, so a caller that means to grant `Contributor` has to
+ * send the roles the account already holds alongside it.
+ *
+ * The response, unlike the request, is a full `Role[]`: it reports what the
+ * account now holds, and that always includes the `Community` floor.
+ */
+export interface AssignRolesRequest {
+  roles: AssignableRole[];
+}
+
+export interface AssignRolesResponse {
+  userId: string;
+  roles: Role[];
 }
