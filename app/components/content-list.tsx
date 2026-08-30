@@ -1,7 +1,7 @@
 /**
  * A content type's index: filter, sort, and scan.
  *
- * Two layouts share one set of controls, because the eight types are not one
+ * Two layouts share one set of controls, because the content types are not one
  * kind of thing. A table is right for 507 pieces of equipment that a reader
  * compares by cost and damage. It is wrong for 141 species, which a reader
  * recognises by silhouette long before they read a name — those get a gallery

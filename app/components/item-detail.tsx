@@ -1,7 +1,7 @@
 /**
  * A content item, whatever shape it happens to be.
  *
- * The eight types are not uniform — a feat carries six fields and a creature
+ * The content types are not uniform — a feat carries six fields and a creature
  * carries forty-seven — so this renders four open-ended collections rather
  * than a fixed field list: key/value stats, prose sections, named entries
  * (traits, actions, features) and roll tables. A type that has none of a given

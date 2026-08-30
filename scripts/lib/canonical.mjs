@@ -37,13 +37,14 @@ import { humanize, slugify } from "./normalize.mjs";
 /**
  * Which canonical directory feeds each of the site's content types.
  *
- * Three deliberate mismatches are recorded here rather than discovered at
- * runtime:
+ * The mapping is not the identity, and the mismatches are recorded here rather
+ * than discovered at runtime:
  *
- *   - `maneuvers` has no canonical directory. The archive carried maneuvers;
- *     the canonical set has not been given them yet. The type keeps its place
- *     in the site's navigation and renders an empty index rather than
- *     disappearing, so the gap is visible instead of silently closed.
+ *   - the site's type ids are plural because they are URL segments, while the
+ *     canonical directories are singular. `maneuvers` is the one to watch:
+ *     `/maneuvers` has been in the site's navigation since before any maneuver
+ *     content existed, so the segment is fixed and the directory it reads is
+ *     `maneuver`. A rename on either side breaks a published address.
  *   - `feature` is a canonical directory with no site type. Its documents are
  *     the individual class and archetype features, and every one of them is
  *     already written out in the prose of the archetype or class that grants
@@ -54,6 +55,12 @@ import { humanize, slugify } from "./normalize.mjs";
  *     blurb, colour and cover a page needs and a data file cannot supply.
  *     The canonical documents are still read — they are what turns a
  *     `sourceKey` of `phb` into the `PHB` badge every row carries.
+ *
+ * A `null` here is still meaningful: it says the site publishes a type the
+ * canonical set cannot feed, and `build-content-fixture.mjs` writes that type
+ * an empty dataset so its index renders an empty state rather than 404ing on a
+ * link the header offers. Nothing is null today, which is the point — the gap
+ * this mechanism was built for was maneuvers, and it is now closed.
  */
 export const CANONICAL_DIRECTORIES = {
   species: "species",
@@ -61,7 +68,12 @@ export const CANONICAL_DIRECTORIES = {
   backgrounds: "background",
   feats: "feat",
   powers: "power",
-  maneuvers: null,
+  maneuvers: "maneuver",
+  "fighting-styles": "fighting-style",
+  "fighting-masteries": "fighting-mastery",
+  "lightsaber-forms": "lightsaber-form",
+  "weapon-focuses": "weapon-focus",
+  "weapon-supremacies": "weapon-supremacy",
   equipment: "equipment",
   monsters: "monster",
 };
@@ -454,6 +466,144 @@ function normalizePower(record, sources) {
   };
 }
 
+/* --------------------------------------------------------- combat options */
+
+/**
+ * The canonical combat-option documents keep their mechanics as fields and
+ * lists rather than as one paragraph, so these normalizers are mostly a matter
+ * of choosing what goes in the row and what goes in the page. The rule applied
+ * throughout: anything that appears in `stats` or in a table is not also
+ * repeated as prose, because a reader shown the same rule twice has to work out
+ * whether the two copies agree.
+ */
+
+function normalizeManeuver(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const kind = humanize(record.maneuverType);
+  const prerequisite = text(record.prerequisite);
+  const improves = text(record.improves);
+  const superiorityDice = numeric(record.superiorityDice);
+
+  add("Type", kind);
+  add(
+    "Cost",
+    superiorityDice == null
+      ? null
+      : superiorityDice === 0
+        ? "No superiority die"
+        : `${superiorityDice} superiority ${superiorityDice === 1 ? "die" : "dice"}`,
+  );
+  add("Prerequisite", prerequisite);
+  add("Improves", improves);
+
+  return {
+    ...base,
+    // An upgrade's tagline says what it upgrades, because that is the only
+    // thing that makes "Administer Aid (Greater)" mean anything on its own.
+    tagline: improves
+      ? `Improves ${improves}`
+      : kind
+        ? `${kind} maneuver`
+        : null,
+    summary: { kind, prerequisite, superiorityDice, improves },
+    stats,
+    sections: compact([section(null, text(record.description))]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/**
+ * Fighting styles, fighting masteries, weapon focuses and weapon supremacies.
+ *
+ * The benefits are entries rather than prose: each bullet is an independent
+ * rules exception a player checks the situation against, and the detail page
+ * already renders `entries` as a list of named blocks. They have no names of
+ * their own in the books, so only the body is set — which the entry renderer
+ * handles, and which is why a bullet is not forced into a heading it never had.
+ */
+function benefitEntries(record) {
+  return (record.benefits ?? [])
+    .map((benefit) => ({ group: "Benefits", name: null, body: text(benefit) }))
+    .filter((entry) => entry.body);
+}
+
+function normalizeFightingOption(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const prerequisite = text(record.prerequisite);
+  const benefits = benefitEntries(record);
+
+  add("Prerequisite", prerequisite);
+  add("Benefits", benefits.length === 0 ? null : String(benefits.length));
+
+  return {
+    ...base,
+    tagline: prerequisite ? `Requires ${prerequisite}` : "No prerequisite",
+    summary: { prerequisite, benefits: benefits.length },
+    stats,
+    sections: compact([section(null, text(record.description))]),
+    entries: benefits,
+    tables: [],
+  };
+}
+
+function normalizeWeaponTraining(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const weaponGroup = humanize(record.weaponGroup);
+  const benefits = benefitEntries(record);
+
+  add("Weapon group", weaponGroup);
+  add("Benefits", benefits.length === 0 ? null : String(benefits.length));
+
+  return {
+    ...base,
+    tagline: weaponGroup ? `${weaponGroup} weapons` : null,
+    summary: { weaponGroup, benefits: benefits.length },
+    stats,
+    sections: compact([section(null, text(record.description))]),
+    entries: benefits,
+    tables: [],
+  };
+}
+
+/** How a form's two kinds of effect are headed on the page. */
+const FORM_TIMINGS = {
+  onAdopt: "As you adopt this form",
+  active: "While this form is held",
+};
+
+function normalizeLightsaberForm(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const prerequisite = text(record.prerequisite);
+  const effects = record.effects ?? [];
+  const onAdopt = effects.some((effect) => effect?.timing === "onAdopt");
+
+  add("Prerequisite", prerequisite);
+  add("Adopted as", "Bonus action");
+
+  return {
+    ...base,
+    tagline: onAdopt ? "Acts as you adopt it" : "Active while held",
+    summary: { prerequisite, onAdopt },
+    stats,
+    // The effects are the rules text, and they are headed by when they apply
+    // rather than run together: a player who has already adopted the form
+    // needs only the second heading, and one paragraph of prose would make
+    // them read both to find out which is which.
+    sections: compact(
+      effects.map((effect) =>
+        section(FORM_TIMINGS[effect?.timing] ?? null, text(effect?.description)),
+      ),
+    ),
+    entries: [],
+    tables: [],
+  };
+}
+
 /* -------------------------------------------------------------- equipment */
 
 /** `{ numberOfDice: 1, dieFaces: 12, type: "energy" }` becomes `1d12 energy`. */
@@ -631,6 +781,12 @@ const NORMALIZERS = {
   backgrounds: normalizeBackground,
   feats: normalizeFeat,
   powers: normalizePower,
+  maneuvers: normalizeManeuver,
+  "fighting-styles": normalizeFightingOption,
+  "fighting-masteries": normalizeFightingOption,
+  "lightsaber-forms": normalizeLightsaberForm,
+  "weapon-focuses": normalizeWeaponTraining,
+  "weapon-supremacies": normalizeWeaponTraining,
   equipment: normalizeEquipment,
   monsters: normalizeMonster,
 };

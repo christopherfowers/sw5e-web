@@ -409,14 +409,6 @@ main:focus {
   display: none;
 }
 
-/* Once there is room for the whole strip, the fade has nothing to do and the
- * mask is dropped so it cannot clip a focus ring on the last item. */
-@media (min-width: 64rem) {
-  .site-nav {
-    mask-image: none;
-  }
-}
-
 .site-nav ul {
   display: flex;
   gap: 0.125rem;
@@ -424,6 +416,27 @@ main:focus {
   margin: 0 auto;
   padding: 0 var(--space-2);
   list-style: none;
+}
+
+/* Trailing space as wide as the fade, so the last link can be scrolled clear
+ * of it rather than ending underneath it.
+ *
+ * This replaces dropping the mask above 64rem, which assumed the whole strip
+ * fitted on a desktop screen. With thirteen content types it does not: the
+ * strip scrolls at every width now, and a scrollable strip with no fade is one
+ * a reader has no reason to believe continues. The original worry that the
+ * override existed for — a focus ring on the last item clipped by the fade —
+ * is what this actually fixes.
+ *
+ * It has to be a flex item rather than end padding on the list. The list is
+ * capped at --page and its links overflow that box, and trailing padding on an
+ * overflowed flex container is not added to the scrollable area at all: the
+ * padding lands at the cap, hundreds of pixels behind the last link. A
+ * zero-content item is part of the flow and is scrolled to like anything else.
+ */
+.site-nav ul::after {
+  content: "";
+  flex: 0 0 2.5rem;
 }
 
 .site-nav-link {

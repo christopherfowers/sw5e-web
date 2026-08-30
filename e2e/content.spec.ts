@@ -20,6 +20,58 @@ test.describe("pre-rendered content routes", () => {
     expect(html).toContain("Abyssin");
   });
 
+  /**
+   * The regression this domain exists to close. `/maneuvers` was in the
+   * header, resolved, returned 200, rendered its `<h1>` — and said "No
+   * maneuvers in this build of the reference yet", because nothing fed it.
+   * Asserting the heading would have passed throughout. Asserting a row is
+   * what does not.
+   */
+  test("the maneuver index serves maneuvers, not an empty state", async ({
+    request,
+  }) => {
+    const html = await (await request.get("/maneuvers")).text();
+
+    expect(html).toMatch(/<h1[^>]*>Maneuvers<\/h1>/);
+    expect(html).toContain("Administer Aid");
+    expect(html).toContain('href="/maneuvers/administer-aid"');
+    expect(
+      html,
+      "the maneuver index is back to publishing nothing",
+    ).not.toContain("in this build of the reference yet");
+  });
+
+  test("every combat-option index serves its own rows", async ({ request }) => {
+    // One slug per type, each present in the committed fixture and in the full
+    // canonical set, so this reads the same either way.
+    const indexes: [string, string][] = [
+      ["/fighting-styles", "Area Style"],
+      ["/fighting-masteries", "Area Mastery"],
+      ["/lightsaber-forms", "Aqinos Form"],
+      ["/weapon-focuses", "Blade Focus"],
+      ["/weapon-supremacies", "Blade Supremacy"],
+    ];
+
+    for (const [path, name] of indexes) {
+      const html = await (await request.get(path)).text();
+
+      expect(html, `${path} published no rows`).toContain(name);
+      expect(html).not.toContain("in this build of the reference yet");
+    }
+  });
+
+  test("a lightsaber form separates what it does on adoption from what it grants", async ({
+    request,
+  }) => {
+    const html = await (await request.get("/lightsaber-forms/aqinos-form")).text();
+
+    expect(html).toMatch(/<h1[^>]*>Aqinos Form<\/h1>/);
+    // The two headings are the form's structure. One paragraph of prose here
+    // would mean the effects were flattened back together.
+    expect(html).toContain("As you adopt this form");
+    expect(html).toContain("The ability to cast tech powers");
+  });
+
   test("an item page arrives as rendered HTML with its own title", async ({
     request,
   }) => {

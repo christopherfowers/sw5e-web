@@ -58,6 +58,11 @@ describe("Home route", () => {
       "/feats",
       "/powers",
       "/maneuvers",
+      "/fighting-styles",
+      "/fighting-masteries",
+      "/lightsaber-forms",
+      "/weapon-focuses",
+      "/weapon-supremacies",
       "/equipment",
       "/monsters",
     ]) {

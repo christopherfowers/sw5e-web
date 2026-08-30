@@ -51,8 +51,14 @@ repository whose only job is to carry it — see [Container
 image](#container-image).
 
 The canonical set is still growing, and the mapping records where it does not
-yet reach: it has no maneuvers, so that type renders an empty index rather
-than disappearing from the navigation, and its `feature` and `source`
+yet reach. Every type the site publishes has content behind it today — the
+gap this mechanism was built for was maneuvers, and it is closed — but a type
+mapped to nothing still gets an empty dataset and an index that says so,
+rather than disappearing from the navigation or answering 404 on a link the
+header offers. The site's type ids are plural because they are URL segments
+and the canonical directories are singular, so the two are pinned to each
+other rather than derived: `/maneuvers` is a published address and reads
+`content/maneuver`. The `feature` and `source`
 directories are deliberately not published as browsable types — features are
 already written out in the prose of the archetype that grants them, and the
 books are described in `app/content/source-meta.ts`, which carries a blurb,

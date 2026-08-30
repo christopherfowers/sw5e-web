@@ -12,7 +12,20 @@ export const CONTENT_TYPE_IDS = [
   "backgrounds",
   "feats",
   "powers",
+
+  // The combat options. Six types rather than one "combat options" heading,
+  // because a character chooses from six separate lists granted by six
+  // different features, and an entry on one is never a substitute for an entry
+  // on another. Collapsing them would need a "kind" column that did nothing but
+  // undo the collapse, and would make the six counts — 119, 32, 32, 20, 8, 8 —
+  // one number that says nothing.
   "maneuvers",
+  "fighting-styles",
+  "fighting-masteries",
+  "lightsaber-forms",
+  "weapon-focuses",
+  "weapon-supremacies",
+
   "equipment",
   "monsters",
 ] as const;
@@ -125,6 +138,41 @@ export interface PowerSummary extends BaseSummary {
 export interface ManeuverSummary extends BaseSummary {
   kind: string | null;
   prerequisite: string | null;
+  /**
+   * Dice spent by using the maneuver — almost always one. Zero is the case
+   * worth showing: a tiered upgrade changes how a maneuver a character has
+   * already paid for behaves, and costs nothing itself.
+   */
+  superiorityDice: number | null;
+  /** For a tiered maneuver, the maneuver it upgrades. */
+  improves: string | null;
+}
+
+/**
+ * Fighting styles and fighting masteries are the same shape: the same
+ * disciplines chosen from two lists at two points in a career. `benefits` is
+ * the count, which is the honest one-number comparison between them — a style
+ * grants two, a mastery three or four.
+ */
+export interface FightingOptionSummary extends BaseSummary {
+  prerequisite: string | null;
+  benefits: number | null;
+}
+
+/** Weapon focuses and weapon supremacies, keyed by the group they apply to. */
+export interface WeaponTrainingSummary extends BaseSummary {
+  weaponGroup: string | null;
+  benefits: number | null;
+}
+
+export interface LightsaberFormSummary extends BaseSummary {
+  prerequisite: string | null;
+  /**
+   * Whether the form does something as part of the bonus action that adopts
+   * it, as opposed to only granting a benefit while it is held. It is the one
+   * thing that changes how a form is played, so it belongs on the row.
+   */
+  onAdopt: boolean;
 }
 
 export interface EquipmentSummary extends BaseSummary {
@@ -146,31 +194,35 @@ export interface MonsterSummary extends BaseSummary {
   hitPoints: number | null;
 }
 
-export type SummaryFor<T extends ContentTypeId> = T extends "species"
-  ? SpeciesSummary
-  : T extends "archetypes"
-    ? ArchetypeSummary
-    : T extends "backgrounds"
-      ? BackgroundSummary
-      : T extends "feats"
-        ? FeatSummary
-        : T extends "powers"
-          ? PowerSummary
-          : T extends "maneuvers"
-            ? ManeuverSummary
-            : T extends "equipment"
-              ? EquipmentSummary
-              : MonsterSummary;
+/**
+ * Which row shape each content type's list page renders.
+ *
+ * A lookup rather than a chain of conditional types: with thirteen types the
+ * chain was thirteen levels of nesting for what is a table, every addition
+ * moved every line below it, and the compiler's error for a missing arm was
+ * "MonsterSummary" — the final fallback — rather than "you forgot a type".
+ * Indexing `Record<ContentTypeId, …>` makes a missing entry a compile error
+ * naming the type that is missing.
+ */
+interface SummaryByType extends Record<ContentTypeId, BaseSummary> {
+  species: SpeciesSummary;
+  archetypes: ArchetypeSummary;
+  backgrounds: BackgroundSummary;
+  feats: FeatSummary;
+  powers: PowerSummary;
+  maneuvers: ManeuverSummary;
+  "fighting-styles": FightingOptionSummary;
+  "fighting-masteries": FightingOptionSummary;
+  "lightsaber-forms": LightsaberFormSummary;
+  "weapon-focuses": WeaponTrainingSummary;
+  "weapon-supremacies": WeaponTrainingSummary;
+  equipment: EquipmentSummary;
+  monsters: MonsterSummary;
+}
 
-export type AnySummary =
-  | SpeciesSummary
-  | ArchetypeSummary
-  | BackgroundSummary
-  | FeatSummary
-  | PowerSummary
-  | ManeuverSummary
-  | EquipmentSummary
-  | MonsterSummary;
+export type SummaryFor<T extends ContentTypeId> = SummaryByType[T];
+
+export type AnySummary = SummaryByType[ContentTypeId];
 
 /** One labelled fragment of an item, used to explain why a result matched. */
 export interface SearchField {
