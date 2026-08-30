@@ -470,7 +470,18 @@ function normalizeEquipment(record, sources) {
   const base = common(record, sources);
   const { add, stats } = statCollector();
   const category = humanize(record.category);
-  const weaponType = humanize(record.weaponClassification);
+  /*
+   * Nearly every weapon sits in one proficiency group, but a bo-rifle is both
+   * an exotic blaster and an exotic vibroweapon, and a saberstaff is both an
+   * exotic lightweapon and an exotic vibroweapon. Proficiency with any one of
+   * a weapon's groups is enough to use it, so showing only the first would
+   * tell a reader they cannot use a weapon they can.
+   */
+  const weaponType = list(
+    [record.weaponClassification, ...(record.additionalWeaponClassifications ?? [])].map(
+      (classification) => humanize(classification),
+    ),
+  )?.join(", ");
   const armorType = humanize(record.armorClassification);
   const damage = formatDamage(record.damage);
   const cost = numeric(record.costInCredits);
