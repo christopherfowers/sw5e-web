@@ -207,3 +207,53 @@ describe("an item's picture", () => {
     expect(screen.queryByText(/exists in the archive/i)).toBeNull();
   });
 });
+
+/**
+ * A stat whose value names another item the site publishes.
+ *
+ * This is how the enhanced items relate to the equipment they are the enhanced
+ * form of: they are separate content types, and the relationship is a link on
+ * the row rather than a merge of the two schemas. The link is only ever set
+ * where the dataset builder resolved the name to exactly one document, so what
+ * this covers is that a resolved reference reaches the reader and an
+ * unresolved one leaves the value alone rather than rendering a dead link.
+ */
+describe("a stat that points at another item", () => {
+  const withLink: ContentItem = {
+    type: "enhanced-items",
+    slug: "ab-75-bo-rifle",
+    name: "AB-75 Bo-Rifle",
+    source: "WH",
+    sourceName: "Wretched Hives",
+    tagline: "Prototype weapon",
+    summary: {},
+    stats: [
+      { label: "Rarity", value: "Prototype" },
+      { label: "Kind", value: "Bo-rifle", href: "/equipment/bo-rifle" },
+    ],
+    sections: [{ heading: null, body: "You have a +2 bonus to attack rolls." }],
+    entries: [],
+    tables: [],
+  };
+
+  it("links the value to the item it names", () => {
+    renderItem(withLink);
+
+    expect(screen.getByRole("link", { name: "Bo-rifle" })).toHaveAttribute(
+      "href",
+      "/equipment/bo-rifle",
+    );
+  });
+
+  it("leaves an unresolved value as plain text rather than a dead link", () => {
+    renderItem({
+      ...withLink,
+      stats: [{ label: "Kind", value: "Any blaster" }],
+    });
+
+    expect(screen.getByText("Any blaster")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Any blaster" }),
+    ).not.toBeInTheDocument();
+  });
+});

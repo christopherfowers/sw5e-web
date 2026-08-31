@@ -29,10 +29,12 @@
  * or the two datasets would publish different sites. `humanize` is shared for
  * the same reason — the canonical set stores enums in camelCase
  * (`martialBlaster`, `bonusAction`) exactly as the archive did, and the labels
- * the UI filters on have to come out identical.
+ * the UI filters on have to come out identical. `splitIntoSections` joins
+ * them for a third: a rules chapter divides into the same sections whichever
+ * source it was read from, because how it divides is a property of the prose.
  */
 
-import { humanize, slugify } from "./normalize.mjs";
+import { humanize, slugify, splitIntoSections } from "./normalize.mjs";
 
 /**
  * Which canonical directory feeds each of the site's content types.
@@ -96,6 +98,9 @@ export const CANONICAL_DIRECTORIES = {
   "weapon-focuses": "weapon-focus",
   "weapon-supremacies": "weapon-supremacy",
   equipment: "equipment",
+  "enhanced-items": "enhanced-item",
+  "weapon-properties": "weapon-property",
+  "armor-properties": "armor-property",
   monsters: "monster",
   "starship-base-sizes": "starship-base-size",
   "starship-deployments": "starship-deployment",
@@ -103,6 +108,8 @@ export const CANONICAL_DIRECTORIES = {
   "starship-modifications": "starship-modification",
   "starship-ventures": "starship-venture",
   "starship-rules": "starship-rule",
+  rules: "rule",
+  "reference-tables": "reference-table",
 };
 
 /* --------------------------------------------------------------- helpers */
@@ -138,7 +145,12 @@ function section(heading, body) {
 function statCollector() {
   const stats = [];
   return {
-    add(label, value) {
+    /**
+     * `href` is optional and is only ever supplied where the value names
+     * exactly one document the site publishes, so a linked stat is a resolved
+     * cross-reference rather than a guess at one.
+     */
+    add(label, value, href) {
       if (value == null) return;
       if (Array.isArray(value)) {
         if (value.length === 0) return;
@@ -147,7 +159,7 @@ function statCollector() {
       }
       const asText = typeof value === "string" ? value.trim() : String(value);
       if (asText === "") return;
-      stats.push({ label, value: asText });
+      stats.push(href ? { label, value: asText, href } : { label, value: asText });
     },
     stats,
   };
@@ -230,7 +242,7 @@ function common(record, sources) {
  * because the edges are stated on the documents and normalizing throws away
  * the fields that state them.
  */
-export function buildClassGraph({ classes = [], classImprovements = [], archetypes = [], features = [] }) {
+export function buildClassGraph({ classes = [], classImprovements = [], archetypes = [], features = [], equipment = [] }) {
   const grants = new Map();
   const branches = new Map();
 
@@ -253,6 +265,25 @@ export function buildClassGraph({ classes = [], classImprovements = [], archetyp
       level: numeric(feature.level),
     });
   }
+
+  // Equipment, by name, for the one edge that crosses out of the class graph:
+  // an enhanced item names the gear it is built on or installed in, and that
+  // name only becomes a link if exactly one equipment document answers to it.
+  // A name two documents share is dropped rather than arbitrated — the point
+  // of this index is that a link built from it is certainly right, and an
+  // ambiguous name has no certainly-right answer.
+  const equipmentByName = new Map();
+  const ambiguous = new Set();
+
+  for (const item of equipment) {
+    const name = text(item?.name);
+    if (!name) continue;
+    const key = name.toLowerCase();
+    if (equipmentByName.has(key)) ambiguous.add(key);
+    equipmentByName.set(key, `/equipment/${slugify(name)}`);
+  }
+
+  for (const key of ambiguous) equipmentByName.delete(key);
 
   for (const list of grants.values()) {
     list.sort(
@@ -303,6 +334,8 @@ export function buildClassGraph({ classes = [], classImprovements = [], archetyp
     classSlugs,
     grantedBy: (kind, name) => grants.get(grantKey(kind, name)) ?? [],
     branchesOf: (className) => branches.get(className) ?? { archetypes: [], improvements: [] },
+    equipmentRoute: (name) =>
+      name ? (equipmentByName.get(name.toLowerCase()) ?? null) : null,
   };
 }
 
@@ -1076,6 +1109,231 @@ function normalizeEquipment(record, sources) {
   };
 }
 
+/* --------------------------------------------------------- enhanced items */
+
+/**
+ * The rarity ladder, ascending. This is the enhanced-item corpus's substitute
+ * for a price — nothing in it carries a cost in credits — so a list page has to
+ * be able to sort by it, and sorting by it has to mean sorting by power rather
+ * than by spelling. Alphabetical order would put artifact first and standard
+ * last, which is close to exactly backwards.
+ */
+const RARITY_ORDER = [
+  "standard",
+  "premium",
+  "prototype",
+  "advanced",
+  "legendary",
+  "artifact",
+];
+
+function normalizeEnhancedItem(record, sources, graph) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const itemType = humanize(record.itemType);
+  const rarity = humanize(record.rarity);
+  const subtype = text(record.subtype);
+  const prerequisite = text(record.prerequisite);
+  const requiresAttunement = Boolean(record.requiresAttunement);
+
+  add("Rarity", rarity);
+  add("Item type", itemType);
+  // The label follows the meaning rather than the field name: what `subtype`
+  // holds depends on the item type. For a modification it is the equipment the
+  // modification is installed in, for adventuring gear it is the body slot the
+  // item occupies, and for a specific weapon it is the base weapon the
+  // enhanced version is built on.
+  add(
+    record.itemType === "itemModification" ? "Installed in" : "Kind",
+    subtype ? subtype[0].toUpperCase() + subtype.slice(1) : null,
+    equipmentRoute(subtype, graph),
+  );
+  add("Attunement", requiresAttunement ? "Required" : "Not required");
+  add("Prerequisite", prerequisite);
+
+  return {
+    ...base,
+    tagline: compact([rarity, itemType?.toLowerCase()]).join(" ") || null,
+    summary: {
+      itemType,
+      rarity,
+      // -1 for a rarity the ladder does not know, which sorts it below
+      // standard rather than throwing. The schema's enum makes that
+      // unreachable today; it stops a future rarity from breaking the column.
+      rarityRank: RARITY_ORDER.indexOf(record.rarity ?? ""),
+      subtype,
+      requiresAttunement,
+      prerequisite,
+    },
+    stats,
+    sections: compact([section(null, text(record.description))]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/**
+ * The equipment page an enhanced item's `subtype` names, or null.
+ *
+ * This is the whole of the relationship between the two types, and it is
+ * deliberately the whole of it. An enhanced item is not a piece of equipment
+ * with extra fields — it has no price, no weight, no armor class and no damage
+ * dice, and it has a rarity band, an attunement requirement and a prerequisite
+ * that no mundane item has — so the two are separate types that point at each
+ * other rather than one type with half its fields empty.
+ *
+ * What `subtype` holds varies with `itemType`: a specific base weapon
+ * ("bo-rifle"), a family ("any blaster", "vibroweapon"), a body slot ("hands"),
+ * or a bare noun ("ammunition"). Nothing on the document says which, so the
+ * match has to be the whole string against a whole equipment name, and only
+ * where exactly one item answers to it. Twenty of the corpus's 56 subtypes
+ * resolve that way, covering 321 enhanced items; the other 36 name something
+ * the equipment catalogue has no single entry for, and produce no link. A
+ * looser rule — a prefix, a word overlap — would produce links that resolve
+ * and are wrong, which is worse than none, because a wrong link is invisible.
+ */
+function equipmentRoute(subtype, graph) {
+  return graph?.equipmentRoute?.(subtype) ?? null;
+}
+
+/* ------------------------------------------- weapon and armour properties */
+
+/**
+ * The common fields for an item the archive recorded no book for.
+ *
+ * The two property glossaries and the reference tables are the three content
+ * types with no `sourceKey`, and that is a decision rather than an omission:
+ * the archive records their source as "None", and unlike the rule chapters —
+ * where the file a record sits in names the book — there is nothing to infer
+ * one from. A guessed citation on a rules page is worse than none at all.
+ *
+ * `common` is bypassed here rather than taught to tolerate a missing key,
+ * because everywhere else an unresolvable `sourceKey` must stay the hard error
+ * it is: it means the build is reading a content set and a mapping that
+ * disagree.
+ */
+function unsourced(record) {
+  return {
+    name: text(record.name) ?? String(record.name ?? "").trim(),
+    slug: slugify(record.name),
+    source: null,
+    sourceName: null,
+  };
+}
+
+/**
+ * The opening sentence of a rule, which is what a glossary is scanned by. A
+ * property's rules text runs to a paragraph or more, and its first sentence is
+ * almost always the whole of what the property does; the rest is arithmetic.
+ */
+function firstSentence(markdown) {
+  const prose = text(markdown);
+  if (!prose) return null;
+  const paragraph = prose.split("\n\n")[0].replace(/\s+/g, " ").trim();
+  const stop = paragraph.search(/\.(?:\s|$)/);
+  return stop === -1 ? paragraph : paragraph.slice(0, stop + 1);
+}
+
+function normalizeProperty(record) {
+  const description = text(record.description);
+
+  return {
+    ...unsourced(record),
+    // No tagline. The badge under the heading already says "Weapon property",
+    // and repeating the rule's first sentence directly above the rule itself
+    // reads as a stutter.
+    tagline: null,
+    summary: { summaryLine: firstSentence(description) },
+    stats: [],
+    sections: compact([section(null, description)]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/* ------------------------------------------------------------------ rules */
+
+/**
+ * A chapter's position in its book, as a label, or null when printing it would
+ * mislead. The archive numbers the Player's Handbook preface -2 and both
+ * changelogs 99, and neither is a chapter number a reader would recognise.
+ * Both still sort correctly in the table of contents, which is what the number
+ * is actually for.
+ */
+function chapterLabel(chapterNumber) {
+  const value = numeric(chapterNumber);
+  if (value == null || value < 1 || value > 90) return null;
+  return `Chapter ${value}`;
+}
+
+function normalizeRule(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const isVariant = record.ruleType === "variant";
+  const sections = splitIntoSections(text(record.body) ?? "");
+
+  add("Book", base.sourceName);
+  add("Kind", isVariant ? "Variant rule" : "Chapter");
+  add("Position", chapterLabel(record.chapterNumber));
+
+  return {
+    ...base,
+    /*
+      The one content type whose slug comes from the document's key rather than
+      from its display name.
+
+      Slugs are derived from names everywhere else so that a canonical build
+      and an archive build publish the same URLs, and that works because names
+      are unique within a type. Chapter titles are not: seven of them are
+      printed in more than one book, and all three books have a chapter called
+      "Equipment". Deriving from the name would hand three of them the same
+      slug and leave the collision handler to number them, so which book
+      `/rules/equipment` showed would depend on directory order. The key is
+      already the book-qualified slug, and the archive path builds the same
+      string from the file a record came from.
+    */
+    slug: text(record.key) ?? base.slug,
+    tagline: isVariant
+      ? "Optional variant rule"
+      : compact([base.sourceName, chapterLabel(record.chapterNumber)]).join(
+          " · ",
+        ) || null,
+    summary: {
+      ruleType: isVariant ? "Variant" : "Chapter",
+      chapterNumber: numeric(record.chapterNumber),
+      sectionCount: sections.filter((each) => each.heading).length,
+    },
+    stats,
+    sections,
+    entries: [],
+    tables: [],
+  };
+}
+
+/* ------------------------------------------------------- reference tables */
+
+function normalizeReferenceTable(record) {
+  const subject = text(record.subject);
+  const { add, stats } = statCollector();
+
+  add("Subject", subject);
+
+  return {
+    ...unsourced(record),
+    tagline: subject,
+    summary: { subject },
+    stats,
+    // The table is markdown and is rendered as markdown rather than being
+    // parsed into the structured `tables` collection. The archived tables
+    // disagree about their own shape — some carry an alignment row, some an
+    // empty header, two a merged caption — so parsing them into a grid would
+    // need a repair pass per table and would gain a reader nothing.
+    sections: compact([section(null, text(record.body))]),
+    entries: [],
+    tables: [],
+  };
+}
+
 /* --------------------------------------------------------------- monsters */
 
 const ABILITIES = [
@@ -1623,6 +1881,11 @@ const NORMALIZERS = {
   "weapon-focuses": normalizeWeaponTraining,
   "weapon-supremacies": normalizeWeaponTraining,
   equipment: normalizeEquipment,
+  "enhanced-items": normalizeEnhancedItem,
+  // One mapping for both glossaries. The documents are the same shape, and
+  // which glossary an entry belongs to is decided by the directory it sits in.
+  "weapon-properties": normalizeProperty,
+  "armor-properties": normalizeProperty,
   monsters: normalizeMonster,
   "starship-base-sizes": normalizeStarshipBaseSize,
   "starship-deployments": normalizeStarshipDeployment,
@@ -1630,6 +1893,8 @@ const NORMALIZERS = {
   "starship-modifications": normalizeStarshipModification,
   "starship-ventures": normalizeStarshipVenture,
   "starship-rules": normalizeStarshipRule,
+  rules: normalizeRule,
+  "reference-tables": normalizeReferenceTable,
 };
 
 /**
@@ -1655,6 +1920,12 @@ export function indexSources(records) {
  * document a unique `key`, but the slug is derived from the display name, so
  * two documents can still collide; later collisions take a numbered suffix in
  * the input order, which the caller keeps stable by sorting.
+ *
+ * `graph` is what the caller knows about the rest of the build: which features
+ * a class grants, and which equipment document a name resolves to. A
+ * normalizer stays a function of one document plus what it was handed, because
+ * the caller is the only thing that knows what else is being published
+ * alongside it.
  */
 export function normalizeAllCanonical(typeId, records, sources, graph = EMPTY_GRAPH) {
   const normalize = NORMALIZERS[typeId];

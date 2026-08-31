@@ -23,10 +23,12 @@ import type { ContentTypeId } from "./types";
 /** The named hues the design system exposes. See `--hue-*` in app.css. */
 export type Accent =
   | "amber"
+  | "clay"
   | "cyan"
   | "green"
   | "indigo"
   | "red"
+  | "rose"
   | "steel"
   | "teal"
   | "violet";
@@ -133,6 +135,36 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
     blurb: "Weapons, armor and gear with cost, weight and damage.",
     accent: "steel",
   },
+  /*
+    Enhanced items get a hue of their own rather than sharing equipment's
+    steel. They are the largest type in the corpus and the one a reader is most
+    often hunting through, and the distinction between "gear you buy" and "gear
+    you find" is exactly the one a colour should be carrying here.
+  */
+  "enhanced-items": {
+    plural: "Enhanced items",
+    singular: "Enhanced item",
+    blurb: "Found and crafted gear by rarity: artefacts, modifications, augmentations and consumables.",
+    accent: "rose",
+  },
+  /*
+    Both property glossaries take equipment's steel on purpose. They are not a
+    catalogue of their own — they are the definitions an equipment row points
+    into when it says "burst 2" or "strength 13" — so sharing the hue says
+    where they belong.
+  */
+  "weapon-properties": {
+    plural: "Weapon properties",
+    singular: "Weapon property",
+    blurb: "What burst, versatile and reload actually do to a weapon.",
+    accent: "steel",
+  },
+  "armor-properties": {
+    plural: "Armor properties",
+    singular: "Armor property",
+    blurb: "What absorptive, bulky and powered actually do to armor and shields.",
+    accent: "steel",
+  },
   monsters: {
     plural: "Creatures",
     singular: "Creature",
@@ -178,6 +210,23 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
     blurb: "The rulebook itself: flying, fighting, repairing and outfitting a ship.",
     accent: "green",
   },
+  /*
+    Rules and reference tables share clay for the same reason the properties
+    share steel: they are one body of material, the books' prose and the tables
+    that prose cites, and a reader moving between them is doing one job.
+  */
+  rules: {
+    plural: "Rules",
+    singular: "Rule",
+    blurb: "The books themselves, chapter by chapter, plus the optional variant rules.",
+    accent: "clay",
+  },
+  "reference-tables": {
+    plural: "Reference tables",
+    singular: "Reference table",
+    blurb: "The standalone tables the rules send you to: costs, capacities, travel times.",
+    accent: "clay",
+  },
 };
 
 /**
@@ -188,6 +237,12 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
  * together in the middle of that because they are all answers to the same
  * question. Maneuvers lead the group: they are the largest of the six by an
  * order of magnitude and the one a reader arrives looking for.
+ *
+ * Gear runs equipment, then the enhanced items that are its found and crafted
+ * counterpart, then the two glossaries both of them point into: a reader who
+ * has just read "burst 2" on a weapon row is one link from what burst does.
+ * The rules material goes last, because it is what a reader turns to when the
+ * catalogue has not answered the question.
  */
 export const TYPE_ORDER: ContentTypeId[] = [
   "species",
@@ -205,6 +260,9 @@ export const TYPE_ORDER: ContentTypeId[] = [
   "weapon-focuses",
   "weapon-supremacies",
   "equipment",
+  "enhanced-items",
+  "weapon-properties",
+  "armor-properties",
   "monsters",
   "starship-base-sizes",
   "starship-deployments",
@@ -212,4 +270,6 @@ export const TYPE_ORDER: ContentTypeId[] = [
   "starship-modifications",
   "starship-ventures",
   "starship-rules",
+  "rules",
+  "reference-tables",
 ];

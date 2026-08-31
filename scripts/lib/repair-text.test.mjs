@@ -107,6 +107,45 @@ describe("repairing the archive's encoding damage", () => {
     expect(repairText("first\r\nsecond\r\n")).toBe("first\nsecond");
   });
 
+  describe("the rules corpus's markdown", () => {
+    it("restores the em dash a table cell uses to mean none", () => {
+      expect(repairText("|Level|Wealth|\r\n|1st|�|\r\n|2nd|1,000 cr|")).toBe(
+        "|Level|Wealth|\n|1st|—|\n|2nd|1,000 cr|",
+      );
+    });
+
+    it("keeps the padding a source table lined its columns up with", () => {
+      expect(repairText("|\tWretched\t\t|\t�\t|")).toBe(
+        "|\tWretched\t\t|\t—\t|",
+      );
+    });
+
+    it("restores every cell in a run of empty ones", () => {
+      expect(repairText("|1-4|6|3|�|�|�|�|9|")).toBe("|1-4|6|3|—|—|—|—|9|");
+    });
+
+    it("closes a quotation that ends a table cell", () => {
+      expect(
+        repairText("|3|always searching for that �special someone.�|"),
+      ).toBe('|3|always searching for that "special someone."|');
+    });
+
+    it("collapses a drop cap the scrape read twice", () => {
+      expect(repairText("DDestiny plays a large role")).toBe(
+        "Destiny plays a large role",
+      );
+      expect(repairText("a paragraph\r\n\r\nWWhen you cast a power")).toBe(
+        "a paragraph\n\nWhen you cast a power",
+      );
+    });
+
+    it("leaves a doubled capital alone in the middle of a line", () => {
+      expect(repairText("the droid designated RRuk, of the RRuk line")).toBe(
+        "the droid designated RRuk, of the RRuk line",
+      );
+    });
+  });
+
   it("counts every replacement character exactly once", () => {
     const counts = countRepairs(
       "You can�t see it � a new generation�for example",

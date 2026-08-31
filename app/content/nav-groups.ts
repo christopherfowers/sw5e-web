@@ -178,6 +178,22 @@ export const TYPE_NAV: Record<ContentTypeId, TypePlacement> = {
   "weapon-supremacies": { group: "combat", prominence: "primary" },
 
   equipment: { group: "gear", prominence: "primary" },
+  /*
+    Enhanced gear is a destination in its own right, not a footnote to
+    equipment: it is the largest type in the corpus at 1,918 items, and the
+    question it answers — "what could my party find" — is one a reader arrives
+    with rather than one they stumble into from a weapon row.
+  */
+  "enhanced-items": { group: "gear", prominence: "primary" },
+  /*
+    The glossaries are the opposite. Nobody opens `/weapon-properties` to read
+    76 definitions end to end; they arrive from a blaster whose row says
+    "burst 2" and want to know what burst does. They keep their index, their
+    routes and their place in search, and they stop competing with the two
+    types people actually browse.
+  */
+  "weapon-properties": { group: "gear", prominence: "supporting" },
+  "armor-properties": { group: "gear", prominence: "supporting" },
 
   monsters: { group: "bestiary", prominence: "primary" },
 
@@ -187,6 +203,14 @@ export const TYPE_NAV: Record<ContentTypeId, TypePlacement> = {
   "starship-modifications": { group: "starships", prominence: "primary" },
   "starship-ventures": { group: "starships", prominence: "primary" },
   "starship-rules": { group: "starships", prominence: "primary" },
+
+  /*
+    Reference is the group the books themselves live in, and these two are what
+    it was named for. Both are primary: looking a rule up is a thing a reader
+    sets out to do, not somewhere they end up.
+  */
+  rules: { group: "reference", prominence: "primary" },
+  "reference-tables": { group: "reference", prominence: "primary" },
 };
 
 /** One group, resolved into the destinations it offers. */

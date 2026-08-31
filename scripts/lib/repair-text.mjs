@@ -11,6 +11,14 @@
  * letter inside a proper noun would silently invent game content, which is
  * worse than admitting the character is gone. `containsUnrepairedLoss` lets
  * the UI mark what remains as a visible, labelled absence.
+ *
+ * These rules also exist a second time, in C#, as `LegacyText` in the
+ * sw5e-database repository. That is not accidental duplication and neither
+ * copy is waiting to be extracted into a shared library: this one repairs the
+ * archive as the site builds a dataset straight from it, and that one repairs
+ * the archive once, at import time, so the canonical content set is already
+ * clean and nothing reading it has to know the corruption existed. The two are
+ * kept in step by hand, and both carry this note.
  */
 
 export const REPLACEMENT = "�";
@@ -31,9 +39,42 @@ const CONTRACTION = /(?<=\p{L})�(?=(?:t|s|d|m|re|ve|ll)\b)/gu;
  * them: `a <?>tell<?> that`, `the proverb <?>unity is strength<?>.` Only a
  * quotation mark pairs like that. The length cap keeps the pairing local, so
  * two unrelated dashes far apart cannot be mistaken for a quotation.
+ *
+ * The closing context includes `|` because the corpus quotes inside pipe
+ * tables — a background's personality-trait table is one quoted line per row —
+ * and a quotation that ends a cell closes against the cell boundary rather
+ * than against a space.
  */
 const QUOTE_PAIR =
-  /(^|[\s([])�(?=\S)([^�\n]{0,80}?)(?<=\S)�(?=[\s.,;:!?)\]]|$)/gmu;
+  /(^|[\s([])�(?=\S)([^�\n]{0,80}?)(?<=\S)�(?=[\s.,;:!?)\]|]|$)/gmu;
+
+/**
+ * A replacement character that is the entire content of a markdown table cell.
+ * Only an em dash sets a cell to "none" in these tables, and the rules corpus
+ * is full of them: the starting-wealth table, the armour tables' stealth
+ * column, the tool-proficiency table's uses column, and the enhanced-item
+ * distribution tables where every zero is printed as a dash.
+ *
+ * The cell boundaries are lookaround rather than consumed, so a run of empty
+ * cells — `|1-4|6|3|<?>|<?>|<?>|<?>|9|` — repairs every one of them rather
+ * than every other one.
+ */
+const TABLE_CELL_DASH = /(?<=\|)([ \t]*)�([ \t]*)(?=\|)/g;
+
+/**
+ * A capital letter doubled at the start of a line and followed by lower case:
+ * `DDestiny plays a large role`, `WWhen you cast a power`.
+ *
+ * These are drop caps. The source books open a section with a large decorative
+ * initial, and the scraper read it both as the decoration and as the first
+ * letter of the paragraph, so the letter came out twice. The shape is safe to
+ * collapse because no English word begins with a doubled capital followed by
+ * lower case, and the corpus bears that out: the rule matches eight places in
+ * the whole archive and every one of them is a drop cap. Anchoring to the
+ * start of a line keeps it away from the middle of a sentence, where a doubled
+ * capital is more likely an abbreviation or an alien name.
+ */
+const DOUBLED_INITIAL = /(?<=^|\n)([A-Z])\1(?=[a-z])/g;
 
 /**
  * A replacement character standing alone after a space: a spaced em dash.
@@ -83,13 +124,20 @@ export function containsUnrepairedLoss(text) {
   return typeof text === "string" && text.includes(REPLACEMENT);
 }
 
-/** Applies every repair rule, in the order that keeps them from competing. */
+/**
+ * Applies every repair rule, in the order that keeps them from competing.
+ * Expects line endings to already be normalized: two of the rules are anchored
+ * to a line boundary, and a stray `\r` would sit between the anchor and the
+ * character they are looking for.
+ */
 function applyRules(text) {
   return text
     .replace(QUOTE_PAIR, '$1"$2"')
     .replace(CONTRACTION, "'")
+    .replace(TABLE_CELL_DASH, "$1—$2")
     .replace(SPACED_DASH, "—")
-    .replace(WELDED_DASH, "—");
+    .replace(WELDED_DASH, "—")
+    .replace(DOUBLED_INITIAL, "$1");
 }
 
 /**
@@ -103,7 +151,7 @@ export function repairText(value) {
   if (typeof value !== "string") return value;
   if (isTotalLoss(value)) return null;
 
-  const cleaned = normalizeWhitespace(applyRules(value));
+  const cleaned = normalizeWhitespace(applyRules(value.replace(/\r\n?/g, "\n")));
   return cleaned === "" ? null : cleaned;
 }
 
@@ -127,6 +175,8 @@ export function countRepairs(value) {
   text = text.replace(QUOTE_PAIR, '$1"$2"');
   const apostrophes = (text.match(CONTRACTION) ?? []).length;
   text = text.replace(CONTRACTION, "'");
+  const tableCellDashes = (text.match(TABLE_CELL_DASH) ?? []).length;
+  text = text.replace(TABLE_CELL_DASH, "$1—$2");
   const spacedDashes = (text.match(SPACED_DASH) ?? []).length;
   text = text.replace(SPACED_DASH, "—");
   const weldedDashes = (text.match(WELDED_DASH) ?? []).length;
@@ -136,7 +186,9 @@ export function countRepairs(value) {
     quotes,
     apostrophes,
     spacedDashes,
-    weldedDashes,
+    // A table cell's dash is an em dash like any other, so it is counted with
+    // them rather than given a line of its own in the build's summary.
+    weldedDashes: weldedDashes + tableCellDashes,
     unrepaired: (text.match(/�/g) ?? []).length,
     totalLoss: 0,
   };

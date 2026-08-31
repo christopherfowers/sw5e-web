@@ -185,11 +185,24 @@ Measured on one machine, warm cache, same hardware both ways:
 |---|---|---|---|---|
 | Canonical, before the class graph | 2,239 | 2,273 | 3m18s | 53 MB |
 | Canonical, with it | 5,092 | 5,129 | 26m46s | 113 MB |
-| Committed fixture | 64 | 125 | seconds | — |
+| Committed fixture | 84 | 126 | seconds | — |
 
-Thirty-seven routes in each total are fixed — the home page, search, the sources
+Forty-two routes in each total are fixed — the home page, search, the sources
 index and its five book pages, one index per content type, and the seven account
 pages — and do not vary with the dataset.
+
+Adding the enhanced items, the property glossaries, the rules and the reference
+tables puts another 2,099 documents on top of that, for roughly 7,230 routes. No
+clean like-for-like timing of that build exists yet: two attempts on the machine
+above were abandoned after the 5,092-document baseline alone had not finished in
+forty minutes, which is itself the point — at this size a run is long enough that
+anything else happening on the box changes the answer. One thing observed at
+around 2,200 routes, before the class graph landed, is worth recording: a run
+failed part-way with `Prerender: Request failed` and an empty message, and a
+straight retry cleared it. That is not a reason to publish less content — the
+routes are cheap to serve, and the windowing below means a long index costs a
+reader nothing — but a prerender that fails non-deterministically at this size
+says the same thing the curve does.
 
 **2.3 times the routes cost 8.1 times the time**: 87ms per route became 313ms.
 That is the number to argue about, not the total. Whatever the cause — one

@@ -249,11 +249,12 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 37 pages that do not come from content:
+          # One page per document, plus 42 pages that do not come from content:
           # the home page, the search page, the sources index, five source
-          # pages, twenty-two type indexes, and the seven account routes listed
-          # in ACCOUNT_PATHS in react-router.config.ts. `source` is the only
-          # directory that is not a browsable type, so the other twenty-two
+          # pages, twenty-seven type indexes, and the seven account routes
+          # listed in ACCOUNT_PATHS in react-router.config.ts. `source` is the
+          # only directory that is not a browsable type, so the other
+          # twenty-seven
           # contribute item pages.
           #
           # The account routes are prerendered deliberately, as signed-out
@@ -266,12 +267,10 @@ jobs:
                       background feat power \
                       maneuver fighting-style fighting-mastery \
                       lightsaber-form weapon-focus weapon-supremacy \
-                      equipment monster \
-                      starship-base-size starship-deployment starship-equipment \
-                      starship-modification starship-venture starship-rule; do
+                      equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 37))
+          expected=$((items + 42))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
@@ -326,6 +325,45 @@ jobs:
             if [ "$rendered" -ne "$canonical" ]; then
               echo "::error::/$segment renders $rendered items; the content it" \
                 "was built from has $canonical"
+
+      - name: The largest type in the corpus is rendered whole
+        run: |
+          # Enhanced items are 1,918 of the roughly 2,200 documents this site
+          # publishes, and they are the type most likely to be silently
+          # truncated: a build that ran out of memory partway through the
+          # prerender, or a generator that quietly dropped a directory, still
+          # produces a site that looks finished. The species check above cannot
+          # catch either, because species are fourteen documents.
+          canonical=$(ls canonical-content/enhanced-item/*.json | wc -l)
+          rendered=$(docker exec sw5e-web \
+            find /usr/share/nginx/html/enhanced-items -name index.html | wc -l)
+
+          # One page per item, plus the type's own index page.
+          echo "canonical enhanced items: $canonical, rendered pages: $rendered"
+          if [ "$rendered" -ne "$((canonical + 1))" ]; then
+            echo "the image renders $rendered enhanced-item pages; the content" \
+              "it was built from has $canonical items, which should give" \
+              "$((canonical + 1)) pages including the index."
+            exit 1
+          fi
+
+      - name: A rules chapter serves its prose, not just its heading
+        run: |
+          # The rules are the one content type that is prose rather than a
+          # catalogue row, and the only one whose body is large enough to be
+          # dropped by a size limit somewhere in the pipeline without anything
+          # failing. A page that renders its title and none of its text is
+          # indistinguishable from a working one at the status-line level.
+          body=$(curl --fail --silent \
+            http://127.0.0.1:8080/rules/phb-appendix-a-conditions)
+
+          grep -q '<h1>Appendix A: Conditions</h1>' <<< "$body"
+
+          # Every condition is a section heading in that chapter. If the body
+          # survived, these did.
+          for condition in Blinded Charmed Frightened Prone Restrained Stunned; do
+            if ! grep -q ">$condition<" <<< "$body"; then
+              echo "the conditions chapter rendered without its $condition section"
               exit 1
             fi
           done
@@ -362,6 +400,21 @@ jobs:
           fi
           if [ "$rendered" -ne "$canonical" ]; then
             echo "::error::/features links $rendered of $canonical entries."               "Every entry must stay in the markup: it is what a crawler and"               "a reader without JavaScript see."
+
+      - name: A type with no source in the archive publishes no source badge
+        run: |
+          # The property glossaries and the reference tables carry no
+          # sourceKey, because the archive records none and guessing a book
+          # would put a false citation on a rules page. This asserts the
+          # decision survived the pipeline rather than being quietly filled in
+          # with a default.
+          body=$(curl --fail --silent http://127.0.0.1:8080/weapon-properties)
+
+          grep -q '<h1>Weapon properties</h1>' <<< "$body"
+
+          if grep -qE 'href="/sources/(phb|ec|wh|snv)"' <<< "$body"; then
+            echo "the weapon-property index cites a source book; the archive" \
+              "records none for any of these entries."
             exit 1
           fi
 

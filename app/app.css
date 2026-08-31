@@ -122,12 +122,17 @@
   --mark-bg: #ffe08a;
   --mark-text: #1a1814;
 
-  /* The information ramp. Nothing outside this list may be a hue. */
+  /* The information ramp. Nothing outside this list may be a hue.
+   * clay and rose were added for the rules material and the enhanced items;
+   * both are checked against --surface at the same 4.5:1 as the rest, and both
+   * are far enough from amber and red to stay distinguishable beside them. */
   --hue-amber: #8a5a06;
+  --hue-clay: #8a4a2a;
   --hue-cyan: #0d6273;
   --hue-green: #1f6b34;
   --hue-indigo: #3a45a8;
   --hue-red: #ab1c26;
+  --hue-rose: #a51f5b;
   --hue-steel: #4b5769;
   --hue-teal: #0c6a58;
   --hue-violet: #6a35b5;
@@ -193,10 +198,12 @@
     --mark-text: #ffdf8a;
 
     --hue-amber: #f5b53d;
+    --hue-clay: #f0a980;
     --hue-cyan: #56cfe1;
     --hue-green: #6ede8a;
     --hue-indigo: #9fb0ff;
     --hue-red: #ff8288;
+    --hue-rose: #ff9dc4;
     --hue-steel: #adbacc;
     --hue-teal: #52d0b6;
     --hue-violet: #c6a6ff;
@@ -1041,10 +1048,12 @@ kbd {
 }
 
 .badge[data-accent="amber"] { color: var(--hue-amber); }
+.badge[data-accent="clay"] { color: var(--hue-clay); }
 .badge[data-accent="cyan"] { color: var(--hue-cyan); }
 .badge[data-accent="green"] { color: var(--hue-green); }
 .badge[data-accent="indigo"] { color: var(--hue-indigo); }
 .badge[data-accent="red"] { color: var(--hue-red); }
+.badge[data-accent="rose"] { color: var(--hue-rose); }
 .badge[data-accent="steel"] { color: var(--hue-steel); }
 .badge[data-accent="teal"] { color: var(--hue-teal); }
 .badge[data-accent="violet"] { color: var(--hue-violet); }
@@ -1313,10 +1322,12 @@ kbd {
 
 /* Accent plumbing: one attribute on an element, one variable for its subtree. */
 [data-accent="amber"] { --type-accent: var(--hue-amber); }
+[data-accent="clay"] { --type-accent: var(--hue-clay); }
 [data-accent="cyan"] { --type-accent: var(--hue-cyan); }
 [data-accent="green"] { --type-accent: var(--hue-green); }
 [data-accent="indigo"] { --type-accent: var(--hue-indigo); }
 [data-accent="red"] { --type-accent: var(--hue-red); }
+[data-accent="rose"] { --type-accent: var(--hue-rose); }
 [data-accent="steel"] { --type-accent: var(--hue-steel); }
 [data-accent="teal"] { --type-accent: var(--hue-teal); }
 [data-accent="violet"] { --type-accent: var(--hue-violet); }
@@ -1636,6 +1647,67 @@ th[aria-sort="descending"] .sort-indicator {
  * scanned by shape and silhouette in a way a column of names cannot, which is
  * the whole reason the archive's art was worth recovering.
  */
+/* The rules index: a table of contents rather than a table.
+ *
+ * Two columns on a wide screen, because a book's chapter list is short and
+ * tall and would otherwise leave two thirds of the page empty; one column on a
+ * phone, where a two-column list of long titles is unreadable. The numbering
+ * comes from the `<ol>` rather than from the data — a chapter's printed number
+ * is already in its meta line, and the list's own count is what tells a reader
+ * how far through the book an entry sits. */
+.chapter-list {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-4);
+}
+
+.chapter-book {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  font-size: 1.0625rem;
+  border-bottom: 2px solid var(--type-accent, var(--border-strong));
+}
+
+.chapter-book-count {
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter-entries {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+}
+
+@media (min-width: 48rem) {
+  .chapter-entries {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+  }
+}
+
+.chapter-entries li {
+  break-inside: avoid;
+}
+
+.chapter-entries a {
+  font-weight: 600;
+}
+
+.chapter-entry-meta {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
 .gallery {
   list-style: none;
   display: grid;

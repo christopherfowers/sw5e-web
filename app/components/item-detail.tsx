@@ -1,11 +1,12 @@
 /**
  * A content item, whatever shape it happens to be.
  *
- * The content types are not uniform — a feat carries six fields and a creature
- * carries forty-seven — so this renders four open-ended collections rather
- * than a fixed field list: key/value stats, prose sections, named entries
- * (traits, actions, features) and roll tables. A type that has none of a given
- * collection simply renders nothing for it.
+ * The content types are not uniform — a feat carries six fields, a creature
+ * carries forty-seven, and a rules chapter carries one field half a megabyte
+ * long — so this renders four open-ended collections rather than a fixed field
+ * list: key/value stats, prose sections, named entries (traits, actions,
+ * features) and roll tables. A type that has none of a given collection simply
+ * renders nothing for it.
  *
  * Some types also have a picture. A species has its portrait, an archetype has
  * its class illustration, and both come from `itemFigure` below rather than
@@ -14,6 +15,8 @@
  * back to a single column — there is no empty frame and no broken icon,
  * because an `<img>` is only ever emitted for a file this build contains.
  */
+
+import { Link } from "react-router";
 
 import { Badge, SourceBadge } from "./badges";
 import { AssetImage, MonogramPlate } from "./media";
@@ -133,6 +136,10 @@ export function ItemDetail({ item }: { item: ContentItem }) {
                   <dd>
                     {stat.lost || stat.value == null ? (
                       <LostValue />
+                    ) : stat.href ? (
+                      <Link to={stat.href}>
+                        <SourceText value={stat.value} />
+                      </Link>
                     ) : (
                       <SourceText value={stat.value} />
                     )}
