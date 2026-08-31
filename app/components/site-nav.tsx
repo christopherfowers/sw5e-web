@@ -15,7 +15,7 @@
  *
  *   - It works with JavaScript switched off. Every page of this site is static
  *     HTML and the whole point is that it is readable without a bundle; a menu
- *     that needs hydration to open would put twenty-two of the site's twenty-six
+ *     that needs hydration to open would put twenty of the site's twenty-three
  *     destinations behind JavaScript.
  *   - Enter and Space operate it natively, and it is in the tab order once, as
  *     one stop, rather than as a widget with its own key handling to get wrong.
