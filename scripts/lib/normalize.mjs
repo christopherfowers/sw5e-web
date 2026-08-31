@@ -610,6 +610,218 @@ function normalizeArchetype(record) {
   };
 }
 
+/* ---------------------------------------------------------------- classes */
+
+/**
+ * The class level table, out of the archive's shape.
+ *
+ * The archive stores it as an object keyed by level, each value an object keyed
+ * by printed column heading, in printed column order. Two of those columns are
+ * dropped: "Level" duplicates the row's own key, and "Features" is pulled out
+ * ahead of the rest so it keeps its place immediately after the proficiency
+ * bonus whatever else the class prints.
+ */
+function classProgressionTable(levelChanges) {
+  if (!levelChanges || typeof levelChanges !== "object") return null;
+
+  const levels = Object.keys(levelChanges)
+    .filter((key) => /^\d+$/.test(key))
+    .sort((left, right) => Number(left) - Number(right));
+
+  if (levels.length === 0) return null;
+
+  const fixed = new Set(["Level", "Proficiency Bonus", "Features"]);
+  const labels = [];
+  for (const level of levels) {
+    for (const label of Object.keys(levelChanges[level] ?? {})) {
+      if (!fixed.has(label) && !labels.includes(label)) labels.push(label);
+    }
+  }
+
+  const rows = levels.map((level) => {
+    const row = levelChanges[level] ?? {};
+    return [
+      ordinal(Number(level)),
+      text(row["Proficiency Bonus"]) ?? "—",
+      text(row.Features) ?? "—",
+      ...labels.map((label) => text(row[label]) ?? "—"),
+    ];
+  });
+
+  return {
+    caption: "Class progression",
+    columns: ["Level", "Proficiency Bonus", "Features", ...labels],
+    rows,
+  };
+}
+
+/** `1` becomes `1st`. Levels are printed as ordinals throughout the corpus. */
+function ordinal(level) {
+  if (level == null || !Number.isFinite(level)) return null;
+  const rest = level % 100;
+  if (rest >= 11 && rest <= 13) return `${level}th`;
+  return `${level}${["th", "st", "nd", "rd"][level % 10] ?? "th"}`;
+}
+
+/**
+ * One printed proficiency line, rebuilt from the commas the scrape split it on.
+ * "None" is how the archive writes an empty line.
+ */
+function proficiencyLine(values) {
+  const parts = list(values);
+  if (!parts || (parts.length === 1 && parts[0] === "None")) return null;
+  return parts.join(", ");
+}
+
+function normalizeClass(record) {
+  const base = common(record);
+  const { add, stats } = statCollector();
+  const primaryAbility = text(record.primaryAbility);
+  const hitDie = numeric(record.hitDiceDieType);
+  const rawCasterType = text(record.casterType);
+  const casterType = rawCasterType === "None" ? null : rawCasterType;
+
+  add("Primary ability", primaryAbility);
+  add("Hit die", hitDie == null ? null : `d${hitDie}`);
+  add("Hit points at 1st level", text(record.hitPointsAtFirstLevel));
+  add("Hit points at higher levels", text(record.hitPointsAtHigherLevels));
+  add("Saving throws", list(record.savingThrows));
+  add("Armor", proficiencyLine(record.armorProficiencies));
+  add("Weapons", proficiencyLine(record.weaponProficiencies));
+  add("Tools", proficiencyLine(record.toolProficiencies));
+  add("Skills", text(record.skillChoices));
+  add("Starting wealth", text(record.startingWealthVariant));
+  add("Casting", casterType);
+  add("Multiclass proficiencies", proficiencyLine(record.multiClassProficiencies));
+
+  return {
+    ...base,
+    tagline:
+      compact([
+        hitDie == null ? null : `d${hitDie} hit die`,
+        primaryAbility,
+        casterType ? `${casterType} casting` : null,
+      ]).join(" · ") || null,
+    summary: { primaryAbility, hitDie, casterType, archetypeCount: null },
+    stats,
+    sections: compact([
+      section(null, proseText(record.flavorText)),
+      section(null, proseText(record.classFeatureText)),
+      section(text(record.archetypeFlavorName), proseText(record.archetypeFlavorText)),
+      section(`Creating a ${base.name.toLowerCase()}`, proseText(record.creatingText)),
+      section("Quick build", proseText(record.quickBuildText)),
+      section("Starting equipment", proseText((list(record.equipmentLines) ?? []).join("\n"))),
+    ]),
+    entries: [],
+    tables: compact([classProgressionTable(record.levelChanges)]),
+  };
+}
+
+/* ------------------------------------------------------- class improvements */
+
+const IMPROVEMENT_LABELS = {
+  class: "Class Improvement",
+  multiclass: "Multiclass Improvement",
+  splashclass: "Splashclass Improvement",
+};
+
+const IMPROVEMENT_TAGLINES = {
+  class: "Taken while advancing in the class",
+  multiclass: "What the class contributes to a multiclassed character",
+  splashclass: "Available without any levels in the class",
+};
+
+/**
+ * One of the three per-class improvement rules.
+ *
+ * The archive puts the class name in `name` and records the kind nowhere at
+ * all — the file it came from is the only thing that says which of the three
+ * this is, so the reader tags each record with `improvementType` before it
+ * reaches here. Both the display name and the slug are rebuilt from the pair,
+ * because ten records called "Berserker" across three files would otherwise
+ * collide into one URL and read as three copies of one entry.
+ */
+function normalizeClassImprovement(record) {
+  const className = text(record.name);
+  const improvementType = text(record.improvementType);
+  const name = `${className} ${IMPROVEMENT_LABELS[improvementType] ?? "Improvement"}`;
+  const source = text(record.contentSource);
+  const { add, stats } = statCollector();
+  const prerequisite = text(record.prerequisite);
+
+  add("Class", className);
+  add("Kind", improvementType ? humanize(improvementType) : null);
+  add("Prerequisite", prerequisite);
+
+  return {
+    name,
+    slug: slugify(name),
+    source,
+    sourceName: source ? (SOURCE_NAMES[source] ?? source) : null,
+    tagline: improvementType ? (IMPROVEMENT_TAGLINES[improvementType] ?? null) : null,
+    summary: {
+      className,
+      improvementType: improvementType ? humanize(improvementType) : null,
+      prerequisite,
+    },
+    stats,
+    sections: compact([section(null, proseText(record.description))]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/* --------------------------------------------------------------- features */
+
+/**
+ * One granted ability.
+ *
+ * The archive has no key for a feature and its name is nowhere near unique —
+ * "Ability Score Improvement" appears forty times — so the URL is built the way
+ * the canonical set builds its key: from the granting kind, the granting entry,
+ * the name and the level.
+ *
+ * Nothing here links back to the class or archetype that grants it, which the
+ * canonical mapping does do. That link needs a stable key on both ends, and the
+ * archive has one on neither; this path exists to keep a dataset buildable
+ * without the canonical set, not to reproduce everything it can express.
+ */
+function normalizeFeature(record) {
+  const source = text(record.source);
+  const grantedByName = text(record.sourceName);
+  const level = numeric(record.level);
+  const { add, stats } = statCollector();
+
+  add("Granted by", grantedByName);
+  add("Level", ordinal(level));
+
+  return {
+    name: text(record.name) ?? String(record.name ?? "").trim(),
+    slug: slugify(
+      [source, grantedByName, record.name, level == null ? null : String(level)]
+        .filter(Boolean)
+        .join(" "),
+    ),
+    // A feature record carries no provenance of its own. The canonical import
+    // derives it from the granting entry; this path leaves it unattributed
+    // rather than guessing, and the badge is simply absent.
+    source: null,
+    sourceName: null,
+    tagline:
+      compact([grantedByName, level == null ? null : `${ordinal(level)} level`]).join(" · ") ||
+      null,
+    summary: {
+      grantedBy: source ? humanize(source) : null,
+      grantedByName,
+      level,
+    },
+    stats,
+    sections: compact([section(null, proseText(record.text))]),
+    entries: [],
+    tables: [],
+  };
+}
+
 /* -------------------------------------------------------------- maneuvers */
 
 /**
@@ -799,10 +1011,26 @@ function normalizeLightsaberForm(record) {
 /**
  * Every content type, in the order the site presents them. `file` names the
  * archive dump; `id` is the URL segment and the key everything else uses.
+ *
+ * `class-improvements` is the one type with more than one dump behind it. The
+ * three files hold identical records and become one type, and nothing in a
+ * record says which file it came from, so `files` pairs each dump with the kind
+ * it holds and the reader tags every record with it.
  */
 export const CONTENT_TYPES = [
   { id: "species", file: "Species", normalize: normalizeSpecies },
+  { id: "classes", file: "Class", normalize: normalizeClass },
+  {
+    id: "class-improvements",
+    files: [
+      { file: "ClassImprovement", improvementType: "class" },
+      { file: "MulticlassImprovement", improvementType: "multiclass" },
+      { file: "SplashclassImprovement", improvementType: "splashclass" },
+    ],
+    normalize: normalizeClassImprovement,
+  },
   { id: "archetypes", file: "Archetype", normalize: normalizeArchetype },
+  { id: "features", file: "Feature", normalize: normalizeFeature },
   { id: "backgrounds", file: "Background", normalize: normalizeBackground },
   { id: "feats", file: "Feat", normalize: normalizeFeat },
   { id: "powers", file: "Power", normalize: normalizePower },

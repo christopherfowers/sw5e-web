@@ -29,9 +29,12 @@ import type {
   AnySummary,
   ArchetypeSummary,
   BackgroundSummary,
+  ClassImprovementSummary,
+  ClassSummary,
   ContentTypeId,
   EquipmentSummary,
   FeatSummary,
+  FeatureSummary,
   FightingOptionSummary,
   LightsaberFormSummary,
   ManeuverSummary,
@@ -198,6 +201,190 @@ const species: ListConfig<SpeciesSummary> = {
     sourceFacet(),
   ],
 };
+
+/**
+ * Ten rows, each with the class illustration beside it. A class is the one
+ * choice in this corpus that a reader makes exactly once, so the index is short
+ * enough to show every column that matters to that choice: what it plays like,
+ * how much punishment it takes, and whether it casts.
+ */
+const classes: ListConfig<ClassSummary> = {
+  defaultSort: "name",
+  compactLine: (row) =>
+    joinParts([
+      row.hitDie == null ? null : `d${row.hitDie}`,
+      row.primaryAbility,
+      row.casterType,
+    ]),
+  rowMedia: (row) => ({
+    image: classArt(row.name),
+    alt: `Illustration of a ${row.name}`,
+  }),
+  columns: [
+    nameColumn(),
+    {
+      key: "primaryAbility",
+      header: "Primary ability",
+      className: FROM_SMALL,
+      sortValue: (row) => row.primaryAbility,
+      render: (row) => textOr(row.primaryAbility),
+    },
+    {
+      key: "hitDie",
+      header: "Hit die",
+      numeric: true,
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.hitDie,
+      render: (row) =>
+        row.hitDie == null ? em : (
+          <Badge className="badge-numeric" accent="indigo">{`d${row.hitDie}`}</Badge>
+        ),
+    },
+    {
+      key: "casterType",
+      header: "Casting",
+      className: FROM_MEDIUM,
+      render: (row) =>
+        row.casterType ? (
+          <Badge accent={powerTypeAccent(row.casterType)}>{row.casterType}</Badge>
+        ) : (
+          em
+        ),
+    },
+    {
+      key: "archetypeCount",
+      header: "Archetypes",
+      numeric: true,
+      className: FROM_LARGE,
+      sortValue: (row) => row.archetypeCount,
+      render: (row) =>
+        row.archetypeCount == null ? em : String(row.archetypeCount),
+    },
+    sourceColumn(),
+  ],
+  facets: [
+    {
+      key: "primaryAbility",
+      label: "Primary ability",
+      valueOf: (row) => row.primaryAbility,
+    },
+    { key: "casterType", label: "Casting", valueOf: (row) => row.casterType },
+  ],
+};
+
+const classImprovements: ListConfig<ClassImprovementSummary> = {
+  defaultSort: "name",
+  compactLine: (row) => joinParts([row.className, row.improvementType]),
+  rowMedia: (row) =>
+    row.className
+      ? {
+          image: classArt(row.className),
+          alt: `Illustration of a ${row.className}`,
+        }
+      : null,
+  columns: [
+    nameColumn(),
+    {
+      key: "className",
+      header: "Class",
+      className: FROM_SMALL,
+      sortValue: (row) => row.className,
+      render: (row) =>
+        row.className ? <Badge accent="indigo">{row.className}</Badge> : em,
+    },
+    {
+      key: "improvementType",
+      header: "Kind",
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.improvementType,
+      render: (row) => textOr(row.improvementType),
+    },
+    {
+      key: "prerequisite",
+      header: "Prerequisite",
+      className: FROM_LARGE,
+      render: (row) => mutedOr(row.prerequisite),
+    },
+  ],
+  facets: [
+    { key: "className", label: "Class", valueOf: (row) => row.className },
+    { key: "improvementType", label: "Kind", valueOf: (row) => row.improvementType },
+  ],
+};
+
+/**
+ * The longest table on the site by some distance — over a thousand rows — so it
+ * is striped, and the two facets that cut it down are the ones a reader
+ * actually has in mind: the level they are about to reach, and the class or
+ * archetype they are playing.
+ */
+const features: ListConfig<FeatureSummary> = {
+  defaultSort: "name",
+  striped: true,
+  compactLine: (row) =>
+    joinParts([
+      row.grantedByName,
+      row.level == null ? null : `${row.level}${ordinalSuffix(row.level)} level`,
+    ]),
+  columns: [
+    nameColumn(),
+    {
+      key: "level",
+      header: "Level",
+      numeric: true,
+      sortValue: (row) => row.level,
+      render: (row) =>
+        row.level == null ? (
+          em
+        ) : (
+          <Badge className="badge-numeric" accent="indigo">
+            {row.level}
+          </Badge>
+        ),
+    },
+    {
+      key: "grantedByName",
+      header: "Granted by",
+      className: FROM_SMALL,
+      sortValue: (row) => row.grantedByName,
+      render: (row) => textOr(row.grantedByName),
+    },
+    {
+      key: "grantedBy",
+      header: "From",
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.grantedBy,
+      render: (row) => mutedOr(row.grantedBy),
+    },
+    sourceColumn(),
+  ],
+  facets: [
+    {
+      key: "grantedBy",
+      label: "Granted by",
+      valueOf: (row) => row.grantedBy,
+    },
+    {
+      key: "level",
+      label: "Level",
+      valueOf: (row) => (row.level == null ? null : String(row.level)),
+      compare: (left, right) => Number(left) - Number(right),
+    },
+    {
+      key: "grantedByName",
+      label: "Class or archetype",
+      valueOf: (row) => row.grantedByName,
+    },
+    sourceFacet(),
+  ],
+};
+
+/** `1` takes "st", `13` takes "th". Only used for the narrow-screen digest. */
+function ordinalSuffix(level: number): string {
+  const rest = level % 100;
+  if (rest >= 11 && rest <= 13) return "th";
+  return ["th", "st", "nd", "rd"][level % 10] ?? "th";
+}
 
 const archetypes: ListConfig<ArchetypeSummary> = {
   defaultSort: "name",
@@ -1021,7 +1208,10 @@ function ratingValue(rating: string): number {
 
 const CONFIGS = {
   species,
+  classes,
+  "class-improvements": classImprovements,
   archetypes,
+  features,
   backgrounds,
   feats,
   powers,

@@ -36,6 +36,7 @@ import process from "node:process";
 
 import {
   CANONICAL_DIRECTORIES,
+  buildClassGraph,
   indexSources,
   normalizeAllCanonical,
 } from "./lib/canonical.mjs";
@@ -44,7 +45,10 @@ import { REPLACEMENT, countRepairs } from "./lib/repair-text.mjs";
 
 const TYPE_LABELS = {
   species: { singular: "Species", plural: "Species" },
+  classes: { singular: "Class", plural: "Classes" },
+  "class-improvements": { singular: "Class improvement", plural: "Class improvements" },
   archetypes: { singular: "Archetype", plural: "Archetypes" },
+  features: { singular: "Feature", plural: "Features" },
   backgrounds: { singular: "Background", plural: "Backgrounds" },
   feats: { singular: "Feat", plural: "Feats" },
   powers: { singular: "Power", plural: "Powers" },
@@ -211,6 +215,27 @@ async function readArchiveType(archiveDirectory, fileName) {
   return parsed;
 }
 
+/**
+ * Every archive record for one content type.
+ *
+ * Most types are one dump. `class-improvements` is three, and which of the
+ * three a record came from is the only thing that says what kind of
+ * improvement it is — the records themselves are identical in shape and carry
+ * nothing to tell them apart. So the reader stamps the kind on each record as
+ * it is read, and the normalizer treats it as a field like any other.
+ */
+async function readArchiveRecords(archiveDirectory, type) {
+  if (!type.files) return readArchiveType(archiveDirectory, type.file);
+
+  const records = [];
+  for (const { file, improvementType } of type.files) {
+    for (const record of await readArchiveType(archiveDirectory, file)) {
+      records.push({ ...record, improvementType });
+    }
+  }
+  return records;
+}
+
 async function writeJson(directory, name, value) {
   const file = path.join(directory, name);
   await writeFile(file, `${JSON.stringify(value)}\n`, "utf8");
@@ -293,21 +318,44 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
   }
   const sources = indexSources(sourceRecords);
 
-  const types = [];
+  // Every document is read once, before anything is normalized, because four
+  // of the types are a graph rather than a catalogue: a class page links to
+  // its archetypes, its improvements and everything it grants, and a feature
+  // page links back. None of those links can be resolved from one type's
+  // documents alone.
+  const records = new Map();
   for (const type of CONTENT_TYPES) {
     const directory = CANONICAL_DIRECTORIES[type.id];
+    records.set(
+      type.id,
+      directory ? await readCanonicalType(contentDirectory, directory) : [],
+    );
+  }
+
+  const graph = buildClassGraph({
+    classes: records.get("classes") ?? [],
+    classImprovements: records.get("class-improvements") ?? [],
+    archetypes: records.get("archetypes") ?? [],
+    features: records.get("features") ?? [],
+  });
+
+  const types = [];
+  for (const type of CONTENT_TYPES) {
     // A type the canonical set does not carry still gets its files and its
     // manifest entry, so the site keeps the route and renders an empty index
     // instead of 404ing on a link its own navigation offers.
-    if (!directory) {
+    if (!CANONICAL_DIRECTORIES[type.id]) {
       types.push({ id: type.id, items: [] });
       continue;
     }
 
-    const records = await readCanonicalType(contentDirectory, directory);
-    const items = normalizeAllCanonical(type.id, records, sources).sort(
-      (left, right) => left.name.localeCompare(right.name, "en"),
-    );
+    const items = normalizeAllCanonical(
+      type.id,
+      records.get(type.id) ?? [],
+      sources,
+      graph,
+    ).sort((left, right) => left.name.localeCompare(right.name, "en"));
+
     types.push({ id: type.id, items });
   }
 
@@ -392,15 +440,16 @@ async function buildFromArchive(options, outputDirectory) {
   const types = [];
   for (const type of CONTENT_TYPES) {
     // A type the archive path does not carry still gets its files and its
-    // manifest entry, the same way the canonical path treats maneuvers: the
-    // route stays and renders an empty index, so the gap is visible rather
-    // than being a link the navigation offers and nothing answers.
-    if (!type.file) {
+    // manifest entry, the same way the canonical path treats a directory it
+    // has not been given: the route stays and renders an empty index, so the
+    // gap is visible rather than being a link the navigation offers and
+    // nothing answers.
+    if (!type.file && !type.files) {
       types.push({ id: type.id, items: [] });
       continue;
     }
 
-    const records = await readArchiveType(archiveDirectory, type.file);
+    const records = await readArchiveRecords(archiveDirectory, type);
     countRepairsDeep(records, repairs);
 
     // Alphabetical by name is the canonical order: it decides the default

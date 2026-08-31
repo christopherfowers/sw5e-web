@@ -58,11 +58,10 @@ rather than disappearing from the navigation or answering 404 on a link the
 header offers. The site's type ids are plural because they are URL segments
 and the canonical directories are singular, so the two are pinned to each
 other rather than derived: `/maneuvers` is a published address and reads
-`content/maneuver`. The `feature` and `source`
-directories are deliberately not published as browsable types — features are
-already written out in the prose of the archetype that grants them, and the
-books are described in `app/content/source-meta.ts`, which carries a blurb,
-a colour and a cover that a data file cannot. The mapping and its reasoning
+`content/maneuver`. The `source` directory is
+deliberately not published as a browsable type: the books are described in
+`app/content/source-meta.ts`, which carries a blurb, a colour and a cover that
+a data file cannot. The mapping and its reasoning
 live in `scripts/lib/canonical.mjs`.
 
 The traffic also runs the other way. The six starship types are canonical-only:
@@ -74,6 +73,52 @@ only because the import read them back out of the rules chapters. Mapping the
 flat records here instead would publish a starship section that cannot say how
 much hull a Small ship has, so `scripts/lib/normalize.mjs` records them with no
 archive file rather than producing a poorer copy.
+
+## The class graph
+
+Four of the twenty-two types are not a catalogue but a graph, and they are mapped
+together for that reason: a class, the three improvement rules that say what it
+is worth to a character multiclassing in or out of it, the archetypes that
+branch off it, and every feature any of those grants. Species join the same
+graph from the side: 1,593 of the 2,682 features are species traits, and their
+pages link back to the species that grants them.
+
+`buildClassGraph` in `scripts/lib/canonical.mjs` walks all four sets of
+documents once, before anything is normalized, and the pages are then built with
+links rather than with their neighbours' text copied into them. A class page
+carries its level table, a linked index of what it grants at each level, and
+links to its archetypes and improvements; an archetype page carries the same
+index and a link back to its class; a feature page links back to whatever grants
+it.
+
+**Features are browsable, and this changed.** They used to be a canonical
+directory with no site type, on the grounds that every one of them is already
+written out in the prose of the class, archetype or species that grants it, so
+publishing them would show the same text twice. The duplication was real; the
+conclusion was wrong. A feature is the unit a person actually looks up — nobody
+asks what Soresu Form says, they ask what Deflection does, mid-turn, and expect
+to search for it by name and send someone the link. Unpublished, all 2,682 of
+them were reachable only by opening one of 288 long pages and reading, and
+search could only ever answer with the parent whose prose happened to contain
+the words. They are also the far end of every level grant in the corpus: a class
+table that names what arrives at 7th level has nothing to point at unless the
+thing it names has a page.
+
+At 2,682 documents this is the largest content type on the site by some
+distance, and it is what the build-time figures below are mostly about.
+
+The duplication is handled rather than avoided. A class or archetype still
+prints its own page in full — 38 features carry a sentence their parent's prose
+lost, and a parent's own tables and introductions belong to no feature at all,
+so dropping either side would lose content. What the parent gains is a table of
+contents, not a second copy.
+
+A feature's URL is its canonical key — `/features/class-berserker-rage-1` —
+rather than its name. Forty features are called "Ability Score Improvement",
+a dozen classes grant an "Extra Attack", and hundreds of species traits share
+names across species; a slug built from the name would put them all on one
+page, or resolve the collision with a numeric suffix that moves whenever the
+corpus grows.
 
 ### The committed fixture — what a clean clone falls back to
 
@@ -131,10 +176,42 @@ embedded in its own HTML, rather than the whole library. The one exception is
 search, which needs the whole corpus in the browser and so fetches a compact
 index on first use.
 
-With the canonical content that is **139 prerendered routes in about 10
-seconds**; with the legacy archive's full library it is 1,842 routes in about
-3m20s on a warm cache, and with the committed fixture 54 routes. Seven of each
-of those totals are the account pages, which do not vary with the dataset.
+### What that costs
+
+Prerendering is nearly the whole build, and it does not scale linearly.
+Measured on one machine, warm cache, same hardware both ways:
+
+| Dataset | Documents | Routes | Build | Output |
+|---|---|---|---|---|
+| Canonical, before the class graph | 2,239 | 2,273 | 3m18s | 53 MB |
+| Canonical, with it | 5,092 | 5,129 | 26m46s | 113 MB |
+| Committed fixture | 64 | 125 | seconds | — |
+
+Thirty-seven routes in each total are fixed — the home page, search, the sources
+index and its five book pages, one index per content type, and the seven account
+pages — and do not vary with the dataset.
+
+**2.3 times the routes cost 8.1 times the time**: 87ms per route became 313ms.
+That is the number to argue about, not the total. Whatever the cause — one
+long-lived Node process rendering five thousand pages in sequence is the obvious
+suspect — the shape of the curve says the next content type of this size will
+not simply add its own share, and "prerender everything, serially" is close to
+the end of its useful life. Two levers are already visible and neither has been
+pulled here:
+
+- React Router's prerender `concurrency`, which defaults to 1. It was tried and
+  put back, because on Windows the prerender client gives every request its own
+  socket with `Connection: close` and four at once made the very first request
+  fail outright. CI is Linux and it may well be free there.
+- Not prerendering every item of every type. The reader-facing argument for
+  static HTML is search-engine visibility and instant loads, and both are worth
+  most on the pages people actually land on.
+
+The `/features` index is also now the largest page the site publishes: 2,682
+rows come to 2.1 MB of HTML, 141 KB after gzip, against 209 KB and 22 KB for the
+271-row creature index. nginx serves it compressed and it is one document rather
+than a request per row, but a list page that ships every row is the other thing
+that does not survive another type this size.
 
 Deployment note: the static host must resolve `/species/wookiee` to
 `species/wookiee/index.html`, which Netlify, Cloudflare Pages, GitHub Pages and

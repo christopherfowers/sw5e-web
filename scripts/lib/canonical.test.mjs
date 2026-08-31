@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   CANONICAL_DIRECTORIES,
+  buildClassGraph,
   indexSources,
   normalizeAllCanonical,
 } from "./canonical.mjs";
@@ -592,6 +593,239 @@ describe("backgrounds", () => {
     expect(item.tables.map((table) => table.caption)).not.toContain(
       "Mandalorian Clan",
     );
+  });
+});
+
+/**
+ * The class graph. These four types are the only part of the corpus where a
+ * page is worth less on its own than it is joined to its neighbours, so what
+ * the tests below pin down is the joins: that a class's table survives the trip
+ * intact, that its features are reachable from it, and that a feature can be
+ * reached at all — which needs a slug that its name cannot supply.
+ */
+describe("the class graph", () => {
+  const berserker = {
+    key: "berserker",
+    name: "Berserker",
+    sourceKey: "phb",
+    contentSet: "core",
+    summary: "Melee combatant who utilizes rage to increase prowess",
+    primaryAbility: "strength",
+    hitPoints: {
+      dieFaces: 12,
+      atFirstLevel: "12 + your Constitution modifier",
+      atHigherLevels: "1d12 (or 7) + your Constitution modifier per berserker level after 1st",
+    },
+    proficiencies: {
+      armor: "Light armor, medium armor",
+      weapons: "All vibroweapons, simple blasters",
+      savingThrows: ["strength", "constitution"],
+      skills: { choose: 2, from: ["Athletics", "Survival"], text: "Choose two from Athletics, Survival" },
+    },
+    multiclassProficiencies: "Light armor, all vibroweapons",
+    startingWealth: "5d4 x 100 cr",
+    casterType: "none",
+    casterRatio: 0,
+    archetypeLabel: "Berserker Approaches",
+    description: "### Rage\nYou fight with primal ferocity.",
+    progression: [
+      {
+        level: 1,
+        proficiencyBonus: 2,
+        features: ["Rage", "Unarmored Defense"],
+        // No Berserker Instincts cell: the book prints an em dash at 1st level
+        // and the content set stores nothing rather than a broken glyph.
+        entries: [
+          { label: "Rages", value: "2" },
+          { label: "Rage Damage", value: "+2" },
+        ],
+      },
+      {
+        level: 2,
+        proficiencyBonus: 2,
+        features: ["Reckless Attack"],
+        entries: [
+          { label: "Rages", value: "2" },
+          { label: "Rage Damage", value: "+2" },
+          { label: "Berserker Instincts", value: "2" },
+        ],
+      },
+    ],
+  };
+
+  const rage = {
+    key: "class-berserker-rage-1",
+    name: "Rage",
+    sourceKey: "phb",
+    grantedBy: "class",
+    grantedByName: "Berserker",
+    level: 1,
+    description: "You fight with primal ferocity.",
+  };
+
+  const recklessAttack = {
+    key: "class-berserker-reckless-attack-2",
+    name: "Reckless Attack",
+    sourceKey: "phb",
+    grantedBy: "class",
+    grantedByName: "Berserker",
+    level: 2,
+    description: "You throw aside all concern for defence.",
+  };
+
+  const marauder = {
+    key: "marauder-approach",
+    name: "Marauder Approach",
+    sourceKey: "phb",
+    className: "Berserker",
+    casterType: "none",
+    description: "You revel in the fight.",
+  };
+
+  const multiclass = {
+    key: "berserker-multiclass-improvement",
+    name: "Berserker Multiclass Improvement",
+    sourceKey: "phb",
+    className: "Berserker",
+    improvementType: "multiclass",
+    prerequisite: "At least 3 levels in berserker",
+    description: "You can add half your other class's levels.",
+  };
+
+  const graph = buildClassGraph({
+    classes: [berserker],
+    classImprovements: [multiclass],
+    archetypes: [marauder],
+    features: [rage, recklessAttack],
+  });
+
+  const normalizeInGraph = (type, record) =>
+    normalizeAllCanonical(type, [record], sources, graph)[0];
+
+  it("prints the class table with the three columns every class shares", () => {
+    const item = normalizeInGraph("classes", berserker);
+
+    expect(item.tables[0]).toEqual({
+      caption: "Class progression",
+      columns: ["Level", "Proficiency Bonus", "Features", "Rages", "Rage Damage", "Berserker Instincts"],
+      rows: [
+        ["1st", "+2", "Rage, Unarmored Defense", "2", "+2", "—"],
+        ["2nd", "+2", "Reckless Attack", "2", "+2", "2"],
+      ],
+    });
+  });
+
+  it("reads the stat block out of the nested proficiency object", () => {
+    const item = normalizeInGraph("classes", berserker);
+
+    expect(item.summary).toEqual({
+      primaryAbility: "Strength",
+      hitDie: 12,
+      casterType: null,
+      archetypeCount: 1,
+    });
+    expect(item.tagline).toBe("d12 hit die · Strength");
+    expect(item.stats).toContainEqual({ label: "Hit die", value: "d12" });
+    expect(item.stats).toContainEqual({
+      label: "Saving throws",
+      value: "Strength, Constitution",
+    });
+    expect(item.stats).toContainEqual({
+      label: "Skills",
+      value: "Choose two from Athletics, Survival",
+    });
+  });
+
+  it("links a class to everything that hangs off it", () => {
+    const item = normalizeInGraph("classes", berserker);
+    const bodies = item.sections.map((each) => each.body).join("\n");
+
+    // The archetype introduction and the list of archetypes are one
+    // section. They were two under the same heading, which printed
+    // "Berserker Approaches" twice with a paragraph between them.
+    const headings = item.sections.map((each) => each.heading).filter(Boolean);
+    expect(headings).toEqual([...new Set(headings)]);
+    expect(headings).toContain("Berserker Approaches");
+
+    // The features index is by level, because that is the question a reader
+    // levelling up is asking.
+    expect(bodies).toContain("| 1st | [Rage](/features/class-berserker-rage-1) |");
+    expect(bodies).toContain(
+      "| 2nd | [Reckless Attack](/features/class-berserker-reckless-attack-2) |",
+    );
+    expect(bodies).toContain("- [Marauder Approach](/archetypes/marauder-approach)");
+    expect(bodies).toContain(
+      "- [Berserker Multiclass Improvement](/class-improvements/berserker-multiclass-improvement)",
+    );
+  });
+
+  it("gives an archetype a linked index of what it grants and a way back", () => {
+    const withFeature = buildClassGraph({
+      classes: [berserker],
+      archetypes: [marauder],
+      features: [
+        {
+          key: "archetype-marauder-approach-furious-force-3",
+          name: "Furious Force",
+          grantedBy: "archetype",
+          grantedByName: "Marauder Approach",
+          level: 3,
+        },
+      ],
+    });
+
+    const bodies = normalizeAllCanonical("archetypes", [marauder], sources, withFeature)[0]
+      .sections.map((each) => each.body)
+      .join("\n");
+
+    expect(bodies).toContain(
+      "| 3rd | [Furious Force](/features/archetype-marauder-approach-furious-force-3) |",
+    );
+    expect(bodies).toContain("An archetype of the [Berserker](/classes/berserker) class.");
+  });
+
+  it("gives a feature the URL its name cannot", () => {
+    // "Ability Score Improvement" is granted forty times over. A slug built
+    // from the name would collide with all of them and be resolved by a
+    // numeric suffix that moves as the corpus grows, so the URL is the
+    // canonical key, which is stable and unique by construction.
+    const item = normalizeInGraph("features", rage);
+
+    expect(item.slug).toBe("class-berserker-rage-1");
+    expect(item.tagline).toBe("Berserker · 1st level");
+    expect(item.summary).toEqual({
+      grantedBy: "Class",
+      grantedByName: "Berserker",
+      level: 1,
+    });
+    expect(item.sections.at(-1).body).toBe(
+      "Granted by [Berserker](/classes/berserker) at 1st level.",
+    );
+  });
+
+  it("says what a class improvement is for rather than repeating its name", () => {
+    const item = normalizeInGraph("class-improvements", multiclass);
+
+    expect(item.tagline).toBe(
+      "What the class contributes to a multiclassed character",
+    );
+    expect(item.summary).toEqual({
+      className: "Berserker",
+      improvementType: "Multiclass",
+      prerequisite: "At least 3 levels in berserker",
+    });
+    expect(item.sections.at(-1).body).toBe(
+      "Part of the [Berserker](/classes/berserker) class.",
+    );
+  });
+
+  it("publishes features rather than hiding them inside their parent", () => {
+    // The reversal this change is about. `feature` was a canonical directory
+    // with no site type; it is now a browsable one, and the fixture and the
+    // prerender list both derive from this map.
+    expect(CANONICAL_DIRECTORIES.features).toBe("feature");
+    expect(CANONICAL_DIRECTORIES.classes).toBe("class");
+    expect(CANONICAL_DIRECTORIES["class-improvements"]).toBe("class-improvement");
   });
 });
 

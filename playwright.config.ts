@@ -7,8 +7,10 @@ export default defineConfig({
     command: "npm run build && npx vite preview --port 4173 --strictPort",
     url: "http://localhost:4173",
     reuseExistingServer: !process.env.CI,
-    // The full archive-derived dataset pre-renders ~1,830 routes, which takes
-    // minutes. CI builds the small committed fixture and finishes in seconds.
+    // The full canonical dataset pre-renders ~5,100 routes and takes about
+    // half an hour. CI builds the small committed fixture instead and
+    // finishes in seconds; a contributor with app/data/generated populated
+    // should expect the long one.
     timeout: 600_000,
   },
 });

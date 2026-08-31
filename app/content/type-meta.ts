@@ -7,6 +7,15 @@
  * The `accent` is a hue name, not a hex value. `app/app.css` defines a light
  * and a dark value for each one, which is what lets an equipment page read as
  * an equipment page in both themes without a component knowing either colour.
+ *
+ * There are more types than hues, so hues repeat. Where they repeat by
+ * necessity that is all it is, but four of them share indigo deliberately:
+ * classes, class improvements, archetypes and features are not four subjects
+ * but one graph. A reader who opens a class, follows it to an archetype and
+ * follows that to a feature has not changed subject, and a colour that changed
+ * under them at each step would say they had. The types are still told apart
+ * at a glance by their marks in `app/components/type-icon.tsx` and by their
+ * names; here the hue carries the family.
  */
 
 import type { ContentTypeId } from "./types";
@@ -40,10 +49,28 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
     blurb: "Playable species, their traits, homeworlds and physical range.",
     accent: "teal",
   },
+  classes: {
+    plural: "Classes",
+    singular: "Class",
+    blurb: "The ten classes, level by level: hit dice, proficiencies, casting.",
+    accent: "indigo",
+  },
+  "class-improvements": {
+    plural: "Class improvements",
+    singular: "Class improvement",
+    blurb: "What each class is worth to a character multiclassing in or out.",
+    accent: "indigo",
+  },
   archetypes: {
     plural: "Archetypes",
     singular: "Archetype",
     blurb: "Specialisations that branch off each class, with their features.",
+    accent: "indigo",
+  },
+  features: {
+    plural: "Features",
+    singular: "Feature",
+    blurb: "Every ability a class or archetype grants, by the level it arrives.",
     accent: "indigo",
   },
   backgrounds: {
@@ -164,7 +191,10 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
  */
 export const TYPE_ORDER: ContentTypeId[] = [
   "species",
+  "classes",
+  "class-improvements",
   "archetypes",
+  "features",
   "backgrounds",
   "feats",
   "powers",

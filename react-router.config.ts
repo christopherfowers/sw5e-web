@@ -5,7 +5,10 @@ import type { Config } from "@react-router/dev/config";
 
 const CONTENT_TYPES = [
   "species",
+  "classes",
+  "class-improvements",
   "archetypes",
+  "features",
   "backgrounds",
   "feats",
   "powers",
@@ -80,11 +83,21 @@ export default {
   ssr: false,
 
   /**
-   * Every content page is prerendered: the home page, the nineteen type
+   * Every content page is prerendered: the home page, the twenty-two type
    * indexes, the search page, and one page per item. That is what makes the library
    * visible to crawlers that do not run JavaScript, and it is also what keeps
    * the dataset out of the browser — each page ships only its own data,
    * serialized into its own static HTML.
+   *
+   * Prerendering is serial, and is left that way. It is now almost the whole
+   * build — the canonical set went from 132 documents to 1,377 when the class
+   * graph landed, and each one costs two requests against a preview server, an
+   * HTML render and a data payload — so raising React Router's `concurrency`
+   * off its default of 1 is the obvious lever. It was tried and put back: on
+   * Windows the prerender client issues each request over its own socket with
+   * `Connection: close`, and running four at once made the very first one fail
+   * with a bare socket error. A build that finishes in six minutes beats one
+   * that might finish in three.
    */
   async prerender() {
     const directory = datasetDirectory();

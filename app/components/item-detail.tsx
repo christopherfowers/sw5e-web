@@ -42,13 +42,28 @@ function itemFigure(item: ContentItem): Figure | null {
     };
   }
 
-  if (item.type === "archetypes") {
+  if (item.type === "classes") {
+    return {
+      image: classArt(item.name),
+      alt: `Illustration of a ${item.name}`,
+      caption: `${item.name} — illustration from the Star Wars 5e archive`,
+      fallbackNote: `No illustration of the ${item.name} exists in the archive.`,
+    };
+  }
+
+  // An archetype and a class improvement are both about one class and neither
+  // has art of its own, so both borrow the class illustration — which is also
+  // what makes 137 archetypes read as ten families at a glance.
+  if (item.type === "archetypes" || item.type === "class-improvements") {
     const className = item.summary.className;
     if (typeof className !== "string") return null;
     return {
       image: classArt(className),
       alt: `Illustration of a ${className}`,
-      caption: `${className} — the class this archetype branches from`,
+      caption:
+        item.type === "archetypes"
+          ? `${className} — the class this archetype branches from`
+          : `${className} — the class this improvement belongs to`,
       fallbackNote: `No illustration of the ${className} class exists in the archive.`,
     };
   }

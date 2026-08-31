@@ -249,11 +249,11 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 34 pages that do not come from content:
+          # One page per document, plus 37 pages that do not come from content:
           # the home page, the search page, the sources index, five source
-          # pages, nineteen type indexes, and the seven account routes listed
-          # in ACCOUNT_PATHS in react-router.config.ts. `feature` and `source`
-          # are not browsable types, so only the nineteen mapped directories
+          # pages, twenty-two type indexes, and the seven account routes listed
+          # in ACCOUNT_PATHS in react-router.config.ts. `source` is the only
+          # directory that is not a browsable type, so the other twenty-two
           # contribute item pages.
           #
           # The account routes are prerendered deliberately, as signed-out
@@ -262,7 +262,8 @@ jobs:
           # Leaving them out would send them through the SPA fallback below,
           # which answers 404.
           items=0
-          for type in species archetype background feat power \
+          for type in species class class-improvement archetype feature \
+                      background feat power \
                       maneuver fighting-style fighting-mastery \
                       lightsaber-form weapon-focus weapon-supremacy \
                       equipment monster \
@@ -270,7 +271,7 @@ jobs:
                       starship-modification starship-venture starship-rule; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 34))
+          expected=$((items + 37))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
