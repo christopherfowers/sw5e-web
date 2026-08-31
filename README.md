@@ -192,17 +192,25 @@ index and its five book pages, one index per content type, and the seven account
 pages — and do not vary with the dataset.
 
 Adding the enhanced items, the property glossaries, the rules and the reference
-tables puts another 2,099 documents on top of that, for roughly 7,230 routes. No
-clean like-for-like timing of that build exists yet: two attempts on the machine
-above were abandoned after the 5,092-document baseline alone had not finished in
-forty minutes, which is itself the point — at this size a run is long enough that
-anything else happening on the box changes the answer. One thing observed at
-around 2,200 routes, before the class graph landed, is worth recording: a run
-failed part-way with `Prerender: Request failed` and an empty message, and a
-straight retry cleared it. That is not a reason to publish less content — the
-routes are cheap to serve, and the windowing below means a long index costs a
-reader nothing — but a prerender that fails non-deterministically at this size
-says the same thing the curve does.
+tables puts another 2,099 documents on top of that, for roughly 7,230 routes.
+
+**The table above is a Windows developer-machine measurement, and it is the
+pessimistic one.** The same full-corpus prerender runs inside the `Container
+image` CI job, and on a Linux runner the whole image build — dependency install,
+client bundle and all 5,129 routes — takes **369 seconds**. That is 72ms per
+route against the 313ms above: a 4.3x difference in the platform, not in the
+work. Whatever is making the curve bend, most of it does not survive the trip to
+CI, and CI is where the number that matters is measured.
+
+The developer machine is worth recording anyway, because it is now failing
+rather than merely being slow. Two runs at this corpus size ended before
+finishing: one stopped at 2,117 of the expected routes with no error written,
+and one stopped at 3,005 with `Prerender: Request failed` on a route belonging
+to `features`. Neither is caused by the content added most recently — the first
+of those two was the corpus *without* it — and both ran on a box that also had a
+dev server resident, so treat them as a warning about local builds rather than a
+property of the pipeline. Build locally from the committed fixture; let CI build
+the corpus.
 
 **2.3 times the routes cost 8.1 times the time**: 87ms per route became 313ms.
 That is the number to argue about, not the total. Whatever the cause — one
