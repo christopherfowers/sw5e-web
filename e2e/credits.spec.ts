@@ -25,6 +25,28 @@ test.describe("the credits page", () => {
     expect(html).toContain("Galiphile");
     expect(html).toContain("Karbacca");
     expect(html).toContain("cover and SW5e logo");
+    // rendered as emphasis, not as literal asterisks
+    expect(html).toContain("<em>epic</em>");
+  });
+
+  /**
+   * The contributions are reproduced verbatim from credits that were written
+   * in markdown, so the emphasis in "for the *epic* cover" has to render as
+   * emphasis. Printing the asterisks would put a visible defect on the most
+   * prominent credit on the page.
+   */
+  test("renders the emphasis in a contribution rather than its asterisks", async ({
+    page,
+  }) => {
+    await page.goto("/credits");
+
+    const karbacca = page
+      .locator(".credit-entry")
+      .filter({ has: page.getByText("Karbacca", { exact: true }) });
+
+    await expect(karbacca).toContainText("for the epic cover and SW5e logo");
+    await expect(karbacca).not.toContainText("*");
+    await expect(karbacca.locator("em")).toHaveText("epic");
   });
 
   test("keeps its categories apart rather than as one list of names", async ({

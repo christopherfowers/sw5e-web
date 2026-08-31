@@ -18,12 +18,14 @@
 import { Link } from "react-router";
 
 import { safeExternalHref } from "~/components/media";
+import { Inline } from "~/components/prose";
 import { Breadcrumbs } from "~/components/site-chrome";
 import {
   citedAssetCount,
   creditCategories,
   creditedPeopleCount,
 } from "~/content/credits.server";
+import { parseInline } from "~/content/markdown";
 import type { CreditCategory } from "~/content/types";
 import type { Route } from "./+types/credits";
 
@@ -120,7 +122,17 @@ export default function Credits({ loaderData }: Route.ComponentProps) {
                     <PersonName name={person.name} link={person.link} />
                   </dt>
                   <dd>
-                    {person.contribution ?? (
+                    {person.contribution ? (
+                      // The contributions are reproduced from the original
+                      // credits verbatim, and the original wrote emphasis in
+                      // markdown: Karbacca is credited "for the *epic* cover".
+                      // Rendering the source text raw would print the asterisks
+                      // on the most prominent credit on the page, so it goes
+                      // through the same inline renderer the rest of the site
+                      // uses rather than being stripped — the emphasis is part
+                      // of how the credit was written.
+                      <Inline nodes={parseInline(person.contribution)} />
+                    ) : (
                       <span className="credit-unrecorded">
                         Contribution not recorded
                       </span>
