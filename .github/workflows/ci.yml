@@ -325,6 +325,9 @@ jobs:
             if [ "$rendered" -ne "$canonical" ]; then
               echo "::error::/$segment renders $rendered items; the content it" \
                 "was built from has $canonical"
+              exit 1
+            fi
+          done
 
       - name: The largest type in the corpus is rendered whole
         run: |
