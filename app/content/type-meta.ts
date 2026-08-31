@@ -112,6 +112,45 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
     blurb: "Stat blocks: armor class, hit points, senses and behaviors.",
     accent: "red",
   },
+  // Starship play. The six share no single hue: a reader arriving from the
+  // navigation is choosing between them, so they have to be told apart the
+  // same way the character types are.
+  "starship-base-sizes": {
+    plural: "Starship hulls",
+    singular: "Hull",
+    blurb: "The six ship sizes, with hull dice, roles and the tier table each advances on.",
+    accent: "steel",
+  },
+  "starship-deployments": {
+    plural: "Deployments",
+    singular: "Deployment",
+    blurb: "The stations a character serves at aboard a ship, rank by rank.",
+    accent: "indigo",
+  },
+  "starship-equipment": {
+    plural: "Ship equipment",
+    singular: "Ship part",
+    blurb: "Weapons, ammunition, armor, shields, reactors, couplings and hyperdrives.",
+    accent: "cyan",
+  },
+  "starship-modifications": {
+    plural: "Modifications",
+    singular: "Modification",
+    blurb: "Upgrades bought with a hull's modification slots, and what each one needs first.",
+    accent: "amber",
+  },
+  "starship-ventures": {
+    plural: "Ventures",
+    singular: "Venture",
+    blurb: "Talents a crewmember earns at every rank, and the ranks they are gated behind.",
+    accent: "violet",
+  },
+  "starship-rules": {
+    plural: "Starship rules",
+    singular: "Rules chapter",
+    blurb: "The rulebook itself: flying, fighting, repairing and outfitting a ship.",
+    accent: "green",
+  },
 };
 
 /**
@@ -137,4 +176,10 @@ export const TYPE_ORDER: ContentTypeId[] = [
   "weapon-supremacies",
   "equipment",
   "monsters",
+  "starship-base-sizes",
+  "starship-deployments",
+  "starship-equipment",
+  "starship-modifications",
+  "starship-ventures",
+  "starship-rules",
 ];

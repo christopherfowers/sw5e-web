@@ -17,6 +17,12 @@ const CONTENT_TYPES = [
   "weapon-supremacies",
   "equipment",
   "monsters",
+  "starship-base-sizes",
+  "starship-deployments",
+  "starship-equipment",
+  "starship-modifications",
+  "starship-ventures",
+  "starship-rules",
 ] as const;
 
 /**
@@ -74,7 +80,7 @@ export default {
   ssr: false,
 
   /**
-   * Every content page is prerendered: the home page, the thirteen type
+   * Every content page is prerendered: the home page, the nineteen type
    * indexes, the search page, and one page per item. That is what makes the library
    * visible to crawlers that do not run JavaScript, and it is also what keeps
    * the dataset out of the browser — each page ships only its own data,
@@ -85,9 +91,9 @@ export default {
     const paths = ["/", "/search", "/sources", ...ACCOUNT_PATHS];
 
     // Kept in step with SOURCE_META in app/content/source-meta.ts. A source
-    // page is a static page over the whole dataset, so it costs four routes
-    // rather than one per entry.
-    for (const slug of ["phb", "ec", "wh", "snv"]) {
+    // page is a static page over the whole dataset, so it costs one route per
+    // book rather than one per entry.
+    for (const slug of ["phb", "ec", "wh", "snv", "sotg"]) {
       paths.push(`/sources/${slug}`);
     }
 

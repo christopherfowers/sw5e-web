@@ -28,6 +28,15 @@ export const CONTENT_TYPE_IDS = [
 
   "equipment",
   "monsters",
+  // Starship play. Its six types sit together and after the character types,
+  // because that is the order a table reaches them: a group builds characters
+  // first and acquires a ship later.
+  "starship-base-sizes",
+  "starship-deployments",
+  "starship-equipment",
+  "starship-modifications",
+  "starship-ventures",
+  "starship-rules",
 ] as const;
 
 export type ContentTypeId = (typeof CONTENT_TYPE_IDS)[number];
@@ -195,10 +204,58 @@ export interface MonsterSummary extends BaseSummary {
 }
 
 /**
+ * A hull, which is the ship's equivalent of a class. The list is six rows
+ * long, so the columns are the numbers a player compares when choosing one
+ * rather than the ones that fit.
+ */
+export interface StarshipBaseSizeSummary extends BaseSummary {
+  hullDice: string | null;
+  modificationSlots: number | null;
+  savingThrows: string | null;
+  roles: string | null;
+}
+
+export interface StarshipDeploymentSummary extends BaseSummary {
+  /** What the station does aboard the ship, in one line. */
+  role: string | null;
+}
+
+export interface StarshipEquipmentSummary extends BaseSummary {
+  category: string | null;
+  cost: number | null;
+  mounting: string | null;
+  damage: string | null;
+  properties: string | null;
+}
+
+export interface StarshipModificationSummary extends BaseSummary {
+  modificationType: string | null;
+  /** 0 to 5. What the modification costs in slots is read from it. */
+  grade: number | null;
+  /** The hull requirement, as printed minus its leading "Ship size". */
+  requiresShipSize: string | null;
+  /** Every other prerequisite clause; the hull one has a column of its own. */
+  prerequisite: string | null;
+}
+
+export interface StarshipVentureSummary extends BaseSummary {
+  prerequisite: string | null;
+  /** The deployment a rank is required in, when the prerequisite names one. */
+  deployment: string | null;
+  /** The character class the prerequisite demands levels in, if it names one. */
+  characterClass: string | null;
+}
+
+export interface StarshipRuleSummary extends BaseSummary {
+  /** Reading order, and how the chapters cross-reference each other. */
+  chapterNumber: number | null;
+}
+
+/**
  * Which row shape each content type's list page renders.
  *
- * A lookup rather than a chain of conditional types: with thirteen types the
- * chain was thirteen levels of nesting for what is a table, every addition
+ * A lookup rather than a chain of conditional types: with nineteen types the
+ * chain was nineteen levels of nesting for what is a table, every addition
  * moved every line below it, and the compiler's error for a missing arm was
  * "MonsterSummary" — the final fallback — rather than "you forgot a type".
  * Indexing `Record<ContentTypeId, …>` makes a missing entry a compile error
@@ -218,6 +275,12 @@ interface SummaryByType extends Record<ContentTypeId, BaseSummary> {
   "weapon-supremacies": WeaponTrainingSummary;
   equipment: EquipmentSummary;
   monsters: MonsterSummary;
+  "starship-base-sizes": StarshipBaseSizeSummary;
+  "starship-deployments": StarshipDeploymentSummary;
+  "starship-equipment": StarshipEquipmentSummary;
+  "starship-modifications": StarshipModificationSummary;
+  "starship-ventures": StarshipVentureSummary;
+  "starship-rules": StarshipRuleSummary;
 }
 
 export type SummaryFor<T extends ContentTypeId> = SummaryByType[T];
@@ -258,4 +321,5 @@ export const SOURCE_NAMES: Record<string, string> = {
   EC: "Expanded Content",
   WH: "Wretched Hives",
   SnV: "Scum and Villainy",
+  SotG: "Starships of the Galaxy",
 };

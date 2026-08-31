@@ -76,6 +76,12 @@ export const CANONICAL_DIRECTORIES = {
   "weapon-supremacies": "weapon-supremacy",
   equipment: "equipment",
   monsters: "monster",
+  "starship-base-sizes": "starship-base-size",
+  "starship-deployments": "starship-deployment",
+  "starship-equipment": "starship-equipment",
+  "starship-modifications": "starship-modification",
+  "starship-ventures": "starship-venture",
+  "starship-rules": "starship-rule",
 };
 
 /* --------------------------------------------------------------- helpers */
@@ -786,6 +792,418 @@ function normalizeMonster(record, sources) {
   };
 }
 
+/* -------------------------------------------------------------- starships */
+
+/**
+ * The starship types are the only ones whose documents were never a flat row,
+ * so they are also the only ones where this module does real shaping rather
+ * than renaming. A base size arrives with a six-row tier table, six roles and
+ * two dice pools; a deployment with a rank table and its features; a
+ * modification with a prerequisite list whose entries are already resolved.
+ * All of that goes into `tables` and `entries` rather than being flattened
+ * into prose, because the tables are the part a player reads at the table.
+ */
+
+/** `{ number: 3, faces: 6 }` becomes `3d6`. */
+function diceExpression(dice) {
+  const number = numeric(dice?.number);
+  const faces = numeric(dice?.faces);
+  return number && faces ? `${number}d${faces}` : null;
+}
+
+/** `[{ ability: "dexterity", modifier: -4 }]` becomes `Dexterity -4`. */
+function formatAdjustments(adjustments) {
+  if (!Array.isArray(adjustments) || adjustments.length === 0) return null;
+  const rendered = adjustments
+    .map((adjustment) => {
+      const ability = humanize(adjustment?.ability);
+      const modifier = numeric(adjustment?.modifier);
+      if (!ability || modifier == null) return null;
+      return `${ability} ${modifier > 0 ? "+" : ""}${modifier}`;
+    })
+    .filter(Boolean);
+  return rendered.length > 0 ? rendered.join(", ") : null;
+}
+
+/**
+ * `{ normal: 1200, long: 4800 }` becomes `1,200/4,800 ft.` — the two bands a
+ * gunner reads off a weapon, grouped because at this scale the digits run
+ * together otherwise.
+ */
+function formatRange(range) {
+  const normal = numeric(range?.normal);
+  const long = numeric(range?.long);
+  if (normal == null || long == null) return null;
+  return `${normal.toLocaleString("en-US")}/${long.toLocaleString("en-US")} ft.`;
+}
+
+function normalizeStarshipBaseSize(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const hull = record.hull ?? {};
+  const shields = record.shields ?? {};
+  const modifications = record.modifications ?? {};
+  const progression = record.tierProgression ?? {};
+  const roles = Array.isArray(record.roles) ? record.roles : [];
+
+  const hullDice = diceExpression(hull.diceAtTier0);
+  const modificationSlots = numeric(modifications.baseModificationSlots);
+  const savingThrows = text(record.savingThrows);
+  const adjustments = formatAdjustments(record.abilityScoreAdjustments);
+
+  add("Ability adjustments", adjustments ?? "None");
+  add("Hull dice at tier 0", hullDice);
+  add("Hull points, first die", text(hull.firstDiePoints));
+  add("Hull points, each die after", text(hull.subsequentDiePoints));
+  add("Shield dice at tier 0", diceExpression(shields.diceAtTier0));
+  add("Shield points, first die", text(shields.firstDiePoints));
+  add("Shield points, each die after", text(shields.subsequentDiePoints));
+  add("Base modification slots", modificationSlots);
+  // Absent means none: a Tiny ship is unmanned and holds no suites at all,
+  // which the printed table says with a dash.
+  add("Maximum suite systems", text(modifications.maximumSuiteSystems) ?? "None");
+  add("Stock modifications", text(modifications.stockModifications));
+  add("Saving throws", savingThrows);
+
+  return {
+    ...base,
+    tagline: compact([
+      hullDice ? `${hullDice} hull` : null,
+      `${roles.length} role${roles.length === 1 ? "" : "s"}`,
+    ])
+      .join(" · "),
+    summary: {
+      hullDice,
+      modificationSlots,
+      savingThrows,
+      roles: roles.map((role) => text(role?.name)).filter(Boolean).join(", ") || null,
+    },
+    stats,
+    sections: compact([section(null, text(record.lore))]),
+    entries: (record.features ?? [])
+      .map((feature) => ({
+        group: "Features",
+        name: text(feature?.name),
+        body: text(feature?.description),
+      }))
+      .filter((entry) => entry.name || entry.body),
+    tables: compact([tierTable(progression), rolesTable(roles)]),
+  };
+}
+
+/**
+ * The tier table, with the size's own signature die as a column heading —
+ * every size names that die differently, so the heading comes from the data.
+ */
+function tierTable(progression) {
+  const tiers = Array.isArray(progression?.tiers) ? progression.tiers : [];
+  if (tiers.length === 0) return null;
+  const dieName = text(progression.dieName) ?? "Die";
+  return {
+    caption: "Tier progression",
+    columns: ["Tier", "Features", dieName, "Hull & shield dice", "AC"],
+    rows: tiers.map((tier) => [
+      String(numeric(tier?.tier) ?? ""),
+      (tier?.features ?? []).join(", "),
+      text(tier?.die) ?? "—",
+      text(tier?.hullAndShieldDice) ?? "—",
+      numeric(tier?.armorClassBonus) ? `+${tier.armorClassBonus}` : "—",
+    ]),
+  };
+}
+
+/**
+ * The roles a hull can be laid down as. The shields column is dropped for the
+ * three sizes whose roles have none, rather than printed as six dashes.
+ */
+function rolesTable(roles) {
+  if (roles.length === 0) return null;
+  const withShields = roles.some((role) => text(role?.shields));
+  const columns = compact([
+    "Role",
+    "Ability scores",
+    "Armor",
+    withShields ? "Shields" : null,
+    "Reactor",
+    "Power coupling",
+    "Speed / turning",
+  ]);
+  return {
+    caption: "Roles",
+    columns,
+    rows: roles.map((role) => {
+      const speed = numeric(role?.speed);
+      const turning = numeric(role?.turning);
+      return compact([
+        text(role?.name) ?? "",
+        formatAdjustments(role?.abilityScoreAdjustments) ?? "—",
+        text(role?.armor) ?? "—",
+        withShields ? (text(role?.shields) ?? "—") : null,
+        text(role?.reactor) ?? "—",
+        text(role?.powerCoupling) ?? "—",
+        speed == null || turning == null ? "—" : `${speed}/${turning} ft.`,
+      ]);
+    }),
+  };
+}
+
+function normalizeStarshipDeployment(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const role = text(record.role);
+  const ranks = Array.isArray(record.rankProgression) ? record.rankProgression : [];
+
+  add("Station", role);
+  add("Ranks", ranks.length > 0 ? String(ranks.length) : null);
+
+  return {
+    ...base,
+    tagline: role,
+    summary: { role },
+    stats,
+    sections: [],
+    entries: (record.features ?? [])
+      .map((feature) => ({
+        group: "Features",
+        name: text(feature?.name),
+        body: text(feature?.description),
+      }))
+      .filter((entry) => entry.name || entry.body),
+    tables:
+      ranks.length === 0
+        ? []
+        : [
+            {
+              caption: "Rank progression",
+              columns: ["Rank", "Features"],
+              rows: ranks.map((rank) => [
+                String(numeric(rank?.rank) ?? ""),
+                (rank?.features ?? []).join(", "),
+              ]),
+            },
+          ],
+  };
+}
+
+function normalizeStarshipEquipment(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const weapon = record.weapon ?? {};
+  const category = humanize(record.category);
+  const mounting = humanize(weapon.mounting);
+  const cost = numeric(record.costInCredits);
+  const damage = formatDamage(record.damage);
+  const damageForLargerShips = formatDamage(record.damageForLargerShips);
+  const properties = list(record.properties);
+  const armor = record.armor ?? {};
+  const shield = record.shield ?? {};
+  const reactor = record.reactor ?? {};
+  const coupling = record.powerCoupling ?? {};
+
+  add("Category", category);
+  add("Cost", cost == null ? null : `${cost.toLocaleString("en-US")} cr`);
+  add("Mounting", mounting);
+  // "Small" and "Huge" here are the two weapon tables, not the size of the
+  // gun: a Small weapon is what a Tiny to Large hull carries.
+  add(
+    "Weapon table",
+    weapon.weaponSize
+      ? weapon.weaponSize === "huge"
+        ? "Huge and Gargantuan hulls"
+        : "Tiny to Large hulls"
+      : null,
+  );
+  add("Damage", damage);
+  add("Damage, Huge and larger", damageForLargerShips);
+  add("Range", formatRange(record.range));
+  add(
+    "Weight",
+    numeric(record.weightInPounds) == null ? null : `${record.weightInPounds} lb.`,
+  );
+  add(
+    "Weight, Huge and larger",
+    numeric(record.weightInPoundsForLargerShips) == null
+      ? null
+      : `${record.weightInPoundsForLargerShips} lb.`,
+  );
+  add("Properties", properties);
+  add("Fired by", list(record.firedBy));
+  add("Armor Class", text(armor.armorClass));
+  add(
+    "Damage reduction",
+    numeric(armor.damageReduction) == null ? null : String(armor.damageReduction),
+  );
+  if (armor.stealthDisadvantage) add("Stealth", "Disadvantage");
+  add("Shield capacity", text(shield.capacityMultiplier));
+  add("Shield regeneration", text(shield.regenerationRateCoefficient));
+  add("Power dice recovered", text(reactor.powerDiceRecovered));
+  add("Fuel cost", text(reactor.fuelCostModifier));
+  add(
+    "Central power storage",
+    numeric(coupling.centralStorageCapacity) == null
+      ? null
+      : String(coupling.centralStorageCapacity),
+  );
+  add(
+    "Per-system power storage",
+    numeric(coupling.systemStorageCapacity) == null
+      ? null
+      : String(coupling.systemStorageCapacity),
+  );
+  add("Hyperdrive class", text(record.hyperdriveClass));
+
+  return {
+    ...base,
+    tagline: compact([category, mounting]).join(" · ") || null,
+    summary: {
+      category,
+      cost,
+      mounting,
+      damage,
+      properties: properties ? properties.join(", ") : null,
+    },
+    stats,
+    sections: compact([section(null, text(record.description))]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/**
+ * A prerequisite list, as one line.
+ *
+ * The printed wording is what is shown, never the resolved target: the
+ * document carries both so that a link can be built without the page having to
+ * paraphrase the book.
+ */
+function formatPrerequisites(prerequisites) {
+  if (!Array.isArray(prerequisites)) return null;
+  const clauses = prerequisites.map((entry) => text(entry?.text)).filter(Boolean);
+  return clauses.length > 0 ? clauses.join(", ") : null;
+}
+
+/**
+ * The hull requirement, as the short phrase a filter can offer.
+ *
+ * It is pulled out of the prerequisite list and given a column of its own
+ * because it is the question a crew actually arrives with — "what can my Small
+ * ship fit?" — and because leaving it inside a prose prerequisite makes it
+ * unfilterable across 257 rows. The clause is printed as "Ship size Medium or
+ * larger"; the leading words are the same on every one of them and only the
+ * tail distinguishes them, so the tail is what the facet lists.
+ */
+function shipSizeRequirement(prerequisites) {
+  if (!Array.isArray(prerequisites)) return null;
+  const clause = prerequisites.find((entry) => entry?.kind === "shipSize");
+  const printed = text(clause?.text);
+  return printed ? printed.replace(/^Ship size\s+/i, "") : null;
+}
+
+/** Every prerequisite clause except the hull requirement, which has a column. */
+function formatOtherPrerequisites(prerequisites) {
+  if (!Array.isArray(prerequisites)) return null;
+  return formatPrerequisites(
+    prerequisites.filter((entry) => entry?.kind !== "shipSize"),
+  );
+}
+
+function normalizeStarshipModification(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const modificationType = humanize(record.modificationType);
+  const grade = numeric(record.grade);
+  const prerequisite = formatPrerequisites(record.prerequisites);
+  const requiresShipSize = shipSizeRequirement(record.prerequisites);
+
+  add("Type", modificationType);
+  add("Grade", grade == null ? null : String(grade));
+  add("Ship size", requiresShipSize);
+  add("Prerequisite", prerequisite);
+
+  return {
+    ...base,
+    tagline: compact([
+      modificationType ? `${modificationType} modification` : null,
+      grade == null ? null : `grade ${grade}`,
+    ]).join(" · ") || null,
+    summary: {
+      modificationType,
+      grade,
+      requiresShipSize,
+      // The hull requirement is already its own column, so repeating it here
+      // would spend the widest column in the table on a duplicate.
+      prerequisite: formatOtherPrerequisites(record.prerequisites),
+    },
+    stats,
+    sections: compact([section(null, text(record.description))]),
+    entries: [],
+    tables: [],
+  };
+}
+
+function normalizeStarshipVenture(record, sources) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const prerequisites = Array.isArray(record.prerequisites) ? record.prerequisites : [];
+  const prerequisite = formatPrerequisites(prerequisites);
+
+  // A venture gated on a rank in a named station is one a player of that
+  // station is shopping for, so it is worth a column of its own.
+  const deployment =
+    prerequisites.map((entry) => text(entry?.deploymentName)).find(Boolean) ?? null;
+
+  // A venture gated on a class level is one only that class can ever take, so
+  // it is the second filter a player reaches for after their station.
+  const characterClass = prerequisites
+    .map((entry) => text(entry?.className))
+    .find(Boolean);
+
+  add("Prerequisite", prerequisite);
+  add("Deployment", deployment);
+  add("Class", characterClass ? humanize(characterClass) : null);
+
+  return {
+    ...base,
+    tagline: prerequisite ? `Requires ${prerequisite}` : "No prerequisite",
+    summary: {
+      prerequisite,
+      deployment,
+      characterClass: characterClass ? humanize(characterClass) : null,
+    },
+    stats,
+    sections: compact([section(null, text(record.description))]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/**
+ * A rule chapter is titled rather than named, exactly as a source is, so its
+ * identity comes from a different field and `common` cannot be reused whole.
+ */
+function normalizeStarshipRule(record, sources) {
+  const base = common({ ...record, name: record.title }, sources);
+  const { add, stats } = statCollector();
+  const chapterNumber = numeric(record.chapterNumber);
+
+  add("Chapter", chapterNumber == null ? null : String(chapterNumber));
+
+  return {
+    ...base,
+    tagline: chapterNumber == null ? null : `Chapter ${chapterNumber}`,
+    summary: { chapterNumber },
+    stats,
+    // The body opens with its own "# Chapter 9: Combat" heading, and the page
+    // already prints that as its h1. Left in, every chapter would carry two
+    // top-level headings saying the same thing.
+    sections: compact([
+      section(null, text(String(record.body ?? "").replace(/^#\s+[^\n]*\n+/, ""))),
+    ]),
+    entries: [],
+    tables: [],
+  };
+}
+
 const NORMALIZERS = {
   species: normalizeSpecies,
   archetypes: normalizeArchetype,
@@ -800,6 +1218,12 @@ const NORMALIZERS = {
   "weapon-supremacies": normalizeWeaponTraining,
   equipment: normalizeEquipment,
   monsters: normalizeMonster,
+  "starship-base-sizes": normalizeStarshipBaseSize,
+  "starship-deployments": normalizeStarshipDeployment,
+  "starship-equipment": normalizeStarshipEquipment,
+  "starship-modifications": normalizeStarshipModification,
+  "starship-ventures": normalizeStarshipVenture,
+  "starship-rules": normalizeStarshipRule,
 };
 
 /**

@@ -25,7 +25,7 @@ export interface SourceMeta {
   accent: Accent;
 }
 
-export const SOURCE_ORDER = ["PHB", "EC", "WH", "SnV"] as const;
+export const SOURCE_ORDER = ["PHB", "EC", "WH", "SnV", "SotG"] as const;
 
 export const SOURCE_META: Record<string, SourceMeta> = {
   PHB: {
@@ -59,6 +59,14 @@ export const SOURCE_META: Record<string, SourceMeta> = {
     blurb:
       "The bestiary. Every creature, droid and adversary in this reference comes from here.",
     accent: "red",
+  },
+  SotG: {
+    code: "SotG",
+    slug: "sotg",
+    name: "Starships of the Galaxy",
+    blurb:
+      "The other half of the game: hulls, crew stations, ship weapons and modifications, and the rules for flying and fighting in them.",
+    accent: "cyan",
   },
 };
 

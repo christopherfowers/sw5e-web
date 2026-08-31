@@ -18,6 +18,7 @@ const sources = indexSources([
   { key: "phb", abbreviation: "PHB", title: "Star Wars 5e Player's Handbook" },
   { key: "snv", abbreviation: "SnV", title: "Scum and Villainy" },
   { key: "wh", abbreviation: "WH", title: "Wretched Hives" },
+  { key: "sotg", abbreviation: "SotG", title: "Starships of the Galaxy" },
 ]);
 
 function normalizeOne(type, record) {
@@ -662,5 +663,389 @@ describe("archetypes and feats", () => {
     expect(withOne.tagline).toBe(
       "Requires The ability to cast at least one force power",
     );
+  });
+});
+
+/**
+ * The starship types are the only ones whose canonical documents were never a
+ * flat row, so they are the only place this module does real shaping. Each
+ * test below sits on one of those crossings: a nested pool becoming a dice
+ * expression, a table of rows becoming a rendered table with a heading that
+ * comes out of the data, a resolved prerequisite becoming a column a reader
+ * can filter on.
+ */
+describe("starship base sizes", () => {
+  const small = {
+    key: "small",
+    name: "Small",
+    sourceKey: "sotg",
+    contentSet: "core",
+    lore: "Snubfighters are the smallest crewed ships.",
+    abilityScoreAdjustments: [
+      { ability: "dexterity", modifier: 2 },
+      { ability: "constitution", modifier: -2 },
+    ],
+    hull: {
+      diceAtTier0: { number: 3, faces: 6 },
+      firstDiePoints: "6 + your ship's Constitution modifier",
+      subsequentDiePoints:
+        "1d6 (or 4) + your ship's Constitution modifier per Hull Die after 1st",
+    },
+    shields: {
+      diceAtTier0: { number: 3, faces: 6 },
+      firstDiePoints: "6 + your ship's Strength modifier",
+      subsequentDiePoints:
+        "1d6 (or 4) + your ship's Strength modifier per Shield Die after 1st",
+    },
+    modifications: {
+      maximumSuiteSystems: "-1 + your ship's Constitution modifier",
+      baseModificationSlots: 20,
+      stockModifications: "Your choice of two non-suite modifications.",
+    },
+    savingThrows: "Strength, Dexterity",
+    tierProgression: {
+      dieName: "Pinpoint Strike Die",
+      tiers: [
+        { tier: 0, features: ["Role"], hullAndShieldDice: "3d6", armorClassBonus: 0 },
+        {
+          tier: 2,
+          features: ["Role Specialization", "Retro Thrusters"],
+          die: "d6",
+          hullAndShieldDice: "5d6",
+          armorClassBonus: 1,
+        },
+      ],
+    },
+    roles: [
+      {
+        name: "Bomber",
+        abilityScoreAdjustments: [{ ability: "constitution", modifier: 1 }],
+        armor: "Reinforced",
+        reactor: "Fuel Cell",
+        powerCoupling: "Direct",
+        speed: 250,
+        turning: 100,
+      },
+    ],
+    features: [
+      { name: "Pinpoint Strike", description: "Your ship finds the seam in a larger hull." },
+    ],
+  };
+
+  it("renders the tier table under the size's own name for its signature die", () => {
+    const item = normalizeOne("starship-base-sizes", small);
+
+    // Every size names this die differently — a Tiny ship rolls Swarm Tactics,
+    // a Gargantuan one Superior Firepower — so the heading has to come out of
+    // the document rather than out of this module.
+    expect(item.tables[0]).toEqual({
+      caption: "Tier progression",
+      columns: ["Tier", "Features", "Pinpoint Strike Die", "Hull & shield dice", "AC"],
+      rows: [
+        ["0", "Role", "—", "3d6", "—"],
+        ["2", "Role Specialization, Retro Thrusters", "d6", "5d6", "+1"],
+      ],
+    });
+  });
+
+  it("drops the shields column for a size whose roles are launched without them", () => {
+    const item = normalizeOne("starship-base-sizes", small);
+
+    expect(item.tables[1]).toEqual({
+      caption: "Roles",
+      columns: [
+        "Role",
+        "Ability scores",
+        "Armor",
+        "Reactor",
+        "Power coupling",
+        "Speed / turning",
+      ],
+      rows: [
+        ["Bomber", "Constitution +1", "Reinforced", "Fuel Cell", "Direct", "250/100 ft."],
+      ],
+    });
+  });
+
+  it("turns the nested hull pool into the expression a sheet prints", () => {
+    const item = normalizeOne("starship-base-sizes", small);
+
+    expect(item.summary.hullDice).toBe("3d6");
+    expect(item.summary.modificationSlots).toBe(20);
+    expect(item.summary.roles).toBe("Bomber");
+    expect(item.stats).toContainEqual({
+      label: "Ability adjustments",
+      value: "Dexterity +2, Constitution -2",
+    });
+    expect(item.entries).toEqual([
+      {
+        group: "Features",
+        name: "Pinpoint Strike",
+        body: "Your ship finds the seam in a larger hull.",
+      },
+    ]);
+  });
+
+  it("says a Tiny hull holds no suites rather than leaving the line off", () => {
+    // The printed table writes it as a dash, so the field is simply absent. A
+    // missing line here would read as "not recorded" instead of "none".
+    const item = normalizeOne("starship-base-sizes", {
+      ...small,
+      key: "tiny",
+      name: "Tiny",
+      modifications: { baseModificationSlots: 10 },
+    });
+
+    expect(item.stats).toContainEqual({ label: "Maximum suite systems", value: "None" });
+  });
+});
+
+describe("starship deployments", () => {
+  it("renders the rank table and keeps the station line as the tagline", () => {
+    const item = normalizeOne("starship-deployments", {
+      key: "gunner",
+      name: "Gunner",
+      sourceKey: "sotg",
+      role: "Controls one or more weapon emplacements",
+      rankProgression: [
+        { rank: 1, features: ["Venture", "Gunner Techniques"] },
+        { rank: 2, features: ["Gunning Style", "Improved Critical"] },
+      ],
+      features: [{ name: "Venture", description: "You choose a venture." }],
+    });
+
+    expect(item.tagline).toBe("Controls one or more weapon emplacements");
+    expect(item.summary).toEqual({ role: "Controls one or more weapon emplacements" });
+    expect(item.stats).toContainEqual({ label: "Ranks", value: "2" });
+    expect(item.tables[0]).toEqual({
+      caption: "Rank progression",
+      columns: ["Rank", "Features"],
+      rows: [
+        ["1", "Venture, Gunner Techniques"],
+        ["2", "Gunning Style, Improved Critical"],
+      ],
+    });
+  });
+});
+
+describe("starship equipment", () => {
+  it("carries both damage scales and the launcher for a piece of ammunition", () => {
+    const item = normalizeOne("starship-equipment", {
+      key: "proton-torpedo",
+      name: "Proton torpedo",
+      sourceKey: "sotg",
+      category: "ammunition",
+      costInCredits: 650,
+      damage: { numberOfDice: 2, dieFaces: 10, type: "energy" },
+      damageForLargerShips: { numberOfDice: 4, dieFaces: 10, type: "energy" },
+      weightInPounds: 65,
+      weightInPoundsForLargerShips: 130,
+      range: { normal: 1200, long: 4800 },
+      properties: ["explosive", "keen 1"],
+      firedBy: ["Torpedo launcher", "Assault torpedo launcher"],
+    });
+
+    expect(item.summary.damage).toBe("2d10 energy");
+    expect(item.stats).toContainEqual({
+      label: "Damage, Huge and larger",
+      value: "4d10 energy",
+    });
+    expect(item.stats).toContainEqual({ label: "Range", value: "1,200/4,800 ft." });
+    expect(item.stats).toContainEqual({
+      label: "Fired by",
+      value: "Torpedo launcher, Assault torpedo launcher",
+    });
+  });
+
+  it("says which weapon table a part belongs to rather than repeating a size word", () => {
+    // The document's `small` and `huge` are the two printed weapon tables, not
+    // the size of the gun. Shown verbatim they would read as a claim about the
+    // weapon that is simply false.
+    const item = normalizeOne("starship-equipment", {
+      key: "assault-turbolaser-battery",
+      name: "Assault turbolaser battery",
+      sourceKey: "sotg",
+      category: "weapon",
+      costInCredits: 4150,
+      weapon: { mounting: "secondary", weaponSize: "huge" },
+      properties: ["power", "constitution 15"],
+      damage: { numberOfDice: 6, dieFaces: 6, type: "energy" },
+      range: { normal: 1200, long: 4800 },
+    });
+
+    expect(item.summary.mounting).toBe("Secondary");
+    expect(item.tagline).toBe("Weapon · Secondary");
+    expect(item.stats).toContainEqual({
+      label: "Weapon table",
+      value: "Huge and Gargantuan hulls",
+    });
+  });
+
+  it("gives each system category only the lines that category has", () => {
+    const shield = normalizeOne("starship-equipment", {
+      key: "fortress-shield",
+      name: "Fortress shield",
+      sourceKey: "sotg",
+      category: "shield",
+      costInCredits: 4650,
+      shield: { capacityMultiplier: "x 3/2", regenerationRateCoefficient: "x 2/3" },
+    });
+    const hyperdrive = normalizeOne("starship-equipment", {
+      key: "hyperdrive-class-0-5",
+      name: "Hyperdrive, class 0.5",
+      sourceKey: "sotg",
+      category: "hyperdrive",
+      costInCredits: 50000,
+      hyperdriveClass: "0.5",
+    });
+
+    expect(shield.stats.map((stat) => stat.label)).toEqual([
+      "Category",
+      "Cost",
+      "Shield capacity",
+      "Shield regeneration",
+    ]);
+    expect(hyperdrive.stats.map((stat) => stat.label)).toEqual([
+      "Category",
+      "Cost",
+      "Hyperdrive class",
+    ]);
+  });
+});
+
+describe("starship modifications and ventures", () => {
+  it("shows a prerequisite in the words the book used, not the resolved target", () => {
+    const item = normalizeOne("starship-modifications", {
+      key: "plating-reinforced-mk-iii",
+      name: "Plating, Reinforced Mk III",
+      sourceKey: "sotg",
+      modificationType: "universal",
+      grade: 3,
+      prerequisites: [
+        { kind: "equipment", text: "Reinforced Armor", equipmentName: "Reinforced armor" },
+        {
+          kind: "modification",
+          text: "Plating, Reinforced MK II",
+          modificationName: "Plating, Reinforced Mk II",
+        },
+      ],
+      description: "You substantially upgrade your ship's armor plating.",
+    });
+
+    // The document carries the wording and the resolved name side by side, so a
+    // link can be built without the page paraphrasing the book.
+    expect(item.summary.prerequisite).toBe("Reinforced Armor, Plating, Reinforced MK II");
+    expect(item.summary.grade).toBe(3);
+    expect(item.tagline).toBe("Universal modification · grade 3");
+  });
+
+  it("lifts the hull requirement out of the prerequisite so 257 rows can be filtered", () => {
+    const item = normalizeOne("starship-modifications", {
+      key: "anti-boarding-system",
+      name: "Anti-Boarding System",
+      sourceKey: "sotg",
+      modificationType: "universal",
+      grade: 0,
+      prerequisites: [
+        {
+          kind: "shipSize",
+          text: "Ship size Medium or larger",
+          shipSizes: ["medium", "large", "huge", "gargantuan"],
+        },
+        { kind: "modification", text: "Armory", modificationName: "Armory" },
+      ],
+      description: "Boarders are met by automated defences.",
+    });
+
+    // The leading words are identical on every one of these clauses, so the
+    // facet lists only the tail that distinguishes them.
+    expect(item.summary.requiresShipSize).toBe("Medium or larger");
+
+    // And it is not repeated in the prerequisite column, which is the widest
+    // one in the table.
+    expect(item.summary.prerequisite).toBe("Armory");
+    expect(item.stats).toContainEqual({ label: "Ship size", value: "Medium or larger" });
+  });
+
+  it("leaves the hull requirement empty for a modification any ship can fit", () => {
+    const item = normalizeOne("starship-modifications", {
+      key: "frame-mk-i",
+      name: "Frame, Mk I",
+      sourceKey: "sotg",
+      modificationType: "universal",
+      grade: 1,
+      description: "Your ship's Constitution score increases by 1.",
+    });
+
+    expect(item.summary.requiresShipSize).toBeNull();
+    expect(item.summary.prerequisite).toBeNull();
+  });
+
+  it("pulls the deployment out of a venture's prerequisite so it can be filtered on", () => {
+    const item = normalizeOne("starship-ventures", {
+      key: "lock-on-target",
+      name: "Lock on Target",
+      sourceKey: "sotg",
+      prerequisites: [
+        { kind: "casting", text: "The ability to cast tech powers" },
+        {
+          kind: "deploymentRank",
+          text: "at least 1 rank in gunner",
+          deploymentName: "Gunner",
+          rank: 1,
+        },
+      ],
+      description: "You mark the target.",
+    });
+
+    expect(item.summary.deployment).toBe("Gunner");
+    expect(item.summary.characterClass).toBeNull();
+    expect(item.summary.prerequisite).toBe(
+      "The ability to cast tech powers, at least 1 rank in gunner",
+    );
+  });
+
+  it("leaves the deployment empty for a venture gated on a class instead", () => {
+    const item = normalizeOne("starship-ventures", {
+      key: "analytical-coordinator",
+      name: "Analytical Coordinator",
+      sourceKey: "sotg",
+      prerequisites: [
+        {
+          kind: "classLevel",
+          text: "at least 1 level in scholar",
+          className: "scholar",
+          level: 1,
+        },
+      ],
+      description: "Your ally rolls a d6.",
+    });
+
+    expect(item.summary.deployment).toBeNull();
+    // Gated on a class instead, which is the other filter the list offers.
+    expect(item.summary.characterClass).toBe("Scholar");
+    expect(item.tagline).toBe("Requires at least 1 level in scholar");
+  });
+});
+
+describe("starship rules", () => {
+  it("takes a chapter's identity from its title and drops its duplicated heading", () => {
+    const item = normalizeOne("starship-rules", {
+      key: "combat",
+      title: "Combat",
+      sourceKey: "sotg",
+      chapterNumber: 9,
+      body: "# Chapter 9: Combat\n\nAs the light freighter exits hyperspace.",
+    });
+
+    expect(item.name).toBe("Combat");
+    expect(item.slug).toBe("combat");
+    expect(item.tagline).toBe("Chapter 9");
+    expect(item.summary).toEqual({ chapterNumber: 9 });
+    // The page prints the title as its own h1, so the body's copy of it would
+    // be a second top-level heading saying the same thing.
+    expect(item.sections).toEqual([
+      { heading: null, body: "As the light freighter exits hyperspace." },
+    ]);
   });
 });

@@ -65,6 +65,12 @@ const TYPE_LABELS = {
   },
   equipment: { singular: "Equipment", plural: "Equipment" },
   monsters: { singular: "Creature", plural: "Creatures" },
+  "starship-base-sizes": { singular: "Hull", plural: "Starship hulls" },
+  "starship-deployments": { singular: "Deployment", plural: "Deployments" },
+  "starship-equipment": { singular: "Ship part", plural: "Ship equipment" },
+  "starship-modifications": { singular: "Modification", plural: "Modifications" },
+  "starship-ventures": { singular: "Venture", plural: "Ventures" },
+  "starship-rules": { singular: "Rules chapter", plural: "Starship rules" },
 };
 
 /** How many items per type the committed fixture carries. */
@@ -385,6 +391,15 @@ async function buildFromArchive(options, outputDirectory) {
 
   const types = [];
   for (const type of CONTENT_TYPES) {
+    // A type the archive path does not carry still gets its files and its
+    // manifest entry, the same way the canonical path treats maneuvers: the
+    // route stays and renders an empty index, so the gap is visible rather
+    // than being a link the navigation offers and nothing answers.
+    if (!type.file) {
+      types.push({ id: type.id, items: [] });
+      continue;
+    }
+
     const records = await readArchiveType(archiveDirectory, type.file);
     countRepairsDeep(records, repairs);
 
