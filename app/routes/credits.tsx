@@ -17,6 +17,7 @@
 
 import { Link } from "react-router";
 
+import { safeExternalHref } from "~/components/media";
 import { Breadcrumbs } from "~/components/site-chrome";
 import {
   citedAssetCount,
@@ -69,9 +70,10 @@ function PersonName({
   name: string;
   link: string | null;
 }) {
-  if (!link) return <>{name}</>;
+  const href = safeExternalHref(link);
+  if (!href) return <>{name}</>;
   return (
-    <a href={link} rel="noopener noreferrer">
+    <a href={href} rel="noopener noreferrer">
       {name}
     </a>
   );

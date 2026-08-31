@@ -105,6 +105,32 @@ export function MonogramPlate({
 }
 
 /**
+ * A link supplied by content, reduced to one this site is willing to render.
+ *
+ * The `link` on a credit is authored data: it comes from the content set, and
+ * once there is an authoring UI it will come from whatever a contributor typed
+ * into a form. The schema asks for a URI, and `javascript:alert(1)` is a
+ * perfectly valid URI — so validating the shape of the string is not the same
+ * as deciding it is safe to put in an `href`. Everything except http and https
+ * is dropped, which turns a hostile link into a plain name rather than into
+ * script running on this origin.
+ *
+ * This is here now, before the write path exists, because the moment it exists
+ * this becomes reachable by anyone with a Contributor role.
+ */
+export function safeExternalHref(link: string | null): string | null {
+  if (!link) return null;
+  try {
+    const url = new URL(link);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : null;
+  } catch {
+    // Not an absolute URL at all. Relative links are not what this field is
+    // for, and resolving one against the current page would be a surprise.
+    return null;
+  }
+}
+
+/**
  * The credit for one picture, shown with the picture rather than only in a
  * list somewhere else.
  *
@@ -125,11 +151,12 @@ export function ImageCredit({ credit }: { credit: AssetCredit | null }) {
 
   if (credit.status === "cited") {
     const attribution = credit.artist ?? "an unnamed artist";
+    const href = safeExternalHref(credit.link);
     return (
       <p className="image-credit">
         <span className="image-credit-label">Art by</span>{" "}
-        {credit.link ? (
-          <a href={credit.link} rel="noopener noreferrer">
+        {href ? (
+          <a href={href} rel="noopener noreferrer">
             {attribution}
           </a>
         ) : (
