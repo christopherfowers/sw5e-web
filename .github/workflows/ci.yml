@@ -403,6 +403,8 @@ jobs:
           fi
           if [ "$rendered" -ne "$canonical" ]; then
             echo "::error::/features links $rendered of $canonical entries."               "Every entry must stay in the markup: it is what a crawler and"               "a reader without JavaScript see."
+            exit 1
+          fi
 
       - name: A type with no source in the archive publishes no source badge
         run: |
