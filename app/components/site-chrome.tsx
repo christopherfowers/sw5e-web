@@ -93,19 +93,19 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="site-footer-statement">
-        <p>
-          Star Wars 5e is a fan conversion of fifth-edition D&amp;D, made by
-          Galiphile and a community of contributors in accordance with Wizards
-          of the Coast&rsquo;s Fan Content Policy. Star Wars and all related
-          properties belong to Lucasfilm. This site is unofficial, and is not
-          affiliated with, endorsed by, or sponsored by Lucasfilm or Wizards of
-          the Coast.
-        </p>
-        <p>
-          This website&rsquo;s source code is MIT licensed. The game content and
-          the artwork are not the site&rsquo;s to license and remain with their
-          authors and rights holders.
-        </p>
+          <p>
+            Star Wars 5e is a fan conversion of fifth-edition D&amp;D, made by
+            Galiphile and a community of contributors in accordance with Wizards
+            of the Coast&rsquo;s Fan Content Policy. Star Wars and all related
+            properties belong to Lucasfilm. This site is unofficial, and is not
+            affiliated with, endorsed by, or sponsored by Lucasfilm or Wizards
+            of the Coast.
+          </p>
+          <p>
+            This website&rsquo;s source code is MIT licensed. The game content
+            and the artwork are not the site&rsquo;s to license and remain with
+            their authors and rights holders.
+          </p>
         </div>
         <ul className="site-footer-links">
           <li>
