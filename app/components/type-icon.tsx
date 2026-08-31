@@ -51,6 +51,46 @@ const PATHS: Record<ContentTypeId, React.ReactNode> = {
       <path d="M9.5 6 6 9.5" />
     </>
   ),
+  // The five marks below sit next to the crossed blades of `maneuvers` in the
+  // navigation, so each has to be legible against the others at 1em and not
+  // just against the rest of the set. Styles and masteries take one chevron
+  // and three, which is the relationship between them; focuses and
+  // supremacies take a target and a target already struck.
+  "fighting-styles": (
+    <>
+      <path d="M4.75 14.25 12 7.5l7.25 6.75" />
+      <path d="M4.75 19.25h14.5" />
+    </>
+  ),
+  "fighting-masteries": (
+    <>
+      <path d="M4.75 9.5 12 4.25l7.25 5.25" />
+      <path d="M4.75 14.5 12 9.25l7.25 5.25" />
+      <path d="M4.75 19.5 12 14.25l7.25 5.25" />
+    </>
+  ),
+  "lightsaber-forms": (
+    <>
+      <rect x="10.25" y="15" width="3.5" height="5.5" rx="1.25" />
+      <path d="M10.25 17.5h3.5" />
+      <path d="M12 15V3.5" />
+    </>
+  ),
+  "weapon-focuses": (
+    <>
+      <circle cx="12" cy="12" r="5.75" />
+      <circle cx="12" cy="12" r="1.25" />
+      <path d="M12 3.5v2.5M12 18v2.5M3.5 12H6M18 12h2.5" />
+    </>
+  ),
+  "weapon-supremacies": (
+    <>
+      <circle cx="10.5" cy="13.5" r="5.75" />
+      <circle cx="10.5" cy="13.5" r="1.25" />
+      <path d="m14.75 9.25 4.75-4.75" />
+      <path d="M17.25 4.5h2.25v2.25" />
+    </>
+  ),
   equipment: (
     <>
       <rect x="3.25" y="7.5" width="17.5" height="12.25" rx="1.75" />

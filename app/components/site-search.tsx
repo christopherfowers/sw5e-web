@@ -1,6 +1,6 @@
 /**
  * The header search: type anywhere on the site and get grouped results across
- * all eight content types.
+ * every content type.
  *
  * Deliberately built from a real form and real links rather than an ARIA
  * combobox. A combobox would force every suggestion to be a `role="option"`

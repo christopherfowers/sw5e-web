@@ -70,6 +70,36 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
     blurb: "Superiority-die maneuvers for physical and mental combat.",
     accent: "cyan",
   },
+  "fighting-styles": {
+    plural: "Fighting Styles",
+    singular: "Fighting Style",
+    blurb: "Early specialisations in one way of fighting, and what each grants.",
+    accent: "amber",
+  },
+  "fighting-masteries": {
+    plural: "Fighting Masteries",
+    singular: "Fighting Mastery",
+    blurb: "The late-career counterparts to the fighting styles.",
+    accent: "red",
+  },
+  "lightsaber-forms": {
+    plural: "Lightsaber Forms",
+    singular: "Lightsaber Form",
+    blurb: "Stances adopted as a bonus action, and what each does while held.",
+    accent: "violet",
+  },
+  "weapon-focuses": {
+    plural: "Weapon Focuses",
+    singular: "Weapon Focus",
+    blurb: "Training in one weapon group, from Wretched Hives.",
+    accent: "steel",
+  },
+  "weapon-supremacies": {
+    plural: "Weapon Supremacies",
+    singular: "Weapon Supremacy",
+    blurb: "The higher tier of weapon-group training, one per group.",
+    accent: "indigo",
+  },
   equipment: {
     plural: "Equipment",
     singular: "Item",
@@ -84,7 +114,15 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
   },
 };
 
-/** Navigation order, shared by the header and the home page. */
+/**
+ * Navigation order, shared by the header and the home page.
+ *
+ * The order follows how a character is put together — what you are, what you
+ * become, what you can do, what you carry — and the six combat options sit
+ * together in the middle of that because they are all answers to the same
+ * question. Maneuvers lead the group: they are the largest of the six by an
+ * order of magnitude and the one a reader arrives looking for.
+ */
 export const TYPE_ORDER: ContentTypeId[] = [
   "species",
   "archetypes",
@@ -92,6 +130,11 @@ export const TYPE_ORDER: ContentTypeId[] = [
   "feats",
   "powers",
   "maneuvers",
+  "fighting-styles",
+  "fighting-masteries",
+  "lightsaber-forms",
+  "weapon-focuses",
+  "weapon-supremacies",
   "equipment",
   "monsters",
 ];

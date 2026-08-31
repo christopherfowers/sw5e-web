@@ -49,6 +49,20 @@ const TYPE_LABELS = {
   feats: { singular: "Feat", plural: "Feats" },
   powers: { singular: "Power", plural: "Powers" },
   maneuvers: { singular: "Maneuver", plural: "Maneuvers" },
+  "fighting-styles": { singular: "Fighting Style", plural: "Fighting Styles" },
+  "fighting-masteries": {
+    singular: "Fighting Mastery",
+    plural: "Fighting Masteries",
+  },
+  "lightsaber-forms": {
+    singular: "Lightsaber Form",
+    plural: "Lightsaber Forms",
+  },
+  "weapon-focuses": { singular: "Weapon Focus", plural: "Weapon Focuses" },
+  "weapon-supremacies": {
+    singular: "Weapon Supremacy",
+    plural: "Weapon Supremacies",
+  },
   equipment: { singular: "Equipment", plural: "Equipment" },
   monsters: { singular: "Creature", plural: "Creatures" },
 };
@@ -156,10 +170,27 @@ function toSummary(item) {
  */
 function selectCurated(items) {
   const usable = items
-    .filter((item) => item.sections.some((each) => each.body.length > 120))
+    .filter((item) => renderedProseLength(item) > 120)
     .filter((item) => !hasResidualCorruption(item))
     .sort((left, right) => left.name.localeCompare(right.name, "en"));
   return usable.slice(0, CURATED_PER_TYPE);
+}
+
+/**
+ * How much prose an item would actually put on the page.
+ *
+ * Sections used to be the whole of this, which worked while every type kept
+ * its rules text in one blob. The combat options do not: a fighting style's
+ * page is a one-line lead and then its benefits, which are entries, so
+ * measuring sections alone found no fighting style worth committing and the
+ * fixture would have shipped that type empty — the exact failure the fixture
+ * exists to rule out.
+ */
+function renderedProseLength(item) {
+  return (
+    item.sections.reduce((total, each) => total + each.body.length, 0) +
+    item.entries.reduce((total, each) => total + (each.body?.length ?? 0), 0)
+  );
 }
 
 function hasResidualCorruption(item) {

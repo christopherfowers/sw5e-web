@@ -4,7 +4,7 @@
  *
  * A creature list needs challenge rating; a power list needs level and casting
  * time; an equipment list needs cost and damage. Rendering one generic table
- * eight times would bury exactly the columns a reader is scanning for at the
+ * once per type would bury exactly the columns a reader is scanning for at the
  * table mid-game, so every type declares its own.
  *
  * Two of the declarations here are about form rather than fields. `layout`
@@ -32,10 +32,13 @@ import type {
   ContentTypeId,
   EquipmentSummary,
   FeatSummary,
+  FightingOptionSummary,
+  LightsaberFormSummary,
   ManeuverSummary,
   MonsterSummary,
   PowerSummary,
   SpeciesSummary,
+  WeaponTrainingSummary,
 } from "./types";
 
 export interface Column<Row> {
@@ -388,7 +391,8 @@ const powers: ListConfig<PowerSummary> = {
 
 const maneuvers: ListConfig<ManeuverSummary> = {
   defaultSort: "name",
-  compactLine: (row) => row.kind,
+  striped: true,
+  compactLine: (row) => joinParts([row.kind, diceLabel(row.superiorityDice)]),
   columns: [
     nameColumn(),
     {
@@ -400,15 +404,183 @@ const maneuvers: ListConfig<ManeuverSummary> = {
         row.kind ? <Badge accent={maneuverAccent(row.kind)}>{row.kind}</Badge> : em,
     },
     {
+      // What using the maneuver takes out of the pool. It is one die for all
+      // but ten of the 119, and those ten are exactly the ones worth spotting
+      // in a list: they upgrade a maneuver already paid for.
+      key: "superiorityDice",
+      header: "Dice",
+      numeric: true,
+      className: FROM_SMALL,
+      sortValue: (row) => row.superiorityDice,
+      render: (row) =>
+        row.superiorityDice == null ? (
+          em
+        ) : (
+          <span className={row.superiorityDice === 0 ? "cell-muted" : undefined}>
+            {row.superiorityDice}
+          </span>
+        ),
+    },
+    {
       key: "prerequisite",
       header: "Prerequisite",
       className: FROM_MEDIUM,
       render: (row) => mutedOr(row.prerequisite),
     },
+    {
+      key: "improves",
+      header: "Improves",
+      className: FROM_LARGE,
+      sortValue: (row) => row.improves,
+      render: (row) => mutedOr(row.improves),
+    },
     sourceColumn(),
   ],
   facets: [
     { key: "kind", label: "Type", valueOf: (row) => row.kind },
+    {
+      key: "superiorityDice",
+      label: "Cost",
+      valueOf: (row) => diceLabel(row.superiorityDice),
+      compare: (left, right) => (left === "Free" ? -1 : right === "Free" ? 1 : 0),
+    },
+    sourceFacet(),
+  ],
+};
+
+/**
+ * A die cost as a reader would say it. "Free" rather than "0 dice" because
+ * zero is not an absence here — it is the defining property of an upgrade.
+ */
+function diceLabel(dice: number | null): string | null {
+  if (dice == null) return null;
+  if (dice === 0) return "Free";
+  return dice === 1 ? "1 die" : `${dice} dice`;
+}
+
+/**
+ * Fighting styles and fighting masteries render identically, because they are
+ * the same disciplines chosen from two lists at two points in a career, and a
+ * reader comparing Duelist Style with Duelist Mastery should be comparing two
+ * rows of the same shape.
+ *
+ * The benefit count earns its column for the same reason: it is the one number
+ * that separates the two lists, and it only exists as a number because the
+ * canonical documents keep the benefits as a list rather than as prose.
+ */
+const fightingOptions: ListConfig<FightingOptionSummary> = {
+  defaultSort: "name",
+  compactLine: (row) =>
+    joinParts([
+      benefitsLabel(row.benefits),
+      row.prerequisite ? `Requires ${row.prerequisite}` : null,
+    ]),
+  columns: [
+    nameColumn(),
+    {
+      key: "benefits",
+      header: "Benefits",
+      numeric: true,
+      className: FROM_SMALL,
+      sortValue: (row) => row.benefits,
+      render: (row) => textOr(row.benefits == null ? null : String(row.benefits)),
+    },
+    {
+      key: "prerequisite",
+      header: "Prerequisite",
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.prerequisite,
+      render: (row) => mutedOr(row.prerequisite),
+    },
+    sourceColumn(),
+  ],
+  facets: [
+    {
+      key: "prerequisite",
+      label: "Prerequisite",
+      valueOf: (row) => row.prerequisite,
+    },
+    sourceFacet(),
+  ],
+};
+
+function benefitsLabel(benefits: number | null): string | null {
+  if (benefits == null) return null;
+  return benefits === 1 ? "1 benefit" : `${benefits} benefits`;
+}
+
+/**
+ * Weapon focuses and weapon supremacies. Eight rows each, one per weapon
+ * group, so the group is the column a reader is actually scanning for — the
+ * names differ from it only in whether the books wrote the word "Weapon".
+ */
+const weaponTraining: ListConfig<WeaponTrainingSummary> = {
+  defaultSort: "name",
+  compactLine: (row) => joinParts([row.weaponGroup, benefitsLabel(row.benefits)]),
+  columns: [
+    nameColumn(),
+    {
+      key: "weaponGroup",
+      header: "Weapon group",
+      className: FROM_SMALL,
+      sortValue: (row) => row.weaponGroup,
+      render: (row) =>
+        row.weaponGroup ? <Badge accent="steel">{row.weaponGroup}</Badge> : em,
+    },
+    {
+      key: "benefits",
+      header: "Benefits",
+      numeric: true,
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.benefits,
+      render: (row) => textOr(row.benefits == null ? null : String(row.benefits)),
+    },
+    sourceColumn(),
+  ],
+  facets: [
+    {
+      key: "weaponGroup",
+      label: "Weapon group",
+      valueOf: (row) => row.weaponGroup,
+    },
+    sourceFacet(),
+  ],
+};
+
+const lightsaberForms: ListConfig<LightsaberFormSummary> = {
+  defaultSort: "name",
+  compactLine: (row) =>
+    joinParts([
+      row.onAdopt ? "Acts on adoption" : "Active while held",
+      row.prerequisite ? `Requires ${row.prerequisite}` : null,
+    ]),
+  columns: [
+    nameColumn(),
+    {
+      // The one thing that changes how a form is played: does adopting it do
+      // something this turn, or does it only change what is true afterwards?
+      key: "onAdopt",
+      header: "On adoption",
+      className: FROM_SMALL,
+      sortValue: (row) => (row.onAdopt ? 0 : 1),
+      render: (row) =>
+        row.onAdopt ? <Badge accent="violet">Acts</Badge> : mutedOr("While held"),
+    },
+    {
+      key: "prerequisite",
+      header: "Prerequisite",
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.prerequisite,
+      render: (row) => mutedOr(row.prerequisite),
+    },
+    sourceColumn(),
+  ],
+  facets: [
+    {
+      key: "onAdopt",
+      label: "On adoption",
+      valueOf: (row) => (row.onAdopt ? "Acts" : "While held"),
+    },
     sourceFacet(),
   ],
 };
@@ -540,6 +712,18 @@ const CONFIGS = {
   feats,
   powers,
   maneuvers,
+
+  // Styles and masteries share one declaration, and so do focuses and
+  // supremacies. They are separate content types with separate routes and
+  // separate counts, but the pair in each case is the same list of choices at
+  // two career points, and giving them two copies of one table would only
+  // create somewhere for the copies to drift apart.
+  "fighting-styles": fightingOptions,
+  "fighting-masteries": fightingOptions,
+  "lightsaber-forms": lightsaberForms,
+  "weapon-focuses": weaponTraining,
+  "weapon-supremacies": weaponTraining,
+
   equipment,
   monsters,
 } as const;

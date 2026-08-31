@@ -249,12 +249,12 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 22 pages that do not come from content:
+          # One page per document, plus 27 pages that do not come from content:
           # the home page, the search page, the sources index, four source
-          # pages, eight type indexes, and the seven account routes listed in
-          # ACCOUNT_PATHS in react-router.config.ts. The canonical set has no
-          # maneuvers, and `feature` and `source` are not browsable types, so
-          # only the seven mapped directories contribute item pages.
+          # pages, thirteen type indexes, and the seven account routes listed
+          # in ACCOUNT_PATHS in react-router.config.ts. `feature` and `source`
+          # are not browsable types, so only the thirteen mapped directories
+          # contribute item pages.
           #
           # The account routes are prerendered deliberately, as signed-out
           # skeletons: nothing in that area has a loader, so there is no
@@ -262,10 +262,13 @@ jobs:
           # Leaving them out would send them through the SPA fallback below,
           # which answers 404.
           items=0
-          for type in species archetype background feat power equipment monster; do
+          for type in species archetype background feat power \
+                      maneuver fighting-style fighting-mastery \
+                      lightsaber-form weapon-focus weapon-supremacy \
+                      equipment monster; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 22))
+          expected=$((items + 27))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
@@ -276,14 +279,83 @@ jobs:
             exit 1
           fi
 
-      - name: A type with no canonical content still has an index page
+      - name: The maneuver index publishes maneuvers
         run: |
-          # The canonical set carries no maneuvers. The type keeps its place
-          # in the site's navigation, so its index has to exist and render
-          # rather than 404 on a link the header offers.
-          body=$(curl --fail --silent http://127.0.0.1:8080/maneuvers)
-          grep -q '<h1>Maneuvers</h1>' <<< "$body"
-          grep -q 'No maneuvers in this build' <<< "$body"
+          # This step used to assert the opposite: that /maneuvers rendered
+          # "No maneuvers in this build". The type was in the site's
+          # navigation with nothing behind it, and the page it published was
+          # a working, 200-answering apology. Now it has content, and the
+          # count is compared against the canonical set for the same reason
+          # the species count is — "more than zero" would pass on a build
+          # that lost 118 of the 119.
+          canonical=$(ls canonical-content/maneuver/*.json | wc -l)
+          rendered=$(curl --fail --silent http://127.0.0.1:8080/maneuvers \
+            | grep -o 'href="/maneuvers/[a-z0-9-]*"' | sort -u | wc -l)
+
+          echo "canonical maneuvers: $canonical, rendered: $rendered"
+
+          if [ "$canonical" -lt 119 ]; then
+            echo "the canonical content set has shrunk to $canonical maneuvers"
+            exit 1
+          fi
+          if [ "$rendered" -ne "$canonical" ]; then
+            echo "the image renders $rendered maneuvers out of $canonical"
+            exit 1
+          fi
+
+          curl --fail --silent http://127.0.0.1:8080/maneuvers \
+            | grep -q '<h1>Maneuvers</h1>'
+
+      - name: Every combat-option index publishes its whole list
+        run: |
+          # The five smaller combat-option types, checked the same way. They
+          # are small enough that a broken import could plausibly still
+          # produce a page with a couple of rows on it, so each is compared
+          # against the directory it was built from rather than against zero.
+          set -- \
+            "fighting-style:fighting-styles:32" \
+            "fighting-mastery:fighting-masteries:32" \
+            "lightsaber-form:lightsaber-forms:20" \
+            "weapon-focus:weapon-focuses:8" \
+            "weapon-supremacy:weapon-supremacies:8"
+
+          for entry in "$@"; do
+            directory=${entry%%:*}
+            rest=${entry#*:}
+            segment=${rest%%:*}
+            floor=${rest##*:}
+
+            canonical=$(ls "canonical-content/$directory"/*.json | wc -l)
+            rendered=$(curl --fail --silent "http://127.0.0.1:8080/$segment" \
+              | grep -o "href=\"/$segment/[a-z0-9-]*\"" | sort -u | wc -l)
+
+            echo "$segment: canonical $canonical, rendered $rendered"
+
+            if [ "$canonical" -lt "$floor" ]; then
+              echo "content/$directory has shrunk to $canonical documents"
+              exit 1
+            fi
+            if [ "$rendered" -ne "$canonical" ]; then
+              echo "/$segment renders $rendered of $canonical"
+              exit 1
+            fi
+          done
+
+      - name: A type with no canonical content would still have an index page
+        run: |
+          # Every type the site publishes now has content behind it, so the
+          # empty index cannot be observed against this image. The behaviour
+          # is still load-bearing — CANONICAL_DIRECTORIES may carry a null
+          # again, and a header link that 404s is worse than one that explains
+          # itself — so what is asserted here is that the empty-state string
+          # the code would render still exists in the shipped bundle. The
+          # rendering itself is covered by app/routes/type-index.test.tsx.
+          if ! docker exec sw5e-web sh -c \
+               'grep -rqF "in this build of the reference yet" /usr/share/nginx/html'; then
+            echo "the empty-type index state is no longer in the bundle;" \
+              "a type the canonical set cannot feed would render nothing at all"
+            exit 1
+          fi
 
       - name: A prerendered content page serves its own markup
         run: |

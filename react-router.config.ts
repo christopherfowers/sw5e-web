@@ -10,6 +10,11 @@ const CONTENT_TYPES = [
   "feats",
   "powers",
   "maneuvers",
+  "fighting-styles",
+  "fighting-masteries",
+  "lightsaber-forms",
+  "weapon-focuses",
+  "weapon-supremacies",
   "equipment",
   "monsters",
 ] as const;
@@ -69,8 +74,8 @@ export default {
   ssr: false,
 
   /**
-   * Every content page is prerendered: the home page, the eight type indexes,
-   * the search page, and one page per item. That is what makes the library
+   * Every content page is prerendered: the home page, the thirteen type
+   * indexes, the search page, and one page per item. That is what makes the library
    * visible to crawlers that do not run JavaScript, and it is also what keeps
    * the dataset out of the browser — each page ships only its own data,
    * serialized into its own static HTML.

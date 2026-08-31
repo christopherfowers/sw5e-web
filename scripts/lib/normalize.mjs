@@ -612,21 +612,185 @@ function normalizeArchetype(record) {
 
 /* -------------------------------------------------------------- maneuvers */
 
+/**
+ * The archive stores every combat option as one prose blob, while the site's
+ * rows and pages want the structure that is written inside it. The four rules
+ * below each key off a marker the source prints — the phrase that spends a die,
+ * the parenthesised tier on an upgrade's name, the italic prerequisite run-in,
+ * the markdown bullet — so nothing here interprets a sentence, and each one
+ * produces the same fields the canonical mapping in `canonical.mjs` reads
+ * straight out of a document. That correspondence is the point: a dataset built
+ * from the archive and one built from the canonical set have to be
+ * interchangeable, and these types are where the two inputs are furthest apart.
+ */
+const EXPENDS_SUPERIORITY_DIE =
+  /expend(?:ing)?(?:\s+and\s+roll(?:ing)?)?\s+(?:a|one)\s+superiority\s+(?:die|dice)/i;
+
+const MANEUVER_TIER = /\s*\((?:Improved|Greater)\)$/;
+
+const PREREQUISITE_RUN_IN = /^_\*\*Prerequisite:\*\*\s*(.+?)_\s*\n/;
+
+/** Splits the italic prerequisite line off the front of an entry. */
+function takePrerequisite(prose) {
+  if (!prose) return { prerequisite: null, body: "" };
+  const match = PREREQUISITE_RUN_IN.exec(prose);
+  if (!match) return { prerequisite: null, body: prose };
+  return { prerequisite: text(match[1]), body: prose.slice(match[0].length) };
+}
+
+/** Lead prose, then one entry per printed bullet. */
+function takeBenefits(prose) {
+  const lines = (prose ?? "").split("\n");
+  const first = lines.findIndex((line) => line.startsWith("- "));
+  if (first < 0) return { lead: text(prose), benefits: [] };
+  return {
+    lead: text(lines.slice(0, first).join("\n")),
+    benefits: lines
+      .slice(first)
+      .filter((line) => line.startsWith("- "))
+      .map((line) => ({ group: "Benefits", name: null, body: text(line.slice(2)) }))
+      .filter((entry) => entry.body),
+  };
+}
+
 function normalizeManeuver(record) {
   const base = common(record);
   const { add, stats } = statCollector();
   const kind = text(record.type);
   const prerequisite = text(record.prerequisite);
+  const description = proseText(record.description);
+  const name = base.name;
+  const improved = MANEUVER_TIER.test(name) ? name.replace(MANEUVER_TIER, "") : null;
+  const superiorityDice =
+    description && EXPENDS_SUPERIORITY_DIE.test(description) ? 1 : 0;
 
   add("Type", kind);
+  add("Cost", superiorityDice === 0 ? "No superiority die" : "1 superiority die");
   add("Prerequisite", prerequisite);
+  add("Improves", improved);
 
   return {
     ...base,
-    tagline: kind ? `${kind} maneuver` : null,
-    summary: { kind, prerequisite },
+    tagline: improved
+      ? `Improves ${improved}`
+      : kind
+        ? `${kind} maneuver`
+        : null,
+    summary: { kind, prerequisite, superiorityDice, improves: improved },
     stats,
-    sections: compact([section(null, proseText(record.description))]),
+    sections: compact([section(null, description)]),
+    entries: [],
+    tables: [],
+  };
+}
+
+function normalizeFightingOption(record) {
+  const base = common(record);
+  const { add, stats } = statCollector();
+  // Fighting styles keep their rules in `description`; fighting masteries keep
+  // theirs in `text`. The archive is not consistent about which name a prose
+  // field gets, so both are read rather than one being assumed.
+  const { prerequisite, body } = takePrerequisite(
+    proseText(record.description ?? record.text),
+  );
+  const { lead, benefits } = takeBenefits(body);
+
+  add("Prerequisite", prerequisite);
+  add("Benefits", benefits.length === 0 ? null : String(benefits.length));
+
+  return {
+    ...base,
+    tagline: prerequisite ? `Requires ${prerequisite}` : "No prerequisite",
+    summary: { prerequisite, benefits: benefits.length },
+    stats,
+    sections: compact([section(null, lead)]),
+    entries: benefits,
+    tables: [],
+  };
+}
+
+/**
+ * The eight weapon groups, read off the entry's name. Three carry the word
+ * "Weapon" in print and five do not, so the group comes from a table rather
+ * than from lower-casing whatever is left.
+ */
+const WEAPON_GROUPS = {
+  Blade: "Blade",
+  Carbine: "Carbine",
+  "Crushing Weapon": "Crushing",
+  "Heavy Weapon": "Heavy",
+  Polearm: "Polearm",
+  Rifle: "Rifle",
+  Sidearm: "Sidearm",
+  "Trip Weapon": "Trip",
+};
+
+function normalizeWeaponTraining(suffix) {
+  return (record) => {
+    const base = common(record);
+    const { add, stats } = statCollector();
+    const stem = base.name.endsWith(suffix)
+      ? base.name.slice(0, -suffix.length)
+      : base.name;
+    const weaponGroup = WEAPON_GROUPS[stem] ?? null;
+    const { lead, benefits } = takeBenefits(proseText(record.description));
+
+    add("Weapon group", weaponGroup);
+    add("Benefits", benefits.length === 0 ? null : String(benefits.length));
+
+    return {
+      ...base,
+      tagline: weaponGroup ? `${weaponGroup} weapons` : null,
+      summary: { weaponGroup, benefits: benefits.length },
+      stats,
+      sections: compact([section(null, lead)]),
+      entries: benefits,
+      tables: [],
+    };
+  };
+}
+
+/**
+ * A lightsaber form does one thing as part of the bonus action that adopts it
+ * and another for as long as it is held. The books tie the first kind to that
+ * bonus action with a fixed sentence, and the paragraph break separates the
+ * two, so the split is read off the page rather than judged.
+ */
+const FORM_ADOPTION_CLAUSE = "As a part of the bonus action to adopt this form";
+
+const FORM_TIMINGS = {
+  onAdopt: "As you adopt this form",
+  active: "While this form is held",
+};
+
+function normalizeLightsaberForm(record) {
+  const base = common(record);
+  const { add, stats } = statCollector();
+  const { prerequisite, body } = takePrerequisite(proseText(record.description));
+  const paragraphs = (body ?? "")
+    .split("\n\n")
+    .map((paragraph) => text(paragraph))
+    .filter(Boolean);
+  const onAdopt = paragraphs.some((paragraph) =>
+    paragraph.startsWith(FORM_ADOPTION_CLAUSE),
+  );
+
+  add("Prerequisite", prerequisite);
+  add("Adopted as", "Bonus action");
+
+  return {
+    ...base,
+    tagline: onAdopt ? "Acts as you adopt it" : "Active while held",
+    summary: { prerequisite, onAdopt },
+    stats,
+    sections: paragraphs.map((paragraph) =>
+      section(
+        paragraph.startsWith(FORM_ADOPTION_CLAUSE)
+          ? FORM_TIMINGS.onAdopt
+          : FORM_TIMINGS.active,
+        paragraph,
+      ),
+    ),
     entries: [],
     tables: [],
   };
@@ -643,6 +807,19 @@ export const CONTENT_TYPES = [
   { id: "feats", file: "Feat", normalize: normalizeFeat },
   { id: "powers", file: "Power", normalize: normalizePower },
   { id: "maneuvers", file: "Maneuvers", normalize: normalizeManeuver },
+  { id: "fighting-styles", file: "FightingStyle", normalize: normalizeFightingOption },
+  { id: "fighting-masteries", file: "FightingMastery", normalize: normalizeFightingOption },
+  { id: "lightsaber-forms", file: "LightsaberForm", normalize: normalizeLightsaberForm },
+  {
+    id: "weapon-focuses",
+    file: "WeaponFocus",
+    normalize: normalizeWeaponTraining(" Focus"),
+  },
+  {
+    id: "weapon-supremacies",
+    file: "WeaponSupremacy",
+    normalize: normalizeWeaponTraining(" Supremacy"),
+  },
   { id: "equipment", file: "Equipment", normalize: normalizeEquipment },
   { id: "monsters", file: "Monster", normalize: normalizeMonster },
 ];

@@ -17,6 +17,7 @@ import {
 const sources = indexSources([
   { key: "phb", abbreviation: "PHB", title: "Star Wars 5e Player's Handbook" },
   { key: "snv", abbreviation: "SnV", title: "Scum and Villainy" },
+  { key: "wh", abbreviation: "WH", title: "Wretched Hives" },
 ]);
 
 function normalizeOne(type, record) {
@@ -62,12 +63,215 @@ describe("what the canonical mapping guarantees for every type", () => {
     expect(items.map((item) => item.slug)).toEqual(["bo-rifle", "bo-rifle-2"]);
   });
 
-  it("carries no site type that the canonical set cannot feed, except maneuvers", () => {
-    // The canonical set has no maneuvers directory. That is a gap in the
-    // content, not a bug in the mapping, and it has to stay visible.
-    expect(CANONICAL_DIRECTORIES.maneuvers).toBeNull();
+  it("gives every site type a canonical directory to read", () => {
+    // This used to record maneuvers as the one site type the canonical set
+    // could not feed, which is why /maneuvers rendered an empty index while
+    // sitting in the site's navigation. Nothing is unmapped now, and this
+    // assertion is what notices if a type is ever added to the site without
+    // content behind it — the empty-index machinery still exists for that
+    // case, but it must be a decision rather than an accident.
+    for (const [type, directory] of Object.entries(CANONICAL_DIRECTORIES)) {
+      expect(directory, `${type} has no canonical directory`).toBeTruthy();
+    }
+
     expect(CANONICAL_DIRECTORIES.species).toBe("species");
     expect(CANONICAL_DIRECTORIES.monsters).toBe("monster");
+  });
+
+  it("maps the plural route segments onto the singular canonical directories", () => {
+    // The site's ids are URL segments and the canonical directories are not.
+    // /maneuvers in particular is a published address that predates the
+    // content, so the two spellings have to stay pinned to each other.
+    expect(CANONICAL_DIRECTORIES.maneuvers).toBe("maneuver");
+    expect(CANONICAL_DIRECTORIES["fighting-styles"]).toBe("fighting-style");
+    expect(CANONICAL_DIRECTORIES["fighting-masteries"]).toBe("fighting-mastery");
+    expect(CANONICAL_DIRECTORIES["lightsaber-forms"]).toBe("lightsaber-form");
+    expect(CANONICAL_DIRECTORIES["weapon-focuses"]).toBe("weapon-focus");
+    expect(CANONICAL_DIRECTORIES["weapon-supremacies"]).toBe("weapon-supremacy");
+  });
+});
+
+describe("combat options", () => {
+  it("puts a maneuver's list and die cost where a row can read them", () => {
+    const item = normalizeOne("maneuvers", {
+      key: "parry",
+      name: "Parry",
+      sourceKey: "phb",
+      maneuverType: "physical",
+      superiorityDice: 1,
+      description:
+        "When another creature damages you with a melee attack, you can use " +
+        "your reaction and expend one superiority die to reduce the damage.",
+    });
+
+    expect(item.summary).toEqual({
+      kind: "Physical",
+      prerequisite: null,
+      superiorityDice: 1,
+      improves: null,
+    });
+    expect(item.tagline).toBe("Physical maneuver");
+    expect(item.stats).toContainEqual({ label: "Cost", value: "1 superiority die" });
+  });
+
+  it("says what a tiered maneuver improves, in the tagline and in the row", () => {
+    const item = normalizeOne("maneuvers", {
+      key: "administer-aid-greater",
+      name: "Administer Aid (Greater)",
+      sourceKey: "phb",
+      maneuverType: "mental",
+      superiorityDice: 0,
+      prerequisite: "Administer Aid (Improved) maneuver",
+      improves: "Administer Aid",
+      description: "You can use your Administer Aid maneuver as an action.",
+    });
+
+    // "Administer Aid (Greater)" says nothing on its own; what it upgrades is
+    // the whole of what the name means.
+    expect(item.tagline).toBe("Improves Administer Aid");
+    expect(item.summary.improves).toBe("Administer Aid");
+    expect(item.summary.superiorityDice).toBe(0);
+
+    // Zero dice is a fact about the maneuver, not a missing value, so it is
+    // spelled out rather than left off the stat block.
+    expect(item.stats).toContainEqual({
+      label: "Cost",
+      value: "No superiority die",
+    });
+  });
+
+  it("renders a fighting style's benefits as a list, not as a paragraph", () => {
+    const item = normalizeOne("fighting-styles", {
+      key: "duelist-style",
+      name: "Duelist Style",
+      sourceKey: "phb",
+      description: "You are skilled with a single weapon. You gain the following benefits:",
+      benefits: [
+        "You gain a +1 bonus to attack rolls.",
+        "You can draw a weapon without using your object interaction.",
+      ],
+    });
+
+    expect(item.summary).toEqual({ prerequisite: null, benefits: 2 });
+    expect(item.entries).toEqual([
+      {
+        group: "Benefits",
+        name: null,
+        body: "You gain a +1 bonus to attack rolls.",
+      },
+      {
+        group: "Benefits",
+        name: null,
+        body: "You can draw a weapon without using your object interaction.",
+      },
+    ]);
+
+    // The lead sentence is the only prose. Repeating the bullets underneath it
+    // would show the same rules twice on one page.
+    expect(item.sections).toHaveLength(1);
+    expect(item.sections[0].body).not.toContain("+1 bonus");
+  });
+
+  it("carries a style's prerequisite as a field rather than a line of prose", () => {
+    const item = normalizeOne("fighting-masteries", {
+      key: "formfighting-mastery",
+      name: "Formfighting Mastery",
+      sourceKey: "phb",
+      prerequisite: "The ability to cast force powers",
+      description: "You've mastered the basics of lightsaber combat. You gain:",
+      benefits: ["You learn two additional lightsaber forms."],
+    });
+
+    expect(item.tagline).toBe("Requires The ability to cast force powers");
+    expect(item.stats).toContainEqual({
+      label: "Prerequisite",
+      value: "The ability to cast force powers",
+    });
+  });
+
+  it("heads a lightsaber form's two halves by when each applies", () => {
+    const item = normalizeOne("lightsaber-forms", {
+      key: "shii-cho-form",
+      name: "Shii-Cho Form",
+      sourceKey: "phb",
+      effects: [
+        {
+          timing: "onAdopt",
+          description:
+            "As a part of the bonus action to adopt this form, you can engage " +
+            "in Two-Weapon Fighting.",
+        },
+        {
+          timing: "active",
+          description:
+            "The first time you hit a creature before the end of your next " +
+            "turn, it must make a Strength saving throw.",
+        },
+      ],
+    });
+
+    expect(item.summary).toEqual({ prerequisite: null, onAdopt: true });
+    expect(item.tagline).toBe("Acts as you adopt it");
+    expect(item.sections.map((each) => each.heading)).toEqual([
+      "As you adopt this form",
+      "While this form is held",
+    ]);
+    expect(item.stats).toContainEqual({
+      label: "Adopted as",
+      value: "Bonus action",
+    });
+  });
+
+  it("marks a form that only does something while it is held", () => {
+    const item = normalizeOne("lightsaber-forms", {
+      key: "juyo-form",
+      name: "Juyo Form",
+      sourceKey: "phb",
+      effects: [
+        {
+          timing: "active",
+          description:
+            "Until the start of your next turn, your critical hit range " +
+            "increases by 1.",
+        },
+      ],
+    });
+
+    expect(item.summary.onAdopt).toBe(false);
+    expect(item.tagline).toBe("Active while held");
+    expect(item.sections[0].heading).toBe("While this form is held");
+  });
+
+  it("keys a weapon focus on the group it applies to", () => {
+    const item = normalizeOne("weapon-focuses", {
+      key: "crushing-weapon-focus",
+      name: "Crushing Weapon Focus",
+      sourceKey: "wh",
+      weaponGroup: "crushing",
+      description: "You've focused your training on crushing weapons:",
+      benefits: ["You gain a +1 bonus to the weapon's damage rolls."],
+    });
+
+    // The group is not derivable from the name — three of the eight carry the
+    // word "Weapon" in print and five do not — so the field is what a row and
+    // a filter both read.
+    expect(item.summary).toEqual({ weaponGroup: "Crushing", benefits: 1 });
+    expect(item.tagline).toBe("Crushing weapons");
+    expect(item.source).toBe("WH");
+  });
+
+  it("gives a weapon supremacy the same shape as its focus", () => {
+    const item = normalizeOne("weapon-supremacies", {
+      key: "blade-supremacy",
+      name: "Blade Supremacy",
+      sourceKey: "wh",
+      weaponGroup: "blade",
+      description: "You've specialized your training with blade weapons:",
+      benefits: ["You gain a +1 bonus to the weapon's attack rolls."],
+    });
+
+    expect(item.summary.weaponGroup).toBe("Blade");
+    expect(item.entries[0].group).toBe("Benefits");
   });
 });
 
