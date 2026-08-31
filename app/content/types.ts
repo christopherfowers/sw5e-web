@@ -8,7 +8,10 @@
 
 export const CONTENT_TYPE_IDS = [
   "species",
+  "classes",
+  "class-improvements",
   "archetypes",
+  "features",
   "backgrounds",
   "feats",
   "powers",
@@ -118,9 +121,30 @@ export interface SpeciesSummary extends BaseSummary {
   abilityIncreases: string | null;
 }
 
+export interface ClassSummary extends BaseSummary {
+  primaryAbility: string | null;
+  hitDie: number | null;
+  casterType: string | null;
+  /** How many archetypes branch off this class. Null on the archive dataset. */
+  archetypeCount: number | null;
+}
+
+export interface ClassImprovementSummary extends BaseSummary {
+  className: string | null;
+  improvementType: string | null;
+  prerequisite: string | null;
+}
+
 export interface ArchetypeSummary extends BaseSummary {
   className: string | null;
   casterType: string | null;
+}
+
+export interface FeatureSummary extends BaseSummary {
+  /** "Class", "Archetype" or "Species" — what kind of thing grants it. */
+  grantedBy: string | null;
+  grantedByName: string | null;
+  level: number | null;
 }
 
 export interface BackgroundSummary extends BaseSummary {
@@ -263,7 +287,10 @@ export interface StarshipRuleSummary extends BaseSummary {
  */
 interface SummaryByType extends Record<ContentTypeId, BaseSummary> {
   species: SpeciesSummary;
+  classes: ClassSummary;
+  "class-improvements": ClassImprovementSummary;
   archetypes: ArchetypeSummary;
+  features: FeatureSummary;
   backgrounds: BackgroundSummary;
   feats: FeatSummary;
   powers: PowerSummary;

@@ -18,6 +18,23 @@ const PATHS: Record<ContentTypeId, React.ReactNode> = {
       <path d="M4.75 20.5c0-3.5 3.25-6 7.25-6s7.25 2.5 7.25 6" />
     </>
   ),
+  // A level table: three rungs, each longer than the last.
+  classes: (
+    <>
+      <path d="M4.75 18.5h6" />
+      <path d="M4.75 12h9.5" />
+      <path d="M4.75 5.5h14.5" />
+    </>
+  ),
+  // Two paths converging into one, which is what multiclassing is.
+  "class-improvements": (
+    <>
+      <path d="M4.75 4.75c0 5 3.5 7.25 7.25 7.25" />
+      <path d="M4.75 19.25c0-5 3.5-7.25 7.25-7.25" />
+      <path d="M12 12h7.25" />
+      <path d="m16.25 8.75 3.25 3.25-3.25 3.25" />
+    </>
+  ),
   archetypes: (
     <>
       <path d="M12 20.5v-6" />
@@ -25,6 +42,13 @@ const PATHS: Record<ContentTypeId, React.ReactNode> = {
       <path d="m12 14.5 5.25-5.25" />
       <circle cx="5.25" cy="7.75" r="2.25" />
       <circle cx="18.75" cy="7.75" r="2.25" />
+    </>
+  ),
+  // A ribbon: one thing awarded, at one level.
+  features: (
+    <>
+      <circle cx="12" cy="8.75" r="4.75" />
+      <path d="m8.75 12.75-2 7.75L12 18l5.25 2.5-2-7.75" />
     </>
   ),
   backgrounds: (

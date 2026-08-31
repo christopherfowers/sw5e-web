@@ -45,12 +45,7 @@ import { humanize, slugify } from "./normalize.mjs";
  *     `/maneuvers` has been in the site's navigation since before any maneuver
  *     content existed, so the segment is fixed and the directory it reads is
  *     `maneuver`. A rename on either side breaks a published address.
- *   - `feature` is a canonical directory with no site type. Its documents are
- *     the individual class and archetype features, and every one of them is
- *     already written out in the prose of the archetype or class that grants
- *     it. Publishing them as well would show a reader the same text twice
- *     under two different headings.
- *   - `source` is a canonical directory with no site type either. The site
+ *   - `source` is a canonical directory with no site type. The site
  *     describes its books in `app/content/source-meta.ts`, which carries the
  *     blurb, colour and cover a page needs and a data file cannot supply.
  *     The canonical documents are still read — they are what turns a
@@ -61,10 +56,36 @@ import { humanize, slugify } from "./normalize.mjs";
  * an empty dataset so its index renders an empty state rather than 404ing on a
  * link the header offers. Nothing is null today, which is the point — the gap
  * this mechanism was built for was maneuvers, and it is now closed.
+ *
+ * `feature` used to be a third mismatch: 2,682 documents held back on the
+ * grounds that every class and archetype feature is already written out in the
+ * prose of whatever grants it, so publishing them would show the same text
+ * twice. That reasoning was right about the duplication and wrong about the
+ * conclusion, and it is reversed here.
+ *
+ * A feature is the unit a person actually looks up. Nobody asks what Soresu
+ * Form says; they ask what Deflection does, in the middle of a turn, and they
+ * expect to search for it by name and send someone the link. Unpublished, all
+ * 2,682 of them were reachable only by opening one of 288 long pages and
+ * reading — search could only answer with the archetype whose prose happened to
+ * contain the words, which is the wrong answer to "what does Reckless Attack
+ * do". They are also the far end of every level grant in the corpus: a class
+ * table that names what arrives at 7th level has nothing to point at unless the
+ * thing it names has a page.
+ *
+ * The duplication is real and is handled rather than avoided. A class or
+ * archetype still prints its own page in full, because 38 of these features
+ * carry a sentence their parent's prose lost and a parent's own tables and
+ * introductions belong to no feature at all — so dropping either side would
+ * lose content. What the parent gains is a linked index of what it grants, by
+ * level, which is a table of contents rather than a second copy of the text.
  */
 export const CANONICAL_DIRECTORIES = {
   species: "species",
+  classes: "class",
+  "class-improvements": "class-improvement",
   archetypes: "archetype",
+  features: "feature",
   backgrounds: "background",
   feats: "feat",
   powers: "power",
@@ -188,6 +209,380 @@ function common(record, sources) {
     slug: slugify(record.name),
     source: source.abbreviation,
     sourceName: source.title,
+  };
+}
+
+/* ----------------------------------------------------------- the class graph */
+
+/**
+ * The edges between a class, its archetypes, its improvement rules and every
+ * feature any of them grants.
+ *
+ * These four types are the only part of the corpus that is a graph rather than
+ * a catalogue, and the relationships are already data: an archetype names its
+ * class, an improvement names its class, a feature names what grants it and the
+ * level it arrives at. This walks them once, up front, so that a page can be
+ * rendered with links to its neighbours instead of with their text copied into
+ * it — which is what stops "the feature is already written out in the
+ * archetype" from being an argument against publishing features.
+ *
+ * Built from the canonical documents rather than from the normalized items,
+ * because the edges are stated on the documents and normalizing throws away
+ * the fields that state them.
+ */
+export function buildClassGraph({ classes = [], classImprovements = [], archetypes = [], features = [] }) {
+  const grants = new Map();
+  const branches = new Map();
+
+  const grantKey = (kind, name) => `${kind}:${name}`;
+
+  for (const feature of features) {
+    const kind = text(feature.grantedBy);
+    const parent = text(feature.grantedByName);
+    if (!kind || !parent) continue;
+
+    const key = grantKey(kind, parent);
+    if (!grants.has(key)) grants.set(key, []);
+    grants.get(key).push({
+      name: text(feature.name),
+      // A feature's URL is its canonical key, not its name. Forty grants are
+      // called "Ability Score Improvement" and a dozen classes grant an
+      // "Extra Attack"; slugs derived from those names would collide and be
+      // resolved by a numeric suffix that moves whenever the corpus grows.
+      slug: text(feature.key),
+      level: numeric(feature.level),
+    });
+  }
+
+  for (const list of grants.values()) {
+    list.sort(
+      (left, right) =>
+        (left.level ?? 0) - (right.level ?? 0) ||
+        left.name.localeCompare(right.name, "en"),
+    );
+  }
+
+  const branchesFor = (className) => {
+    if (!branches.has(className)) {
+      branches.set(className, { archetypes: [], improvements: [] });
+    }
+    return branches.get(className);
+  };
+
+  for (const archetype of archetypes) {
+    const className = text(archetype.className);
+    if (!className) continue;
+    branchesFor(className).archetypes.push({
+      name: text(archetype.name),
+      slug: slugify(archetype.name),
+    });
+  }
+
+  for (const improvement of classImprovements) {
+    const className = text(improvement.className);
+    if (!className) continue;
+    branchesFor(className).improvements.push({
+      name: text(improvement.name),
+      slug: slugify(improvement.name),
+      improvementType: text(improvement.improvementType),
+    });
+  }
+
+  for (const entry of branches.values()) {
+    entry.archetypes.sort((left, right) => left.name.localeCompare(right.name, "en"));
+    entry.improvements.sort((left, right) => left.name.localeCompare(right.name, "en"));
+  }
+
+  // Classes are indexed by name because that is how everything else in the
+  // corpus refers to one; the slug is what a link needs.
+  const classSlugs = new Map(
+    classes.map((record) => [text(record.name), slugify(record.name)]),
+  );
+
+  return {
+    classSlugs,
+    grantedBy: (kind, name) => grants.get(grantKey(kind, name)) ?? [],
+    branchesOf: (className) => branches.get(className) ?? { archetypes: [], improvements: [] },
+  };
+}
+
+const EMPTY_GRAPH = buildClassGraph({});
+
+/** `1` becomes `1st`, `13` becomes `13th`. Levels are printed as ordinals. */
+function ordinal(level) {
+  if (level == null) return null;
+  const rest = level % 100;
+  if (rest >= 11 && rest <= 13) return `${level}th`;
+  return `${level}${["th", "st", "nd", "rd"][level % 10] ?? "th"}`;
+}
+
+function markdownLink(label, href) {
+  // Square brackets never appear in a name in this corpus, and a stray one
+  // would break the link rather than escape anything, so it is dropped.
+  return `[${label.replace(/[[\]]/g, "")}](${href})`;
+}
+
+/**
+ * The linked index of what an entry grants, as a markdown table by level.
+ *
+ * A table rather than a list because the level is the question: a player
+ * levelling up reads down the first column, and a player looking a feature up
+ * scans the second. Both halves are links, so this is the page's table of
+ * contents as well as its map into the rest of the corpus.
+ */
+function grantedFeaturesSection(features) {
+  if (features.length === 0) return null;
+
+  const byLevel = new Map();
+  for (const feature of features) {
+    const level = ordinal(feature.level) ?? "—";
+    if (!byLevel.has(level)) byLevel.set(level, []);
+    byLevel.get(level).push(markdownLink(feature.name, `/features/${feature.slug}`));
+  }
+
+  const rows = [...byLevel]
+    .map(([level, links]) => `| ${level} | ${links.join(", ")} |`)
+    .join("\n");
+
+  return section(
+    "Features by level",
+    `| Level | Feature |\n|:--|:--|\n${rows}`,
+  );
+}
+
+/* ---------------------------------------------------------------- classes */
+
+/**
+ * The class level table.
+ *
+ * Unlike an archetype's, this one has three columns every class prints and a
+ * handful more that no two classes share, so the fixed three are read from
+ * their own fields and the rest from the row's labelled cells. A cell the book
+ * prints as an em dash is absent from the document rather than stored, so the
+ * placeholder is filled in here — which is what makes a class table with
+ * twenty rows and nine columns cost only the cells that say something.
+ */
+function classProgressionTable(progression) {
+  if (!Array.isArray(progression) || progression.length === 0) return null;
+
+  const labels = [];
+  for (const row of progression) {
+    for (const entry of row?.entries ?? []) {
+      const label = text(entry?.label);
+      if (label && !labels.includes(label)) labels.push(label);
+    }
+  }
+
+  const rows = progression
+    .map((row) => {
+      const level = numeric(row?.level);
+      if (level == null) return null;
+      const byLabel = new Map(
+        (row?.entries ?? []).map((entry) => [text(entry?.label), text(entry?.value)]),
+      );
+      return [
+        ordinal(level),
+        row?.proficiencyBonus == null ? "—" : `+${row.proficiencyBonus}`,
+        (list(row?.features) ?? []).join(", ") || "—",
+        ...labels.map((label) => byLabel.get(label) ?? "—"),
+      ];
+    })
+    .filter(Boolean);
+
+  if (rows.length === 0) return null;
+
+  return {
+    caption: "Class progression",
+    columns: ["Level", "Proficiency Bonus", "Features", ...labels],
+    rows,
+  };
+}
+
+/** A markdown bullet list of links, or null when there is nothing to link to. */
+function linkList(entries, hrefFor) {
+  if (entries.length === 0) return null;
+  return entries.map((entry) => `- ${markdownLink(entry.name, hrefFor(entry))}`).join("\n");
+}
+
+/** Joins the blocks that are present with a blank line, or null when none are. */
+function joinBlocks(blocks) {
+  const kept = blocks.filter(Boolean);
+  return kept.length > 0 ? kept.join("\n\n") : null;
+}
+
+function normalizeClass(record, sources, graph) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const hitPoints = record.hitPoints ?? {};
+  const proficiencies = record.proficiencies ?? {};
+  const skills = proficiencies.skills ?? {};
+  const primaryAbility = humanize(record.primaryAbility);
+  const hitDie = numeric(hitPoints.dieFaces);
+  const casterType =
+    record.casterType && record.casterType !== "none" ? humanize(record.casterType) : null;
+  const branches = graph.branchesOf(base.name);
+
+  add("Primary ability", primaryAbility);
+  add("Hit die", hitDie == null ? null : `d${hitDie}`);
+  add("Hit points at 1st level", text(hitPoints.atFirstLevel));
+  add("Hit points at higher levels", text(hitPoints.atHigherLevels));
+  add(
+    "Saving throws",
+    list(proficiencies.savingThrows)?.map((ability) => humanize(ability)),
+  );
+  add("Armor", text(proficiencies.armor));
+  add("Weapons", text(proficiencies.weapons));
+  add("Tools", text(proficiencies.tools));
+  add("Skills", skillLine(skills));
+  add("Starting wealth", text(record.startingWealth));
+  add("Casting", casterType);
+  add("Multiclass proficiencies", text(record.multiclassProficiencies));
+
+  return {
+    ...base,
+    tagline: compact([
+      hitDie == null ? null : `d${hitDie} hit die`,
+      primaryAbility,
+      casterType ? `${casterType} casting` : null,
+    ]).join(" · ") || null,
+    summary: {
+      primaryAbility,
+      hitDie,
+      casterType,
+      archetypeCount: branches.archetypes.length,
+    },
+    stats,
+    sections: compact([
+      section(null, text(record.lore)),
+      grantedFeaturesSection(graph.grantedBy("class", base.name)),
+      section(null, text(record.description)),
+      // The introduction and the list of archetypes are one section, under the
+      // name this class gives its archetypes — Berserker Approaches, Monastic
+      // Orders. Two sections would print that heading twice.
+      section(
+        text(record.archetypeLabel) ?? "Archetypes",
+        joinBlocks([
+          text(record.archetypeIntroduction),
+          linkList(branches.archetypes, (entry) => `/archetypes/${entry.slug}`),
+        ]),
+      ),
+      section(
+        "Multiclassing and splashclassing",
+        linkList(branches.improvements, (entry) => `/class-improvements/${entry.slug}`),
+      ),
+      section(`Creating a ${base.name.toLowerCase()}`, text(record.creatingCharacter)),
+      section("Quick build", text(record.quickBuild)),
+      section("Starting equipment", text(record.startingEquipment)),
+    ]),
+    entries: [],
+    tables: compact([classProgressionTable(record.progression)]),
+  };
+}
+
+/**
+ * "Choose two from Athletics, Insight…" — the printed sentence when there is
+ * one, and a sentence built from the parts when there is not. An absent list
+ * means the class may choose any skill, which is the operative's case.
+ */
+function skillLine(skills) {
+  const printed = text(skills.text);
+  if (printed) return printed;
+
+  const choose = numeric(skills.choose);
+  if (choose == null) return null;
+
+  const options = list(skills.from);
+  return options ? `Choose ${choose} from ${options.join(", ")}` : `Choose any ${choose}`;
+}
+
+/* ------------------------------------------------------- class improvements */
+
+const IMPROVEMENT_TAGLINES = {
+  class: "Taken while advancing in the class",
+  multiclass: "What the class contributes to a multiclassed character",
+  splashclass: "Available without any levels in the class",
+};
+
+function normalizeClassImprovement(record, sources, graph) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const className = text(record.className);
+  const improvementType = text(record.improvementType);
+  const prerequisite = text(record.prerequisite);
+
+  add("Class", className);
+  add("Kind", humanize(improvementType));
+  add("Prerequisite", prerequisite);
+
+  const classSlug = graph.classSlugs.get(className);
+
+  return {
+    ...base,
+    tagline: improvementType ? IMPROVEMENT_TAGLINES[improvementType] ?? null : null,
+    summary: { className, improvementType: humanize(improvementType), prerequisite },
+    stats,
+    sections: compact([
+      section(null, text(record.description)),
+      classSlug
+        ? section(null, `Part of the ${markdownLink(className, `/classes/${classSlug}`)} class.`)
+        : null,
+    ]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/* --------------------------------------------------------------- features */
+
+const GRANTOR_ROUTES = {
+  class: "classes",
+  archetype: "archetypes",
+  species: "species",
+};
+
+function normalizeFeature(record, sources, graph) {
+  const base = common(record, sources);
+  const { add, stats } = statCollector();
+  const grantedBy = text(record.grantedBy);
+  const grantedByName = text(record.grantedByName);
+  const level = numeric(record.level);
+
+  add("Granted by", grantedByName);
+  add("Level", ordinal(level));
+
+  const route = grantedBy ? GRANTOR_ROUTES[grantedBy] : null;
+  const grantorSlug =
+    grantedBy === "class" ? graph.classSlugs.get(grantedByName) : slugify(grantedByName ?? "");
+
+  return {
+    ...base,
+    // The URL is the canonical key rather than the name: "Ability Score
+    // Improvement" is granted forty times over and "Extra Attack" a dozen, and
+    // a slug derived from the name would put them all on one page or resolve
+    // the collision with a suffix that moves as the corpus grows.
+    slug: text(record.key) ?? base.slug,
+    tagline: compact([
+      grantedByName,
+      level == null ? null : `${ordinal(level)} level`,
+    ]).join(" · ") || null,
+    summary: {
+      grantedBy: humanize(grantedBy),
+      grantedByName,
+      level,
+    },
+    stats,
+    sections: compact([
+      section(null, text(record.description)),
+      route && grantorSlug
+        ? section(
+            null,
+            `Granted by ${markdownLink(grantedByName, `/${route}/${grantorSlug}`)}` +
+              `${level == null ? "" : ` at ${ordinal(level)} level`}.`,
+          )
+        : null,
+    ]),
+    entries: [],
+    tables: [],
   };
 }
 
@@ -327,7 +722,7 @@ function progressionTable(progression) {
   return { caption: "Progression", columns: ["Level", ...labels], rows };
 }
 
-function normalizeArchetype(record, sources) {
+function normalizeArchetype(record, sources, graph) {
   const base = common(record, sources);
   const { add, stats } = statCollector();
   const className = text(record.className);
@@ -339,12 +734,20 @@ function normalizeArchetype(record, sources) {
   add("Class", className);
   add("Casting", casterType);
 
+  const classSlug = graph.classSlugs.get(className);
+
   return {
     ...base,
     tagline: className ? `${className} archetype` : null,
     summary: { className, casterType },
     stats,
-    sections: compact([section(null, text(record.description))]),
+    sections: compact([
+      section(null, text(record.description)),
+      grantedFeaturesSection(graph.grantedBy("archetype", base.name)),
+      classSlug
+        ? section(null, `An archetype of the ${markdownLink(className, `/classes/${classSlug}`)} class.`)
+        : null,
+    ]),
     entries: [],
     tables: compact([progressionTable(record.progression)]),
   };
@@ -1206,7 +1609,10 @@ function normalizeStarshipRule(record, sources) {
 
 const NORMALIZERS = {
   species: normalizeSpecies,
+  classes: normalizeClass,
+  "class-improvements": normalizeClassImprovement,
   archetypes: normalizeArchetype,
+  features: normalizeFeature,
   backgrounds: normalizeBackground,
   feats: normalizeFeat,
   powers: normalizePower,
@@ -1250,7 +1656,7 @@ export function indexSources(records) {
  * two documents can still collide; later collisions take a numbered suffix in
  * the input order, which the caller keeps stable by sorting.
  */
-export function normalizeAllCanonical(typeId, records, sources) {
+export function normalizeAllCanonical(typeId, records, sources, graph = EMPTY_GRAPH) {
   const normalize = NORMALIZERS[typeId];
   if (!normalize) {
     throw new Error(`No canonical mapping for content type: ${typeId}`);
@@ -1258,7 +1664,7 @@ export function normalizeAllCanonical(typeId, records, sources) {
 
   const seen = new Map();
   return records.map((record) => {
-    const item = normalize(record, sources);
+    const item = normalize(record, sources, graph);
     const count = (seen.get(item.slug) ?? 0) + 1;
     seen.set(item.slug, count);
     return {
