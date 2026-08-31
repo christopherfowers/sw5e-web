@@ -43,7 +43,21 @@ function parseArguments(argv) {
   return options;
 }
 
-/** Every JSON document in one canonical type directory, by file order. */
+/**
+ * Every JSON document in one canonical type directory, or null when the
+ * directory is not there at all.
+ *
+ * The null case is not a failure. The container build runs this against the
+ * published content image, and that image is built from the content
+ * repository's main branch — so between a credits change being written and
+ * that image carrying it, the directories here simply do not exist yet. A
+ * missing directory therefore means "the canonical set has nothing newer than
+ * what is committed", which is the committed document's cue to stand.
+ *
+ * An empty directory is different and does fail: somebody has published a
+ * credit-category directory with nothing in it, and quietly rendering the
+ * committed file over the top of that would hide a real mistake.
+ */
 async function readType(contentDirectory, type) {
   const directory = path.join(contentDirectory, type);
 
@@ -51,10 +65,7 @@ async function readType(contentDirectory, type) {
   try {
     names = (await readdir(directory)).filter((name) => name.endsWith(".json")).sort();
   } catch {
-    throw new Error(
-      `Cannot read ${directory}. Pass --content <dir> pointing at the ` +
-        "`content` directory of a sw5e-database checkout.",
-    );
+    return null;
   }
 
   if (names.length === 0) {
@@ -81,6 +92,25 @@ async function main() {
     readType(contentDirectory, "credit"),
     readType(contentDirectory, "asset-credit"),
   ]);
+
+  // All three or none. A canonical set carrying credits but no categories, or
+  // people but no citations, is a half-published change, and building from it
+  // would drop somebody off the page rather than fail.
+  const present = [categories, credits, assetCredits].filter(Boolean).length;
+  if (present === 0) {
+    process.stdout.write(
+      `${contentDirectory} carries no credit content yet; keeping the ` +
+        "committed app/data/credits.json.\n",
+    );
+    return;
+  }
+  if (present < 3) {
+    throw new Error(
+      `${contentDirectory} carries only part of the credits content ` +
+        "(credit-category, credit and asset-credit must all be present). " +
+        "Building from a half-published set would silently drop people.",
+    );
+  }
 
   const known = new Set(categories.map((category) => category.key));
   const orphans = credits.filter((credit) => !known.has(credit.categoryKey));
