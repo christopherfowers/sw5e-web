@@ -175,7 +175,12 @@ function rewriteReferences(markdown, powerSlugs) {
 function statCollector() {
   const stats = [];
   return {
-    add(label, value) {
+    /**
+     * `href` is optional and is only ever supplied where the value names
+     * exactly one document the site publishes, so a linked stat is a resolved
+     * cross-reference rather than a guess at one.
+     */
+    add(label, value, href) {
       if (value == null) return;
       if (value === LOST) {
         stats.push({ label, value: null, lost: true });
@@ -188,7 +193,7 @@ function statCollector() {
       }
       const asText = typeof value === "string" ? value.trim() : String(value);
       if (asText === "") return;
-      stats.push({ label, value: asText });
+      stats.push(href ? { label, value: asText, href } : { label, value: asText });
     },
     stats,
   };
@@ -1008,6 +1013,332 @@ function normalizeLightsaberForm(record) {
   };
 }
 
+/* --------------------------------------------------------- enhanced items */
+
+/**
+ * Rarity in ascending order. The archive spells it four ways — a one-element
+ * `rarityOptions` array, a stringified `rarityOptionsJson` duplicate, an
+ * inconsistently cased `rarityText`, and a `searchableRarity` left over from
+ * the old site's search box — and the array is the one that is uniform across
+ * all 1,918 records.
+ *
+ * The order is the game's ladder rather than the alphabet, because rarity is
+ * this corpus's substitute for a price: nothing in it has a cost in credits,
+ * so rarity is the only column a reader can rank items by.
+ */
+const RARITY_ORDER = [
+  "standard",
+  "premium",
+  "prototype",
+  "advanced",
+  "legendary",
+  "artifact",
+];
+
+/**
+ * An enhanced item.
+ *
+ * Ten `*Type` discriminator fields are dropped in favour of `subtype`. At most
+ * one of the ten is ever set on a record and all ten are "None" on more than
+ * half of them, while `subtype` is populated wherever the item has a kind at
+ * all — and says it more precisely: `itemModificationType` records "Augment"
+ * or nothing, where `subtype` records the wristpad, blaster or suit of armour
+ * the modification actually goes into.
+ */
+function normalizeEnhancedItem(record, _powerSlugs, graph) {
+  const base = common(record);
+  const { add, stats } = statCollector();
+  const itemType = humanize(record.type);
+  const rarityKey = (record.rarityOptions?.[0] ?? "").toLowerCase();
+  const rarity = humanize(rarityKey);
+  const subtype = text(record.subtype)?.toLowerCase() ?? null;
+  // Every archived prerequisite carries a stray leading space, and a third of
+  // them lower-case a first word the rest capitalise.
+  const prerequisiteText = text(record.prerequisite);
+  const prerequisite = prerequisiteText
+    ? prerequisiteText[0].toUpperCase() + prerequisiteText.slice(1)
+    : null;
+  const requiresAttunement = Boolean(record.requiresAttunement);
+
+  add("Rarity", rarity);
+  add("Item type", itemType);
+  add(
+    record.type === "ItemModification" ? "Installed in" : "Kind",
+    subtype ? subtype[0].toUpperCase() + subtype.slice(1) : null,
+    // The one link between the two gear types. See `equipmentRoute` in
+    // canonical.mjs for why the match has to be a whole name and nothing
+    // looser.
+    graph?.equipmentRoute?.(subtype) ?? null,
+  );
+  add("Attunement", requiresAttunement ? "Required" : "Not required");
+  add("Prerequisite", prerequisite);
+
+  return {
+    ...base,
+    tagline: compact([rarity, itemType?.toLowerCase()]).join(" ") || null,
+    summary: {
+      itemType,
+      rarity,
+      rarityRank: RARITY_ORDER.indexOf(rarityKey),
+      subtype,
+      requiresAttunement,
+      prerequisite,
+    },
+    stats,
+    sections: compact([section(null, proseText(record.text))]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/* ------------------------------------------- weapon and armour properties */
+
+/**
+ * A weapon or armour property glossary entry.
+ *
+ * These records have no usable provenance: the archive gives all seventy-six a
+ * `contentSource` of "None", and the file they came from names the kind of
+ * property rather than a book. `common` would turn that into a source badge
+ * reading "None", so the fields are built here instead and the badge is left
+ * off. A guessed citation on a rules page is worse than no citation.
+ */
+function normalizeProperty(record) {
+  const name = text(record.name) ?? String(record.name ?? "").trim();
+  // The archived text opens with a level-four heading repeating the property's
+  // name. The page prints the name as its own heading, so keeping it would
+  // show the title twice.
+  const description = stripLeadingHeading(proseText(record.content), name);
+
+  return {
+    name,
+    slug: slugify(record.name),
+    source: null,
+    sourceName: null,
+    tagline: null,
+    summary: { summaryLine: firstSentence(description) },
+    stats: [],
+    sections: compact([section(null, description)]),
+    entries: [],
+    tables: [],
+  };
+}
+
+/** Drops a leading markdown heading that says nothing but the given title. */
+function stripLeadingHeading(body, title) {
+  if (!body) return body;
+  const match = /^\s*#{1,6}\s*([^\n]*?)\s*(?:\n|$)/.exec(body);
+  if (!match) return body;
+  const comparable = (value) => value.replace(/[^a-z0-9]/gi, "").toLowerCase();
+  const heading = match[1].replace(/^chapter\s+-?\d+\s*[:.]?\s*/i, "");
+  if (comparable(heading) !== comparable(title)) return body;
+  return body.slice(match[0].length).replace(/^\n+/, "");
+}
+
+/** The opening sentence of a rule, which is what a glossary is scanned by. */
+function firstSentence(markdown) {
+  if (!markdown) return null;
+  const paragraph = markdown.split("\n\n")[0].replace(/\s+/g, " ").trim();
+  const stop = paragraph.search(/\.(?:\s|$)/);
+  return stop === -1 ? paragraph : paragraph.slice(0, stop + 1);
+}
+
+/* ------------------------------------------------------------------ rules */
+
+/**
+ * Which book each archive file of rules records belongs to, and whether its
+ * records are chapters of that book or free-standing variant rules.
+ *
+ * This table is the whole provenance story for the rules corpus. Every one of
+ * the 76 records has a `contentSource` of "None", so nothing inside a record
+ * says which book printed it; the file it sits in is unambiguous and is the
+ * only evidence there is. `VariantRule` is attributed to the Expanded Content
+ * supplement because that is the book whose "Variant Rules" chapter prints
+ * them, and because every one of its records is already marked as expanded
+ * content.
+ */
+const RULE_BOOKS = {
+  phb: { source: "PHB", ruleType: "Chapter" },
+  wh: { source: "WH", ruleType: "Chapter" },
+  ec: { source: "EC", ruleType: "Chapter" },
+  variant: { source: "EC", ruleType: "Variant" },
+};
+
+/**
+ * Splits a passage of rules prose into the sections a reader navigates it by.
+ *
+ * Rules are the one content type in the corpus that is prose rather than a
+ * catalogue row, and the passages are long: the Expanded Content archetypes
+ * chapter is close to half a megabyte. Rendered as one undivided block it is
+ * hard to read and, worse, hard to find anything in — the search index keeps a
+ * fixed-length excerpt of an item's prose, so without this only a chapter's
+ * first paragraph would ever match a query.
+ *
+ * The split is on the shallowest heading level the passage actually uses,
+ * because the corpus is not consistent about depth: a Player's Handbook
+ * chapter divides at `##`, the conditions appendix at `####`, and a short
+ * variant rule may have no headings at all. Taking the shallowest level gives
+ * each passage its own top-level divisions at whatever depth it wrote them.
+ * Level 1 is excluded — a lone `#` is the chapter's own title, which the
+ * import strips from the front of a body but which two passages carry in the
+ * middle of one.
+ */
+export function splitIntoSections(body) {
+  const lines = body.split("\n");
+  const depths = lines
+    .map((line) => /^(#{2,6})\s+\S/.exec(line))
+    .filter(Boolean)
+    .map((match) => match[1].length);
+
+  if (depths.length === 0) return [{ heading: null, body }];
+
+  const pattern = new RegExp(`^#{${Math.min(...depths)}}\\s+(.*)$`);
+  const sections = [];
+  let heading = null;
+  let buffer = [];
+
+  const flush = () => {
+    const collected = buffer.join("\n").trim();
+    if (heading || collected) sections.push({ heading, body: collected });
+    buffer = [];
+  };
+
+  for (const line of lines) {
+    const match = pattern.exec(line);
+    if (match) {
+      flush();
+      heading = match[1].trim();
+      continue;
+    }
+    buffer.push(line);
+  }
+  flush();
+
+  return sections;
+}
+
+/**
+ * A chapter's position in its book, as a label, or null when printing it would
+ * mislead. The archive numbers the Player's Handbook preface -2 and both
+ * changelogs 99, and neither is a chapter number a reader would recognise.
+ */
+function chapterLabel(chapterNumber) {
+  const value = numeric(chapterNumber);
+  if (value == null || value < 1 || value > 90) return null;
+  return `Chapter ${value}`;
+}
+
+/**
+ * A chapter of a book, or one optional variant rule.
+ *
+ * This is the only normalizer that needs to know which file its record came
+ * from, and `normalizeAll` is what passes it down. Chapter slugs carry the
+ * book's abbreviation because seven chapter titles are printed in more than
+ * one book — all three print one called "Equipment" — and an unqualified slug
+ * would collide.
+ */
+function normalizeRule(record) {
+  const book = RULE_BOOKS[record.ruleBook];
+  if (!book) {
+    throw new Error(
+      `A rule record's book is decided by the archive file it came from, and ` +
+        `"${record.ruleBook}" is not one of the four that hold rules.`,
+    );
+  }
+
+  const name = text(record.chapterName) ?? "";
+  const isVariant = book.ruleType === "Variant";
+  const sourceName = SOURCE_NAMES[book.source] ?? book.source;
+  const body = stripLeadingHeading(proseText(record.contentMarkdown), name);
+  const sections = splitIntoSections(body ?? "");
+  const { add, stats } = statCollector();
+
+  add("Book", sourceName);
+  add("Kind", isVariant ? "Variant rule" : "Chapter");
+  add("Position", chapterLabel(record.chapterNumber));
+
+  return {
+    name,
+    slug: isVariant
+      ? slugify(name)
+      : `${slugify(book.source)}-${slugify(name)}`,
+    source: book.source,
+    sourceName,
+    tagline: isVariant
+      ? "Optional variant rule"
+      : compact([sourceName, chapterLabel(record.chapterNumber)]).join(" · ") ||
+        null,
+    summary: {
+      ruleType: book.ruleType,
+      chapterNumber: isVariant ? null : numeric(record.chapterNumber),
+      sectionCount: sections.filter((each) => each.heading).length,
+    },
+    stats,
+    sections,
+    entries: [],
+    tables: [],
+  };
+}
+
+/* ------------------------------------------------------- reference tables */
+
+/**
+ * Keywords that place a table under a subject, tried in order; the first match
+ * wins. Thirty-three tables is too many to present as one flat list and too
+ * few to justify a taxonomy, and the captions are consistent enough that the
+ * subject can be read straight off them. The starship terms come first because
+ * "Modification Capacity by Ship Size" is a starship table and would otherwise
+ * be caught by nothing at all.
+ */
+const TABLE_SUBJECTS = [
+  ["starship", "Starships"],
+  ["ship size", "Starships"],
+  ["ship tier", "Starships"],
+  ["hyperspace", "Starships"],
+  ["realspace", "Starships"],
+  ["deployment", "Starships"],
+  ["by tier", "Starships"],
+  ["modification", "Starships"],
+  ["ability score", "Character creation"],
+  ["multiclassing", "Character creation"],
+  ["xp and pb", "Character creation"],
+  ["lifestyle", "Downtime"],
+  ["slowed", "Conditions"],
+];
+
+function tableSubject(name) {
+  const lowered = name.toLowerCase();
+  for (const [keyword, subject] of TABLE_SUBJECTS) {
+    if (lowered.includes(keyword)) return subject;
+  }
+  return null;
+}
+
+/**
+ * A standalone lookup table. Like the property glossaries these carry no
+ * source, and unlike the rule chapters there is no file name to infer one
+ * from: the thirty-three come from at least three different books.
+ */
+function normalizeReferenceTable(record) {
+  const name = text(record.name) ?? String(record.name ?? "").trim();
+  const subject = tableSubject(name);
+  const { add, stats } = statCollector();
+
+  add("Subject", subject);
+
+  return {
+    name,
+    slug: slugify(record.name),
+    source: null,
+    sourceName: null,
+    tagline: subject,
+    summary: { subject },
+    stats,
+    sections: compact([section(null, proseText(record.content))]),
+    entries: [],
+    tables: [],
+  };
+}
+
 /**
  * Every content type, in the order the site presents them. `file` names the
  * archive dump; `id` is the URL segment and the key everything else uses.
@@ -1016,6 +1347,12 @@ function normalizeLightsaberForm(record) {
  * three files hold identical records and become one type, and nothing in a
  * record says which file it came from, so `files` pairs each dump with the kind
  * it holds and the reader tags every record with it.
+ * `rules` is the one entry whose `file` is a list. The archive keeps each
+ * book's chapters in a dump of its own, plus a fifth for the optional variant
+ * rules, and all four hold records of identical shape — the book is a value on
+ * the item rather than a type of its own. Which file a record came from is
+ * passed through to the normalizer, because for that type it is the only
+ * record of provenance there is.
  */
 export const CONTENT_TYPES = [
   { id: "species", file: "Species", normalize: normalizeSpecies },
@@ -1049,6 +1386,9 @@ export const CONTENT_TYPES = [
     normalize: normalizeWeaponTraining(" Supremacy"),
   },
   { id: "equipment", file: "Equipment", normalize: normalizeEquipment },
+  { id: "enhanced-items", file: "EnhancedItem", normalize: normalizeEnhancedItem },
+  { id: "weapon-properties", file: "WeaponProperty", normalize: normalizeProperty },
+  { id: "armor-properties", file: "ArmorProperty", normalize: normalizeProperty },
   { id: "monsters", file: "Monster", normalize: normalizeMonster },
 
   /*
@@ -1071,6 +1411,21 @@ export const CONTENT_TYPES = [
   { id: "starship-modifications", file: null, normalize: null },
   { id: "starship-ventures", file: null, normalize: null },
   { id: "starship-rules", file: null, normalize: null },
+  {
+    id: "rules",
+    // Four dumps, one type. Which book printed a chapter is not in the record
+    // — every rules record in the archive has a contentSource of "None" — so
+    // the file it came from is stamped onto it as it is read, the same way a
+    // class improvement is stamped with its kind.
+    files: [
+      { file: "playerHandbookRule", ruleBook: "phb" },
+      { file: "wretchedHivesRule", ruleBook: "wh" },
+      { file: "ExpandedContent", ruleBook: "ec" },
+      { file: "VariantRule", ruleBook: "variant" },
+    ],
+    normalize: normalizeRule,
+  },
+  { id: "reference-tables", file: "ReferenceTable", normalize: normalizeReferenceTable },
 ];
 
 /**
@@ -1078,14 +1433,18 @@ export const CONTENT_TYPES = [
  * URL; the archive contains a few genuine name collisions (two distinct
  * `Bo-rifle` weapons), so later collisions take a numbered suffix in the
  * archive's own order, which is stable across runs.
+ *
+ * `graph` is what the caller knows about the rest of the build. Only the
+ * enhanced items read it, to turn the name of the gear an item is built on
+ * into a link, and only when exactly one equipment document answers to it.
  */
-export function normalizeAll(typeId, records, powerSlugs = new Set()) {
+export function normalizeAll(typeId, records, powerSlugs = new Set(), graph = {}) {
   const definition = CONTENT_TYPES.find((type) => type.id === typeId);
   if (!definition) throw new Error(`Unknown content type: ${typeId}`);
 
   const seen = new Map();
   return records.map((record) => {
-    const item = definition.normalize(record, powerSlugs);
+    const item = definition.normalize(record, powerSlugs, graph);
     const count = (seen.get(item.slug) ?? 0) + 1;
     seen.set(item.slug, count);
     return {

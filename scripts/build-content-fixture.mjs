@@ -68,6 +68,9 @@ const TYPE_LABELS = {
     plural: "Weapon Supremacies",
   },
   equipment: { singular: "Equipment", plural: "Equipment" },
+  "enhanced-items": { singular: "Enhanced item", plural: "Enhanced items" },
+  "weapon-properties": { singular: "Weapon property", plural: "Weapon properties" },
+  "armor-properties": { singular: "Armor property", plural: "Armor properties" },
   monsters: { singular: "Creature", plural: "Creatures" },
   "starship-base-sizes": { singular: "Hull", plural: "Starship hulls" },
   "starship-deployments": { singular: "Deployment", plural: "Deployments" },
@@ -75,6 +78,8 @@ const TYPE_LABELS = {
   "starship-modifications": { singular: "Modification", plural: "Modifications" },
   "starship-ventures": { singular: "Venture", plural: "Ventures" },
   "starship-rules": { singular: "Rules chapter", plural: "Starship rules" },
+  rules: { singular: "Rule", plural: "Rules" },
+  "reference-tables": { singular: "Reference table", plural: "Reference tables" },
 };
 
 /** How many items per type the committed fixture carries. */
@@ -145,6 +150,28 @@ function toSearchRecord(item) {
   for (const stat of item.stats) {
     if (stat.value && stat.value.length <= 80) fields.push({ label: stat.label, text: stat.value });
   }
+
+  /*
+    Section headings, before the prose excerpt.
+
+    The excerpt below is a fixed 240 characters, which is the whole of a feat
+    and a fair sample of a creature. It is nothing at all of a rules chapter:
+    the Expanded Content archetypes chapter is close to half a megabyte, and
+    indexing its first paragraph would mean the site could not find any rule
+    printed after the first page of the chapter that holds it.
+
+    Indexing the full text is not the answer either — the index is downloaded
+    by the browser, and the rules corpus is 2.7 MB of markdown. The headings
+    are: they are the words a reader actually searches for ("blinded",
+    "flanking", "attunement"), there are about a thousand of them across the
+    corpus, and they cost roughly forty kilobytes. So a rules search finds the
+    chapter and names the section it matched in, and reading the section is
+    then one page-find away.
+  */
+  for (const section of item.sections) {
+    if (section.heading) fields.push({ label: "Section", text: section.heading });
+  }
+
   const prose = item.sections.map((each) => toPlainText(each.body)).join(" ");
   if (prose) {
     fields.push({ label: "Description", text: excerpt(prose, SEARCH_EXCERPT_LENGTH) });
@@ -207,6 +234,33 @@ function hasResidualCorruption(item) {
   return JSON.stringify(item).includes(REPLACEMENT);
 }
 
+/**
+ * Drops the cross-references that point outside the fixture.
+ *
+ * A linked stat is a route, and the fixture is four items per type, so almost
+ * every link an item carries points at a document the fixture did not keep.
+ * Left in place they are dead links on the one dataset a contributor without
+ * the archive can actually render, which is exactly the audience least able to
+ * tell a bug in the site from a gap in their checkout. The value stays; only
+ * the link goes, which is what an unresolvable reference looks like everywhere
+ * else in the pipeline.
+ */
+function pruneLinksOutside(types) {
+  const published = new Set(
+    types.flatMap(({ id, items }) => items.map((item) => `/${id}/${item.slug}`)),
+  );
+
+  for (const { items } of types) {
+    for (const item of items) {
+      for (const stat of item.stats) {
+        if (stat.href && !published.has(stat.href)) delete stat.href;
+      }
+    }
+  }
+
+  return types;
+}
+
 async function readArchiveType(archiveDirectory, fileName) {
   const file = path.join(archiveDirectory, `${fileName}.json`);
   const raw = await readFile(file, "utf8");
@@ -218,19 +272,22 @@ async function readArchiveType(archiveDirectory, fileName) {
 /**
  * Every archive record for one content type.
  *
- * Most types are one dump. `class-improvements` is three, and which of the
- * three a record came from is the only thing that says what kind of
- * improvement it is — the records themselves are identical in shape and carry
- * nothing to tell them apart. So the reader stamps the kind on each record as
- * it is read, and the normalizer treats it as a field like any other.
+ * Most types are one dump. Two are not, and for the same reason: the records
+ * in each of their files are identical in shape and carry nothing that says
+ * which file they came from, while the file is the only thing that says what
+ * they are. `class-improvements` is three dumps whose file names the kind of
+ * improvement; `rules` is four whose file names the book that printed the
+ * chapter — every rules record in the archive has a `contentSource` of "None".
+ * So the reader stamps whatever the entry declares onto each record as it is
+ * read, and the normalizer treats it as a field like any other.
  */
 async function readArchiveRecords(archiveDirectory, type) {
   if (!type.files) return readArchiveType(archiveDirectory, type.file);
 
   const records = [];
-  for (const { file, improvementType } of type.files) {
+  for (const { file, ...stamp } of type.files) {
     for (const record of await readArchiveType(archiveDirectory, file)) {
-      records.push({ ...record, improvementType });
+      records.push({ ...record, ...stamp });
     }
   }
   return records;
@@ -337,6 +394,10 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
     classImprovements: records.get("class-improvements") ?? [],
     archetypes: records.get("archetypes") ?? [],
     features: records.get("features") ?? [],
+    // The one edge that crosses out of the class graph: an enhanced item names
+    // the gear it is built on or installed in, and that name becomes a link
+    // only when exactly one equipment document answers to it.
+    equipment: records.get("equipment") ?? [],
   });
 
   const types = [];
@@ -428,6 +489,12 @@ async function buildFromArchive(options, outputDirectory) {
   const powerRecords = await readArchiveType(archiveDirectory, "Power");
   const powerSlugs = new Set(powerRecords.map((record) => slugify(record.name)));
 
+  // And equipment, for the same reason: an enhanced item names the base item
+  // it is built on, and that name only becomes a link if the item exists.
+  const graph = buildClassGraph({
+    equipment: await readArchiveType(archiveDirectory, "Equipment"),
+  });
+
   const repairs = {
     quotes: 0,
     apostrophes: 0,
@@ -455,7 +522,7 @@ async function buildFromArchive(options, outputDirectory) {
     // Alphabetical by name is the canonical order: it decides the default
     // list order and, with it, what "previous" and "next" mean on a detail
     // page. The archive's own order is arbitrary for several types.
-    const normalized = normalizeAll(type.id, records, powerSlugs).sort(
+    const normalized = normalizeAll(type.id, records, powerSlugs, graph).sort(
       (left, right) => left.name.localeCompare(right.name, "en"),
     );
     types.push({
@@ -464,7 +531,11 @@ async function buildFromArchive(options, outputDirectory) {
     });
   }
 
-  await writeDataset(outputDirectory, types, { curated: options.curated });
+  await writeDataset(
+    outputDirectory,
+    options.curated ? pruneLinksOutside(types) : types,
+    { curated: options.curated },
+  );
 
   const total = types.reduce((sum, type) => sum + type.items.length, 0);
   process.stdout.write(

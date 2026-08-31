@@ -30,6 +30,9 @@ export const CONTENT_TYPE_IDS = [
   "weapon-supremacies",
 
   "equipment",
+  "enhanced-items",
+  "weapon-properties",
+  "armor-properties",
   "monsters",
   // Starship play. Its six types sit together and after the character types,
   // because that is the order a table reaches them: a group builds characters
@@ -40,6 +43,8 @@ export const CONTENT_TYPE_IDS = [
   "starship-modifications",
   "starship-ventures",
   "starship-rules",
+  "rules",
+  "reference-tables",
 ] as const;
 
 export type ContentTypeId = (typeof CONTENT_TYPE_IDS)[number];
@@ -53,6 +58,15 @@ export interface Stat {
   label: string;
   /** `null` only when `lost` is true: the source text no longer exists. */
   value: string | null;
+  /**
+   * A route this value points at, when the value names another item the site
+   * publishes. Set only where the dataset builder could resolve the name to
+   * exactly one document, so a link here is never a guess: an enhanced item
+   * whose kind is "Bo-rifle" links to the bo-rifle a character would enhance,
+   * and one whose kind is "Any blaster" links nowhere, because that names a
+   * family rather than an item.
+   */
+  href?: string;
   /**
    * The archive stored nothing but a replacement character here, so the
    * original content is unrecoverable. The UI must show this as a marked
@@ -217,6 +231,48 @@ export interface EquipmentSummary extends BaseSummary {
   properties: string | null;
 }
 
+/**
+ * Enhanced gear: a specific artefact, a modification bolted onto ordinary
+ * equipment, an augmentation, or a consumable.
+ *
+ * Deliberately not an `EquipmentSummary`. Nothing here has a cost or a weight —
+ * the archive records no price for any of the 1,918 — and everything here has a
+ * rarity band and an attunement requirement, which no mundane item does. The
+ * columns a reader scans are different, so the row is different.
+ */
+export interface EnhancedItemSummary extends BaseSummary {
+  itemType: string | null;
+  rarity: string | null;
+  /** Position on the rarity ladder, for sorting a column by power rather than by spelling. */
+  rarityRank: number | null;
+  subtype: string | null;
+  requiresAttunement: boolean;
+  prerequisite: string | null;
+}
+
+/** A weapon or armour property glossary entry. */
+export interface PropertySummary extends BaseSummary {
+  /** The opening sentence of the rule, which is what a glossary is scanned by. */
+  summaryLine: string | null;
+}
+
+/**
+ * A passage of rules prose. `chapterNumber` is what orders a book's table of
+ * contents, and it is not a positive index: prefaces are negative and
+ * changelogs are 99 so they sort last.
+ */
+export interface RuleSummary extends BaseSummary {
+  ruleType: string | null;
+  chapterNumber: number | null;
+  /** How many named sections the passage holds, as a sense of its length. */
+  sectionCount: number;
+}
+
+/** A standalone lookup table. */
+export interface ReferenceTableSummary extends BaseSummary {
+  subject: string | null;
+}
+
 export interface MonsterSummary extends BaseSummary {
   size: string | null;
   kind: string | null;
@@ -301,6 +357,12 @@ interface SummaryByType extends Record<ContentTypeId, BaseSummary> {
   "weapon-focuses": WeaponTrainingSummary;
   "weapon-supremacies": WeaponTrainingSummary;
   equipment: EquipmentSummary;
+  "enhanced-items": EnhancedItemSummary;
+  // One row shape for both glossaries. The documents are identical in shape and
+  // the only thing that separates them is which glossary they are printed in,
+  // which the type id already says.
+  "weapon-properties": PropertySummary;
+  "armor-properties": PropertySummary;
   monsters: MonsterSummary;
   "starship-base-sizes": StarshipBaseSizeSummary;
   "starship-deployments": StarshipDeploymentSummary;
@@ -308,6 +370,8 @@ interface SummaryByType extends Record<ContentTypeId, BaseSummary> {
   "starship-modifications": StarshipModificationSummary;
   "starship-ventures": StarshipVentureSummary;
   "starship-rules": StarshipRuleSummary;
+  rules: RuleSummary;
+  "reference-tables": ReferenceTableSummary;
 }
 
 export type SummaryFor<T extends ContentTypeId> = SummaryByType[T];

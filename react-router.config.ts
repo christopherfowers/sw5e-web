@@ -19,6 +19,9 @@ const CONTENT_TYPES = [
   "weapon-focuses",
   "weapon-supremacies",
   "equipment",
+  "enhanced-items",
+  "weapon-properties",
+  "armor-properties",
   "monsters",
   "starship-base-sizes",
   "starship-deployments",
@@ -26,6 +29,8 @@ const CONTENT_TYPES = [
   "starship-modifications",
   "starship-ventures",
   "starship-rules",
+  "rules",
+  "reference-tables",
 ] as const;
 
 /**

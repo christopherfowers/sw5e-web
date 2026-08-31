@@ -122,6 +122,33 @@ const PATHS: Record<ContentTypeId, React.ReactNode> = {
       <path d="M8.5 7.5V4.25h7V7.5" />
     </>
   ),
+  // A cased gem: enhanced gear is what a party finds rather than buys, so the
+  // mark is a stone in a setting rather than another crate.
+  "enhanced-items": (
+    <>
+      <path d="M8.25 4.75h7.5l4 5.25L12 20 4.25 10Z" />
+      <path d="M4.25 10h15.5" />
+      <path d="m8.25 4.75 1.75 5.25L12 20" />
+      <path d="m15.75 4.75-1.75 5.25L12 20" />
+    </>
+  ),
+  // The two glossaries share a mark with a tag on it, because both are a label
+  // clipped to something else rather than a thing in their own right. The
+  // weapon one is the blade, the armour one the plate.
+  "weapon-properties": (
+    <>
+      <path d="M6.75 17.25 17 7" />
+      <path d="M14.5 4.75h4.75V9.5" />
+      <path d="M4.5 19.5h3.25v-3.25" />
+      <circle cx="9.25" cy="9.25" r="1.6" />
+    </>
+  ),
+  "armor-properties": (
+    <>
+      <path d="M12 3.75 5.25 6v6.25c0 4 2.9 6.6 6.75 8 3.85-1.4 6.75-4 6.75-8V6Z" />
+      <circle cx="12" cy="10.75" r="1.6" />
+    </>
+  ),
   monsters: (
     <>
       <circle cx="6.5" cy="10.25" r="1.9" />
@@ -179,6 +206,23 @@ const PATHS: Record<ContentTypeId, React.ReactNode> = {
       <path d="M5.5 3.75h11a2 2 0 0 1 2 2v14.5H7.5a2 2 0 0 1-2-2Z" />
       <path d="M5.5 17.25h13" />
       <path d="M9 7.75h6M9 11h4" />
+    </>
+  ),
+  // An open book. The rules type is the only one whose pages are the content.
+  rules: (
+    <>
+      <path d="M12 7.5C10.4 6.25 8.5 5.5 5.75 5.5H3.75v12h2c2.75 0 4.65.75 6.25 2 1.6-1.25 3.5-2 6.25-2h2v-12h-2c-2.75 0-4.65.75-6.25 2Z" />
+      <path d="M12 7.5v12" />
+      <path d="M6 9.25h3M6 12.25h3M15 9.25h3M15 12.25h3" />
+    </>
+  ),
+  // A grid: a reference table is a grid and nothing else.
+  "reference-tables": (
+    <>
+      <rect x="3.75" y="4.75" width="16.5" height="14.5" rx="1.5" />
+      <path d="M3.75 9.25h16.5" />
+      <path d="M3.75 14.25h16.5" />
+      <path d="M9.75 9.25v10" />
     </>
   ),
 };

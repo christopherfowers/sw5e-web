@@ -1,12 +1,12 @@
 import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
-// The two dynamic content routes cover all eight content types. Each type
+// The two dynamic content routes cover every content type. Each type
 // still gets its own columns, filters and detail shaping — that lives in the
 // per-type configuration, not in a duplicated route module.
 //
 // The static segments are declared before `:type` for readability; React
 // Router ranks a static segment above a dynamic one regardless of order, so
-// `/sources` reaches the source pages rather than being read as a ninth
+// `/sources` reaches the source pages rather than being read as one more
 // content type. The account routes are static segments too, and rank the same
 // way — `/account` cannot be mistaken for a content type.
 export default [

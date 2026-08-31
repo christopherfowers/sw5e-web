@@ -1,12 +1,16 @@
 /**
  * A content type's index: filter, sort, and scan.
  *
- * Two layouts share one set of controls, because the content types are not one
- * kind of thing. A table is right for 507 pieces of equipment that a reader
- * compares by cost and damage. It is wrong for 141 species, which a reader
- * recognises by silhouette long before they read a name — those get a gallery
- * of portraits. Which layout a type uses is declared in its list config, so
- * this component holds the behaviour and the config holds the judgement.
+ * Three layouts share one set of controls, because the content types are not
+ * one kind of thing. A table is right for 507 pieces of equipment that a
+ * reader compares by cost and damage. It is wrong for 141 species, which a
+ * reader recognises by silhouette long before they read a name — those get a
+ * gallery of portraits. And it is wrong again for the rules, which are prose:
+ * there is nothing to compare between "Chapter 9: Combat" and the "Flanking"
+ * variant, so a table of them would be a column of names beside four columns
+ * of nothing. Those get a table of contents, grouped by book and in printed
+ * order. Which layout a type uses is declared in its list config, so this
+ * component holds the behaviour and the config holds the judgement.
  *
  * The table is a real `<table>` with a `<caption>`, `<th scope="col">` headers
  * and `aria-sort` on the active column, because that is what lets a screen
@@ -144,6 +148,7 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
 
   const facets = useMemo(() => facetOptions(config, rows), [config, rows]);
   const isGallery = config.layout === "gallery";
+  const isChapters = config.layout === "chapters";
 
   const visible = useMemo(() => {
     const needle = nameFilter.trim().toLowerCase();
@@ -241,11 +246,12 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
         ))}
 
         {/*
-          A gallery has no column headers to click, so sorting moves into the
-          toolbar as a labelled select and a direction button. Both are native
-          controls: no key handling, no roles to get wrong.
+          Neither a gallery nor a table of contents has column headers to
+          click, so sorting moves into the toolbar as a labelled select and a
+          direction button. Both are native controls: no key handling, no roles
+          to get wrong.
         */}
-        {isGallery && sortableColumns.length > 1 ? (
+        {(isGallery || isChapters) && sortableColumns.length > 1 ? (
           <>
             <div className="filter-field">
               <label htmlFor={`${filterId}-sort`}>Sort by</label>
@@ -317,6 +323,13 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
           </p>
         ) : isGallery ? (
           <Gallery
+            type={type}
+            typeLabel={typeLabel}
+            rows={windowed}
+            config={config}
+          />
+        ) : isChapters ? (
+          <Chapters
             type={type}
             typeLabel={typeLabel}
             rows={windowed}
@@ -501,6 +514,96 @@ function Gallery({
       })}
     </ul>
   );
+}
+
+/**
+ * A table of contents: the rows grouped under the book they belong to, in the
+ * order that book prints them.
+ *
+ * The grouping is applied after filtering and sorting rather than instead of
+ * them, so narrowing to one book or to the variant rules still works and the
+ * headings simply thin out. A group with nothing left in it disappears
+ * entirely rather than showing an empty heading, which is what makes "filter
+ * to Wretched Hives" read as a book rather than as a mostly-empty index.
+ *
+ * Each entry is a link and a line of context — the chapter's position and how
+ * many sections it holds — because the one thing a reader can judge a chapter
+ * by before opening it is how much of it there is.
+ */
+function Chapters({
+  type,
+  typeLabel,
+  rows,
+  config,
+}: {
+  type: ContentTypeId;
+  typeLabel: string;
+  rows: AnySummary[];
+  config: ListConfig<AnySummary>;
+}) {
+  const accent = TYPE_META[type].accent;
+  const groupOf = config.groupOf ?? (() => typeLabel);
+  const order = config.groupOrder ?? [];
+
+  const groups = new Map<string, AnySummary[]>();
+  for (const row of rows) {
+    const name = groupOf(row);
+    const existing = groups.get(name);
+    if (existing) existing.push(row);
+    else groups.set(name, [row]);
+  }
+
+  const ordered = [...groups.entries()].sort(([left], [right]) => {
+    const leftRank = order.indexOf(left);
+    const rightRank = order.indexOf(right);
+    // Anything the config did not name sorts after everything it did, by name,
+    // so a book added to the data before it is added to the order still shows
+    // up rather than silently taking the first slot.
+    if (leftRank === -1 && rightRank === -1) return left.localeCompare(right, "en");
+    if (leftRank === -1) return 1;
+    if (rightRank === -1) return -1;
+    return leftRank - rightRank;
+  });
+
+  return (
+    <div className="chapter-list" data-accent={accent}>
+      {ordered.map(([name, entries]) => (
+        <section key={name} aria-labelledby={`book-${headingId(name)}`}>
+          {/*
+            The label points at the title span rather than at the whole
+            heading, so the landmark is named "Wretched Hives" and not
+            "Wretched Hives 10 entries". The count is still in the heading and
+            still read when the heading is.
+          */}
+          <h2 className="chapter-book">
+            <span id={`book-${headingId(name)}`}>{name}</span>
+            <span className="chapter-book-count">
+              {entries.length} {entries.length === 1 ? "entry" : "entries"}
+            </span>
+          </h2>
+          <ol className="chapter-entries">
+            {entries.map((row) => {
+              const compact = config.compactLine(row);
+              return (
+                <li key={row.slug}>
+                  <Link to={`/${type}/${row.slug}`}>
+                    <SourceText value={row.name} />
+                  </Link>
+                  {compact ? (
+                    <span className="chapter-entry-meta">{compact}</span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function headingId(label: string): string {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function ContentTable({

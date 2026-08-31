@@ -24,7 +24,9 @@ import {
   maneuverAccent,
   powerTypeAccent,
 } from "~/components/badges";
+import type { Accent } from "./type-meta";
 import { classArt, speciesThumbnail, type ImageSource } from "./imagery";
+import { SOURCE_META, SOURCE_ORDER } from "./source-meta";
 import type {
   AnySummary,
   ArchetypeSummary,
@@ -32,6 +34,7 @@ import type {
   ClassImprovementSummary,
   ClassSummary,
   ContentTypeId,
+  EnhancedItemSummary,
   EquipmentSummary,
   FeatSummary,
   FeatureSummary,
@@ -40,6 +43,9 @@ import type {
   ManeuverSummary,
   MonsterSummary,
   PowerSummary,
+  PropertySummary,
+  ReferenceTableSummary,
+  RuleSummary,
   SpeciesSummary,
   StarshipBaseSizeSummary,
   StarshipDeploymentSummary,
@@ -88,8 +94,15 @@ export interface ListConfig<Row> {
   columns: Column<Row>[];
   facets: Facet<Row>[];
   defaultSort: string;
-  /** "table" unless a type is better read as pictures. */
-  layout?: "table" | "gallery";
+  /**
+   * "table" unless a type is better read some other way: as pictures, or as a
+   * table of contents.
+   */
+  layout?: "table" | "gallery" | "chapters";
+  /** Required by the "chapters" layout: the heading a row is filed under. */
+  groupOf?: (row: Row) => string;
+  /** Orders those headings. Anything not named here sorts after, by name. */
+  groupOrder?: string[];
   /** Zebra stripes, for tables long and wide enough to lose your place in. */
   striped?: boolean;
   /** Required by the gallery layout, ignored by the table one. */
@@ -819,6 +832,239 @@ const equipment: ListConfig<EquipmentSummary> = {
   ],
 };
 
+/**
+ * The rarity ladder, ascending. Rarity is the enhanced-item corpus's substitute
+ * for a price — nothing in it has a cost in credits — so the filter has to
+ * offer it in the game's order rather than the alphabet's, which would put
+ * Artifact at the top and Standard at the bottom.
+ */
+const RARITY_ORDER = [
+  "Standard",
+  "Premium",
+  "Prototype",
+  "Advanced",
+  "Legendary",
+  "Artifact",
+];
+
+/**
+ * Rarity reads as a temperature: ordinary gear is cool, an artifact is not.
+ * Three bands rather than six, because six hues on one column would be a
+ * legend to memorise rather than a signal to glance at.
+ */
+function rarityAccent(rarity: string | null): Accent | null {
+  const rank = rarity ? RARITY_ORDER.indexOf(rarity) : -1;
+  if (rank < 0) return null;
+  if (rank < 2) return "steel";
+  if (rank < 4) return "teal";
+  return "rose";
+}
+
+/**
+ * 1,918 rows, and nobody scrolls 1,918 rows.
+ *
+ * The three facets are what make the page usable at all, and each answers a
+ * question a reader actually arrives with. Rarity is the closest thing this
+ * corpus has to a price, so it stands in for "what can my party plausibly
+ * have". Item type separates the four hundred things you install in equipment
+ * you already own from the eighteen suits of armour. Kind — the wristpad, the
+ * body slot, the base weapon — is what turns "modifications" into "the seven
+ * modifications that go in a wristpad", which is the shape of the question
+ * someone asks with a wristpad in front of them.
+ *
+ * Attunement is a facet rather than only a column because it is a hard
+ * constraint: a character can hold three attunements, so "which of these costs
+ * me one" is a filter, not a detail.
+ */
+const enhancedItems: ListConfig<EnhancedItemSummary> = {
+  defaultSort: "name",
+  striped: true,
+  compactLine: (row) =>
+    joinParts([row.rarity, row.itemType?.toLowerCase(), row.subtype]),
+  columns: [
+    nameColumn(),
+    {
+      key: "rarity",
+      header: "Rarity",
+      // Sorted on the ladder position rather than the word, so ascending means
+      // "least rare first" rather than "Advanced, Artifact, Legendary".
+      sortValue: (row) => row.rarityRank,
+      render: (row) =>
+        row.rarity ? (
+          <Badge accent={rarityAccent(row.rarity)}>{row.rarity}</Badge>
+        ) : (
+          em
+        ),
+    },
+    {
+      key: "itemType",
+      header: "Type",
+      className: FROM_SMALL,
+      sortValue: (row) => row.itemType,
+      render: (row) => textOr(row.itemType),
+    },
+    {
+      key: "subtype",
+      header: "Kind",
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.subtype,
+      render: (row) => mutedOr(row.subtype),
+    },
+    {
+      key: "requiresAttunement",
+      header: "Attunement",
+      className: FROM_LARGE,
+      sortValue: (row) => (row.requiresAttunement ? 1 : 0),
+      render: (row) => (row.requiresAttunement ? "Required" : em),
+    },
+    sourceColumn(),
+  ],
+  facets: [
+    {
+      key: "rarity",
+      label: "Rarity",
+      valueOf: (row) => row.rarity,
+      compare: (left, right) =>
+        RARITY_ORDER.indexOf(left) - RARITY_ORDER.indexOf(right),
+    },
+    { key: "itemType", label: "Type", valueOf: (row) => row.itemType },
+    { key: "subtype", label: "Kind", valueOf: (row) => row.subtype },
+    {
+      key: "requiresAttunement",
+      label: "Attunement",
+      valueOf: (row) => (row.requiresAttunement ? "Required" : "Not required"),
+    },
+    sourceFacet(),
+  ],
+};
+
+/**
+ * A glossary, not a catalogue: forty-six entries with nothing to compare and
+ * nothing to sort by but the name. What a reader wants is to see what each one
+ * does without opening it, so the second column is the rule's opening sentence
+ * rather than a facet nobody would use.
+ *
+ * No source column either — the archive records no book for any of these, so a
+ * column of empty badges would be all the page had to say about provenance.
+ */
+const properties: ListConfig<PropertySummary> = {
+  defaultSort: "name",
+  compactLine: (row) => row.summaryLine,
+  columns: [
+    nameColumn(),
+    {
+      key: "summaryLine",
+      header: "What it does",
+      className: FROM_SMALL,
+      render: (row) => mutedOr(row.summaryLine),
+    },
+  ],
+  facets: [],
+};
+
+/**
+ * The books, as a table of contents.
+ *
+ * This is the one type the site does not present as a sortable table, and the
+ * reason is that a rule is not a row. There is nothing to compare between
+ * "Chapter 9: Combat" and the "Flanking" variant — no cost, no level, no
+ * challenge rating — so a table of them would be a column of names with four
+ * columns of nothing beside it. What a reader looking up a rule actually needs
+ * is the shape of the books: which chapters exist, in the order they are
+ * printed, under the book they belong to.
+ *
+ * So the layout groups by book and orders by position, and the toolbar keeps
+ * only the controls that still mean something — filter by name, filter by
+ * book, filter by chapter or variant. Sorting stays available because the
+ * columns below are what the sort control reads, but the default is the one
+ * order the material has of its own.
+ */
+const rules: ListConfig<RuleSummary> = {
+  layout: "chapters",
+  defaultSort: "position",
+  groupOf: (row) => (row.source ? (SOURCE_META[row.source]?.name ?? row.source) : "Other"),
+  groupOrder: SOURCE_ORDER.map((code) => SOURCE_META[code].name),
+  compactLine: (row) =>
+    joinParts([
+      row.ruleType === "Variant" ? "Variant rule" : chapterLabel(row),
+      row.sectionCount > 0
+        ? `${row.sectionCount} section${row.sectionCount === 1 ? "" : "s"}`
+        : null,
+    ]),
+  columns: [
+    nameColumn(),
+    {
+      key: "position",
+      header: "Position",
+      className: FROM_SMALL,
+      /*
+        A composite key, because a book's contents are not one sequence.
+        Chapters come first in printed order — including the negative numbers
+        the archive gives a preface and the 99 it gives a changelog, both of
+        which land in the right place — and the variant rules follow
+        alphabetically, because they have no position at all.
+      */
+      sortValue: (row) =>
+        row.ruleType === "Variant"
+          ? `B${row.name}`
+          : `A${String((row.chapterNumber ?? 0) + 1000).padStart(5, "0")}`,
+      render: (row) =>
+        row.ruleType === "Variant" ? (
+          <Badge accent="clay">Variant</Badge>
+        ) : (
+          textOr(chapterLabel(row))
+        ),
+    },
+    {
+      key: "sectionCount",
+      header: "Sections",
+      numeric: true,
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.sectionCount,
+      render: (row) => (row.sectionCount > 0 ? String(row.sectionCount) : em),
+    },
+    sourceColumn(),
+  ],
+  facets: [
+    sourceFacet(),
+    { key: "ruleType", label: "Kind", valueOf: (row) => row.ruleType },
+  ],
+};
+
+/**
+ * The archive numbers a preface -2 and a changelog 99. Both sort correctly and
+ * neither is a chapter number a reader would recognise, so only the ones that
+ * are get printed.
+ */
+function chapterLabel(row: RuleSummary): string | null {
+  const number = row.chapterNumber;
+  if (number == null || number < 1 || number > 90) return null;
+  return `Chapter ${number}`;
+}
+
+/**
+ * Thirty tables, grouped by what they are about. Subject is the only facet
+ * worth having and it is worth having a lot: two thirds of these are starship
+ * tables, and a reader who is not running a starship game wants them out of
+ * the way in one click.
+ */
+const referenceTables: ListConfig<ReferenceTableSummary> = {
+  defaultSort: "name",
+  compactLine: (row) => row.subject,
+  columns: [
+    nameColumn(),
+    {
+      key: "subject",
+      header: "Subject",
+      className: FROM_SMALL,
+      sortValue: (row) => row.subject,
+      render: (row) =>
+        row.subject ? <Badge accent="clay">{row.subject}</Badge> : em,
+    },
+  ],
+  facets: [{ key: "subject", label: "Subject", valueOf: (row) => row.subject }],
+};
+
 const monsters: ListConfig<MonsterSummary> = {
   defaultSort: "name",
   striped: true,
@@ -1229,6 +1475,11 @@ const CONFIGS = {
   "weapon-supremacies": weaponTraining,
 
   equipment,
+  "enhanced-items": enhancedItems,
+  // One config for both glossaries: same shape, same columns, and the page
+  // heading is already the only thing that distinguishes them.
+  "weapon-properties": properties,
+  "armor-properties": properties,
   monsters,
   "starship-base-sizes": starshipBaseSizes,
   "starship-deployments": starshipDeployments,
@@ -1236,6 +1487,8 @@ const CONFIGS = {
   "starship-modifications": starshipModifications,
   "starship-ventures": starshipVentures,
   "starship-rules": starshipRules,
+  rules,
+  "reference-tables": referenceTables,
 } as const;
 
 export function getListConfig(type: ContentTypeId): ListConfig<AnySummary> {
