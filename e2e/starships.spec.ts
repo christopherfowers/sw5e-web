@@ -42,48 +42,40 @@ test.describe("starship types", () => {
     });
   }
 
-  test("the header offers every one of them", async ({ page }) => {
+  test("the header offers every one of them, one menu deep", async ({ page }) => {
     await page.goto("/");
 
-    const nav = page.getByRole("navigation", { name: "Content types" });
+    // All six live under one group now. The strip used to carry every content
+    // type at its top level, which is what made it unscannable.
+    await page.locator('details[data-group="starships"] > summary').click();
+
+    const menu = page.locator('details[data-group="starships"]');
 
     for (const { segment, heading } of STARSHIP_TYPES) {
-      await expect(nav.getByRole("link", { name: heading })).toHaveAttribute(
+      await expect(menu.getByRole("link", { name: heading })).toHaveAttribute(
         "href",
         `/${segment}`,
       );
     }
   });
 
-  test("the navigation strip stays reachable now that it overflows", async ({
+  test("the header no longer overflows now that the types are grouped", async ({
     page,
   }) => {
-    // Fourteen destinations no longer fit any viewport, so the strip scrolls
-    // and the fade at its right edge is the only thing that says so. It used
-    // to be dropped above 64rem, back when eight destinations fitted there.
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto("/");
+    // This assertion used to be its own inverse: twenty-three destinations did
+    // not fit any viewport, so the strip scrolled sideways and needed a fade at
+    // its edge to say so. Grouping is what removed the overflow, and a strip
+    // that starts scrolling again means a group has been dissolved back into
+    // its types.
+    for (const width of [390, 768, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
 
-    const overflow = await page
-      .locator(".site-nav")
-      .evaluate((nav) => ({
-        scrolls: nav.scrollWidth > nav.clientWidth,
-        faded: getComputedStyle(nav).maskImage !== "none",
-      }));
+      const overflows = await page
+        .locator(".site-nav")
+        .evaluate((nav) => nav.scrollWidth > nav.clientWidth + 1);
 
-    expect(overflow.scrolls).toBe(true);
-    expect(
-      overflow.faded,
-      "a strip that scrolls with no fade gives a reader no sign there is more of it",
-    ).toBe(true);
-
-    // And the last link is still reachable and still clear of the fade once
-    // the strip is scrolled to its end.
-    const last = page
-      .getByRole("navigation", { name: "Content types" })
-      .getByRole("link", { name: "Starship rules" });
-
-    await last.scrollIntoViewIfNeeded();
-    await expect(last).toBeInViewport();
+      expect(overflows, `the header scrolls sideways at ${width}px`).toBe(false);
+    }
   });
 });

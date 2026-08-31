@@ -384,33 +384,23 @@ main:focus {
   }
 }
 
-/* Nineteen destinations will not fit across any screen, so the nav scrolls
- * sideways. What it must never do is look broken while doing it: a raw scrollbar under
- * the bar and a word sliced in half reads as a layout bug rather than as
- * "there is more this way". So the scrollbar is hidden and the last inch of
- * the strip fades out, which is the affordance people already recognise. The
- * fade sits over empty space and is invisible when everything fits. */
+/* ------------------------------------------------------------ navigation */
+
+/* The header used to be one flat strip of every content type. It scrolled
+ * sideways at every width, needed a fade at its edge to say so, and by
+ * twenty-two types it was a list nobody could hold in their head. It is now six
+ * groups, which fit across a phone without scrolling at all.
+ *
+ * The strip that this replaces is gone rather than kept for narrow screens:
+ * a second navigation with a different shape is a second thing to keep working,
+ * and the groups are what a reader is looking for at any width. */
 .site-nav {
   border-top: 1px solid var(--border);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  scroll-padding-inline: var(--space-4);
-  mask-image: linear-gradient(
-    to right,
-    #000 0,
-    #000 calc(100% - 2.5rem),
-    transparent 100%
-  );
 }
 
-.site-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.site-nav ul {
+.site-nav-groups {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.125rem;
   max-width: var(--page);
   margin: 0 auto;
@@ -418,69 +408,278 @@ main:focus {
   list-style: none;
 }
 
-/* Trailing space as wide as the fade, so the last link can be scrolled clear
- * of it rather than ending underneath it.
- *
- * This replaces dropping the mask above 64rem, which assumed the whole strip
- * fitted on a desktop screen. With nineteen content types it does not: the
- * strip scrolls at every width now, and a scrollable strip with no fade is one
- * a reader has no reason to believe continues. The original worry that the
- * override existed for — a focus ring on the last item clipped by the fade —
- * is what this actually fixes.
- *
- * It has to be a flex item rather than end padding on the list. The list is
- * capped at --page and its links overflow that box, and trailing padding on an
- * overflowed flex container is not added to the scrollable area at all: the
- * padding lands at the cap, hundreds of pixels behind the last link. A
- * zero-content item is part of the flow and is scrolled to like anything else.
- */
-.site-nav ul::after {
-  content: "";
-  flex: 0 0 2.5rem;
-}
-
-.site-nav-link {
+/* The summary of a group, and the link a one-destination group renders
+ * instead. One rule for both so a group growing past a single type does not
+ * change how the header looks. */
+.nav-group-trigger {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 0.5625rem;
+  gap: 0.3125rem;
+  padding: 0.5rem 0.6875rem;
   font-size: 0.875rem;
   font-weight: 550;
   color: var(--text-muted);
   text-decoration: none;
   white-space: nowrap;
   border-bottom: 2px solid transparent;
+  cursor: pointer;
+  list-style: none;
 }
 
-/* The marks are a nicety, not a label — every one of them sits beside its own
- * word — so on a narrow screen they are the first thing to go, which buys back
- * about 400 pixels of a strip that has to be scrolled either way. */
-.site-nav-link .type-icon {
+/* Safari still draws its own disclosure triangle without this, beside the one
+ * drawn below. */
+.nav-group-trigger::-webkit-details-marker {
   display: none;
-  width: 1rem;
-  height: 1rem;
-  opacity: 0.7;
 }
 
-@media (min-width: 64rem) {
-  .site-nav-link .type-icon {
-    display: block;
-  }
-}
-
-.site-nav-link:hover {
+.nav-group-trigger:hover {
   color: var(--text);
   background: color-mix(in oklab, var(--text) 6%, transparent);
 }
 
-.site-nav-link.is-current {
+/* The group the current page belongs to, so a reader who arrived from search
+ * can see where they are without opening anything. */
+.nav-group-trigger.is-current {
   color: var(--text);
   border-bottom-color: var(--brand);
 }
 
-.site-nav-link.is-current .type-icon {
-  opacity: 1;
+.nav-group-caret {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  opacity: 0.55;
+}
+
+.nav-group[open] > .nav-group-trigger {
+  color: var(--text);
+  background: var(--surface-raised);
+}
+
+.nav-group[open] > .nav-group-trigger .nav-group-caret {
+  transform: translateY(1px) rotate(225deg);
+}
+
+.nav-group {
+  position: relative;
+}
+
+.nav-group-panel {
+  position: absolute;
+  z-index: 40;
+  top: 100%;
+  left: 0;
+  min-width: 15rem;
+  max-width: min(22rem, calc(100vw - var(--space-4) * 2));
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+.nav-group-blurb {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.nav-group-types,
+.nav-group-supporting {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-type-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.375rem 0.4375rem;
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 550;
+  text-decoration: none;
+}
+
+.nav-type-link .type-icon {
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.nav-type-link:hover {
+  background: color-mix(in oklab, var(--text) 7%, transparent);
+  color: var(--text);
+}
+
+.nav-type-link.is-current {
   color: var(--brand-text);
+}
+
+.nav-type-link.is-current .type-icon {
+  opacity: 1;
+}
+
+/* Supporting types are reachable, not advertised: nobody browses class
+ * improvements, they arrive from the class that grants one. Quieter type and a
+ * rule above them says "these are here if you were sent" without spending a
+ * primary slot on them. */
+.nav-group-subhead,
+.group-rail-subhead {
+  margin: var(--space-3) 0 var(--space-1);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.nav-group-supporting,
+.group-rail-supporting {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8125rem;
+}
+
+.nav-group-supporting a,
+.group-rail-supporting a {
+  display: block;
+  padding: 0.25rem 0.4375rem;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.nav-group-supporting a:hover,
+.group-rail-supporting a:hover {
+  color: var(--text);
+}
+
+/* ------------------------------------------------------------------ rail */
+
+/* `display: contents` is the whole trick: on every page where the rail
+ * declines to render — the home page, search, the account area — this wrapper
+ * disappears from layout entirely and `<main>` is the flex child of `<body>`
+ * it has always been. Only a page that actually has a rail becomes a grid. */
+.site-body {
+  display: contents;
+}
+
+.site-body:has(> .group-rail) {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: var(--page);
+  margin: 0 auto;
+}
+
+.site-body:has(> .group-rail) > main {
+  min-width: 0;
+}
+
+/* Hidden until there is room for it. A phone has none, and the header's group
+ * menus already answer both of the questions this rail answers. */
+.group-rail {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .site-body:has(> .group-rail) {
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    padding-right: var(--space-4);
+  }
+
+  /* Sibling types stay on screen while a long index is scrolled, which is the
+   * orientation a dropdown cannot give: a reader can see where they are in the
+   * group without opening anything. The offset clears the sticky header. */
+  .group-rail {
+    display: block;
+    position: sticky;
+    top: 6.5rem;
+    align-self: start;
+    padding: var(--space-5) 0 var(--space-5) var(--space-4);
+  }
+}
+
+.group-rail-heading {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.group-rail-types {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+/* ------------------------------------------- revealing a long index */
+
+.list-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.list-more-all {
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.list-more-all:hover {
+  color: var(--text);
+}
+
+/* The complete list, for a crawler, for a reader with no JavaScript, and for
+ * anyone who would rather scan names than rows. Closed by default because it is
+ * a fallback rather than the page's subject. */
+.full-index {
+  margin-top: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.full-index > summary {
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.full-index[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.full-index-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0 var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.875rem;
 }
 
 .site-footer {

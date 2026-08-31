@@ -19,9 +19,39 @@
  * On a phone most table columns are hidden and their values are folded into a
  * compact second line under each name, which keeps one DOM tree rather than
  * shipping a duplicate card layout that a screen reader would have to skip.
+ *
+ * ---------------------------------------------------------------------------
+ * Why only part of the list is drawn
+ *
+ * `/features` published 2,682 rows as 2.1 MB of HTML. The bytes were the small
+ * half of that problem: each row is a `<tr>` with five cells, a link, a compact
+ * line and a badge, so the page was 40,342 elements that the browser had to
+ * parse, lay out, and then hand to React to hydrate — on the main thread, in one
+ * go, before anything on the page could respond. The page did not load slowly.
+ * It arrived and then froze.
+ *
+ * Nothing about that is fixed by a faster network, and it gets worse on its
+ * own: enhanced items are 1,918 rows and are next.
+ *
+ * So the rich list draws `WINDOW` rows and reveals more on request. That is
+ * chosen over the two alternatives because of what this site is. Real
+ * pagination needs either a server to read `?page=` or one prerendered route
+ * per page; there is no server, and routes are the build's whole cost — 5,129
+ * of them already. Virtualisation needs measured scroll geometry, which does
+ * not exist during a prerender, so the static HTML would contain nothing at
+ * all and the site's entire reason for being static would go with it.
+ *
+ * Windowing has none of that. The first `WINDOW` rows are real markup in the
+ * static file, hydration matches because the server and the client both start
+ * from the same constant, and every reveal is ordinary React state.
+ *
+ * The one thing it would cost is completeness — an index that shows 100 of
+ * 2,682 has stopped being an index — so `FullIndex` below publishes every
+ * entry as a plain link underneath. It is deliberately cheap, and deliberately
+ * not hydrated; see the comment on it.
  */
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 
 import type { Column, ListConfig } from "~/content/list-config";
@@ -72,12 +102,45 @@ function compareValues(
   return String(left).localeCompare(String(right), "en");
 }
 
+/**
+ * How many rows the rich list draws before a reader asks for more, and how many
+ * each reveal adds.
+ *
+ * One number for every type rather than a per-type budget. The cost being
+ * managed is DOM elements on the main thread, and a row is roughly the same
+ * size whichever type it belongs to, so a per-type figure would be a knob with
+ * nothing behind it. A hundred is comfortably more than fits on a screen — a
+ * reader who wants the next few scrolls rather than clicking — and small enough
+ * that the largest index in the corpus costs the same as the smallest.
+ */
+export const WINDOW = 100;
+
 export function ContentList({ type, typeLabel, rows, config }: ContentListProps) {
   const filterId = useId();
   const [nameFilter, setNameFilter] = useState("");
   const [facetValues, setFacetValues] = useState<Record<string, string>>({});
   const [sortKey, setSortKey] = useState(config.defaultSort);
   const [direction, setDirection] = useState<SortDirection>("ascending");
+  const [shown, setShown] = useState(WINDOW);
+
+  const resultsRef = useRef<HTMLDivElement>(null);
+  /*
+    Where the last reveal started, so focus can be sent to the first row that
+    was not there before. Without it, "Show 100 more" leaves a keyboard reader
+    at the bottom of the page with a hundred new rows above them and no way to
+    know it, and leaves them on nothing at all when the button that had focus
+    was the last one and has now gone.
+  */
+  const revealedFrom = useRef<number | null>(null);
+
+  useEffect(() => {
+    const from = revealedFrom.current;
+    revealedFrom.current = null;
+    if (from == null) return;
+    const anchors =
+      resultsRef.current?.querySelectorAll<HTMLElement>("[data-row-anchor]");
+    anchors?.[from]?.focus();
+  }, [shown]);
 
   const facets = useMemo(() => facetOptions(config, rows), [config, rows]);
   const isGallery = config.layout === "gallery";
@@ -104,7 +167,22 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
     });
   }, [rows, nameFilter, facetValues, sortKey, direction, config]);
 
+  /*
+    Every control that changes which rows qualify puts the window back to the
+    top. A reader who has revealed six hundred rows and then types a name is
+    asking a new question, and answering it six hundred rows deep would hand
+    back the cost the window exists to avoid.
+  */
+  const windowed = visible.slice(0, shown);
+  const hidden = visible.length - windowed.length;
+
+  function reveal(count: number) {
+    revealedFrom.current = shown;
+    setShown((current) => current + count);
+  }
+
   function toggleSort(column: Column<AnySummary>) {
+    setShown(WINDOW);
     if (column.key === sortKey) {
       setDirection((current) =>
         current === "ascending" ? "descending" : "ascending",
@@ -131,7 +209,10 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
             type="search"
             value={nameFilter}
             autoComplete="off"
-            onChange={(event) => setNameFilter(event.target.value)}
+            onChange={(event) => {
+              setShown(WINDOW);
+              setNameFilter(event.target.value);
+            }}
           />
         </div>
 
@@ -141,12 +222,13 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
             <select
               id={`${filterId}-${facet.key}`}
               value={facetValues[facet.key] ?? ""}
-              onChange={(event) =>
+              onChange={(event) => {
+                setShown(WINDOW);
                 setFacetValues((current) => ({
                   ...current,
                   [facet.key]: event.target.value,
-                }))
-              }
+                }));
+              }}
             >
               <option value="">All</option>
               {facet.options.map((option) => (
@@ -170,7 +252,10 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
               <select
                 id={`${filterId}-sort`}
                 value={sortKey}
-                onChange={(event) => setSortKey(event.target.value)}
+                onChange={(event) => {
+                  setShown(WINDOW);
+                  setSortKey(event.target.value);
+                }}
               >
                 {sortableColumns.map((column) => (
                   <option key={column.key} value={column.key}>
@@ -183,11 +268,12 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
               type="button"
               className="sort-direction"
               aria-pressed={direction === "descending"}
-              onClick={() =>
+              onClick={() => {
+                setShown(WINDOW);
                 setDirection((current) =>
                   current === "ascending" ? "descending" : "ascending",
-                )
-              }
+                );
+              }}
             >
               <span aria-hidden="true">
                 {direction === "ascending" ? "↑" : "↓"}
@@ -202,6 +288,7 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
             type="button"
             className="filter-reset"
             onClick={() => {
+              setShown(WINDOW);
               setNameFilter("");
               setFacetValues({});
             }}
@@ -212,37 +299,153 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
       </div>
 
       <p className="result-count" role="status">
-        {visible.length === rows.length
-          ? `${rows.length} ${typeLabel.toLowerCase()}`
-          : `${visible.length} of ${rows.length} ${typeLabel.toLowerCase()}`}
+        {describeCount(visible.length, windowed.length, rows.length, typeLabel)}
       </p>
 
-      {visible.length === 0 ? (
-        <p className="empty-state">
-          {/*
-            A type can be empty for two different reasons, and telling a
-            reader to clear a filter they never set is a dead end. The
-            canonical content set does not carry every type the site
-            publishes, so a type index can legitimately have nothing in it.
-          */}
-          {rows.length === 0
-            ? `No ${typeLabel.toLowerCase()} in this build of the reference yet.`
-            : "Nothing matches those filters. Try clearing one."}
-        </p>
-      ) : isGallery ? (
-        <Gallery type={type} typeLabel={typeLabel} rows={visible} config={config} />
-      ) : (
-        <ContentTable
-          type={type}
-          typeLabel={typeLabel}
-          rows={visible}
-          config={config}
-          sortKey={sortKey}
-          direction={direction}
-          onSort={toggleSort}
-        />
-      )}
+      <div ref={resultsRef}>
+        {visible.length === 0 ? (
+          <p className="empty-state">
+            {/*
+              A type can be empty for two different reasons, and telling a
+              reader to clear a filter they never set is a dead end. The
+              canonical content set does not carry every type the site
+              publishes, so a type index can legitimately have nothing in it.
+            */}
+            {rows.length === 0
+              ? `No ${typeLabel.toLowerCase()} in this build of the reference yet.`
+              : "Nothing matches those filters. Try clearing one."}
+          </p>
+        ) : isGallery ? (
+          <Gallery
+            type={type}
+            typeLabel={typeLabel}
+            rows={windowed}
+            config={config}
+          />
+        ) : (
+          <ContentTable
+            type={type}
+            typeLabel={typeLabel}
+            rows={windowed}
+            config={config}
+            sortKey={sortKey}
+            direction={direction}
+            onSort={toggleSort}
+          />
+        )}
+      </div>
+
+      {hidden > 0 ? (
+        <div className="list-more">
+          <button type="button" className="button" onClick={() => reveal(WINDOW)}>
+            Show {Math.min(WINDOW, hidden).toLocaleString("en-US")} more
+          </button>
+          <button
+            type="button"
+            className="list-more-all"
+            onClick={() => reveal(hidden)}
+          >
+            Show all {visible.length.toLocaleString("en-US")}
+          </button>
+        </div>
+      ) : null}
+
+      <FullIndex type={type} typeLabel={typeLabel} rows={rows} />
     </>
+  );
+}
+
+/**
+ * The line above the list. It has to distinguish three states that a single
+ * "N of M" cannot: everything is here, a filter has narrowed it, and the list
+ * is longer than what is drawn.
+ */
+function describeCount(
+  matching: number,
+  drawn: number,
+  total: number,
+  typeLabel: string,
+): string {
+  const noun = typeLabel.toLowerCase();
+  const shown = drawn.toLocaleString("en-US");
+
+  if (drawn < matching) {
+    return `Showing ${shown} of ${matching.toLocaleString("en-US")} ${noun}`;
+  }
+  if (matching === total) return `${total.toLocaleString("en-US")} ${noun}`;
+  return `${shown} of ${total.toLocaleString("en-US")} ${noun}`;
+}
+
+const ESCAPES: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+};
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"]/g, (character) => ESCAPES[character]!);
+}
+
+/**
+ * Every entry in the type, as a plain link, whether or not the rich list above
+ * has drawn it.
+ *
+ * This is what makes windowing safe to do at all. A crawler that does not run
+ * JavaScript, and a reader who has it switched off, both see the whole
+ * catalogue here rather than the first hundred rows of it — which is the
+ * property this site prerenders in order to have. It is also what the container
+ * job in CI counts when it asserts that the image renders as many items as the
+ * content it was built from.
+ *
+ * It is written as one `dangerouslySetInnerHTML` string on purpose, and the
+ * purpose is the same as the window's. React does not walk the children of such
+ * an element during hydration, so 2,682 anchors here cost one node of
+ * hydration work instead of eight thousand. Rendering them as JSX would hand
+ * back a large part of what the window just saved, for markup that is inert:
+ * these are ordinary links to prerendered pages, they have no state, and
+ * nothing on the page ever changes one.
+ *
+ * The only thing that string interpolation puts at risk is escaping, so the
+ * names go through `escapeHtml` and `app/components/content-list.test.tsx`
+ * asserts it against a name containing markup. Slugs are generated by
+ * `scripts/build-content-fixture.mjs` and are `[a-z0-9-]` by construction, and
+ * are escaped anyway rather than trusted.
+ */
+function FullIndex({
+  type,
+  typeLabel,
+  rows,
+}: {
+  type: ContentTypeId;
+  typeLabel: string;
+  rows: AnySummary[];
+}) {
+  // Nothing to add when the list already fits inside one window: the table
+  // above is the complete index, and a second copy of it would be noise.
+  const html = useMemo(() => {
+    if (rows.length <= WINDOW) return null;
+    return [...rows]
+      .sort((left, right) => left.name.localeCompare(right.name, "en"))
+      .map(
+        (row) =>
+          `<li><a href="/${type}/${escapeHtml(row.slug)}">${escapeHtml(row.name)}</a></li>`,
+      )
+      .join("");
+  }, [type, rows]);
+
+  if (!html) return null;
+
+  return (
+    <details className="full-index">
+      <summary>
+        All {rows.length.toLocaleString("en-US")} {typeLabel.toLowerCase()}, A–Z
+      </summary>
+      <ul
+        className="full-index-list"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    </details>
   );
 }
 
@@ -285,7 +488,7 @@ function Gallery({
             )}
             <div className="gallery-tile-body">
               <p className="gallery-tile-name">
-                <Link to={`/${type}/${row.slug}`}>
+                <Link to={`/${type}/${row.slug}`} data-row-anchor="">
                   <SourceText value={row.name} />
                 </Link>
               </p>
@@ -385,7 +588,7 @@ function ContentTable({
                           />
                         ) : null}
                         <span>
-                          <Link to={`/${type}/${row.slug}`}>
+                          <Link to={`/${type}/${row.slug}`} data-row-anchor="">
                             <SourceText value={row.name} />
                           </Link>
                           {compact ? (
