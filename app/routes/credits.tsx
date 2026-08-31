@@ -21,6 +21,7 @@ import { safeExternalHref } from "~/components/media";
 import { Inline } from "~/components/prose";
 import { Breadcrumbs } from "~/components/site-chrome";
 import {
+  assetCreditKeys,
   citedAssetCount,
   creditCategories,
   creditedPeopleCount,
@@ -47,11 +48,13 @@ export async function loader() {
   return {
     categories,
     people: creditedPeopleCount(),
-    // The site carries 150 pictures and knows the artist of one of them. That
-    // gap is stated on the page rather than left for a reader to infer from
-    // an absence, because it is the thing most likely to be fixed by somebody
-    // reading this page and recognising their own work.
-    images: 150,
+    // Counted, not written down. The site carries a citation per picture and
+    // knows the artist of one of them; that gap is stated on the page rather
+    // than left for a reader to infer from an absence, because it is the thing
+    // most likely to be fixed by somebody reading this page and recognising
+    // their own work. A hardcoded total would drift the moment a picture was
+    // added and quietly misreport how much is still unattributed.
+    images: assetCreditKeys().length,
     cited: citedAssetCount(),
   };
 }
