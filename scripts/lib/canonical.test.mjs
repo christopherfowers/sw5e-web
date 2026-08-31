@@ -491,6 +491,28 @@ describe("equipment", () => {
     expect(item.stats).toContainEqual({ label: "Cost", value: "1,550 cr" });
   });
 
+  it("shows every proficiency group a weapon belongs to, not just the first", () => {
+    // A bo-rifle is both an exotic blaster and an exotic vibroweapon, and
+    // proficiency with either is enough to use it. Showing only the first
+    // would tell a reader they cannot use a weapon they can.
+    const item = normalizeOne("equipment", {
+      key: "bo-rifle",
+      name: "Bo-rifle",
+      sourceKey: "phb",
+      category: "weapon",
+      costInCredits: 1075,
+      weight: 0,
+      weaponClassification: "exoticBlaster",
+      additionalWeaponClassifications: ["exoticVibroweapon"],
+      stealthDisadvantage: false,
+    });
+
+    expect(item.stats).toContainEqual({
+      label: "Weapon type",
+      value: "Exotic blaster, Exotic vibroweapon",
+    });
+  });
+
   it("marks armor that gives away a wearer trying to hide", () => {
     const item = normalizeOne("equipment", {
       key: "battle-armor",

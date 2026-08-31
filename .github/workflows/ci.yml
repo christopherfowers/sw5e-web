@@ -222,10 +222,24 @@ jobs:
           # An absolute floor as well as the derived count: if the content
           # image itself ever shrank, the two numbers would still agree, and
           # this job must not agree with a fixture-sized catalogue.
-          if [ "$canonical" -lt 14 ]; then
-            echo "the canonical content set has shrunk to $canonical species"
-            exit 1
-          fi
+          #
+          # The floors are the full published corpus, not a token above zero.
+          # Every one of these types spent a release rendering a dozen sample
+          # documents, which is a site that looks broken rather than one that
+          # fails, so the number that matters is the whole set. Raise a floor
+          # when the corpus genuinely grows.
+          for entry in species:141 background:61 feat:118 power:465 \
+                       equipment:505 monster:271; do
+            type=${entry%:*}
+            floor=${entry#*:}
+            have=$(ls "canonical-content/$type"/*.json 2>/dev/null | wc -l)
+
+            if [ "$have" -lt "$floor" ]; then
+              echo "the canonical content set has $have $type document(s)," \
+                "below the published corpus of $floor"
+              exit 1
+            fi
+          done
           if [ "$rendered" -ne "$canonical" ]; then
             echo "the image renders $rendered species; the content it was" \
               "built from has $canonical. A fixture-sized catalogue (4) means" \
