@@ -17,7 +17,10 @@
  * "W" from a picture of nothing is noise.
  */
 
+import { Link } from "react-router";
+
 import type { ImageSource } from "~/content/imagery";
+import type { AssetCredit } from "~/content/types";
 
 interface AssetImageProps {
   image: ImageSource;
@@ -98,5 +101,50 @@ export function MonogramPlate({
     >
       <span className="monogram-plate-mark">{monogram(name)}</span>
     </span>
+  );
+}
+
+/**
+ * The credit for one picture, shown with the picture rather than only in a
+ * list somewhere else.
+ *
+ * An artist is owed credit for the specific work of theirs on this page. A
+ * bulk roll of every artist who ever contributed does not do that: it tells a
+ * reader that one of fifty-seven people drew this, which is not an
+ * attribution.
+ *
+ * The unattributed case is drawn, not hidden. Every picture inherited from the
+ * original site is in it — that site credited its artists as one alphabetical
+ * list and never recorded which of them made which image — and saying so
+ * plainly is the honest answer and the useful one: a reader who recognises
+ * their own work can come forward, which is exactly how this gets fixed.
+ * Guessing would foreclose that and misattribute somebody at the same time.
+ */
+export function ImageCredit({ credit }: { credit: AssetCredit | null }) {
+  if (!credit) return null;
+
+  if (credit.status === "cited") {
+    const attribution = credit.artist ?? "an unnamed artist";
+    return (
+      <p className="image-credit">
+        <span className="image-credit-label">Art by</span>{" "}
+        {credit.link ? (
+          <a href={credit.link} rel="noopener noreferrer">
+            {attribution}
+          </a>
+        ) : (
+          attribution
+        )}
+        {credit.workTitle ? <span className="image-credit-work"> — {credit.workTitle}</span> : null}
+      </p>
+    );
+  }
+
+  return (
+    <p className="image-credit is-unattributed">
+      <span className="image-credit-label">Artist not recorded.</span>{" "}
+      Inherited from the original site's artwork, which was credited as a whole
+      rather than image by image. <Link to="/credits#art-asset">See the artists</Link>.
+    </p>
   );
 }

@@ -15,6 +15,7 @@ export default [
   route("search", "routes/search.tsx"),
   route("sources", "routes/sources.tsx"),
   route("sources/:slug", "routes/source-detail.tsx"),
+  route("credits", "routes/credits.tsx"),
 
   // Account routes. Every one of these prerenders to a signed-out skeleton and
   // resolves its identity in the browser; none of them exports a `loader`.

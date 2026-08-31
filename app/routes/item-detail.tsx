@@ -1,5 +1,6 @@
 import { ItemDetail } from "~/components/item-detail";
 import { Breadcrumbs, Pager } from "~/components/site-chrome";
+import { assetCredit } from "~/content/credits.server";
 import { getItem, getNeighbours } from "~/content/dataset.server";
 import { TYPE_META } from "~/content/type-meta";
 import { isContentTypeId } from "~/content/types";
@@ -34,9 +35,26 @@ export async function loader({ params }: Route.LoaderArgs) {
   if (!item) throw new Response("Not Found", { status: 404 });
 
   const { previous, next } = getNeighbours(type, params.slug);
+
+  /*
+   * The citation for this page's picture, resolved here because the credits
+   * document is build-time data and only this one entry of it should end up
+   * in the page. Species are keyed by slug and archetypes by the class their
+   * illustration belongs to, matching how `imagery.ts` resolves the files
+   * themselves — so an item with no picture asks for no citation.
+   */
+  const className = item.summary.className;
+  const artCredit =
+    type === "species"
+      ? assetCredit("species", params.slug)
+      : type === "archetypes" && typeof className === "string"
+        ? assetCredit("classes", className.toLowerCase())
+        : null;
+
   return {
     type,
     item,
+    artCredit,
     previous: previous ? { slug: previous.slug, name: previous.name } : null,
     next: next ? { slug: next.slug, name: next.name } : null,
   };
@@ -62,7 +80,7 @@ export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
 }
 
 export default function ItemDetailRoute({ loaderData }: Route.ComponentProps) {
-  const { type, item, previous, next } = loaderData;
+  const { type, item, artCredit, previous, next } = loaderData;
   const meta = TYPE_META[type];
 
   return (
@@ -73,7 +91,7 @@ export default function ItemDetailRoute({ loaderData }: Route.ComponentProps) {
           { label: item.name },
         ]}
       />
-      <ItemDetail item={item} />
+      <ItemDetail item={item} artCredit={artCredit} />
       <Pager
         type={type}
         typeLabel={meta.plural}

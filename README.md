@@ -120,6 +120,29 @@ names across species; a slug built from the name would put them all on one
 page, or resolve the collision with a numeric suffix that moves whenever the
 corpus grows.
 
+### The credits — one document, always complete
+
+`app/data/credits.json` is generated from the same canonical set and committed:
+
+```bash
+node scripts/build-credits.mjs --content ../sw5e-database/content
+```
+
+It is deliberately outside the fixture/generated split that the game content
+uses. That split exists because a contributor without the archive still needs
+the UI to render, and four species is enough to prove a species page works.
+Credits do not work that way: four patrons out of three hundred and eighty-four
+is not a smaller credits list, it is a wrong one, and wrong in the way that
+matters — it leaves people out. So there is one document, it is complete, and
+it is reviewed like the content it came from.
+
+It also carries a citation for every one of the site's 150 pictures, which is
+what lets a species page print the credit for its own portrait rather than
+pointing at a bulk list. `app/content/credits.test.ts` fails the build if a
+picture exists with no citation behind it, which is the contract any future
+image upload has to satisfy: attribution is captured when the artist is still
+known, or it is never captured at all.
+
 ### The committed fixture — what a clean clone falls back to
 
 `app/data/fixture` is four items per type, committed so that `npm test`,

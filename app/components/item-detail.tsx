@@ -19,10 +19,10 @@
 import { Link } from "react-router";
 
 import { Badge, SourceBadge } from "./badges";
-import { AssetImage, MonogramPlate } from "./media";
+import { AssetImage, ImageCredit, MonogramPlate } from "./media";
 import { classArt, speciesPortrait } from "~/content/imagery";
 import { TYPE_META } from "~/content/type-meta";
-import type { ContentItem, Entry } from "~/content/types";
+import type { AssetCredit, ContentItem, Entry } from "~/content/types";
 import { LostValue, SourceText } from "./source-text";
 import { Prose } from "./prose";
 
@@ -40,7 +40,11 @@ function itemFigure(item: ContentItem): Figure | null {
     return {
       image: speciesPortrait(item.slug),
       alt: `Illustration of the ${item.name} species`,
-      caption: `${item.name} — illustration from the Star Wars 5e archive`,
+      // The caption describes the picture; who made it is a separate claim and
+      // comes from the citation below it. The old caption said "illustration
+      // from the Star Wars 5e archive", which read as an attribution while
+      // naming nobody.
+      caption: `Illustration of the ${item.name}`,
       fallbackNote: `No illustration of the ${item.name} exists in the archive.`,
     };
   }
@@ -74,7 +78,19 @@ function itemFigure(item: ContentItem): Figure | null {
   return null;
 }
 
-export function ItemDetail({ item }: { item: ContentItem }) {
+export function ItemDetail({
+  item,
+  artCredit = null,
+}: {
+  item: ContentItem;
+  /**
+   * The citation for this item's picture, supplied by the route's loader
+   * because it is build-time data. Null when the item has no picture — and
+   * note that a picture whose artist is unknown still has a citation, one
+   * that says so.
+   */
+  artCredit?: AssetCredit | null;
+}) {
   const groups = groupEntries(item.entries);
   const figure = itemFigure(item);
   const accent = TYPE_META[item.type].accent;
@@ -121,6 +137,7 @@ export function ItemDetail({ item }: { item: ContentItem }) {
           )}
           <figcaption>
             {figure.image ? figure.caption : figure.fallbackNote}
+            {figure.image ? <ImageCredit credit={artCredit} /> : null}
           </figcaption>
         </figure>
       ) : null}
