@@ -107,6 +107,56 @@ const PATHS: Record<ContentTypeId, React.ReactNode> = {
       <path d="M12.5 12.5c-3.1 0-5.6 2.2-5.6 4.7 0 1.8 1.4 3.05 3.2 3.05.95 0 1.55-.4 2.4-.4s1.45.4 2.4.4c1.8 0 3.2-1.25 3.2-3.05 0-2.5-2.5-4.7-5.6-4.7Z" />
     </>
   ),
+  // A hull seen from above, with its two wings: the shape that distinguishes
+  // one ship size from another at a glance.
+  "starship-base-sizes": (
+    <>
+      <path d="M12 3.5c1.9 2.2 2.9 5 2.9 8.5s-1 6.3-2.9 8.5c-1.9-2.2-2.9-5-2.9-8.5s1-6.3 2.9-8.5Z" />
+      <path d="M9.1 10.25 3.5 14v3.25l5.6-2.5" />
+      <path d="M14.9 10.25 20.5 14v3.25l-5.6-2.5" />
+    </>
+  ),
+  // A crew station: a seat at a console.
+  "starship-deployments": (
+    <>
+      <rect x="3.5" y="4.25" width="17" height="9" rx="1.5" />
+      <path d="M7.25 7.5h9.5M7.25 10.25h5.5" />
+      <path d="M8 16.5v3.25M16 16.5v3.25M6 16.5h12" />
+    </>
+  ),
+  // A weapon mount on a hull plate.
+  "starship-equipment": (
+    <>
+      <path d="M3.5 14.25h17" />
+      <path d="M6.75 14.25v-3a2.5 2.5 0 0 1 2.5-2.5h5.5a2.5 2.5 0 0 1 2.5 2.5v3" />
+      <path d="M12 8.75V3.5" />
+      <path d="M5 17.5h14" />
+    </>
+  ),
+  // A part being bolted on: the whole idea of a modification.
+  "starship-modifications": (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3" />
+      <path d="m6.4 6.4 2.1 2.1M15.5 15.5l2.1 2.1M17.6 6.4l-2.1 2.1M8.5 15.5l-2.1 2.1" />
+    </>
+  ),
+  // A chevron rank mark: ventures arrive one per rank.
+  "starship-ventures": (
+    <>
+      <path d="m5 10 7-5 7 5" />
+      <path d="m5 14.5 7-5 7 5" />
+      <path d="m5 19 7-5 7 5" />
+    </>
+  ),
+  // A rulebook, closed: the chapters rather than the items in them.
+  "starship-rules": (
+    <>
+      <path d="M5.5 3.75h11a2 2 0 0 1 2 2v14.5H7.5a2 2 0 0 1-2-2Z" />
+      <path d="M5.5 17.25h13" />
+      <path d="M9 7.75h6M9 11h4" />
+    </>
+  ),
 };
 
 export function TypeIcon({

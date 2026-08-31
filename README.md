@@ -65,11 +65,23 @@ books are described in `app/content/source-meta.ts`, which carries a blurb,
 a colour and a cover that a data file cannot. The mapping and its reasoning
 live in `scripts/lib/canonical.mjs`.
 
+The traffic also runs the other way. The six starship types are canonical-only:
+the archive holds their files, but three of them lost their structured columns
+to the 2022 scrape — every numeric field on all six base sizes is zero, and
+every piece of ammunition carries a name and a price and nothing else — and the
+canonical documents have hull dice, tier tables, roles and ammunition damage
+only because the import read them back out of the rules chapters. Mapping the
+flat records here instead would publish a starship section that cannot say how
+much hull a Small ship has, so `scripts/lib/normalize.mjs` records them with no
+archive file rather than producing a poorer copy.
+
 ### The committed fixture — what a clean clone falls back to
 
 `app/data/fixture` is four items per type, committed so that `npm test`,
 `npm run build` and CI all work for a contributor with neither of the other
-two sources to hand. It is built from the legacy archive:
+two sources to hand. It is built from the legacy archive, so the six starship
+types are empty in it: they are canonical-only, for the reason given above.
+Their indexes render as empty as `maneuvers` does.
 
 ```bash
 node scripts/build-content-fixture.mjs --archive ../sw5e-legacy-archive/api --curated

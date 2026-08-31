@@ -38,6 +38,12 @@ import type {
   MonsterSummary,
   PowerSummary,
   SpeciesSummary,
+  StarshipBaseSizeSummary,
+  StarshipDeploymentSummary,
+  StarshipEquipmentSummary,
+  StarshipModificationSummary,
+  StarshipRuleSummary,
+  StarshipVentureSummary,
   WeaponTrainingSummary,
 } from "./types";
 
@@ -697,6 +703,314 @@ const monsters: ListConfig<MonsterSummary> = {
   ],
 };
 
+/* --------------------------------------------------------------- starships */
+
+const starshipBaseSizes: ListConfig<StarshipBaseSizeSummary> = {
+  defaultSort: "modificationSlots",
+  compactLine: (row) => joinParts([row.hullDice, row.savingThrows]),
+  columns: [
+    nameColumn(),
+    {
+      key: "hullDice",
+      header: "Hull dice",
+      className: FROM_SMALL,
+      sortValue: (row) => row.hullDice,
+      render: (row) =>
+        row.hullDice ? (
+          <Badge className="badge-numeric" accent="steel">
+            {row.hullDice}
+          </Badge>
+        ) : (
+          em
+        ),
+    },
+    {
+      key: "modificationSlots",
+      header: "Mod slots",
+      numeric: true,
+      sortValue: (row) => row.modificationSlots,
+      render: (row) =>
+        row.modificationSlots == null ? em : String(row.modificationSlots),
+    },
+    {
+      key: "savingThrows",
+      header: "Saving throws",
+      className: FROM_MEDIUM,
+      render: (row) => mutedOr(row.savingThrows),
+    },
+    {
+      key: "roles",
+      header: "Roles",
+      className: FROM_LARGE,
+      render: (row) => mutedOr(row.roles),
+    },
+  ],
+  // Six rows, all from one book: a facet here would offer a single option.
+  facets: [],
+};
+
+const starshipDeployments: ListConfig<StarshipDeploymentSummary> = {
+  defaultSort: "name",
+  compactLine: (row) => row.role,
+  columns: [
+    nameColumn(),
+    {
+      key: "role",
+      header: "Station",
+      render: (row) => textOr(row.role),
+    },
+  ],
+  facets: [],
+};
+
+/**
+ * The shipyard list. Category is the first thing a reader narrows by — nobody
+ * shopping for a hyperdrive wants to scroll past sixty-two guns — and mounting
+ * is the second, because a hardpoint only takes the weapons built for it.
+ */
+/** Mountings read in the order a ship fires them, not alphabetically. */
+const MOUNTING_ORDER = ["Primary", "Secondary", "Tertiary", "Quaternary"];
+
+const starshipEquipment: ListConfig<StarshipEquipmentSummary> = {
+  defaultSort: "name",
+  striped: true,
+  compactLine: (row) =>
+    joinParts([
+      row.category,
+      row.cost == null ? null : `${row.cost.toLocaleString("en-US")} cr`,
+      row.damage,
+    ]),
+  columns: [
+    nameColumn(),
+    {
+      key: "category",
+      header: "Category",
+      className: FROM_SMALL,
+      sortValue: (row) => row.category,
+      render: (row) => (row.category ? <Badge>{row.category}</Badge> : em),
+    },
+    {
+      key: "mounting",
+      header: "Mounting",
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.mounting,
+      render: (row) =>
+        row.mounting ? <Badge accent="cyan">{row.mounting}</Badge> : em,
+    },
+    creditsColumn<StarshipEquipmentSummary>(),
+    {
+      key: "damage",
+      header: "Damage",
+      className: FROM_MEDIUM,
+      render: (row) => textOr(row.damage),
+    },
+    {
+      key: "properties",
+      header: "Properties",
+      className: FROM_LARGE,
+      render: (row) => mutedOr(row.properties),
+    },
+  ],
+  facets: [
+    { key: "category", label: "Category", valueOf: (row) => row.category },
+    {
+      key: "mounting",
+      label: "Mounting",
+      valueOf: (row) => row.mounting,
+      compare: (left, right) =>
+        MOUNTING_ORDER.indexOf(left) - MOUNTING_ORDER.indexOf(right),
+    },
+  ],
+};
+
+/** Hull requirements read smallest-first, which is how a table thinks of them. */
+const SHIP_SIZE_ORDER = [
+  "Tiny",
+  "Small or smaller",
+  "Small",
+  "Small or larger",
+  "Medium or smaller",
+  "Medium",
+  "Medium or larger",
+  "Large",
+  "Large or larger",
+  "Huge",
+  "Gargantuan",
+];
+
+/**
+ * The largest starship list by a wide margin, and the one a filter has to
+ * carry: nobody reads 257 rows.
+ *
+ * Three facets, each answering a question a crew actually arrives with. Grade
+ * is what a modification costs in slots, so a ship with six slots left is
+ * reading one band and ignoring the rest. Type is what it competes with —
+ * suites are capped separately from everything else. Ship size is the one that
+ * would otherwise be invisible: 35 of these are gated on the hull, the clause
+ * is buried in prose, and "what can my Small ship fit?" is unanswerable
+ * without it.
+ */
+const starshipModifications: ListConfig<StarshipModificationSummary> = {
+  defaultSort: "name",
+  striped: true,
+  compactLine: (row) =>
+    joinParts([
+      row.modificationType,
+      row.grade == null ? null : `Grade ${row.grade}`,
+      row.requiresShipSize ? `${row.requiresShipSize} hull` : null,
+      row.prerequisite,
+    ]),
+  columns: [
+    nameColumn(),
+    {
+      key: "modificationType",
+      header: "Type",
+      className: FROM_SMALL,
+      sortValue: (row) => row.modificationType,
+      render: (row) =>
+        row.modificationType ? (
+          <Badge accent="amber">{row.modificationType}</Badge>
+        ) : (
+          em
+        ),
+    },
+    {
+      key: "grade",
+      header: "Grade",
+      numeric: true,
+      sortValue: (row) => row.grade,
+      render: (row) =>
+        row.grade == null ? (
+          em
+        ) : (
+          <Badge className="badge-numeric" accent="amber">
+            {row.grade}
+          </Badge>
+        ),
+    },
+    {
+      key: "requiresShipSize",
+      header: "Ship size",
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.requiresShipSize,
+      render: (row) =>
+        row.requiresShipSize ? (
+          <Badge accent="steel">{row.requiresShipSize}</Badge>
+        ) : (
+          // No hull requirement is a real answer, not a missing value: any
+          // ship can fit it.
+          <span className="cell-muted">Any</span>
+        ),
+    },
+    {
+      key: "prerequisite",
+      header: "Prerequisite",
+      className: FROM_LARGE,
+      render: (row) => mutedOr(row.prerequisite),
+    },
+  ],
+  facets: [
+    {
+      key: "modificationType",
+      label: "Type",
+      valueOf: (row) => row.modificationType,
+    },
+    {
+      key: "grade",
+      label: "Grade",
+      valueOf: (row) => (row.grade == null ? null : String(row.grade)),
+      compare: (left, right) => Number(left) - Number(right),
+    },
+    {
+      key: "requiresShipSize",
+      label: "Ship size",
+      valueOf: (row) => row.requiresShipSize,
+      compare: (left, right) =>
+        SHIP_SIZE_ORDER.indexOf(left) - SHIP_SIZE_ORDER.indexOf(right),
+    },
+  ],
+};
+
+/**
+ * Sixty-seven ventures, and a player is only ever eligible for a slice of
+ * them. Both facets are gates rather than descriptions: the station whose rank
+ * is required, and the character class whose levels are. Between them they
+ * turn the list into "what can I take" instead of "what exists".
+ */
+const starshipVentures: ListConfig<StarshipVentureSummary> = {
+  defaultSort: "name",
+  striped: true,
+  compactLine: (row) =>
+    row.prerequisite ? `Requires ${row.prerequisite}` : "No prerequisite",
+  columns: [
+    nameColumn(),
+    {
+      key: "deployment",
+      header: "Deployment",
+      className: FROM_SMALL,
+      sortValue: (row) => row.deployment,
+      render: (row) =>
+        row.deployment ? <Badge accent="indigo">{row.deployment}</Badge> : em,
+    },
+    {
+      key: "characterClass",
+      header: "Class",
+      className: FROM_MEDIUM,
+      sortValue: (row) => row.characterClass,
+      render: (row) =>
+        row.characterClass ? (
+          <Badge accent="violet">{row.characterClass}</Badge>
+        ) : (
+          em
+        ),
+    },
+    {
+      key: "prerequisite",
+      header: "Prerequisite",
+      className: FROM_LARGE,
+      render: (row) => mutedOr(row.prerequisite),
+    },
+  ],
+  facets: [
+    {
+      key: "deployment",
+      label: "Deployment",
+      valueOf: (row) => row.deployment,
+    },
+    { key: "characterClass", label: "Class", valueOf: (row) => row.characterClass },
+  ],
+};
+
+/**
+ * Thirteen chapters, which are read in order rather than looked up by name, so
+ * this is the one list on the site that does not sort alphabetically.
+ */
+const starshipRules: ListConfig<StarshipRuleSummary> = {
+  defaultSort: "chapterNumber",
+  compactLine: (row) =>
+    row.chapterNumber == null ? null : `Chapter ${row.chapterNumber}`,
+  // The name has to come first: a list's opening cell is the row header and
+  // carries the link, whatever the column declares.
+  columns: [
+    nameColumn(),
+    {
+      key: "chapterNumber",
+      header: "Chapter",
+      numeric: true,
+      sortValue: (row) => row.chapterNumber,
+      render: (row) =>
+        row.chapterNumber == null ? (
+          em
+        ) : (
+          <Badge className="badge-numeric" accent="green">
+            {row.chapterNumber}
+          </Badge>
+        ),
+    },
+  ],
+  facets: [],
+};
+
 function ratingValue(rating: string): number {
   if (rating.includes("/")) {
     const [numerator, denominator] = rating.split("/").map(Number);
@@ -726,6 +1040,12 @@ const CONFIGS = {
 
   equipment,
   monsters,
+  "starship-base-sizes": starshipBaseSizes,
+  "starship-deployments": starshipDeployments,
+  "starship-equipment": starshipEquipment,
+  "starship-modifications": starshipModifications,
+  "starship-ventures": starshipVentures,
+  "starship-rules": starshipRules,
 } as const;
 
 export function getListConfig(type: ContentTypeId): ListConfig<AnySummary> {

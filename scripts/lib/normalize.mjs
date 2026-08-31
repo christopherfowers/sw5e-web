@@ -822,6 +822,27 @@ export const CONTENT_TYPES = [
   },
   { id: "equipment", file: "Equipment", normalize: normalizeEquipment },
   { id: "monsters", file: "Monster", normalize: normalizeMonster },
+
+  /*
+   * The starship types are canonical-only, which is what `file: null` says.
+   *
+   * The archive does contain their six files, so this is a choice rather than
+   * a gap. Three of them lost their structured columns to the 2022 scrape and
+   * kept only prose: every numeric field on all six base-size records is zero,
+   * and every piece of ammunition carries a name and a price and nothing else.
+   * The canonical documents have the hull dice, the tier tables, the roles and
+   * the ammunition damage because the import read them back out of the rules
+   * chapters — work that belongs in the content repository, not in a second
+   * copy here. Mapping the flat records instead would publish a starship
+   * section that cannot say how much hull a Small ship has, which is worse
+   * than an archive build that admits it has no starships.
+   */
+  { id: "starship-base-sizes", file: null, normalize: null },
+  { id: "starship-deployments", file: null, normalize: null },
+  { id: "starship-equipment", file: null, normalize: null },
+  { id: "starship-modifications", file: null, normalize: null },
+  { id: "starship-ventures", file: null, normalize: null },
+  { id: "starship-rules", file: null, normalize: null },
 ];
 
 /**

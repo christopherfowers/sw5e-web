@@ -249,11 +249,11 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 27 pages that do not come from content:
-          # the home page, the search page, the sources index, four source
-          # pages, thirteen type indexes, and the seven account routes listed
+          # One page per document, plus 34 pages that do not come from content:
+          # the home page, the search page, the sources index, five source
+          # pages, nineteen type indexes, and the seven account routes listed
           # in ACCOUNT_PATHS in react-router.config.ts. `feature` and `source`
-          # are not browsable types, so only the thirteen mapped directories
+          # are not browsable types, so only the nineteen mapped directories
           # contribute item pages.
           #
           # The account routes are prerendered deliberately, as signed-out
@@ -265,10 +265,12 @@ jobs:
           for type in species archetype background feat power \
                       maneuver fighting-style fighting-mastery \
                       lightsaber-form weapon-focus weapon-supremacy \
-                      equipment monster; do
+                      equipment monster \
+                      starship-base-size starship-deployment starship-equipment \
+                      starship-modification starship-venture starship-rule; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 27))
+          expected=$((items + 34))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
@@ -278,6 +280,54 @@ jobs:
             echo "the prerendered route count does not match the canonical set"
             exit 1
           fi
+
+      - name: Every starship type renders the whole of what the content image holds
+        run: |
+          set -euo pipefail
+
+          # Starships are half of SW5e and the site published none of them, so
+          # each of the six types is compared against the content the image was
+          # built from rather than merely checked for a 200. A mapping that
+          # dropped a category - ammunition, say, or the ten launchers that
+          # carry no damage of their own - would still render a long, plausible
+          # list, and only this comparison would notice.
+          #
+          # Each carries an absolute floor as well as the derived count, for the
+          # same reason species does: two numbers that agree on zero would pass
+          # against a content image with no starships in it at all, which is
+          # precisely the state this work exists to end. That does mean this job
+          # stays red until sw5e-database has merged and published its content
+          # image, because the site is built from that image.
+          set -- \
+            "starship-base-size:starship-base-sizes:6" \
+            "starship-deployment:starship-deployments:6" \
+            "starship-equipment:starship-equipment:104" \
+            "starship-modification:starship-modifications:257" \
+            "starship-venture:starship-ventures:67" \
+            "starship-rule:starship-rules:13"
+
+          for entry in "$@"; do
+            directory=${entry%%:*}
+            rest=${entry#*:}
+            segment=${rest%%:*}
+            floor=${rest##*:}
+
+            canonical=$(ls "canonical-content/$directory"/*.json | wc -l)
+            rendered=$(curl --fail --silent "http://127.0.0.1:8080/$segment" \
+              | grep -o "href=\"/$segment/[a-z0-9-]*\"" | sort -u | wc -l)
+
+            echo "$segment: canonical $canonical, rendered $rendered"
+
+            if [ "$canonical" -lt "$floor" ]; then
+              echo "::error::content/$directory has shrunk to $canonical documents"
+              exit 1
+            fi
+            if [ "$rendered" -ne "$canonical" ]; then
+              echo "::error::/$segment renders $rendered items; the content it" \
+                "was built from has $canonical"
+              exit 1
+            fi
+          done
 
       - name: The maneuver index publishes maneuvers
         run: |

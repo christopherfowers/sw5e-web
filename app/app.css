@@ -384,8 +384,8 @@ main:focus {
   }
 }
 
-/* Nine destinations will not fit across a phone, so the nav scrolls sideways.
- * What it must never do is look broken while doing it: a raw scrollbar under
+/* Nineteen destinations will not fit across any screen, so the nav scrolls
+ * sideways. What it must never do is look broken while doing it: a raw scrollbar under
  * the bar and a word sliced in half reads as a layout bug rather than as
  * "there is more this way". So the scrollbar is hidden and the last inch of
  * the strip fades out, which is the affordance people already recognise. The
@@ -422,7 +422,7 @@ main:focus {
  * of it rather than ending underneath it.
  *
  * This replaces dropping the mask above 64rem, which assumed the whole strip
- * fitted on a desktop screen. With thirteen content types it does not: the
+ * fitted on a desktop screen. With nineteen content types it does not: the
  * strip scrolls at every width now, and a scrollable strip with no fade is one
  * a reader has no reason to believe continues. The original worry that the
  * override existed for — a focus ring on the last item clipped by the fade —
@@ -453,9 +453,8 @@ main:focus {
 }
 
 /* The marks are a nicety, not a label — every one of them sits beside its own
- * word. Below the width where all nine destinations fit they are the first
- * thing to go, which buys back about 200 pixels and is the difference between
- * a strip that fits and one that has to be scrolled. */
+ * word — so on a narrow screen they are the first thing to go, which buys back
+ * about 400 pixels of a strip that has to be scrolled either way. */
 .site-nav-link .type-icon {
   display: none;
   width: 1rem;
