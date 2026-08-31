@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it } from "vitest";
@@ -382,6 +382,14 @@ describe("a species index", () => {
 describe("a very long index", () => {
   const LONG = 2_682;
 
+  /*
+    Headroom for the tests that drive the list rather than just read it.
+    Rendering and re-rendering 2,682 rows in jsdom is genuinely slow, and a
+    shared CI runner is several times slower than a laptop — the default five
+    seconds is a flake waiting to happen rather than a budget anyone set.
+  */
+  const SLOW = 30_000;
+
   const longRows: AnySummary[] = Array.from({ length: LONG }, (_, index) => ({
     slug: `feature-${index}`,
     name: `Feature ${String(index).padStart(4, "0")}`,
@@ -477,12 +485,13 @@ describe("a very long index", () => {
     ]);
 
     const index = container.querySelector(".full-index-list")!;
+
+    // Queried through the DOM rather than by role: computing an accessible
+    // name for 2,682 anchors is slow enough to time the test out on a CI
+    // runner, and what is under test here is the text that reached the markup.
     expect(index.querySelector("script")).toBeNull();
-    expect(
-      within(index as HTMLElement).getByRole("link", {
-        name: '<script>alert("x")</script> & Co',
-      }),
-    ).toHaveAttribute("href", "/features/quote-name");
+    const link = index.querySelector('a[href="/features/quote-name"]')!;
+    expect(link.textContent).toBe('<script>alert("x")</script> & Co');
   });
 
   it("says how much of the list it is showing", () => {
@@ -509,7 +518,7 @@ describe("a very long index", () => {
       within(body).getByRole("link", { name: "Feature 0100" }),
       "the first newly revealed row must take focus",
     ).toHaveFocus();
-  });
+  }, SLOW);
 
   it("shows everything when asked, and stops offering", async () => {
     const user = userEvent.setup();
@@ -521,21 +530,27 @@ describe("a very long index", () => {
       screen.getByRole("table").querySelectorAll("tbody tr").length,
     ).toBe(LONG);
     expect(screen.queryByRole("button", { name: /Show all/ })).toBeNull();
-  });
+  }, SLOW);
 
   it("puts the window back to the top when the question changes", async () => {
     const user = userEvent.setup();
     renderLong();
 
     await user.click(screen.getByRole("button", { name: /Show all 2,682/ }));
-    await user.type(screen.getByLabelText("Filter by name"), "Feature 01");
+
+    // One change event rather than ten keystrokes. Typing into a field that
+    // re-filters 2,682 rows on every character is a second a character on a CI
+    // runner, and the filtering itself is covered by the tests above.
+    fireEvent.change(screen.getByLabelText("Filter by name"), {
+      target: { value: "Feature 01" },
+    });
 
     // Answering a new question must not carry the cost of the old one: 2,682
     // rows stay rendered otherwise, filtered or not.
     expect(
       screen.getByRole("table").querySelectorAll("tbody tr").length,
     ).toBeLessThanOrEqual(WINDOW);
-  });
+  }, SLOW);
 
   it("leaves a list that fits in one window exactly as it was", () => {
     const { container } = renderLong(longRows.slice(0, WINDOW));

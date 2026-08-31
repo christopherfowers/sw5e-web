@@ -111,6 +111,32 @@ test.describe("grouped navigation", () => {
     await expect(combat).toHaveAttribute("aria-expanded", "false");
   });
 
+  test("an open menu never pushes the page sideways", async ({ page }) => {
+    // A panel anchored to its own trigger runs off the right edge of a narrow
+    // screen — Starships sits two thirds of the way across a phone — and a
+    // horizontal scrollbar on a page nobody scrolled sideways reads as a broken
+    // layout. This is the failure the flat strip had, arriving by another door.
+    for (const width of [375, 768, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/powers");
+
+      for (const group of ["characters", "combat", "starships"]) {
+        const overflows = await menu(page, group).evaluate((details) => {
+          (details as HTMLDetailsElement).open = true;
+          const wide =
+            document.documentElement.scrollWidth > window.innerWidth + 1;
+          (details as HTMLDetailsElement).open = false;
+          return wide;
+        });
+
+        expect(
+          overflows,
+          `the ${group} menu overflows the viewport at ${width}px`,
+        ).toBe(false);
+      }
+    }
+  });
+
   test("the rail keeps a reader's siblings on screen", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/maneuvers");

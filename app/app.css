@@ -480,6 +480,29 @@ main:focus {
   box-shadow: var(--shadow-md);
 }
 
+/* A panel anchored to its own trigger runs off the right edge of a phone:
+ * Starships sits 266px into a 375px viewport and a 240px panel does not fit
+ * beside it, so the document gains 131px of sideways scroll. Below 48rem the
+ * panel is anchored to the bar rather than to the group — `position: static` on
+ * the group hands the containing block to `.site-nav` — and spans it, which
+ * also gives every link a full-width target. */
+@media (max-width: 47.999rem) {
+  .site-nav {
+    position: relative;
+  }
+
+  .nav-group {
+    position: static;
+  }
+
+  .nav-group-panel {
+    left: var(--space-2);
+    right: var(--space-2);
+    min-width: 0;
+    max-width: none;
+  }
+}
+
 .nav-group-blurb {
   margin: 0 0 var(--space-2);
   font-size: 0.75rem;
