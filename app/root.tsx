@@ -14,6 +14,7 @@ import {
   SiteHeader,
   SkipLink,
 } from "./components/site-chrome";
+import { GroupRail } from "./components/site-nav";
 import type { Route } from "./+types/root";
 import "./app.css";
 
@@ -51,9 +52,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <AuthProvider>
           <SkipLink />
           <SiteHeader />
-          <main id="main" tabIndex={-1}>
-            {children}
-          </main>
+          {/*
+            The rail is a sibling of `<main>`, not a child of it: it is site
+            navigation, and putting a second `<nav>` inside the main landmark
+            would make "where am I in this group" part of the page's content.
+            `.site-body` is `display: contents` on every page the rail declines
+            to render on, so those pages have exactly the box model they had
+            before it existed.
+          */}
+          <div className="site-body">
+            <GroupRail />
+            <main id="main" tabIndex={-1}>
+              {children}
+            </main>
+          </div>
           <SiteFooter />
         </AuthProvider>
         <ScrollRestoration />

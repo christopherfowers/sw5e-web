@@ -2,19 +2,22 @@
  * The site frame: skip link, banner, primary navigation, footer.
  *
  * The landmark structure is deliberate. One `<header role="banner">` holding a
- * `<nav aria-label="Content types">`, one `<main id="main">` per page, and one
+ * `<nav aria-label="Content">`, one `<main id="main">` per page, and one
  * `<footer role="contentinfo">`, with a skip link as the first focusable thing
  * on the page so a keyboard user is never forced through the whole nav.
+ *
+ * The navigation itself lives in `./site-nav.tsx`. It used to be a flat strip
+ * of every content type built right here; it is now six grouped menus, which is
+ * enough machinery to deserve its own file.
  */
 
-import { NavLink, Link } from "react-router";
+import { Link } from "react-router";
 
 import { brandImage } from "~/content/imagery";
-import { TYPE_META, TYPE_ORDER } from "~/content/type-meta";
 import { AccountControl } from "./account-control";
 import { AssetImage } from "./media";
+import { GroupedNav } from "./site-nav";
 import { SiteSearch } from "./site-search";
-import { TypeIcon } from "./type-icon";
 
 export function SkipLink() {
   return (
@@ -51,33 +54,7 @@ export function SiteHeader() {
         <SiteSearch />
         <AccountControl />
       </div>
-      <nav aria-label="Content types" className="site-nav">
-        <ul>
-          {TYPE_ORDER.map((type) => (
-            <li key={type}>
-              <NavLink
-                to={`/${type}`}
-                className={({ isActive }) =>
-                  isActive ? "site-nav-link is-current" : "site-nav-link"
-                }
-              >
-                <TypeIcon type={type} />
-                {TYPE_META[type].plural}
-              </NavLink>
-            </li>
-          ))}
-          <li>
-            <NavLink
-              to="/sources"
-              className={({ isActive }) =>
-                isActive ? "site-nav-link is-current" : "site-nav-link"
-              }
-            >
-              Sources
-            </NavLink>
-          </li>
-        </ul>
-      </nav>
+      <GroupedNav />
     </header>
   );
 }

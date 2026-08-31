@@ -207,17 +207,124 @@ pulled here:
   static HTML is search-engine visibility and instant loads, and both are worth
   most on the pages people actually land on.
 
-The `/features` index is also now the largest page the site publishes: 2,682
-rows come to 2.1 MB of HTML, 141 KB after gzip, against 209 KB and 22 KB for the
-271-row creature index. nginx serves it compressed and it is one document rather
-than a request per row, but a list page that ships every row is the other thing
-that does not survive another type this size.
+### Long indexes are windowed
+
+`/features` used to publish all 2,682 of its rows: 2.1 MB of HTML and 40,342
+elements. That is not a download problem — nginx gzips it and it is one document
+rather than a request per row — it is a main-thread problem. The browser parses
+and lays out every one of those elements and then hands them to React to
+hydrate, in a single block, before the page can respond to anything. It did not
+load slowly; it arrived and then froze, with the header's line art briefly drawn
+at full size behind it.
+
+A type index now draws the first hundred rows and reveals the rest on request
+(`WINDOW` in `app/components/content-list.tsx`), and publishes every remaining
+entry underneath as a plain list of links. That list is rendered as one
+`dangerouslySetInnerHTML` string, which React does not walk during hydration, so
+2,682 anchors cost one node of hydration work instead of eight thousand.
+
+| Index | before | after | after, gzipped |
+| --- | ---: | ---: | ---: |
+| `/features` | 2,128,468 | 772,736 | 103,299 |
+| `/equipment` | 445,386 | 217,608 | 30,798 |
+| `/powers` | 407,795 | 203,643 | 25,445 |
+| `/monsters` | 213,745 | 144,071 | 20,685 |
+| `/starship-modifications` | 208,569 | 145,279 | 16,972 |
+
+`/features` goes from 40,342 elements to 7,490, of which only 2,126 are
+hydrated. What is left of its weight is the loader payload — the summaries the
+browser filters and sorts against — which is the part that cannot be windowed
+without breaking the filter.
+
+Pagination and virtualisation were both considered and neither fits a
+prerendered site. Real pagination needs a server to read `?page=`, or one
+prerendered route per page, and routes are the build's entire cost.
+Virtualisation needs measured scroll geometry, which does not exist at build
+time, so the static HTML would contain no rows at all — the opposite of why this
+site prerenders. Windowing keeps real markup in the static file and hydrates
+cleanly, because the server and the browser start from the same constant.
+
+The container job asserts both halves against the real content image: the page
+must be under a megabyte, and it must still link every entry the image was built
+from. A budget on its own would pass on an index that had quietly dropped its
+catalogue.
 
 Deployment note: the static host must resolve `/species/wookiee` to
 `species/wookiee/index.html`, which Netlify, Cloudflare Pages, GitHub Pages and
 S3 website hosting all do. `vite preview` does not, so this repository adds a
 small preview middleware (`vite.config.ts`) to make local preview behave the
 same way.
+
+## Navigation
+
+Twenty-two content types will not fit in a flat strip. The header carried one
+link per type until it did not: it scrolled sideways at every width, needed a
+fade at its edge to admit that it did, and asked a reader to scan twenty-three
+items to find one. Adding a type made it worse, and enhanced items, the property
+glossaries and the rules are all still to come.
+
+The types are grouped by the subject a reader is in the middle of — building a
+character, resolving a fight, buying gear, flying a ship, running a creature,
+looking a rule up — and the header carries the subjects:
+
+| Group | Types |
+| --- | --- |
+| Characters | species, classes, archetypes, features, backgrounds, feats · *class improvements* |
+| Combat | powers, maneuvers, fighting styles, fighting masteries, lightsaber forms, weapon focuses, weapon supremacies |
+| Gear | equipment |
+| Starships | hulls, deployments, ship equipment, modifications, ventures, starship rules |
+| Bestiary | creatures |
+| Reference | source books |
+
+The count is not a target; it fell out of the material, and it will change. Gear
+is one type today and four once enhanced items and the two property glossaries
+land. A group with a single destination renders as a plain link rather than a
+disclosure, so Gear and Bestiary are one click today and become menus on their
+own the moment they grow.
+
+The italicised types are **supporting**: reached from the thing that references
+them rather than browsed. Nobody opens `/class-improvements` to read it end to
+end; they arrive from a class that grants one. A supporting type keeps its index
+page, its prerendered routes and its place in search — it is listed under the
+primary destinations in the menu rather than competing with them.
+
+Interaction is a disclosure menu in the header plus a rail beside the page, and
+the two answer different questions. The menu answers "take me elsewhere". The
+rail is pinned to the group the reader is already in and answers "where am I,
+and what is beside me", so moving from maneuvers to fighting styles costs no
+round trip through a menu. The rail is hidden below 64rem, where there is no
+room for it and the menus already do both jobs.
+
+Both are built on `<details>`/`<summary>`, so they open without JavaScript —
+every page here is static HTML, and a menu that needed hydration would put most
+of the site's destinations behind a bundle. JavaScript adds only what native
+disclosure lacks: an explicit `aria-expanded`, one menu open at a time, Escape
+to close and hand focus back, and dismissal on click-away or navigation. Nothing
+opens on hover.
+
+### The grouping is a compile error, not a convention
+
+`TYPE_NAV` in `app/content/nav-groups.ts` is a `Record<ContentTypeId,
+TypePlacement>`, so a content type added to `CONTENT_TYPE_IDS` without being
+placed fails `npm run typecheck` with its own name in the message. This is the
+same trick `SummaryByType` uses in `app/content/types.ts`, and for the same
+reason: without it the missing type simply would not appear in navigation, every
+test would stay green, and the only symptom would be a page nobody can reach
+from the header. `app/content/nav-groups.test.ts` compiles the real source with
+one arm deleted and asserts that the build breaks, so the guard cannot be
+softened to a `Partial` without something going red.
+
+`{ group: "none", reason: ... }` is the escape hatch, and it has to be written
+out. The credits types are site metadata rather than game content and belong in
+the footer, which already links them; saying so explicitly costs a line and
+keeps the exhaustiveness check catching the types nobody thought about.
+
+Two things are deliberately not modelled. **Tools** — the character builder, the
+ship builder, PDF export — will be a peer of these groups in the header rather
+than a group inside it: it is not a subject of the reference, it is a different
+thing to do with one. **Homebrew** is a facet on the types that already exist, a
+filter on the powers index rather than a section of its own, which is why
+nothing here is shaped as "official" versus "community".
 
 ## Accounts
 
@@ -528,8 +635,12 @@ What CI verifies today: keyboard-only end-to-end paths (`e2e/keyboard.spec.ts`)
 covering the skip link, the search shortcut, arrowing through search results,
 following a result with Enter, escaping the results panel without a trap,
 sorting a table from the keyboard, and focus visibility while tabbing a content
-page. Unit tests cover heading order on item pages and `aria-sort` on sortable
-columns.
+page. The header's group menus add their own (`e2e/navigation.spec.ts`): opened
+with Enter from the keyboard, reporting `aria-expanded` against their real
+state, closing on Escape without stranding focus on something now hidden, and
+opening at all with JavaScript switched off. Unit tests cover heading order on
+item pages, `aria-sort` on sortable columns, and focus landing on the first
+newly revealed row when a long index is expanded.
 
 The account area adds its own coverage (`e2e/account.spec.ts`, and the unit
 tests beside each route): navigating the account sections and following one

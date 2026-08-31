@@ -1,9 +1,9 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it } from "vitest";
 
-import { ContentList } from "./content-list";
+import { ContentList, WINDOW } from "./content-list";
 import { getListConfig } from "~/content/list-config";
 import type {
   AnySummary,
@@ -356,5 +356,211 @@ describe("a species index", () => {
     await user.click(screen.getByRole("button", { name: /A–Z/ }));
 
     expect(names()).toEqual(["Wookiee", "Quermian", "Aleena"]);
+  });
+});
+
+/**
+ * The page that froze.
+ *
+ * `/features` published all 2,682 rows as 2.1 MB of HTML — 40,342 elements for
+ * the browser to parse and lay out and for React to hydrate, in one block, on
+ * the main thread. It was not slow to arrive; it arrived and then stopped
+ * responding. Enhanced items, 1,918 rows, is the next type to land.
+ *
+ * The two numbers asserted below are the two halves of that: how much markup
+ * the page is, and how many elements it is. Both are budgets rather than exact
+ * figures, and both are far enough under what an unwindowed render produces
+ * that no amount of ordinary drift reaches them — the unwindowed version of
+ * this same list is roughly eight times the element budget.
+ *
+ * The third assertion is the one that keeps the other two honest. Publishing
+ * the first hundred rows and nothing else would sail through a size budget
+ * while quietly deleting the catalogue this site exists to be, so the complete
+ * set of links is asserted to still be in the markup. `.github/workflows/ci.yml`
+ * makes the same comparison against the real container.
+ */
+describe("a very long index", () => {
+  const LONG = 2_682;
+
+  /*
+    Headroom for the tests that drive the list rather than just read it.
+    Rendering and re-rendering 2,682 rows in jsdom is genuinely slow, and a
+    shared CI runner is several times slower than a laptop — the default five
+    seconds is a flake waiting to happen rather than a budget anyone set.
+  */
+  const SLOW = 30_000;
+
+  const longRows: AnySummary[] = Array.from({ length: LONG }, (_, index) => ({
+    slug: `feature-${index}`,
+    name: `Feature ${String(index).padStart(4, "0")}`,
+    source: index % 2 === 0 ? "PHB" : "EC",
+    tagline: `Path of Ethereality · ${(index % 20) + 1}th level`,
+    grantedBy: index % 3 === 0 ? "Class" : "Archetype",
+    grantedByName: `Granting thing ${index % 40}`,
+    level: (index % 20) + 1,
+  })) as unknown as AnySummary[];
+
+  function renderLong(rows = longRows) {
+    const Stub = createRoutesStub([
+      {
+        path: "/",
+        Component: () => (
+          <ContentList
+            type="features"
+            typeLabel="Features"
+            rows={rows}
+            config={getListConfig("features")}
+          />
+        ),
+      },
+    ]);
+    return render(<Stub initialEntries={["/"]} />);
+  }
+
+  /** The markup a browser would have to parse, in bytes. */
+  function renderedBytes(container: HTMLElement): number {
+    return new TextEncoder().encode(container.innerHTML).length;
+  }
+
+  it("draws one window of rows rather than the whole list", () => {
+    renderLong();
+
+    const body = screen.getByRole("table").querySelector("tbody")!;
+
+    expect(
+      body.querySelectorAll("tr").length,
+      "every row of the list is being rendered again; this is the state that " +
+        "froze /features",
+    ).toBe(WINDOW);
+  });
+
+  it("stays inside a page-weight budget a full render blows through", () => {
+    const { container } = renderLong();
+
+    const bytes = renderedBytes(container);
+    const elements = container.querySelectorAll("*").length;
+
+    // Rendering all 2,682 rows produces 1,726,811 bytes and 40,342 elements.
+    expect(
+      bytes,
+      `the list rendered ${bytes.toLocaleString("en-US")} bytes of markup for ` +
+        `${LONG} entries`,
+    ).toBeLessThan(400_000);
+    expect(
+      elements,
+      `the list rendered ${elements.toLocaleString("en-US")} elements for ` +
+        `${LONG} entries. Element count is what hydration costs, and what a ` +
+        "reader feels as a frozen page.",
+    ).toBeLessThan(8_000);
+  });
+
+  it("still publishes a link to every entry, not just the drawn ones", () => {
+    const { container } = renderLong();
+
+    const links = new Set(
+      [...container.querySelectorAll<HTMLAnchorElement>("a[href^='/features/']")].map(
+        (anchor) => anchor.getAttribute("href"),
+      ),
+    );
+
+    expect(
+      links.size,
+      "windowing must not remove entries from the published catalogue: a " +
+        "crawler, and a reader with no JavaScript, see only what is in the " +
+        "markup",
+    ).toBe(LONG);
+  });
+
+  it("escapes names on the way into the full index", () => {
+    // The full index is built as a string rather than as elements, because
+    // 2,682 hydrated anchors is most of the cost the window just removed. That
+    // makes escaping this component's responsibility rather than React's.
+    const { container } = renderLong([
+      ...longRows.slice(0, LONG - 1),
+      {
+        ...longRows[0]!,
+        slug: "quote-name",
+        name: '<script>alert("x")</script> & Co',
+      },
+    ]);
+
+    const index = container.querySelector(".full-index-list")!;
+
+    // Queried through the DOM rather than by role: computing an accessible
+    // name for 2,682 anchors is slow enough to time the test out on a CI
+    // runner, and what is under test here is the text that reached the markup.
+    expect(index.querySelector("script")).toBeNull();
+    const link = index.querySelector('a[href="/features/quote-name"]')!;
+    expect(link.textContent).toBe('<script>alert("x")</script> & Co');
+  });
+
+  it("says how much of the list it is showing", () => {
+    renderLong();
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      `Showing ${WINDOW} of 2,682 features`,
+    );
+  });
+
+  it("reveals the next window and lands the reader on the first new row", async () => {
+    const user = userEvent.setup();
+    renderLong();
+
+    await user.click(screen.getByRole("button", { name: /Show 100 more/ }));
+
+    const body = screen.getByRole("table").querySelector("tbody")!;
+    expect(body.querySelectorAll("tr").length).toBe(WINDOW * 2);
+
+    // A reader who has just asked for more rows is put at the first of them,
+    // rather than left on a button at the bottom of a hundred rows they cannot
+    // see. Scoped to the table: the same name is also in the full index below.
+    expect(
+      within(body).getByRole("link", { name: "Feature 0100" }),
+      "the first newly revealed row must take focus",
+    ).toHaveFocus();
+  }, SLOW);
+
+  it("shows everything when asked, and stops offering", async () => {
+    const user = userEvent.setup();
+    renderLong();
+
+    await user.click(screen.getByRole("button", { name: /Show all 2,682/ }));
+
+    expect(
+      screen.getByRole("table").querySelectorAll("tbody tr").length,
+    ).toBe(LONG);
+    expect(screen.queryByRole("button", { name: /Show all/ })).toBeNull();
+  }, SLOW);
+
+  it("puts the window back to the top when the question changes", async () => {
+    const user = userEvent.setup();
+    renderLong();
+
+    await user.click(screen.getByRole("button", { name: /Show all 2,682/ }));
+
+    // One change event rather than ten keystrokes. Typing into a field that
+    // re-filters 2,682 rows on every character is a second a character on a CI
+    // runner, and the filtering itself is covered by the tests above.
+    fireEvent.change(screen.getByLabelText("Filter by name"), {
+      target: { value: "Feature 01" },
+    });
+
+    // Answering a new question must not carry the cost of the old one: 2,682
+    // rows stay rendered otherwise, filtered or not.
+    expect(
+      screen.getByRole("table").querySelectorAll("tbody tr").length,
+    ).toBeLessThanOrEqual(WINDOW);
+  }, SLOW);
+
+  it("leaves a list that fits in one window exactly as it was", () => {
+    const { container } = renderLong(longRows.slice(0, WINDOW));
+
+    expect(container.querySelectorAll("tbody tr").length).toBe(WINDOW);
+    expect(
+      container.querySelector(".full-index"),
+      "a list the table already shows in full does not need a second copy of " +
+        "itself underneath",
+    ).toBeNull();
+    expect(screen.queryByRole("button", { name: /Show/ })).toBeNull();
   });
 });

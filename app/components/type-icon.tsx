@@ -194,6 +194,19 @@ export function TypeIcon({
     <svg
       className={["type-icon", className].filter(Boolean).join(" ")}
       viewBox="0 0 24 24"
+      /*
+        Attribute dimensions as well as the `.type-icon` rule in app.css, and
+        they are not redundant. An inline `<svg>` that carries only a `viewBox`
+        has no intrinsic size, so until the stylesheet has arrived and applied,
+        the browser lays it out at the CSS default for a replaced element with
+        no dimensions — 300x150, or the full width of its container. Every one
+        of these marks sits in the header and beside a heading, so the first
+        paint of a page whose main thread is busy is a screenful of enormous
+        line art. `width`/`height` give it an intrinsic size in the markup
+        itself; the stylesheet still overrides both the moment it lands.
+      */
+      width="24"
+      height="24"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.5"

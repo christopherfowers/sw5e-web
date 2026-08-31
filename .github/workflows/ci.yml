@@ -330,6 +330,41 @@ jobs:
             fi
           done
 
+      - name: The longest index is a page, not the whole catalogue as rows
+        run: |
+          set -euo pipefail
+
+          # /features published all 2,682 of its rows as 2.1 MB of HTML. The
+          # transfer was the smaller half: it was 40,342 elements for the
+          # browser to parse and lay out and for React to hydrate in one block
+          # on the main thread, so the page arrived and then stopped
+          # responding. Enhanced items, 1,918 rows, is the next type to land.
+          #
+          # The index now draws one window of rows and publishes the rest as a
+          # plain link list that is not hydrated. Both halves are asserted
+          # here, because either alone is satisfied by a broken page: a size
+          # budget passes on an index that has quietly dropped its catalogue,
+          # and a link count passes on the 2.1 MB page this replaced.
+          #
+          # This is the only place the real numbers can be seen. CI's e2e suite
+          # builds the four-per-type fixture, where no index is long enough to
+          # window at all.
+          html=$(curl --fail --silent http://127.0.0.1:8080/features)
+          bytes=$(printf '%s' "$html" | wc -c)
+          canonical=$(ls canonical-content/feature/*.json | wc -l)
+          rendered=$(grep -o 'href="/features/[a-z0-9-]*"' <<< "$html"             | sort -u | wc -l)
+
+          echo "/features: $bytes bytes, $rendered of $canonical entries linked"
+
+          if [ "$bytes" -gt 1000000 ]; then
+            echo "::error::/features is $bytes bytes. It was 2,128,468 and"               "froze the browser; the budget is one megabyte."
+            exit 1
+          fi
+          if [ "$rendered" -ne "$canonical" ]; then
+            echo "::error::/features links $rendered of $canonical entries."               "Every entry must stay in the markup: it is what a crawler and"               "a reader without JavaScript see."
+            exit 1
+          fi
+
       - name: The maneuver index publishes maneuvers
         run: |
           # This step used to assert the opposite: that /maneuvers rendered
