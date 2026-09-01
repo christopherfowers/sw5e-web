@@ -28,7 +28,7 @@ FROM ghcr.io/christopherfowers/sw5e-database:${SW5E_CONTENT_TAG} AS content
 # developer's machine all run the same toolchain. `engines.node` floors the
 # project at 22.22.0; this is the version it is actually developed against.
 # ---------------------------------------------------------------------------
-FROM node:22.23.2-alpine AS build
+FROM node:26.8.1-alpine AS build
 
 WORKDIR /app
 
