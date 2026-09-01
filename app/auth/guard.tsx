@@ -104,5 +104,40 @@ export function RequireSession({ role, children }: RequireSessionProps) {
     );
   }
 
+  /*
+   * The account holds the role and still cannot use it, because the session
+   * behind this page was established with an emailed code.
+   *
+   * This mirrors a rule the API enforces on its own — a contributor or
+   * administrator request from a session that only proved an inbox is refused
+   * with a 403 whose `code` is `strong-authentication-required` — and it
+   * exists here for the same reason the role check does: so the reader meets
+   * an explanation instead of an action that silently fails. The refusal is
+   * deliberately worded as temporary and actionable, because it is. Enrolling
+   * either factor and signing in with it clears it in about a minute, and the
+   * role-refusal wording above ("does not have access") would tell somebody
+   * two clicks from the answer to give up.
+   *
+   * Only gated when an area names a role. `/account`, `/account/passkeys` and
+   * `/account/security` must stay reachable from exactly this kind of session
+   * — they are where the passkey gets enrolled, and locking them would be a
+   * catch-22 with no way out of it.
+   */
+  if (role && role !== "Community" && !session.user.strongAuthentication) {
+    return (
+      <div className="page">
+        <Banner tone="error" title="This area needs a passkey or an authenticator app.">
+          You signed in with a code sent to your email address, which confirms
+          the address but says nothing about this device, so{" "}
+          {ROLE_META[role].label.toLowerCase()} tools stay closed until there is
+          a second factor on the account.{" "}
+          <Link to="/account/passkeys">Add a passkey</Link> or{" "}
+          <Link to="/account/security">set up an authenticator app</Link>, then
+          sign in again with it.
+        </Banner>
+      </div>
+    );
+  }
+
   return <>{children(session.user)}</>;
 }

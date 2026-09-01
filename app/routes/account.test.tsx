@@ -22,6 +22,7 @@ import { AuthApiContract, user } from "../../tests/auth-api-contract";
 import { marker, renderWithSession, serveApiContract } from "../../tests/harness";
 import Account from "./account";
 import AccountContributions from "./account-contributions";
+import AccountPasskeys from "./account-passkeys";
 import AccountProfile from "./account-profile";
 
 const SIGN_IN_MARKER = "sign-in page reached";
@@ -44,6 +45,10 @@ function accountRoutes() {
       children: [
         { index: true, Component: AccountProfile },
         { path: "contributions", Component: AccountContributions },
+        // Mounted because one of the tests below is about this page staying
+        // reachable from a session that is refused everywhere else — it is
+        // where the credential that unlocks the rest gets enrolled.
+        { path: "passkeys", Component: AccountPasskeys },
       ],
     },
     { path: "/sign-in", Component: SignInProbe },
@@ -246,5 +251,241 @@ describe("role awareness", () => {
 
     expect(screen.queryByRole("link", { name: /go to contributions/i })).toBeNull();
     expect(screen.getByText(/contributor access is granted by an admin/i)).toBeInTheDocument();
+  });
+});
+
+describe("how this session was established", () => {
+  /**
+   * These three facts are new on `CurrentUser`, and none of them describes the
+   * account — they describe the browser holding the cookie. That distinction
+   * is the reason the page can say something useful at all: the same account
+   * may be signed in with a passkey on a phone and with an emailed code on a
+   * borrowed laptop, and only one of those two readers should be offered a
+   * passkey.
+   */
+  it("names the passkey when that is what got the reader in", async () => {
+    mount(new AuthApiContract({ session: user({ authenticationMethod: "passkey" }) }));
+
+    expect(
+      await screen.findByText(/you signed in on this device with a passkey/i),
+    ).toBeInTheDocument();
+  });
+
+  it("names the emailed code when that is what got the reader in", async () => {
+    mount(
+      new AuthApiContract({
+        session: user({ authenticationMethod: "email", strongAuthentication: false }),
+      }),
+    );
+
+    expect(
+      await screen.findByText(/signed in on this device with a code emailed to you/i),
+    ).toBeInTheDocument();
+  });
+
+  it("says nothing at all about a session that predates the field", async () => {
+    // `null` is an older cookie, still perfectly valid, established before the
+    // service recorded this. Guessing the weaker answer would nag somebody who
+    // signed in with a passkey last week.
+    mount(new AuthApiContract({ session: user({ authenticationMethod: null }) }));
+
+    await screen.findByRole("heading", { name: /how this account is protected/i });
+    expect(screen.queryByText(/you signed in on this device/i)).toBeNull();
+  });
+});
+
+describe("an elevated role with nothing to back it", () => {
+  /** A contributor who has neither a passkey nor an authenticator app. */
+  function strandedContributor() {
+    return user({
+      roles: ["Contributor"],
+      passkeys: [],
+      twoFactorEnabled: false,
+      authenticationMethod: "email",
+      strongAuthentication: false,
+    });
+  }
+
+  it("warns that the role cannot be used, and links to both ways out", async () => {
+    mount(new AuthApiContract({ session: strandedContributor() }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/cannot be used yet/i);
+    // Both, because either one satisfies the requirement and a reader on a
+    // machine that cannot enrol a passkey needs the other named.
+    expect(
+      within(alert).getByRole("link", { name: /add a passkey/i }),
+    ).toHaveAttribute("href", "/account/passkeys");
+    expect(
+      within(alert).getByRole("link", { name: /authenticator app/i }),
+    ).toHaveAttribute("href", "/account/security");
+  });
+
+  it("does not also make the calm suggestion, which would be the same nag twice", async () => {
+    mount(new AuthApiContract({ session: strandedContributor() }));
+
+    await screen.findByRole("alert");
+    expect(screen.queryByText(/add a passkey while you are here/i)).toBeNull();
+  });
+
+  it("says nothing of the kind to a community account, which owes nothing", async () => {
+    mount(
+      new AuthApiContract({
+        session: user({
+          roles: ["Community"],
+          passkeys: [],
+          twoFactorEnabled: false,
+          authenticationMethod: "email",
+          strongAuthentication: false,
+        }),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: /how this account is protected/i });
+    expect(screen.queryByText(/cannot be used yet/i)).toBeNull();
+  });
+
+  it("stops warning once an authenticator app covers the requirement", async () => {
+    mount(
+      new AuthApiContract({
+        session: user({
+          roles: ["Contributor"],
+          passkeys: [],
+          twoFactorEnabled: true,
+        }),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: /how this account is protected/i });
+    expect(screen.queryByText(/cannot be used yet/i)).toBeNull();
+  });
+});
+
+describe("offering a passkey after an emailed-code sign-in", () => {
+  it("makes the offer once, in the calm voice, with somewhere to go", async () => {
+    mount(
+      new AuthApiContract({
+        session: user({
+          passkeys: [],
+          authenticationMethod: "email",
+          strongAuthentication: false,
+        }),
+      }),
+    );
+
+    // Waited for by the heading rather than by the live region, because the
+    // account frame's own "checking your account" spinner is a `status` too
+    // and resolves first.
+    await screen.findByRole("heading", { name: /how this account is protected/i });
+    const offer = screen.getByRole("status");
+    expect(offer).toHaveTextContent(/add a passkey while you are here/i);
+    expect(
+      within(offer).getByRole("link", { name: /add a passkey/i }),
+    ).toHaveAttribute("href", "/account/passkeys");
+    // An offer, not an alarm. `role="status"` waits for a gap in the screen
+    // reader's speech; `role="alert"` interrupts, and interrupting somebody to
+    // suggest an optional improvement is the definition of a nag.
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("does not make it to somebody who already has a passkey", async () => {
+    // They signed in with a code on this machine and have a passkey on
+    // another. There is nothing to offer, and offering anyway is how a page
+    // starts being ignored.
+    mount(
+      new AuthApiContract({
+        session: user({
+          authenticationMethod: "email",
+          strongAuthentication: false,
+        }),
+      }),
+    );
+
+    await screen.findByRole("heading", { name: /how this account is protected/i });
+    expect(screen.queryByText(/add a passkey while you are here/i)).toBeNull();
+  });
+
+  it("does not make it to somebody who signed in with a passkey", async () => {
+    mount(new AuthApiContract({ session: user({ passkeys: [] }) }));
+
+    await screen.findByRole("heading", { name: /how this account is protected/i });
+    expect(screen.queryByText(/add a passkey while you are here/i)).toBeNull();
+  });
+});
+
+describe("a session that only proved an inbox", () => {
+  /**
+   * The client-side mirror of a rule the API enforces on its own: a
+   * contributor or administrator request from a session established with an
+   * emailed code is refused with a 403 whose `code` is
+   * `strong-authentication-required`.
+   *
+   * Drawn here for the same reason the role refusal is drawn rather than
+   * redirected — so the reader meets an explanation instead of a page that
+   * silently does nothing — and worded differently from the role refusal
+   * because it means something different. "Does not have access" is the end of
+   * the conversation. This is two clicks from being fixed.
+   */
+  function contributorOnAnEmailedCode() {
+    return user({
+      roles: ["Contributor"],
+      authenticationMethod: "email",
+      strongAuthentication: false,
+    });
+  }
+
+  it("is refused the contributor area, and told what would fix it", async () => {
+    mount(
+      new AuthApiContract({ session: contributorOnAnEmailedCode() }),
+      "/account/contributions",
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/needs a passkey or an authenticator app/i);
+    expect(
+      within(alert).getByRole("link", { name: /add a passkey/i }),
+    ).toHaveAttribute("href", "/account/passkeys");
+    expect(
+      within(alert).getByRole("link", { name: /authenticator app/i }),
+    ).toHaveAttribute("href", "/account/security");
+  });
+
+  it("is not told its account lacks access, which would be untrue", async () => {
+    // It holds the role. Reporting a dead end at somebody who is a minute from
+    // the answer is the specific failure this wording exists to avoid.
+    mount(
+      new AuthApiContract({ session: contributorOnAnEmailedCode() }),
+      "/account/contributions",
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).not.toHaveTextContent(/does not have access/i);
+    expect(screen.queryByRole("heading", { name: /^contributions$/i })).toBeNull();
+  });
+
+  it("still reaches the passkeys page, which is the way out of it", async () => {
+    // The catch-22 this must never become: locking the account area behind the
+    // very credential the account area is where you enrol.
+    mount(
+      new AuthApiContract({ session: contributorOnAnEmailedCode() }),
+      "/account/passkeys",
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: /your passkeys/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("lets a contributor with a passkey straight through, as before", async () => {
+    mount(
+      new AuthApiContract({
+        session: user({ roles: ["Contributor"], authenticationMethod: "passkey" }),
+      }),
+      "/account/contributions",
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: /^contributions$/i }),
+    ).toBeInTheDocument();
   });
 });
