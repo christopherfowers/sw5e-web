@@ -2,7 +2,8 @@ import { render, screen, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it } from "vitest";
 
-import Home from "./home";
+import Home, { meta } from "./home";
+import { TYPE_ORDER } from "~/content/type-meta";
 import type { Route } from "./+types/home";
 
 const loaderData = {
@@ -32,10 +33,39 @@ describe("Home route", () => {
     ).toBeInTheDocument();
   });
 
-  it("describes the site purpose for search engines and screen readers", () => {
+  /**
+   * The site is the maintained continuation of sw5e.com, and for a long time
+   * it said so nowhere. Worse, its own lede opened "A community reference" —
+   * an indefinite article that filed it alongside every other fan project
+   * instead of saying which one it is. Both halves of that are asserted here,
+   * because fixing one without the other leaves the page still wrong: dropping
+   * the article without naming the lineage says nothing, and naming the lineage
+   * under "a community reference" contradicts itself in the same paragraph.
+   */
+  it("does not file itself as one community reference among several", () => {
     renderHome();
 
-    expect(screen.getByText(/community reference/i)).toBeInTheDocument();
+    expect(screen.queryByText(/a community reference/i)).toBeNull();
+  });
+
+  it("tells a reader off an old bookmark which site this continues", () => {
+    renderHome();
+
+    expect(
+      screen.getByText(/picks up where sw5e\.com left off/i),
+      "the home page has to name the site it continues, in words a reader " +
+        "arriving from that site will recognise",
+    ).toBeInTheDocument();
+  });
+
+  it("offers that reader somewhere to read what happened", () => {
+    renderHome();
+
+    expect(
+      document.querySelector('a[href="/about"]'),
+      "the continuity claim needs a page behind it; the hero has room for one " +
+        "sentence and the question deserves more",
+    ).not.toBeNull();
   });
 
   it("shows the real count of entries for each content type", () => {
@@ -83,5 +113,73 @@ describe("Home route", () => {
     renderHome();
 
     expect(screen.queryByText(/sample dataset/i)).toBeNull();
+  });
+});
+
+/**
+ * The meta tags, asserted directly rather than through the DOM.
+ *
+ * They are what a search result shows and what somebody sees when the page is
+ * pasted into a chat window, which makes them the site's most-read sentence by
+ * a wide margin — and the one nobody looks at while working. The description
+ * used to name eight content types by hand and had been wrong for five
+ * releases: classes, features, starships, enhanced items, the property
+ * glossaries and the rules text all arrived after it was written.
+ */
+describe("Home route metadata", () => {
+  function tagsFor(data: typeof loaderData = loaderData) {
+    return meta({ loaderData: data } as unknown as Route.MetaArgs) as unknown as Array<
+      Record<string, string>
+    >;
+  }
+
+  function descriptionFrom(tags: Array<Record<string, string>>) {
+    return tags.find((tag) => tag.name === "description")?.content ?? "";
+  }
+
+  it("stops describing the site with an indefinite article", () => {
+    const tags = tagsFor();
+    const title = tags.find((tag) => "title" in tag)?.title ?? "";
+
+    expect(title).not.toMatch(/community reference/i);
+    expect(descriptionFrom(tags)).not.toMatch(/a community reference/i);
+  });
+
+  it("names the site it continues, where a search result will show it", () => {
+    expect(descriptionFrom(tagsFor())).toMatch(/sw5e\.com/i);
+  });
+
+  it("counts the corpus rather than listing the types it began with", () => {
+    const description = descriptionFrom(tagsFor());
+
+    // Derived from the loader, so it cannot fall behind the library the way a
+    // hand-written list did. `loaderData` above stands in for the manifest.
+    expect(description).toContain(
+      `${loaderData.total.toLocaleString("en-US")} entries across ${TYPE_ORDER.length} categories`,
+    );
+  });
+
+  it("names the parts of the corpus a reader would doubt were here", () => {
+    const description = descriptionFrom(tagsFor());
+
+    // Each of these landed after the old description was written and none of
+    // them appeared in it, which is precisely why the site read as a partial
+    // conversion rather than the whole of one.
+    for (const subject of ["classes", "features", "starships", "enhanced items"]) {
+      expect(description, `the description must mention ${subject}`).toMatch(
+        new RegExp(subject, "i"),
+      );
+    }
+  });
+
+  it("still reads as a sentence when the loader has thrown", () => {
+    const description = descriptionFrom(
+      meta({} as unknown as Route.MetaArgs) as unknown as Array<
+        Record<string, string>
+      >,
+    );
+
+    expect(description).toMatch(/sw5e\.com/i);
+    expect(description).not.toMatch(/undefined|NaN/);
   });
 });

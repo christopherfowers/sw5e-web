@@ -1185,6 +1185,18 @@ kbd {
   font-size: 0.9375rem;
 }
 
+/*
+  The continuity link under the hero buttons. It is sized and coloured like
+  `.home-hero-meta` rather than like a third button on purpose: it answers a
+  question only some arrivals are asking, and a button would make it compete
+  with the two destinations everybody wants.
+*/
+.home-hero-note {
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
 .home-hero-actions {
   display: flex;
   flex-wrap: wrap;

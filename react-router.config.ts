@@ -106,7 +106,11 @@ export default {
    */
   async prerender() {
     const directory = datasetDirectory();
-    const paths = ["/", "/search", "/sources", ...ACCOUNT_PATHS];
+    // `/about` is prerendered like the rest. It is the page a reader who
+    // followed a dead sw5e.com link is most likely to reach through a search
+    // engine rather than through this site's own navigation, so it is the last
+    // page that can afford to need JavaScript before it says anything.
+    const paths = ["/", "/about", "/search", "/sources", ...ACCOUNT_PATHS];
 
     // Kept in step with SOURCE_META in app/content/source-meta.ts. A source
     // page is a static page over the whole dataset, so it costs one route per
