@@ -149,8 +149,14 @@ export interface RegisterRequest {
 /**
  * Registration deliberately answers the same way whether or not the address
  * was already registered, so this endpoint cannot be used to enumerate
- * accounts. The UI therefore says "check your inbox" in both cases, which is
- * why there is nothing account-shaped in this response.
+ * accounts. The UI therefore shows one screen in both cases, which is why
+ * there is nothing account-shaped in this response.
+ *
+ * Which screen that is depends on one thing, and it is not the address: if the
+ * deployment reports that mail is not getting out — a global fact, published on
+ * `/api/site/environment` and identical for every caller — the confirmation
+ * stops claiming a link was sent. Both addresses still get the same screen as
+ * each other in both states.
  *
  * `message` is the server's own wording for that non-answer. It is carried
  * here so the client can show it rather than paraphrase it, but the client has
@@ -345,9 +351,19 @@ export interface EmailCodeRequest {
  *
  * The consequence for this client is a rule with no exceptions: **nothing in
  * the UI may branch on this response.** There is no "we could not find that
- * address" to show, because the client was not told. The only honest screen is
- * the one that says a code is on its way if the address has an account, and
- * then asks for it.
+ * address" to show, because the client was not told.
+ *
+ * That rule is about *this* response, and it is worth saying what it does not
+ * cover, because the sign-in page now has a second screen and somebody will
+ * eventually read that as a violation. The page branches on whether mail is
+ * getting out **at all**, which is a fact about the deployment published
+ * separately on `/api/site/environment`, carries no address, and is the same
+ * answer for every caller. It has to branch on something, because the honest
+ * screen when the relay is refusing everything is not "a code is on its way" —
+ * that sentence was false on QA while the API already knew it was. What would
+ * be a violation is a per-address version of that question, and there is none
+ * to ask: the service holds no per-address delivery state, precisely so that
+ * this endpoint's silence cannot be recovered from somewhere else.
  *
  * The two numbers are the server's own, carried rather than assumed. They are
  * currently 60 and 600, and hard-coding either here would put the countdown

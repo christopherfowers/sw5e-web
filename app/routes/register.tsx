@@ -5,6 +5,28 @@
  * is a verified email address plus a passkey. Registration collects the two
  * things a person has to type, and everything after it is a link in an inbox.
  *
+ * ## The confirmation is conditional, and that is the point
+ *
+ * The API answers 202 whether or not the address already has an account, and
+ * also whether or not the message it just tried to send actually got out. The
+ * second of those was invisible here, and the screen said "a verification link
+ * is on its way" on the strength of a status code that never promised one. On
+ * QA it said exactly that while the relay was refusing everything, and then
+ * offered the reader their own spam folder to search.
+ *
+ * So after the 202 this asks `/api/site/environment` whether mail is getting
+ * out at all, and picks its wording from the answer. The ordering is what makes
+ * that worth doing: the API attempts its send before it replies, so the state
+ * read here has already seen the failure this very submission caused.
+ *
+ * What is asked is global — is mail getting out, for anyone — and never about
+ * the address in the form. A per-address answer would undo the whole reason the
+ * 202 is identical for a registered address and an unknown one, because asking
+ * whether mail to an address failed is asking whether it has an account.
+ *
+ * If the delivery state cannot be read at all, the wording is exactly what it
+ * was before any of this existed. See `app/site/environment.ts`.
+ *
  * This route exports no `loader`. That is load-bearing rather than incidental
  * — see the note in `app/routes/account.tsx`.
  */
@@ -15,6 +37,7 @@ import { Link } from "react-router";
 import { ApiError, register } from "~/auth/api";
 import { useSession } from "~/auth/session";
 import { AuthCard, Banner, SubmitButton, TextField } from "~/components/auth-ui";
+import { isAccountEmailDelivering } from "~/site/environment";
 
 import "~/styles/account.css";
 
@@ -56,7 +79,14 @@ function displayNameProblem(value: string): string | null {
   return null;
 }
 
-type Phase = "form" | "submitting" | "sent";
+/**
+ * `sent` and `undeliverable` are both the 202. They differ only in what the
+ * site has since learned about the relay, which is why they are two phases
+ * rather than a flag on one: the panels share no sentence, and a single panel
+ * with conditionals in every line is how the honest wording quietly rots back
+ * into the promise.
+ */
+type Phase = "form" | "submitting" | "sent" | "undeliverable";
 
 export default function Register() {
   const session = useSession();
@@ -76,7 +106,9 @@ export default function Register() {
   // reader's next Tab starts again from the top of the page, with no idea that
   // anything happened.
   useEffect(() => {
-    if (phase === "sent") confirmationRef.current?.focus();
+    if (phase === "sent" || phase === "undeliverable") {
+      confirmationRef.current?.focus();
+    }
   }, [phase]);
 
   if (session.status === "authenticated" && session.user) {
@@ -86,6 +118,43 @@ export default function Register() {
           <Link to="/account">Go to your account</Link> to manage your passkeys
           and two-factor authentication.
         </Banner>
+      </AuthCard>
+    );
+  }
+
+  if (phase === "undeliverable") {
+    return (
+      /*
+       * Not one sentence of this says anything about the address that was
+       * typed. It says what is true of the site: mail is not going out. That is
+       * the same statement for every reader, so it tells nobody whether any
+       * particular address has an account here — which is the only reason it
+       * can be shown at all.
+       */
+      <AuthCard title="Email is not being delivered right now">
+        <h2 className="sr-only" tabIndex={-1} ref={confirmationRef}>
+          Verification email not sent
+        </h2>
+        <Banner tone="warning" title="No verification link was sent.">
+          Email from this site is failing to go out at the moment — for
+          everyone. It is not a problem with your address and there is nothing
+          wrong with what you typed. Checking your spam folder will not help,
+          because nothing was sent to it.
+        </Banner>
+        <p className="auth-note">
+          Nothing has been lost. Once mail is going out again,{" "}
+          <button
+            type="button"
+            className="link-button"
+            onClick={() => {
+              setPhase("form");
+              setFailure(null);
+            }}
+          >
+            ask for the link again
+          </button>{" "}
+          and it will arrive.
+        </p>
       </AuthCard>
     );
   }
@@ -134,10 +203,20 @@ export default function Register() {
     setPhase("submitting");
     try {
       await register({ email: email.trim(), displayName: displayName.trim() });
+
       // The response is the same whether or not this address was already
       // registered — the API refuses to be an account-existence oracle — so
-      // there is only one thing to show here.
-      setPhase("sent");
+      // nothing about the address decides what is shown next.
+      //
+      // What does decide it is whether mail is getting out at all, and this is
+      // the moment to ask: the send was attempted before that 202 was written,
+      // so a failure caused by this very submission is already recorded. The
+      // question carries no address and the answer is the same for every
+      // caller, so asking it cannot reopen what the identical 202 closes.
+      //
+      // Unreachable, slow or older-than-this-field all resolve true, which
+      // leaves the wording as it was.
+      setPhase((await isAccountEmailDelivering()) ? "sent" : "undeliverable");
     } catch (error) {
       setPhase("form");
       if (error instanceof ApiError) {

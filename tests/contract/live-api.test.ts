@@ -283,6 +283,36 @@ describe.skipIf(!API)("the account client against the real API", () => {
       expect(mocked.body).not.toHaveProperty("publicKey");
     });
 
+    /**
+     * The delivery flag the account screens branch on, read from the service
+     * that actually publishes it.
+     *
+     * This is the drift this suite exists to catch, in its purest form. The
+     * field is consumed by a `!== false` comparison in `app/site/environment.ts`
+     * — so a service that spelled it differently, or sent it as the string
+     * `"true"`, or dropped it, would not fail anything on either side: the
+     * client would default to "delivering" and the site would go back to
+     * promising mail through an outage, silently, which is the original bug.
+     */
+    it("agrees that the site document carries a boolean delivery flag", async () => {
+      const response = await fetch("/api/site/environment");
+      const actual = (await response.json()) as Record<string, unknown>;
+
+      expect(response.status).toBe(200);
+      expect(typeof actual.accountEmailDelivering).toBe("boolean");
+      expect(typeof actual.isProduction).toBe("boolean");
+
+      // Exhaustive rather than a presence check. This body is anonymous, and
+      // the field that must never appear on it is the provider's reply — a
+      // relay writes that about one envelope and it can quote the recipient.
+      // A whitelist fails the day one is added; a blacklist never would.
+      expect(Object.keys(actual).sort()).toEqual([
+        "accountEmailDelivering",
+        "isProduction",
+        "name",
+      ]);
+    });
+
     it("agrees that a foreign origin is refused", async () => {
       const restoreOrigin = globalThis.fetch;
       useRealApi("https://elsewhere.example");

@@ -45,7 +45,13 @@ export function AuthCard({
   );
 }
 
-export type BannerTone = "error" | "success" | "info";
+/**
+ * `warning` is for the case where what the reader asked for was accepted and
+ * the thing they were promised will not happen anyway — the account endpoints
+ * answer 202 whether or not the mail behind them got out, so a refused relay is
+ * neither a failure of the submission nor a success worth a green banner.
+ */
+export type BannerTone = "error" | "success" | "info" | "warning";
 
 /**
  * A message about the operation as a whole, as opposed to about one field.
@@ -67,6 +73,14 @@ export function Banner({
     <div
       className="auth-banner"
       data-tone={tone}
+      /*
+       * Alert only for `error`. Everything else is polite, `warning` included,
+       * and that is a decision rather than an oversight: the screens that draw
+       * a warning move focus to a heading in the same commit — a step change,
+       * a confirmation panel — and an assertive region firing on top of a focus
+       * move makes a screen reader say two things at once, of which the reader
+       * reliably catches neither.
+       */
       role={tone === "error" ? "alert" : "status"}
     >
       <p className="auth-banner-title">{title}</p>
