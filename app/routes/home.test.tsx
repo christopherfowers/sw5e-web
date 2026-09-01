@@ -146,7 +146,12 @@ describe("Home route metadata", () => {
   });
 
   it("names the site it continues, where a search result will show it", () => {
-    expect(descriptionFrom(tagsFor())).toMatch(/sw5e\.com/i);
+    // Containment rather than a bare `/sw5e\.com/` regex: CodeQL reads an
+    // unanchored hostname pattern as a host check that arbitrary domains can
+    // slip past, and it is right to in general. Here the subject is a sentence
+    // rather than a URL, so the substring is both the honest assertion and the
+    // one that does not train the team to wave the rule through.
+    expect(descriptionFrom(tagsFor())).toContain("sw5e.com");
   });
 
   it("counts the corpus rather than listing the types it began with", () => {
@@ -179,7 +184,7 @@ describe("Home route metadata", () => {
       >,
     );
 
-    expect(description).toMatch(/sw5e\.com/i);
+    expect(description).toContain("sw5e.com");
     expect(description).not.toMatch(/undefined|NaN/);
   });
 });

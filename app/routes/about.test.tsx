@@ -35,9 +35,13 @@ function renderAbout(data: typeof loaderData = loaderData) {
 
 describe("About route", () => {
   it("names the site it continues", () => {
-    renderAbout();
+    const { container } = renderAbout();
 
-    expect(screen.getAllByText(/sw5e\.com/i).length).toBeGreaterThan(0);
+    // Asserted against the page's text rather than with a `/sw5e\.com/` regex.
+    // CodeQL reads an unanchored hostname pattern as a host check anything can
+    // slip past; the subject here is prose, so a substring says what is meant
+    // without teaching anyone to dismiss that rule.
+    expect(container.textContent ?? "").toContain("sw5e.com");
   });
 
   it("says plainly that the previous site stopped being updated, and why", () => {
