@@ -31,7 +31,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router";
 
 import { RequireSession } from "~/auth/guard";
-import { canUploadContent, ROLE_META } from "~/auth/roles";
+import { canAdministerAccounts, canUploadContent, ROLE_META } from "~/auth/roles";
 import { useSession } from "~/auth/session";
 import type { CurrentUser } from "~/auth/types";
 
@@ -156,6 +156,39 @@ function AccountFrame({ user }: { user: CurrentUser }) {
                   Contributions
                 </NavLink>
               </li>
+            ) : null}
+            {/*
+              Administration, and hidden from everybody else — which is the one
+              place in this navigation where hiding a link is the right answer
+              rather than a substitute for a guard.
+
+              Reports is shown to every account because the page has something
+              to say to all of them. These two do not: `/account/people` is a
+              directory of other people's email addresses and `/account/audit`
+              is a record of decisions taken about them, and both refuse a
+              non-administrator outright. Offering a link that can only produce
+              a refusal is offering a dead end.
+
+              The link being absent is not the protection. Both pages guard
+              themselves — see `RequireSession role="Administrator"` in each —
+              and behind them the API refuses every request under
+              `/api/auth/admin` on its own, which is the boundary that actually
+              holds, because everything here runs on hardware the reader
+              controls.
+            */}
+            {canAdministerAccounts(user) ? (
+              <>
+                <li>
+                  <NavLink to="/account/people" className={navClass}>
+                    People
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/account/audit" className={navClass}>
+                    Audit log
+                  </NavLink>
+                </li>
+              </>
             ) : null}
           </ul>
         </nav>

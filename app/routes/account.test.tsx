@@ -244,6 +244,34 @@ describe("role awareness", () => {
     ).toBeInTheDocument();
   });
 
+  it("does not offer administration to a contributor", async () => {
+    // The one place in this navigation where hiding a link is right rather than
+    // a substitute for a guard: `/account/people` is a directory of other
+    // people's email addresses and refuses a contributor outright, so a link to
+    // it could only ever produce a refusal.
+    mount(new AuthApiContract({ session: user({ roles: ["Contributor"] }) }));
+
+    const nav = await accountNav();
+
+    expect(within(nav).queryByRole("link", { name: /^people$/i })).toBeNull();
+    expect(within(nav).queryByRole("link", { name: /audit log/i })).toBeNull();
+  });
+
+  it("offers administration to an administrator", async () => {
+    // The control. Without it, navigation that hid the links from everybody
+    // would satisfy the assertion above.
+    mount(new AuthApiContract({ session: user({ roles: ["Administrator"] }) }));
+
+    const nav = await accountNav();
+
+    expect(
+      within(nav).getByRole("link", { name: /^people$/i }),
+    ).toBeInTheDocument();
+    expect(
+      within(nav).getByRole("link", { name: /audit log/i }),
+    ).toBeInTheDocument();
+  });
+
   it("keeps the upload affordance off a community profile", async () => {
     mount(new AuthApiContract({ session: user({ roles: ["Community"] }) }));
 

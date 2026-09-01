@@ -1,0 +1,302 @@
+/*
+ * The administration screens: the account directory and the audit log.
+ *
+ * Every colour here is a token from app.css. Nothing introduces a hue of its
+ * own, for the reason the flag styles give: these are pages of the site rather
+ * than a tool bolted to the side of one, and a console that looked like a
+ * different product would be a console people trust differently.
+ *
+ * The one place this does depart from the rest of the site is emphasis. A row
+ * here can end in an irreversible action, so the state markers are louder than
+ * the badges on a content page and the destructive control is the only element
+ * on the page allowed to use the danger accent. Everything else — search, role
+ * ticks, paging — is deliberately plain, so that the loud things stay loud.
+ */
+
+.people-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin: var(--space-4) 0 var(--space-5);
+}
+
+.people-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.people-field > span {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.people-field input,
+.people-field select,
+.people-field textarea {
+  font: inherit;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  /* So a long address does not force the whole row wider than its column. */
+  min-width: 0;
+}
+
+.people-field textarea {
+  resize: vertical;
+}
+
+.people-count {
+  margin: 0 0 var(--space-2);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.people-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.people-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.people-row.is-open {
+  border-color: var(--border-strong);
+}
+
+.people-identity {
+  min-width: 0;
+  flex: 1 1 20rem;
+}
+
+.people-name {
+  margin: 0;
+  font-weight: 600;
+}
+
+/*
+ * Somebody else's address. It wraps rather than truncating: an address cut off
+ * with an ellipsis is an address an administrator cannot check against the one
+ * in the message they are holding, which is the entire task this page exists
+ * for.
+ */
+.people-email {
+  margin: 0.125rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.people-roles,
+.people-state {
+  margin: 0.375rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.people-state:empty {
+  display: none;
+}
+
+.people-role,
+.people-flag {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.people-role[data-role="Contributor"],
+.people-role[data-role="Administrator"] {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/*
+ * Suspended and locked out are visually distinct, not two shades of the same
+ * warning. They are different things with different remedies, and an interface
+ * that renders them alike is an interface in which somebody lifts the wrong
+ * one.
+ */
+.people-flag[data-tone="suspended"] {
+  color: var(--hue-red);
+  border-color: currentColor;
+}
+
+.people-flag[data-tone="locked"] {
+  color: var(--hue-amber);
+  border-color: currentColor;
+}
+
+.people-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-raised);
+}
+
+.people-action {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.people-action h4 {
+  margin: 0 0 var(--space-2);
+  font-size: 1rem;
+}
+
+.people-note {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.people-reason {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--border);
+  font-size: 0.9375rem;
+  /* Somebody's own words, wrapped as they wrote them. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.people-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 0;
+}
+
+.people-role-choices {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.people-legend {
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.people-choice {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  margin-top: var(--space-2);
+}
+
+.people-choice > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.people-choice-summary {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* -------------------------------------------------------------- audit log */
+
+.audit-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin: var(--space-4) 0;
+}
+
+.audit-view {
+  font: inherit;
+  font-size: 0.875rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.audit-view.is-current {
+  color: var(--text);
+  border-color: var(--border-strong);
+  font-weight: 600;
+}
+
+.audit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.audit-row {
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.audit-head {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.audit-action {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+/*
+ * The two entries that take something away read differently in a list somebody
+ * is scanning. A deletion in particular is the one entry no later entry can
+ * undo.
+ */
+.audit-action[data-action="account-deleted"],
+.audit-action[data-action="account-suspended"] {
+  color: var(--hue-red);
+}
+
+.audit-detail {
+  margin: var(--space-1) 0 0;
+  font-size: 0.875rem;
+}
+
+.audit-meta {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
