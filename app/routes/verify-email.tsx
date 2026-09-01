@@ -385,9 +385,16 @@ export default function VerifyEmail() {
         tone="error"
         title={verifyFailure ?? "The link could not be verified."}
       >
+        {/* No promise about when it turns up, and that is deliberate. This page
+            has not asked whether mail is going out, and the registration screen
+            it links to does — at the moment the request is actually made, which
+            is the only moment an answer is worth anything. A timing claim made
+            here would be a claim made without grounds, and it was one of the
+            sentences that told a reader on QA to keep waiting for a message the
+            relay had already refused. */}
         Verification links can only be used once and expire after an hour.{" "}
-        <Link to="/register">Request a new one</Link> and it will arrive within
-        a minute or two.
+        <Link to="/register">Request a new one</Link> and you can try again
+        straight away.
       </Banner>
     </AuthCard>
   );

@@ -1,10 +1,16 @@
 /**
- * Which deployment the reader is looking at, and why the site has to ask.
+ * The few facts about this deployment that the site cannot work out for itself.
  *
  * ## The problem
  *
+ * There are two of them, and they arrived a release apart.
+ *
  * QA has to say, visibly, that it is QA and that nothing typed into it is kept.
- * The site cannot work that out for itself. Every page here is prerendered to
+ * And when the mail relay is refusing everything, the account screens have to
+ * stop telling people a link is on its way — see `isAccountEmailDelivering`
+ * below for why that one is not merely a nicety.
+ *
+ * The site cannot work either out for itself. Every page here is prerendered to
  * static HTML at build time and served by nginx, so there is no server-side
  * render at request time and no environment variable can be read per request.
  *
@@ -24,13 +30,20 @@
  *
  * ## What this does instead
  *
- * The API already knows. It is configured per environment, has its own database
- * and its own mail provider in each, and it answers `GET /api/site/environment`
- * with `{ name, isProduction }`. The site asks it once, after hydration, and
- * draws the banner from the answer. The image stays identical across
+ * The API already knows both. It is configured per environment, has its own
+ * database and its own mail provider in each, and it answers
+ * `GET /api/site/environment` with `{ name, isProduction, accountEmailDelivering }`.
+ * The site asks it and works from the answer. The image stays identical across
  * environments and carries no configuration at all — the only thing that
  * differs between QA and production is a variable on the service that already
  * had to have one.
+ *
+ * The two answers are read at different moments and that is deliberate. Which
+ * deployment this is settles once, at hydration, because it cannot change under
+ * the reader. Whether mail is getting out is asked at the instant the interface
+ * is about to promise a message, because it can change between page load and
+ * form submission, and because the API attempts its send before it answers —
+ * so a read taken after a 202 reflects the failure that very submission caused.
  *
  * The request is same-origin, which is what keeps the Content-Security-Policy
  * at `connect-src 'self'` with no host named in it: the deployment routes
@@ -78,6 +91,16 @@
 export interface SiteEnvironment {
   name: string;
   isProduction: boolean;
+
+  /**
+   * Whether account mail is currently reaching the provider.
+   *
+   * Optional because the wire is older than the field. A service that predates
+   * it, or a proxy answering from a half-finished deploy, sends a body without
+   * it, and that has to mean "carry on as before" rather than either a crash or
+   * a mail-outage warning. `isAccountEmailDelivering` is where that is decided.
+   */
+  accountEmailDelivering?: boolean;
 }
 
 const ENDPOINT = "/api/site/environment";
@@ -103,21 +126,26 @@ function isSiteEnvironment(value: unknown): value is SiteEnvironment {
   // falsy. A body with the field missing would otherwise read as "not
   // production" and put the banner on the live site — which is exactly the
   // shape of thing a proxy or a future API version could serve.
+  //
+  // `accountEmailDelivering` is deliberately *not* required here. Requiring it
+  // would mean an API deployed a release behind produced no banner in QA, which
+  // is a regression in a working feature caused by the absence of an unrelated
+  // one. Each field is instead read with its own default at the point of use.
   return typeof candidate.isProduction === "boolean";
 }
 
 /**
- * Asks the service whether this is a test environment.
+ * Fetches the document, or returns null if anything at all went wrong.
  *
- * Never throws and never rejects: a caller that had to handle a failure would
- * have to decide what a failure means, and there is only one safe answer, so it
- * is made here.
+ * Never throws and never rejects. Callers that had to handle a failure would
+ * each have to decide what a failure means, and the two callers here want
+ * opposite defaults from the same silence — so the failure is flattened to one
+ * value and each of them states its own default against it, in one line, where
+ * it can be read and tested.
  *
  * @param signal Aborts the request when the component asking goes away.
- * @returns True only when the service explicitly reported a non-production
- * deployment.
  */
-export async function isTestEnvironment(signal?: AbortSignal): Promise<boolean> {
+async function read(signal?: AbortSignal): Promise<SiteEnvironment | null> {
   try {
     // Inside the try, not above it. `AbortSignal.any` is recent enough that an
     // older browser may not have it, and a synchronous throw out here would
@@ -142,23 +170,92 @@ export async function isTestEnvironment(signal?: AbortSignal): Promise<boolean> 
       signal: combined,
     });
 
-    if (!response.ok) return false;
+    if (!response.ok) return null;
 
     // During a partial deploy the static host answers `/api/*` with this app's
     // own HTML shell and a 200. Parsing that as JSON throws, which the catch
-    // below turns into "production" — but checking the content type first keeps
-    // the common case out of the exception path and says what is being guarded
-    // against.
+    // below turns into "no answer" anyway — but checking the content type first
+    // keeps the common case out of the exception path and says what is being
+    // guarded against.
     const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.includes("application/json")) return false;
+    if (!contentType.includes("application/json")) return null;
 
     const body: unknown = await response.json();
 
-    return isSiteEnvironment(body) && !body.isProduction;
+    return isSiteEnvironment(body) ? body : null;
   } catch {
-    // Every failure is production. See the note at the top of this file: the
-    // banner appearing where it should not is worse than it not appearing where
-    // it should.
-    return false;
+    // Timeout, abort, offline, DNS, a redirect off-origin, a body that is not
+    // JSON. All of them are "no answer", and each caller below turns that into
+    // whichever of its two outcomes changes nothing.
+    return null;
   }
+}
+
+/**
+ * Asks the service whether this is a test environment.
+ *
+ * Never throws and never rejects.
+ *
+ * @param signal Aborts the request when the component asking goes away.
+ * @returns True only when the service explicitly reported a non-production
+ * deployment.
+ */
+export async function isTestEnvironment(signal?: AbortSignal): Promise<boolean> {
+  const environment = await read(signal);
+
+  // Every failure is production. See the note at the top of this file: the
+  // banner appearing where it should not is worse than it not appearing where
+  // it should.
+  return environment !== null && !environment.isProduction;
+}
+
+/**
+ * Asks the service whether account mail is currently getting out.
+ *
+ * ## Why this is asked at all
+ *
+ * Because the site was lying without it. Registering on QA answered 202 and
+ * produced "a verification link is on its way to your address", followed by an
+ * offer to go and look in the spam folder. Nothing had been sent: the relay had
+ * refused the message and the API knew it at the moment the page said otherwise.
+ * A reader who is told to wait for something that will never arrive waits, and
+ * then blames their own address.
+ *
+ * ## Why the answer is global and never about an address
+ *
+ * This is the constraint that shapes the whole feature. The account endpoints
+ * answer 202 with an identical body whether or not an address has an account,
+ * and that is what stops anyone using them to discover who is registered here.
+ * "We could not send to *your* address" would hand that back: asking it about
+ * an address is asking whether the address has an account.
+ *
+ * "Email is not being delivered, for anyone" reveals nothing about anybody. It
+ * is one fact, the same fact for every reader, and the service has no
+ * per-address version of it to leak even if something here asked.
+ *
+ * ## Why silence means "delivering"
+ *
+ * The opposite default to `isTestEnvironment`, and for the same underlying
+ * rule: the safe answer is the one that changes nothing. A reachable service
+ * saying mail is broken is a reason to stop promising mail. Not reaching the
+ * service is not — it would mean every reader on a flaky connection, and every
+ * reader during a partial deploy, is told the site's email is down on the
+ * strength of a request that did not come back. That is the same failure as a
+ * "test environment" banner on the live site: a warning shown without grounds
+ * is a warning people stop reading.
+ *
+ * @param signal Aborts the request when the component asking goes away.
+ * @returns False only when the service explicitly reported that mail is not
+ * getting out.
+ */
+export async function isAccountEmailDelivering(
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const environment = await read(signal);
+
+  // Checked for being exactly `false` rather than for being falsy, and read off
+  // a possibly-absent field. An API a release behind sends no such field, and
+  // `undefined` there has to leave the wording alone rather than announce an
+  // outage nobody reported.
+  return environment?.accountEmailDelivering !== false;
 }

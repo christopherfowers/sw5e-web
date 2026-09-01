@@ -54,6 +54,27 @@
  *   the API is unreachable           distinguished from every refusal above,
  *                                    so nobody is told their credential is bad
  *                                    when the service is simply absent
+ *   the mail relay is refusing
+ *   everything                       the page stops saying a code is on its
+ *                                    way, because it is not. See below
+ *
+ * ## The one that is not a refusal
+ *
+ * A code request answers 202 whether or not the address has an account, and
+ * also whether or not the message it just tried to send got out. The second was
+ * invisible here, so with the relay refusing everything this page said a code
+ * was on its way and then offered the reader their own spam folder. It was
+ * saying it while the API already knew otherwise.
+ *
+ * So the code request is followed by a read of `/api/site/environment`, which
+ * publishes whether mail is getting out at all. That question carries no
+ * address and its answer is the same for every caller — "email is not going
+ * out" is true of the site, not of anybody's account — which is what makes it
+ * safe to show on a page whose whole design is that it reveals nothing about
+ * which addresses are registered. A per-address answer would be the oracle the
+ * identical 202 exists to prevent.
+ *
+ * If that read fails, the page says exactly what it said before it existed.
  *
  * Capability probes run in an effect, never during render: this page is
  * prerendered on a build machine that has no `navigator`, and a first render
@@ -80,6 +101,7 @@ import {
   WebAuthnError,
 } from "~/auth/webauthn";
 import { AuthCard, Banner, SubmitButton, TextField } from "~/components/auth-ui";
+import { isAccountEmailDelivering } from "~/site/environment";
 
 import "~/styles/account.css";
 
@@ -130,6 +152,16 @@ const STEP_HEADING: Record<Step, string> = {
 };
 
 /**
+ * What the code step is called when nothing was emailed.
+ *
+ * The map above is the only place on this page that states, as a fact and to a
+ * screen reader first, that a message was sent. Leaving it alone would mean the
+ * one reader who cannot see the amber banner is the one reader still being told
+ * to go and find an email.
+ */
+const NOTHING_SENT_HEADING = "No code was sent: email is not being delivered";
+
+/**
  * Deliberately permissive, and deliberately the same shape `register.tsx`
  * uses. Whether an address can receive mail is settled by the mail that is
  * sent to it, not by a pattern; all this is for is catching the missing "@"
@@ -162,6 +194,21 @@ export default function SignIn() {
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  /**
+   * Whether mail is getting out at all, as of the last code request.
+   *
+   * Global, and never about the address in the field above. The API answers a
+   * code request identically whether or not that address has an account, and a
+   * per-address delivery answer would hand back exactly the fact that identical
+   * answer exists to withhold. "Email is not going out, for anyone" is one
+   * sentence about the site that happens to be equally true for every reader.
+   *
+   * Starts true and is re-read on every request, so a relay that comes back
+   * mid-session stops the warning without a reload. Unknown counts as true —
+   * see `app/site/environment.ts` for why silence must change nothing.
+   */
+  const [mailDelivering, setMailDelivering] = useState(true);
 
   /**
    * Where `totp` was entered from, so "start over" returns the reader to the
@@ -344,13 +391,33 @@ export default function SignIn() {
     setPending(true);
     try {
       const result = await requestSignInCode(address);
+
+      // Asked after the request, not before, and that ordering is the whole
+      // value of it: the API attempts the send before it answers, so a relay
+      // that has just refused this reader's code is already reflected here.
+      // Every failure to find out resolves true, which leaves every sentence
+      // below exactly as it was before this call existed.
+      const delivering = await isAccountEmailDelivering();
+
+      setMailDelivering(delivering);
       setResendIn(result.resendAfterSeconds);
       setCodeLifetimeSeconds(result.expiresInSeconds);
       setCode("");
       setStep("code");
       // On a resend the step does not change, so nothing moves focus and
       // nothing else would tell a screen reader the button had done anything.
-      if (resend) setNotice("A new code is on its way. The previous one no longer works.");
+      //
+      // The previous code stops working either way: the service issued a new
+      // one and superseded it, and whether the message carrying it got out is a
+      // separate question. Somebody holding an old code needs telling that it
+      // is dead even — especially — when the new one never arrived.
+      if (resend) {
+        setNotice(
+          delivering
+            ? "A new code is on its way. The previous one no longer works."
+            : "No code was sent: email is not being delivered right now. The previous code no longer works either.",
+        );
+      }
     } catch (error) {
       reportFailure(error, "That address could not be used.");
     } finally {
@@ -364,7 +431,13 @@ export default function SignIn() {
     if (digits.length !== 6) {
       setFailure({
         title: "Enter the six-digit code.",
-        body: "It is the number in the email that was just sent.",
+        // The last sentence on this page that asserted a message had been sent.
+        // It is shown when the field is short, which is exactly when somebody
+        // is hunting for a code — so telling them to look in an email that was
+        // never sent is the same harm as the panel above, in smaller type.
+        body: mailDelivering
+          ? "It is the number in the email that was just sent."
+          : "It is the number from a code email, if you have one from earlier.",
       });
       return;
     }
@@ -466,7 +539,9 @@ export default function SignIn() {
 
   const heading = (
     <h2 className="sr-only" tabIndex={-1} ref={stepHeadingRef}>
-      {STEP_HEADING[step]}
+      {step === "code" && !mailDelivering
+        ? NOTHING_SENT_HEADING
+        : STEP_HEADING[step]}
     </h2>
   );
 
@@ -527,18 +602,46 @@ export default function SignIn() {
 
   if (step === "code") {
     return (
+      /*
+       * Two headings and two ledes for one step, chosen by a fact about the
+       * site rather than about the address in the field.
+       *
+       * The honest branch still renders the form. A code that was issued before
+       * the relay broke is still live until it expires, and a reader holding
+       * one has a way in that costs nothing to leave open — whereas a screen
+       * that removed the field would strand them for a reason that has nothing
+       * to do with them. What it does not do is claim anything arrived.
+       */
       <AuthCard
-        title="Check your inbox"
+        title={mailDelivering ? "Check your inbox" : "Email is not being delivered right now"}
         lede={
-          <>
-            If <strong>{email.trim()}</strong> has an account, a six-digit code
-            is on its way to it.
-          </>
+          mailDelivering ? (
+            <>
+              If <strong>{email.trim()}</strong> has an account, a six-digit code
+              is on its way to it.
+            </>
+          ) : (
+            <>No sign-in code was sent.</>
+          )
         }
       >
         {heading}
         {errorBanner}
-        {notice ? <Banner tone="success" title={notice} /> : null}
+        {notice ? (
+          <Banner tone={mailDelivering ? "success" : "warning"} title={notice} />
+        ) : null}
+        {mailDelivering ? null : (
+          /*
+           * Nothing in here mentions the address that was typed. It is a
+           * statement about the site, identical for every reader, and so it
+           * cannot be used to work out who has an account.
+           */
+          <Banner tone="warning" title="Email from this site is not going out at the moment.">
+            This is happening for everyone, not just for you, and it is not a
+            problem with your address. Checking your spam folder will not help,
+            because nothing was sent to it.
+          </Banner>
+        )}
 
         <form className="auth-form" onSubmit={submitEmailCode} noValidate>
           <TextField
@@ -552,9 +655,13 @@ export default function SignIn() {
             required
             disabled={pending}
             hint={
-              codeLifetimeSeconds > 0
-                ? `From the email. It is good for one use and expires after ${minutesFor(codeLifetimeSeconds)} minutes.`
-                : "From the email. It is good for one use."
+              mailDelivering
+                ? codeLifetimeSeconds > 0
+                  ? `From the email. It is good for one use and expires after ${minutesFor(codeLifetimeSeconds)} minutes.`
+                  : "From the email. It is good for one use."
+                : codeLifetimeSeconds > 0
+                  ? `Only if you already have one from earlier. Codes are good for one use and expire after ${minutesFor(codeLifetimeSeconds)} minutes.`
+                  : "Only if you already have one from earlier. Codes are good for one use."
             }
           />
           <div className="auth-actions">
@@ -575,27 +682,51 @@ export default function SignIn() {
           </div>
         </form>
 
-        <p className="auth-note">
-          Nothing arrived? Check the spam folder, or{" "}
-          <button
-            type="button"
-            className="link-button"
-            disabled={pending}
-            onClick={askForAddress}
-          >
-            use a different address
-          </button>
-          . You can also{" "}
-          <button
-            type="button"
-            className="link-button"
-            disabled={pending}
-            onClick={startWithPasskey}
-          >
-            sign in with a passkey instead
-          </button>
-          .
-        </p>
+        {mailDelivering ? (
+          <p className="auth-note">
+            Nothing arrived? Check the spam folder, or{" "}
+            <button
+              type="button"
+              className="link-button"
+              disabled={pending}
+              onClick={askForAddress}
+            >
+              use a different address
+            </button>
+            . You can also{" "}
+            <button
+              type="button"
+              className="link-button"
+              disabled={pending}
+              onClick={startWithPasskey}
+            >
+              sign in with a passkey instead
+            </button>
+            .
+          </p>
+        ) : (
+          /*
+           * No spam folder, and no offer to try another address: neither is a
+           * remedy for a relay that is refusing everything, and both would send
+           * the reader looking for a fault of their own that does not exist.
+           * What is left is the door that does not go through email at all, and
+           * the truth about when this one will work again.
+           */
+          <p className="auth-note">
+            A passkey does not go through email, so{" "}
+            <button
+              type="button"
+              className="link-button"
+              disabled={pending}
+              onClick={startWithPasskey}
+            >
+              signing in with one
+            </button>{" "}
+            still works if you have set one up. Otherwise this will start working
+            again on its own once email is going out; asking for a new code will
+            tell you whether it has.
+          </p>
+        )}
       </AuthCard>
     );
   }

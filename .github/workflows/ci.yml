@@ -597,6 +597,27 @@ jobs:
             exit 1
           fi
 
+          # The same hazard, for the same reason, one feature along. The account
+          # screens stop promising mail when the service reports that the relay
+          # is refusing everything, and that panel is drawn from an answer which
+          # cannot exist at build time. If its words reach the markup, every
+          # reader of a healthy site is told on first byte that email is broken
+          # and it is taken away again once JavaScript runs — which is worse
+          # than the promise it replaced, because it is false in the ordinary
+          # case rather than in the rare one.
+          #
+          # Same *.html restriction, same reason as above: the copy is of course
+          # in the route chunks, because that is where it has to be for a
+          # browser to ever draw it.
+          if docker exec sw5e-web sh -c \
+               'grep -rliE --include="*.html" "not being delivered|is not going out" \
+                  /usr/share/nginx/html'; then
+            echo "::error::The published image carries the mail-outage wording" \
+              "in its prerendered markup. Every reader would be told the site's" \
+              "email is broken before JavaScript runs."
+            exit 1
+          fi
+
       - name: A prerendered index page serves its own markup
         run: |
           curl --fail --silent http://127.0.0.1:8080/species | grep -q "<h1>Species</h1>"

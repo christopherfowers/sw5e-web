@@ -205,6 +205,10 @@
 .auth-banner[data-tone="success"] { --banner-accent: var(--hue-green); }
 .auth-banner[data-tone="info"] { --banner-accent: var(--hue-cyan); }
 
+/* Amber rather than red: the submission was accepted, so this is not a failed
+   request. Amber rather than green for the obvious reason. */
+.auth-banner[data-tone="warning"] { --banner-accent: var(--hue-amber); }
+
 .auth-banner-title {
   font-weight: 700;
 }

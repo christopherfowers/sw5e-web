@@ -21,6 +21,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   AuthApiContract,
+  contractFetch,
   EMAIL_CODE_REQUEST_BUDGET,
   user,
   VALID_EMAIL_CODE,
@@ -897,5 +898,290 @@ describe("a second factor after an emailed code", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/not correct/i);
     expect(alert).not.toHaveTextContent(/passkey/i);
+  });
+});
+
+/**
+ * What the page says when nothing was actually emailed.
+ *
+ * "Check your inbox — if that address has an account, a six-digit code is on
+ * its way to it" is a claim about a message. The API answers 202 whether or not
+ * the address has an account *and* whether or not the relay accepted the
+ * message, so the page was making that claim on the strength of a status code
+ * that never carried it. With the relay refusing everything it told people to
+ * wait, and then offered them a spam folder.
+ *
+ * The enumeration property is untouched by all of this and is asserted here
+ * again, because it is the thing a fix in this area is most likely to break: an
+ * outage panel that named the address, or that appeared for a registered
+ * address and not for a stranger, would be exactly the oracle the identical 202
+ * exists to prevent.
+ */
+describe("when mail is not getting out", () => {
+  it("leaves the code step word for word alone while the relay is healthy", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: true }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: /check your inbox/i }),
+    ).toBeInTheDocument();
+    expect(cardText()).toMatch(/is on its way to it/i);
+    expect(screen.getByText(/check the spam folder/i)).toBeInTheDocument();
+  });
+
+  it("stops saying a code is on its way when the service reports an outage", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: /email is not being delivered right now/i,
+      }),
+    ).toBeInTheDocument();
+    expect(cardText()).toMatch(/no sign-in code was sent/i);
+    expect(cardText()).not.toMatch(/on its way/i);
+  });
+
+  it("does not send anyone to their spam folder for a code that was never sent", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+
+    // Named, so the instinct is headed off; never instructed.
+    expect(screen.queryByText(/check the spam folder/i)).toBeNull();
+    expect(cardText()).toMatch(/spam folder will not help/i);
+  });
+
+  it("says plainly that this is the site's problem and not the reader's", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+
+    expect(cardText()).toMatch(/for everyone, not just for you/i);
+    expect(cardText()).toMatch(/not a problem with your address/i);
+  });
+
+  /**
+   * A screen reader has to be told too, and by the mechanism that actually
+   * reaches it. Focus moves to this heading on the step change, so it — not the
+   * amber banner — is what the reader hears first. Leaving it reading "Enter
+   * the code we emailed you" would mean the one person who cannot see the
+   * banner is the one person still being told a message was sent.
+   */
+  it("changes the heading a screen reader is moved to, not only the visible one", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: /no code was sent/i }),
+      ).toHaveFocus(),
+    );
+    expect(
+      screen.queryByRole("heading", { name: /enter the code we emailed you/i }),
+    ).toBeNull();
+  });
+
+  /**
+   * The door that does not go through email at all. It is the only thing a
+   * reader can actually act on during a relay outage, so it has to still be
+   * there — and "use a different address" has to not be, because it is not a
+   * remedy for anything and sends somebody hunting for a fault of their own.
+   */
+  it("keeps the passkey door open and drops the advice that would not help", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+
+    expect(
+      screen.getByRole("button", { name: /signing in with one/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /use a different address/i }),
+    ).toBeNull();
+  });
+
+  /**
+   * The code field survives the honest panel.
+   *
+   * A code issued before the relay broke is live until it expires, and a reader
+   * holding one has a way in that costs nothing to leave open. Removing the
+   * field would strand them for a reason that has nothing to do with them.
+   */
+  it("still accepts a code the reader already has", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+    await userEvent.type(codeField(), VALID_EMAIL_CODE);
+    await userEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+
+    expect(await screen.findByText(ACCOUNT_MARKER)).toBeInTheDocument();
+  });
+
+  /**
+   * The last sentence on the page that asserted a message had been sent, and
+   * the easiest one to miss: it is the validation message for a short code,
+   * shown at precisely the moment somebody is hunting for a number that was
+   * never emailed to them.
+   */
+  it("does not tell a short code to look in an email that was never sent", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+    await userEvent.type(codeField(), "123");
+    await userEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/enter the six-digit code/i);
+    expect(alert).not.toHaveTextContent(/that was just sent/i);
+    expect(alert).toHaveTextContent(/if you have one from earlier/i);
+  });
+
+  /**
+   * The resend notice was the other sentence that claimed a message. It also
+   * has to keep saying that the previous code is dead: the service issued a new
+   * one and superseded it regardless of whether the message carrying it got
+   * out, and somebody holding an old code needs telling — especially when the
+   * new one never arrived.
+   */
+  it("does not claim a new code was sent on a resend during an outage", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    const contract = new AuthApiContract({
+      session: null,
+      resendAfterSeconds: 1,
+      accountEmailDelivering: true,
+    });
+    mount(contract);
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+    await waitFor(() => expect(resendButton()).toBeEnabled(), { timeout: 5000 });
+
+    // The relay goes down between the two requests, which is the case a page
+    // that only asked once at load would get wrong.
+    contract.accountEmailDelivering = false;
+    await userEvent.click(resendButton());
+
+    await waitFor(() =>
+      expect(cardText()).toMatch(/no code was sent: email is not being delivered/i),
+    );
+    expect(cardText()).not.toMatch(/on its way/i);
+    expect(cardText()).toMatch(/previous code no longer works/i);
+  });
+
+  /**
+   * The property this whole page is built around, re-checked in the state most
+   * likely to break it. A registered address and one the fixture has never
+   * heard of must produce the same card, character for character, while mail is
+   * failing — exactly as they already must while it is working.
+   */
+  it("is still identical for a registered address and an unknown one", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+
+    const knownContract = new AuthApiContract({
+      session: null,
+      accountEmailDelivering: false,
+    });
+    const first = mount(knownContract);
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+    const knownScreen = cardText().replaceAll(VALID_VERIFICATION_EMAIL, "«address»");
+    first.unmount();
+
+    const unknownContract = new AuthApiContract({
+      session: null,
+      accountEmailDelivering: false,
+    });
+    const second = mount(unknownContract);
+    await requestCodeFor(UNKNOWN_EMAIL);
+    const unknownScreen = cardText().replaceAll(UNKNOWN_EMAIL, "«address»");
+    second.unmount();
+
+    expect(unknownScreen).toBe(knownScreen);
+
+    // Both really asked, and both really read the delivery state. Two identical
+    // screens for two flows that never ran would prove nothing.
+    expect(knownContract.calls.filter((call) => call.path === "/email/code")).toHaveLength(1);
+    expect(unknownContract.calls.filter((call) => call.path === "/email/code")).toHaveLength(1);
+    expect(
+      knownContract.calls.filter((call) => call.path === "/site/environment"),
+    ).toHaveLength(1);
+    expect(
+      unknownContract.calls.filter((call) => call.path === "/site/environment"),
+    ).toHaveLength(1);
+
+    // And the screen they matched on is the outage one, not two healthy ones.
+    expect(knownScreen).toMatch(/no sign-in code was sent/i);
+  });
+
+  /**
+   * And the outage panel names no address at all, which is the stronger form of
+   * the assertion above: there is nothing in it to substitute.
+   */
+  it("names no address, because the fact it is drawn from has none", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+
+    expect(cardText()).not.toContain(VALID_VERIFICATION_EMAIL);
+    expect(cardText()).not.toContain("@");
+  });
+
+  /**
+   * Degrade to what it did before. Nobody has reported an outage, so nobody is
+   * told about one.
+   */
+  it("says what it always said when the delivery state cannot be read", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+
+    const contract = new AuthApiContract({ session: null });
+    const served = contractFetch(contract);
+
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.startsWith("/api/site/")) {
+        return Promise.reject(new TypeError("Failed to fetch"));
+      }
+      return served(input, init);
+    });
+
+    renderWithSession(
+      [
+        { path: "/sign-in", Component: SignIn },
+        { path: "/account", Component: marker(ACCOUNT_MARKER) },
+        { path: "/account/passkeys", Component: marker("passkeys page reached") },
+      ],
+      ["/sign-in"],
+    );
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: /check your inbox/i }),
+    ).toBeInTheDocument();
+    expect(cardText()).toMatch(/is on its way to it/i);
   });
 });

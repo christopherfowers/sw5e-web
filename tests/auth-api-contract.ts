@@ -225,6 +225,16 @@ export interface ContractOptions {
    * an obedient client from a hard-coded one.
    */
   resendAfterSeconds?: number;
+  /**
+   * Whether the deployment's mail relay is accepting anything. Defaults to
+   * true, so every test that is not about a mail outage sees the wording the
+   * site has always used.
+   *
+   * One boolean for the whole deployment, mirroring the service: there is no
+   * per-address form of this question, because a per-address answer to it is an
+   * account-existence oracle.
+   */
+  accountEmailDelivering?: boolean;
 }
 
 /**
@@ -239,6 +249,22 @@ export class AuthApiContract {
   offline: boolean;
   readonly origin: string;
   readonly resendAfterSeconds: number;
+
+  /**
+   * Whether the deployment's mail relay is accepting anything.
+   *
+   * Part of the contract rather than a per-test `fetch` stub, because it is
+   * part of the contract: `GET /api/site/environment` publishes it, and the
+   * account screens read it to decide whether they may say a message is on its
+   * way. Modelled as one global boolean with no per-address dimension, exactly
+   * as the service models it — a fixture that let a test answer differently for
+   * different addresses would be a fixture in which the account-existence
+   * oracle is reachable, and the client tests would go on passing.
+   *
+   * Mutable so that a test can break the relay between two requests, which is
+   * what the resend path does.
+   */
+  accountEmailDelivering: boolean;
 
   /** Every request that reached the API, in order. */
   readonly calls: { method: string; path: string; body: unknown }[] = [];
@@ -283,6 +309,7 @@ export class AuthApiContract {
     this.origin = options.origin ?? PAGE_ORIGIN;
     this.resendAfterSeconds =
       options.resendAfterSeconds ?? EMAIL_CODE_RESEND_AFTER_SECONDS;
+    this.accountEmailDelivering = options.accountEmailDelivering ?? true;
   }
 
   /** Whether an unexpired enrolment ticket is being held. */
@@ -806,9 +833,13 @@ export interface FetchAdapterOptions {
  * would be ignored by every real browser, so the adapter stands in for the
  * browser and the client stays as it should be — sending nothing.
  *
- * Anything that is not an account endpoint is refused rather than passed
- * through: a test that accidentally makes a real network call should fail
- * loudly, not hang.
+ * Two prefixes are served. `/api/auth` is the account surface. `/api/site` is
+ * the small anonymous document the prerendered site reads for the facts it
+ * cannot work out for itself, including whether mail is getting out — which the
+ * account screens consult before they tell anybody to check an inbox.
+ *
+ * Anything else is refused rather than passed through: a test that accidentally
+ * makes a real network call should fail loudly, not hang.
  */
 export function contractFetch(
   contract: AuthApiContract,
@@ -819,6 +850,27 @@ export function contractFetch(
   return async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
     const headers = new Headers(init?.headers);
+
+    if (url.startsWith("/api/site/environment")) {
+      contract.calls.push({
+        method: init?.method ?? "GET",
+        path: "/site/environment",
+        body: undefined,
+      });
+
+      // The real body, field for field. Notably it says nothing about any
+      // address and does not carry the provider's reply — the service refuses
+      // to publish either, and a fixture that invented a richer body would let
+      // a client start depending on something it will never be sent.
+      return new Response(
+        JSON.stringify({
+          name: "Test",
+          isProduction: false,
+          accountEmailDelivering: contract.accountEmailDelivering,
+        }),
+        { status: 200, headers: { "content-type": "application/json" } },
+      );
+    }
 
     if (!url.startsWith("/api/auth")) {
       throw new Error(`unexpected request to ${url} in a test`);
