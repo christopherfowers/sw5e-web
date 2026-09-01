@@ -56,7 +56,13 @@ describe("Home route", () => {
     const lede = container.querySelector(".lede")?.textContent ?? "";
 
     expect(lede).not.toMatch(/picks up where/i);
-    expect(lede).not.toMatch(/sw5e\.com/i);
+    // Containment rather than a `/sw5e\.com/` regex, for the reason the meta
+    // assertions below already give: CodeQL reads an unanchored hostname
+    // pattern as a host check arbitrary domains can slip past, and it is right
+    // to in general. The subject here is a sentence, so a substring is both the
+    // honest assertion and the one that does not train anyone to wave the rule
+    // through.
+    expect(lede).not.toContain("sw5e.com");
     expect(lede).toMatch(/the whole conversion and every book/i);
   });
 

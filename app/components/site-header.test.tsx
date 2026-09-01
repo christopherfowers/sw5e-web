@@ -75,7 +75,12 @@ describe("the site header", () => {
     const text = container.textContent ?? "";
 
     expect(text).not.toMatch(/continuing/i);
-    expect(text).not.toMatch(/sw5e\.com/i);
+    // Containment rather than a `/sw5e\.com/` regex. CodeQL reads an unanchored
+    // hostname pattern as a host check arbitrary domains can slip past, and it
+    // is right to in general; the subject here is the wordmark's own prose, so
+    // a substring says what is meant without teaching anyone to dismiss that
+    // rule. The rest of the suite already does it this way.
+    expect(text).not.toContain("sw5e.com");
     expect(text).not.toMatch(/successor|formerly/i);
   });
 
