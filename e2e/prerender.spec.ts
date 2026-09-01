@@ -76,11 +76,37 @@ test.describe("the site's self-description", () => {
     const response = await request.get("/");
     const html = await response.text();
 
-    expect(html).toContain("sw5e.com");
+    expect(html).toContain("picks up where sw5e.com left off");
+  });
+
+  test("the description a search result shows has dropped the indefinite article", async ({
+    request,
+  }) => {
+    const response = await request.get("/");
+    const html = await response.text();
+
+    // Scoped to the meta description rather than run over the whole document,
+    // and the reason is worth writing down: the footer still carries the old
+    // "A community reference for the Star Wars 5e tabletop roleplaying game"
+    // sentence. That block is being rewritten separately, with the Fan Content
+    // Policy attribution and a credits link, and its wording is under review by
+    // the owner — so it is deliberately not this change's to touch. A
+    // document-wide assertion here would either fail on somebody else's
+    // in-flight work or pressure whoever lands it into wording chosen by a
+    // test. This asserts the sentence the site actually leads with.
+    const description =
+      /<meta[^>]+name="description"[^>]+content="([^"]*)"/.exec(html)?.[1] ?? "";
+
     expect(
-      html,
+      description,
+      "the description must exist and be the prerendered one, not a shell " +
+        "placeholder",
+    ).not.toBe("");
+    expect(description).toContain("sw5e.com");
+    expect(
+      description,
       "the site positioned itself as one fan project among several for as " +
-        "long as this phrase was in its lede",
+        "long as this phrase opened its description",
     ).not.toMatch(/a community reference/i);
   });
 
