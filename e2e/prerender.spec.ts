@@ -85,15 +85,13 @@ test.describe("the site's self-description", () => {
     const response = await request.get("/");
     const html = await response.text();
 
-    // Scoped to the meta description rather than run over the whole document,
-    // and the reason is worth writing down: the footer still carries the old
-    // "A community reference for the Star Wars 5e tabletop roleplaying game"
-    // sentence. That block is being rewritten separately, with the Fan Content
-    // Policy attribution and a credits link, and its wording is under review by
-    // the owner — so it is deliberately not this change's to touch. A
-    // document-wide assertion here would either fail on somebody else's
-    // in-flight work or pressure whoever lands it into wording chosen by a
-    // test. This asserts the sentence the site actually leads with.
+    // This was scoped to the meta description while the footer still carried
+    // the old "A community reference for the Star Wars 5e tabletop roleplaying
+    // game" sentence — that block was being rewritten separately and its
+    // wording was under review, so a document-wide assertion would have failed
+    // on in-flight work. The footer has since been replaced with the Fan
+    // Content Policy attribution, so the assertion is now what it was always
+    // meant to be: the phrase appears nowhere in the served page.
     const description =
       /<meta[^>]+name="description"[^>]+content="([^"]*)"/.exec(html)?.[1] ?? "";
 
@@ -104,9 +102,10 @@ test.describe("the site's self-description", () => {
     ).not.toBe("");
     expect(description).toContain("sw5e.com");
     expect(
-      description,
+      html,
       "the site positioned itself as one fan project among several for as " +
-        "long as this phrase opened its description",
+        "long as this phrase appeared anywhere on the page — the description " +
+        "was only the most visible place it did",
     ).not.toMatch(/a community reference/i);
   });
 

@@ -414,3 +414,53 @@ export const SOURCE_NAMES: Record<string, string> = {
   SnV: "Scum and Villainy",
   SotG: "Starships of the Galaxy",
 };
+
+/**
+ * Who made one picture, and why the site may show it.
+ *
+ * `status` is the field that carries the meaning. A `cited` citation names an
+ * artist and the particular work; an `inherited-unattributed` one describes a
+ * picture the original site carried whose artist it never recorded, and it
+ * holds no artist at all rather than a guess. The two are drawn differently
+ * on purpose — a reader told the author is unknown can go looking, whereas a
+ * reader shown a plausible wrong name cannot.
+ */
+export interface AssetCredit {
+  status: "cited" | "inherited-unattributed";
+  artist: string | null;
+  workTitle: string | null;
+  provenance: string;
+  basis:
+    | "artist-permission"
+    | "licence"
+    | "fan-content-policy"
+    | "public-domain"
+    | "unrecorded";
+  basisNote: string | null;
+  link: string | null;
+}
+
+/** The image groups the build emits, which are also the citation keys. */
+export type AssetGroup = "species" | "classes" | "sources" | "brand";
+
+/** One person, and what they were credited for. */
+export interface CreditPerson {
+  key: string;
+  name: string;
+  /**
+   * What this person specifically did, where the source recorded it. Null is
+   * a real answer rather than a gap to fill: most categories were recorded as
+   * rosters, and inventing a contribution would misattribute work.
+   */
+  contribution: string | null;
+  link: string | null;
+}
+
+/** One kind of credit, with its own heading and its own people. */
+export interface CreditCategory {
+  key: string;
+  title: string;
+  description: string | null;
+  note: string | null;
+  people: CreditPerson[];
+}

@@ -110,7 +110,9 @@ export default {
     // followed a dead sw5e.com link is most likely to reach through a search
     // engine rather than through this site's own navigation, so it is the last
     // page that can afford to need JavaScript before it says anything.
-    const paths = ["/", "/about", "/search", "/sources", ...ACCOUNT_PATHS];
+    // `/credits` prerenders for the same reason: attribution that only exists
+    // once JavaScript has run is attribution a crawler never sees.
+    const paths = ["/", "/about", "/search", "/sources", "/credits", ...ACCOUNT_PATHS];
 
     // Kept in step with SOURCE_META in app/content/source-meta.ts. A source
     // page is a static page over the whole dataset, so it costs one route per

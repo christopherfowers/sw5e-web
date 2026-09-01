@@ -68,6 +68,7 @@ RUN set -eu; \
     fi; \
     echo "canonical content: $documents documents"; \
     node scripts/build-content-fixture.mjs --content /content --out app/data/generated; \
+    node scripts/build-credits.mjs --content /content --out app/data/credits.json; \
     node -e 'const m = require("/app/app/data/generated/manifest.json"); const total = m.types.reduce((sum, type) => sum + type.count, 0); if (total === 0) { console.error("the generated dataset holds no items"); process.exit(1); } console.log("generated dataset: " + total + " items");'
 
 # Prerenders every content route to static HTML plus the SPA fallback shell.

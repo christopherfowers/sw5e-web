@@ -731,8 +731,14 @@ main:focus {
   justify-content: space-between;
 }
 
+.site-footer-statement {
+  max-width: 62ch;
+  display: grid;
+  gap: var(--space-2);
+}
+
 .site-footer p {
-  max-width: 54ch;
+  max-width: 62ch;
 }
 
 .site-footer-links {
@@ -740,6 +746,106 @@ main:focus {
   gap: var(--space-4);
   list-style: none;
   flex-wrap: wrap;
+}
+
+/* ================================================================== credits */
+
+/*
+ * The credits page has two shapes because the categories do. Where the source
+ * recorded what somebody did, the entry is a term and its description; where
+ * it recorded only that somebody took part, it is a roster. Rendering the
+ * rosters as description lists would produce four hundred empty second
+ * columns, and rendering the specific credits as a roster would throw away the
+ * sentence that makes them worth having.
+ */
+.credits-section {
+  margin-bottom: var(--space-6);
+}
+
+.credits-blurb {
+  color: var(--text-muted);
+  max-width: var(--measure);
+  margin-bottom: var(--space-3);
+}
+
+.credits-provenance,
+.credits-note {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+  max-width: var(--measure);
+  margin-top: var(--space-3);
+}
+
+.credit-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.credit-entry {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) 1fr;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.credit-entry dt {
+  font-weight: 650;
+}
+
+.credit-entry dd {
+  color: var(--text-muted);
+}
+
+@media (max-width: 34rem) {
+  .credit-entry {
+    grid-template-columns: 1fr;
+    gap: 0.125rem;
+  }
+}
+
+.credit-unrecorded {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/*
+ * A roster is read by scanning for one name, so it is set as columns that
+ * reflow rather than as a single long list: three hundred and eighty-four
+ * patrons in one column is a page nobody reaches the end of.
+ */
+.credit-roster {
+  list-style: none;
+  columns: 3 13rem;
+  column-gap: var(--space-5);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.credit-roster li {
+  break-inside: avoid;
+  padding: 0.125rem 0;
+}
+
+/*
+ * The per-image credit, shown with the picture. The unattributed form is
+ * deliberately not hidden or greyed into invisibility: it is the visible
+ * worklist, and a reader recognising their own work is how it gets fixed.
+ */
+.image-credit {
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+.image-credit-label {
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+.image-credit-work {
+  font-style: italic;
 }
 
 /* =================================================================== search */

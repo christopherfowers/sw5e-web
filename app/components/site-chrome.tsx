@@ -70,16 +70,56 @@ export function SiteHeader() {
   );
 }
 
+/**
+ * The footer states three separate things, and the reason it is this long is
+ * that the short version got all three of them wrong.
+ *
+ * It used to say that "game content and artwork belong to their authors",
+ * which credited nobody by name and conflated three different positions into
+ * one vague sentence. Star Wars belongs to Lucasfilm and always did. The
+ * conversion of D&D into Star Wars 5e is the work of Galiphile and a named
+ * community, made in accordance with Wizards of the Coast's Fan Content Policy
+ * — that is what the original site's credits actually claim, and it is a
+ * different claim from owning Star Wars. And this website's own source code is
+ * MIT licensed, which is a third thing again: the code being freely reusable
+ * says nothing about the game content or the artwork, and reading one as the
+ * other is precisely the confusion the old wording invited.
+ *
+ * The credits link is not decoration. An assertion about who made something,
+ * with no way to reach the list of who, is the failure this replaces.
+ *
+ * The header carries the lineage and this block carries the attribution and the
+ * licensing, which is the division the wordmark's own comment describes. They
+ * have to read as one voice rather than two, so the second sentence borrows the
+ * header's verb: the tagline says "Continuing sw5e.com" and this says the site
+ * continues that work. It also repeats, in the one place that appears on every
+ * page, the limit the about page sets out at length — that continuing somebody
+ * else's work is not the same as speaking for them.
+ */
 export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
-        <p>
-          A community reference for the Star Wars 5e tabletop roleplaying game.
-          Game content and artwork belong to their authors; this site is
-          unofficial.
-        </p>
+        <div className="site-footer-statement">
+          <p>
+            Star Wars 5e is a fan conversion of fifth-edition D&amp;D, made by
+            Galiphile and a community of contributors in accordance with Wizards
+            of the Coast&rsquo;s Fan Content Policy. This site continues that
+            work and does not speak for sw5e.com or the people who ran it. Star
+            Wars and all related properties belong to Lucasfilm. This site is
+            unofficial, and is not affiliated with, endorsed by, or sponsored by
+            Lucasfilm or Wizards of the Coast.
+          </p>
+          <p>
+            This website&rsquo;s source code is MIT licensed. The game content
+            and the artwork are not the site&rsquo;s to license and remain with
+            their authors and rights holders.
+          </p>
+        </div>
         <ul className="site-footer-links">
+          <li>
+            <Link to="/credits">Credits</Link>
+          </li>
           <li>
             <Link to="/sources">Source books</Link>
           </li>
