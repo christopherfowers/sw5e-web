@@ -560,8 +560,8 @@ jobs:
           # assertion where checking a sample would miss a single route having
           # picked it up.
           #
-          # Restricted to index.html, and that restriction is load-bearing
-          # rather than an optimisation. The banner's words are of course in
+          # Restricted to *.html, and that restriction is load-bearing rather
+          # than an optimisation. The banner's words are of course in
           # /assets/root-*.js — they are the component's own copy, and they have
           # to ship or QA could not draw anything. What must never happen is
           # that they reach the *markup*, because markup is what is served
@@ -582,8 +582,15 @@ jobs:
           # to be in that markup, empty. A region that arrives together with its
           # text is often not announced at all, so a reader using a screen
           # reader would get no warning on QA.
-          if ! curl --fail --silent http://127.0.0.1:8080/ \
-               | grep -q '<div class="environment-banner" role="status"></div>'; then
+          #
+          # Fetched into a variable rather than piped into `grep -q`, like the
+          # other body assertions in this job. `grep -q` exits on its first
+          # match and closes the pipe under it, so curl can die of SIGPIPE and
+          # `pipefail` would then fail the step on a page that was perfectly
+          # correct.
+          home=$(curl --fail --silent http://127.0.0.1:8080/)
+
+          if ! grep -q '<div class="environment-banner" role="status"></div>' <<< "$home"; then
             echo "::error::The empty live region is missing from the" \
               "prerendered markup; the QA banner would be inserted into a" \
               "region nothing is watching."
