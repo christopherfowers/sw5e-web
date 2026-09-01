@@ -13,12 +13,17 @@ import type { Route } from "./+types/home";
  *
  * The first is the article. This used to open "A community reference", and the
  * indefinite article did real damage: it filed the site alongside every other
- * fan project rather than saying what it is. Star Wars 5e had a reference, at
- * sw5e.com, and when its maintainer stepped down it stopped being updated. This
- * is where that work continues. Saying so is not a boast — it is the single
- * fact a reader arriving on an old bookmark needs, and the site never said it
- * anywhere. `/about` says it at length; this is the version that fits in a
- * search result.
+ * fan project rather than saying what it is. The fix for that overshot in the
+ * other direction — "The maintained continuation of sw5e.com" — and traded one
+ * wrong self-description for another. A continuation is something that stands
+ * outside a project and carries it forward. This is not outside it. It is Star
+ * Wars 5e, on new foundations, and the description a search result shows should
+ * say what the site is rather than what it succeeded.
+ *
+ * So the lineage has come out of this description entirely and lives on
+ * `/about`, which is the page that can afford the paragraph it needs. That is
+ * not a retreat from the claim; it is putting the claim where it is not
+ * compressed into a phrase that reads as distance.
  *
  * The second is that the description no longer lists content types by hand.
  * The old one named eight, and was already wrong: classes, features, starships,
@@ -42,7 +47,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
     {
       name: "description",
       content:
-        `The maintained continuation of sw5e.com. ${corpus} — classes, ` +
+        `Star Wars 5e, the whole reference. ${corpus} — classes, ` +
         "archetypes, features, powers, starships, enhanced items and creature " +
         "stat blocks — searchable in one place.",
     },
@@ -115,10 +120,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           ) : null}
           <h1>Star Wars 5e</h1>
           <p className="lede">
-            The maintained home for the Star Wars 5e tabletop roleplaying game.
-            This site picks up where sw5e.com left off — the same conversion,
-            the same books, every entry searchable and built to be read at the
-            table.
+            The maintained home for the Star Wars 5e tabletop roleplaying game
+            — the whole conversion and every book, every entry searchable and
+            built to be read at the table.
           </p>
           <p className="home-hero-meta">
             {total.toLocaleString("en-US")} entries across {TYPE_ORDER.length}{" "}
@@ -139,10 +143,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             for an answer to "is this the same site, and is my stuff here". The
             two browse buttons stay first because most arrivals do not need
             this sentence at all.
+
+            It used to ask "here is what happened", which framed the move as an
+            event that befell somebody else. It is a change of address, so it
+            now reads as one. The old domain is still named, because that is the
+            word the reader is holding in their head and a redirect notice that
+            will not say where you came from is no use to anybody.
           */}
           <p className="home-hero-note">
             <Link to="/about">
-              Coming from sw5e.com? Here is what happened, and what carried over.
+              Arrived from an sw5e.com link? Here is what moved, and what did
+              not.
             </Link>
           </p>
         </div>

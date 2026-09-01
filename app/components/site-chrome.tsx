@@ -49,17 +49,28 @@ export function SiteHeader() {
           <span className="site-wordmark-text">
             <span className="site-wordmark-name">Star Wars 5e</span>
             {/*
-              The tagline reads "Continuing sw5e.com" and not "Community
-              reference" because it is the only self-description that appears on
-              every page. A reader who deep-links into a single power from a
+              The tagline is the only self-description that appears on every
+              page, so what it does with four words matters more than its size
+              suggests: a reader who deep-links into a single power from a
               search result never sees the home page, and the footer speaks
-              about licensing rather than about lineage — so this line is the
-              one chance the site gets to tell them, wherever they landed, that
-              this is where the reference they knew went. "Continuing" is the
-              strongest verb the facts support: this site carries that work
-              forward, it is not operated by the people who ran it.
+              about licensing rather than about what the site is.
+
+              It read "Continuing sw5e.com", and before that "Community
+              reference". Both were wrong in the same direction. "Community
+              reference" filed the site as one fan project among many;
+              "Continuing sw5e.com" was worse, because it described the site as
+              standing outside Star Wars 5e and carrying its work along behind
+              it. This is Star Wars 5e. It is the same project it has always
+              been, on new foundations, and a site that has changed where it is
+              served from does not introduce itself by naming its old address —
+              it says what it is.
+
+              So the tag now states the plain fact and nothing else: this is
+              the reference, and it is the current one. There is no verb of
+              succession in it to be read as a claim about somebody else, and
+              no article that makes it one option among several.
             */}
-            <span className="site-wordmark-tag">Continuing sw5e.com</span>
+            <span className="site-wordmark-tag">The current reference</span>
           </span>
         </Link>
         <SiteSearch />
@@ -88,13 +99,24 @@ export function SiteHeader() {
  * The credits link is not decoration. An assertion about who made something,
  * with no way to reach the list of who, is the failure this replaces.
  *
- * The header carries the lineage and this block carries the attribution and the
- * licensing, which is the division the wordmark's own comment describes. They
- * have to read as one voice rather than two, so the second sentence borrows the
- * header's verb: the tagline says "Continuing sw5e.com" and this says the site
- * continues that work. It also repeats, in the one place that appears on every
- * page, the limit the about page sets out at length — that continuing somebody
- * else's work is not the same as speaking for them.
+ * One sentence used to sit in the middle of this paragraph and has been taken
+ * out: "This site continues that work and does not speak for sw5e.com or the
+ * people who ran it." It was written in good faith and it was false. This site
+ * is not a bystander continuing Star Wars 5e from a polite distance; it is
+ * Star Wars 5e, and disclaiming a relationship that exists misled every reader
+ * who got as far as the footer. What replaces it says the true thing in the
+ * same breath as the attribution, because the two belong together: the
+ * conversion is Galiphile's and the community's, and this site is where it is
+ * published now.
+ *
+ * The two disclaimers on either side of it are a different matter entirely and
+ * are untouched. Being Star Wars 5e is not being official with respect to
+ * Lucasfilm or Wizards of the Coast — the first is a statement about which
+ * project this is, the second is a statement about rights nobody here holds —
+ * and collapsing the two is exactly the mistake the removed sentence invited
+ * from the other direction. Star Wars belongs to Lucasfilm, the conversion is
+ * fan content made under the Fan Content Policy, and neither of those stops
+ * being true because the site stopped apologising for existing.
  */
 export function SiteFooter() {
   return (
@@ -104,11 +126,10 @@ export function SiteFooter() {
           <p>
             Star Wars 5e is a fan conversion of fifth-edition D&amp;D, made by
             Galiphile and a community of contributors in accordance with Wizards
-            of the Coast&rsquo;s Fan Content Policy. This site continues that
-            work and does not speak for sw5e.com or the people who ran it. Star
-            Wars and all related properties belong to Lucasfilm. This site is
-            unofficial, and is not affiliated with, endorsed by, or sponsored by
-            Lucasfilm or Wizards of the Coast.
+            of the Coast&rsquo;s Fan Content Policy. This site is that reference,
+            in its newest form. Star Wars and all related properties belong to
+            Lucasfilm. This site is unofficial, and is not affiliated with,
+            endorsed by, or sponsored by Lucasfilm or Wizards of the Coast.
           </p>
           <p>
             This website&rsquo;s source code is MIT licensed. The game content

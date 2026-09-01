@@ -61,18 +61,37 @@ describe("the site footer", () => {
   });
 
   /**
-   * The header carries the lineage and the footer carries the attribution, and
-   * the two have to read as one voice. The footer borrows the wordmark's verb
-   * — "Continuing sw5e.com" / "continues that work" — and repeats, on every
-   * page, the limit the about page sets out at length.
+   * The sentence this footer used to carry, and the reason it is now asserted
+   * on its absence rather than on its wording.
+   *
+   * It read "This site continues that work and does not speak for sw5e.com or
+   * the people who ran it", and it disclaimed a relationship that exists. This
+   * site is Star Wars 5e. A disclaimer of that is not a modest hedge, it is a
+   * false statement, and it appeared on every page of the site — which is
+   * exactly why it is pinned here: the removed sentence is short, plausible and
+   * of the kind a tidy-up would happily reinstate.
+   *
+   * Both halves are checked. "Continues that work" goes too, not only the
+   * disclaimer: a footer that still described the site as continuing something
+   * would keep the same false distance in a friendlier register.
    */
-  it("continues sw5e.com without claiming to speak for it", () => {
+  it("no longer disclaims a relationship with sw5e.com that exists", () => {
     const footer = renderFooter().container;
 
-    expect(footer).toHaveTextContent(/continues that work/i);
-    expect(footer).toHaveTextContent(
-      /does not speak for sw5e\.com or the people who ran it/i,
-    );
+    expect(footer).not.toHaveTextContent(/does not speak for/i);
+    expect(footer).not.toHaveTextContent(/continues that work/i);
+    expect(footer).not.toHaveTextContent(/the people who ran it/i);
+  });
+
+  /**
+   * And what stands in its place. The footer has to say which project this is,
+   * because it is one of only two things on every page that says anything about
+   * the site at all — the wordmark tagline is the other.
+   */
+  it("says that this site is the reference, not a bystander to it", () => {
+    const footer = renderFooter().container;
+
+    expect(footer).toHaveTextContent(/this site is that reference/i);
   });
 
   it("links to the credits, so the claim about who made it is reachable", () => {

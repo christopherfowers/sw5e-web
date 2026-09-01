@@ -9,6 +9,7 @@ import {
 } from "react-router";
 
 import { AuthProvider } from "./auth/session";
+import { EnvironmentBanner } from "./components/environment-banner";
 import {
   SiteFooter,
   SiteHeader,
@@ -36,6 +37,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+        {/*
+          Above the skip link and outside the provider, which is deliberate on
+          both counts.
+
+          Above it, because this is a statement about the whole document and a
+          reader who lands on a QA page should meet it before anything else —
+          and because it puts nothing focusable in front of the skip link,
+          which must stay the first thing a keyboard user reaches.
+
+          Outside the provider, because it has nothing to do with who is signed
+          in. Which deployment this is does not vary by reader, and a banner
+          that waited on the session would be missing for exactly as long as
+          the session round trip takes on every page load.
+
+          On production this renders an empty, invisible live region and
+          nothing else — see app/components/environment-banner.tsx.
+        */}
+        <EnvironmentBanner />
         {/*
           The session is resolved once per document load, here, rather than by
           each page that happens to care. It wraps the header as well as the

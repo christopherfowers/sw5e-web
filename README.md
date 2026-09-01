@@ -767,6 +767,14 @@ as `role="alert"` and confirmations as `role="status"`, and the TOTP secret
 available as selectable text — a QR code cannot be read aloud, focused, or
 scanned by the phone that is displaying it.
 
+The test-environment banner is covered in
+`app/components/environment-banner.test.tsx`: its live region is in the document
+from the first render rather than arriving with its text, because a region
+inserted alongside its contents is frequently not announced at all; it is in
+normal flow so it displaces the page rather than covering it; and it contains
+nothing focusable, which keeps the skip link the first thing a keyboard user
+reaches and makes a focus trap impossible by construction.
+
 What it still does not verify: there is no automated axe scan, so contrast,
 ARIA correctness and landmark structure across every page remain reviewed by
 hand rather than enforced. Until that lands (see the open accessibility issue),
@@ -790,6 +798,37 @@ MIT — see [LICENSE](LICENSE).
 Merging to `main` publishes the image and then deploys it to the internal QA
 environment at <https://sw5e.cfowers.io>, which runs the database, API and site
 as one Compose stack behind the reverse proxy.
+
+### The test-environment banner
+
+QA draws a strip across the top of every page saying that it is a test
+environment and that nothing saved there is kept. Production draws nothing.
+
+The image is identical in both. It has to be — the point of promoting the image
+that passed QA is that the bytes do not change on the way — and this container
+is static nginx serving HTML rendered at build time, so there is no request-time
+render that could read an environment variable and nothing in the image that
+could be told which environment it is. Baking the answer in at build time would
+mean QA and production are different artifacts and "tested in QA" is a claim
+about a different binary.
+
+So the site asks the API instead. `GET /api/site/environment` answers
+`{ name, isProduction }`; the API is configured per environment and already
+knows. The site asks once after hydration, from `app/site/environment.ts`, and
+`app/components/environment-banner.tsx` draws the strip if — and only if — the
+answer explicitly says the deployment is not production.
+
+**Configure QA, not production.** Set `ASPNETCORE_ENVIRONMENT=QA` on the *API*
+service in the QA stack. Leave it unset everywhere else. Every other outcome
+means no banner: no answer, a timeout, a 404 because the API is not mounted
+yet, an HTML page from the proxy, a body of an unexpected shape. That asymmetry
+is deliberate. A missing banner in QA inconveniences the handful of people who
+already know they are in QA; a "nothing here is kept" banner on the live site
+tells every reader that the reference they are consulting is disposable.
+
+Nothing about the banner reaches the prerendered HTML: the region it renders
+into is in the markup and empty, and the container job asserts that the words
+themselves appear in none of the published files.
 
 The deploy step runs on a self-hosted runner on the QA host. That runner polls
 GitHub outbound — no inbound port is opened — holds no secrets, and is
