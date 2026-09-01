@@ -484,7 +484,11 @@ describe("what has been done to an account", () => {
       name: /administrative history/i,
     });
 
-    expect(within(history).getByText(/roles changed/i)).toBeInTheDocument();
+    // `findBy`, not `getBy`. The section itself is in the markup from the first
+    // render — it draws its own heading and a pending state — so waiting for
+    // the region only waits for the panel, and the entries arrive a round trip
+    // later. A `getBy` here passes on a fast machine and fails on a slow one.
+    expect(await within(history).findByText(/roles changed/i)).toBeInTheDocument();
     expect(within(history).getByText(/Jen Ordo/)).toBeInTheDocument();
 
     // Filtered by the server, on the identifier of the account being looked at.

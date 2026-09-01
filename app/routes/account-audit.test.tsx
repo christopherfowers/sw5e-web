@@ -177,7 +177,9 @@ describe("filtering", () => {
       ).toBe("account-deleted"),
     );
 
-    expect(screen.getByText("Gone")).toBeInTheDocument();
+    // `findBy` for the row: the `waitFor` above only proves the request went
+    // out, and the render that answers it is a tick later.
+    expect(await screen.findByText("Gone")).toBeInTheDocument();
     expect(screen.queryByText(/roles changed/i)).not.toBeInTheDocument();
   });
 });
