@@ -5,6 +5,7 @@ import {
   passkey,
   serveAccountApi,
   user,
+  VALID_EMAIL_CODE,
   VALID_TOTP_CODE,
   VALID_VERIFICATION_EMAIL,
   VALID_VERIFICATION_TOKEN,
@@ -394,6 +395,172 @@ test.describe("registration", () => {
       page.getByText(/does not look like an email address/i),
     ).toBeVisible();
     expect(contract.calls.some((call) => call.path === "/register")).toBe(false);
+  });
+});
+
+test.describe("signing in with an emailed code", () => {
+  /**
+   * The path that exists for the machines a passkey cannot reach — a shared
+   * library desktop, an older computer with no platform authenticator, a
+   * managed laptop whose policy forbids enrolling one. Worth running in a real
+   * browser rather than only in jsdom, because the whole flow is four screens
+   * of state in one route with no navigation between them, and "the form
+   * submits, the step changes, focus lands somewhere sensible" is exactly the
+   * kind of thing that works in a test renderer and not in Chrome.
+   */
+  test("takes an address, then a code, and refuses a wrong one on the way", async ({
+    page,
+    context,
+  }) => {
+    const contract = await serveAccountApi(page, context, { session: null });
+
+    await page.goto("/sign-in");
+
+    // The recommendation is still the recommendation: the passkey button is
+    // the primary action and the code is offered underneath it.
+    await expect(
+      page.getByRole("button", { name: /continue with a passkey/i }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: /email me a sign-in code/i }).click();
+
+    await page.getByLabel(/email address/i).fill(VALID_VERIFICATION_EMAIL);
+    await page.getByRole("button", { name: /^email me a code$/i }).click();
+
+    await expect(page.getByLabel(/six-digit code/i)).toBeVisible();
+    // Held back for the cooldown the server named, and saying so rather than
+    // simply refusing to be pressed.
+    const resend = page.getByRole("button", { name: /send a new code/i });
+    await expect(resend).toBeDisabled();
+    await expect(resend).toContainText(/60s/);
+
+    await page.getByLabel(/six-digit code/i).fill("000000");
+    await page.getByRole("button", { name: /^sign in$/i }).click();
+
+    await expect(page.getByRole("alert")).toContainText(/not accepted/i);
+    // Cleared, so the next attempt does not start with a selection and a
+    // delete — and still on the same step, not thrown back to the beginning.
+    await expect(page.getByLabel(/six-digit code/i)).toHaveValue("");
+    await expect(page).toHaveURL(/\/sign-in/);
+
+    await page.getByLabel(/six-digit code/i).fill(VALID_EMAIL_CODE);
+    await page.getByRole("button", { name: /^sign in$/i }).click();
+
+    await expect(page).toHaveURL(/\/account$/);
+    await expect(page.locator(".account-identity-name")).toHaveText("Jen Ordo");
+    // And the session the server ended up holding is the weaker kind, which is
+    // what everything below depends on.
+    expect(contract.session?.authenticationMethod).toBe("email");
+    expect(contract.session?.strongAuthentication).toBe(false);
+  });
+
+  test("the same code cannot be spent twice", async ({ page, context }) => {
+    // Single use is what makes a code safe to put in an inbox. The
+    // second-factor branch is what makes it observable: the code is consumed,
+    // the sign-in is not finished, and "start over" comes back to the same
+    // field with the same digits still in the reader's hand.
+    await serveAccountApi(page, context, { session: null, mfaRequired: true });
+
+    await page.goto("/sign-in");
+    await page.getByRole("button", { name: /email me a sign-in code/i }).click();
+    await page.getByLabel(/email address/i).fill(VALID_VERIFICATION_EMAIL);
+    await page.getByRole("button", { name: /^email me a code$/i }).click();
+    await page.getByLabel(/six-digit code/i).fill(VALID_EMAIL_CODE);
+    await page.getByRole("button", { name: /^sign in$/i }).click();
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: /one more step/i }),
+    ).toBeVisible();
+
+    // Back into the emailed-code path, not into the passkey path — which is a
+    // dead end for exactly the readers who chose this door.
+    await page.getByRole("button", { name: /start over/i }).click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: /check your inbox/i }),
+    ).toBeVisible();
+
+    await page.getByLabel(/six-digit code/i).fill(VALID_EMAIL_CODE);
+    await page.getByRole("button", { name: /^sign in$/i }).click();
+
+    await expect(page.getByRole("alert")).toContainText(/not accepted/i);
+    await expect(page).toHaveURL(/\/sign-in/);
+  });
+
+  test("says the same thing about an address it has never seen", async ({
+    page,
+    context,
+  }) => {
+    // The property the old "there is no email field here" test used to
+    // guarantee by construction, now guaranteed by the server answering
+    // identically. Nothing on this screen may hint that the address is unknown.
+    await serveAccountApi(page, context, { session: null });
+
+    await page.goto("/sign-in");
+    await page.getByRole("button", { name: /email me a sign-in code/i }).click();
+    await page.getByLabel(/email address/i).fill("stranger@example.com");
+    await page.getByRole("button", { name: /^email me a code$/i }).click();
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: /check your inbox/i }),
+    ).toBeVisible();
+    await expect(page.getByLabel(/six-digit code/i)).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  });
+
+  test("the account page then offers a passkey, calmly and once", async ({
+    page,
+    context,
+  }) => {
+    await serveAccountApi(page, context, {
+      session: user({
+        passkeys: [],
+        authenticationMethod: "email",
+        strongAuthentication: false,
+      }),
+    });
+
+    await page.goto("/account");
+
+    await expect(page.locator("main").getByRole("status")).toContainText(
+      /add a passkey while you are here/i,
+    );
+    await expect(
+      page.getByText(/signed in on this device with a code emailed to you/i),
+    ).toBeVisible();
+    // An offer, not an alarm.
+    await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
+  });
+
+  test("a contributor on an emailed code is told what to enrol, not that it lacks access", async ({
+    page,
+    context,
+  }) => {
+    // The client-side mirror of the API's 403
+    // `strong-authentication-required`. The account holds the role, so the
+    // dead-end wording would be both wrong and discouraging: this is a minute
+    // of work away from being fixed, and the page has to say which minute.
+    await serveAccountApi(page, context, {
+      session: user({
+        roles: ["Contributor"],
+        authenticationMethod: "email",
+        strongAuthentication: false,
+      }),
+    });
+
+    await page.goto("/account/contributions");
+
+    const alert = page.locator("main").getByRole("alert");
+    await expect(alert).toContainText(/needs a passkey or an authenticator app/i);
+    await expect(alert).not.toContainText(/does not have access/i);
+    await expect(
+      page.getByRole("heading", { name: /^contributions$/i }),
+    ).toHaveCount(0);
+
+    // And the way out is genuinely open: locking the account area behind the
+    // credential the account area is where you enrol would be a catch-22.
+    await page.goto("/account/passkeys");
+    await expect(
+      page.getByRole("heading", { name: /your passkeys/i }),
+    ).toBeVisible();
   });
 });
 
