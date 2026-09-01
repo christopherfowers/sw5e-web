@@ -45,19 +45,27 @@ export default function AccountContributions() {
             </div>
           </dl>
 
+          <p className="auth-actions">
+            <Link className="button button-primary" to="/authoring">
+              Open the authoring workspace
+            </Link>
+          </p>
+
           <p className="auth-note">
-            Base game content is uploaded as schema-validated JSON documents and
-            reviewed before it is published. The upload tool is not part of this
-            release; until it lands, send corrections through the repository&apos;s
-            issue tracker and they will be applied to the canonical content set.
+            Base game content is edited as schema-validated documents. Every
+            change is written as a draft first, checked against its content
+            type&apos;s schema, and kept as a revision that can be read and put
+            back afterwards. Publishing a draft is an administrator&apos;s job;
+            saving one is how a correction is proposed.
           </p>
 
           <p className="auth-note">
             What readers report is in <Link to="/account/flags">the review
-            queue</Link>. It is worth starting there rather than with the
-            issue tracker: it is where the community can reach you, and it is
-            the only place a picture&apos;s missing artist can be recorded by
-            the person who recognised the work.
+            queue</Link>, and a report a reviewer has accepted leads straight
+            into the editor for the thing it is about. It is worth starting
+            there: it is where the community can reach you, and it is the only
+            place a picture&apos;s missing artist can be recorded by the person
+            who recognised the work.
           </p>
         </section>
       )}

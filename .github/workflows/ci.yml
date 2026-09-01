@@ -249,12 +249,22 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 47 pages that do not come from content:
+          # One page per document, plus 50 pages that do not come from content:
           # the home page, the about page, the search page, the sources index,
-          # five source pages, the credits page, twenty-seven type indexes, and
-          # the ten account routes listed in ACCOUNT_PATHS in
-          # react-router.config.ts. `source` is the only directory that is not a
-          # browsable type, so the other twenty-seven contribute item pages.
+          # five source pages, the credits page, twenty-seven type indexes, the
+          # ten account routes listed in ACCOUNT_PATHS in
+          # react-router.config.ts, and the three authoring routes listed in
+          # AUTHORING_PATHS beside them. `source` is the only directory that is
+          # not a browsable type, so the other twenty-seven contribute item
+          # pages.
+          #
+          # It went from 47 to 50 when the authoring workspace landed. Three
+          # routes rather than one per editable document, and deliberately: the
+          # document being edited travels in the query string, so the worklist,
+          # the editor and the history are one file each no matter how large the
+          # corpus grows. A path segment would have meant a prerendered file per
+          # document — and no file at all for a document that does not exist
+          # yet, which is precisely what the editor has to be able to open.
           #
           # It went from 45 to 47 when administrator-facing account management
           # added `/account/people` and `/account/audit`. Two static addresses
@@ -294,7 +304,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 47))
+          expected=$((items + 50))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)

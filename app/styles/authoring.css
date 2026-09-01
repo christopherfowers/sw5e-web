@@ -1,0 +1,507 @@
+/*
+ * The authoring workspace.
+ *
+ * Two things shape everything below.
+ *
+ * **A generated form has no designer.** Nobody laid out the thirty-one content
+ * types by hand and nobody is going to, so the rules here have to hold for a
+ * four-field armour property and for a class with a forty-row progression and
+ * six markdown fields. That means depth is expressed with a left rule and
+ * indentation rather than with boxes inside boxes — nested cards three deep are
+ * unreadable at the widths this actually runs at.
+ *
+ * **The conflict panel and the error summary are the two things that must be
+ * impossible to miss.** Both are the moment where somebody is about to lose
+ * work or has just had a save refused, and both are given the weight of a real
+ * section rather than of a tooltip.
+ *
+ * Every colour is a token from app.css. Nothing here introduces a hue of its
+ * own, so the workspace reads as part of the site rather than as a tool bolted
+ * to the side of one, and dark mode is inherited rather than reimplemented.
+ */
+
+.authoring-page .account-main {
+  /* The editor is the widest thing on this site and needs to be. A markdown
+     field constrained to the reading measure would show three words a line. */
+  max-width: none;
+}
+
+/* ------------------------------------------------------------------ worklist */
+
+.work-list {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.work-row {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  padding: var(--space-4);
+}
+
+/* An overtaken draft is marked on its edge rather than by a colour behind the
+   text, so the signal survives being read by somebody who cannot see the hue. */
+.work-row[data-stale="true"] {
+  border-inline-start: 4px solid var(--hue-amber);
+}
+
+.work-row-head {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.work-kind {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.4rem;
+  color: var(--brand-contrast);
+  background: var(--text-muted);
+}
+
+.work-kind[data-kind="report"] {
+  background: var(--hue-red);
+}
+
+.work-kind[data-kind="draft"] {
+  background: var(--hue-indigo);
+}
+
+.work-kind[data-kind="new"] {
+  background: var(--hue-green);
+}
+
+.work-name {
+  font-weight: 600;
+  font-size: 1.0625rem;
+}
+
+.work-type,
+.work-meta,
+.work-reason {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.work-reason,
+.work-meta {
+  margin: var(--space-2) 0 0;
+}
+
+.work-stale {
+  margin: var(--space-2) 0 0;
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.work-actions {
+  margin: var(--space-3) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- the form */
+
+.authoring-form {
+  margin-top: var(--space-4);
+}
+
+.authoring-field {
+  margin-top: var(--space-4);
+}
+
+.authoring-field > label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--space-1);
+}
+
+.authoring-field-toggle {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.authoring-field-toggle > label {
+  font-weight: 600;
+  margin: 0;
+}
+
+.authoring-field-toggle > p {
+  grid-column: 1 / -1;
+}
+
+.authoring-input,
+.authoring-select,
+.authoring-prose {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.625rem;
+}
+
+.authoring-input-number {
+  max-width: 12rem;
+}
+
+.authoring-prose {
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.authoring-json {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+.authoring-input:focus-visible,
+.authoring-select:focus-visible,
+.authoring-prose:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.authoring-input[aria-invalid="true"],
+.authoring-select[aria-invalid="true"],
+.authoring-prose[aria-invalid="true"] {
+  /* Never colour alone: the border thickens as well, so the state is available
+     without hue. The message beside it is the thing that actually says what is
+     wrong; this only draws the eye to it. */
+  border-color: var(--hue-red);
+  border-width: 2px;
+}
+
+/* Depth by rule and indent rather than by nested boxes. */
+.authoring-group {
+  margin: var(--space-5) 0 0;
+  border: 0;
+  border-inline-start: 2px solid var(--border);
+  padding: 0 0 0 var(--space-4);
+}
+
+.authoring-group > legend {
+  padding: 0;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.authoring-count {
+  margin-inline-start: var(--space-2);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border-radius: 999px;
+  padding: 0.0625rem 0.4rem;
+}
+
+.authoring-conditions {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: 0.9375rem;
+}
+
+.authoring-conditions p {
+  margin: 0;
+}
+
+.authoring-conditions p + p {
+  margin-top: var(--space-2);
+}
+
+.authoring-list-items {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.authoring-list-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  background: var(--surface);
+}
+
+.authoring-list-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.authoring-list-item-number {
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.authoring-list-item-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.authoring-list-add {
+  margin: var(--space-3) 0 0;
+}
+
+.authoring-remove {
+  color: var(--hue-red);
+}
+
+.authoring-extras {
+  margin-top: var(--space-5);
+  padding: var(--space-3);
+  border: 1px dashed var(--hue-amber);
+  border-radius: var(--radius-sm);
+}
+
+/* ------------------------------------------------------------- errors & state */
+
+.authoring-errors {
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  border: 2px solid var(--hue-red);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.authoring-errors-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.authoring-errors ul {
+  margin: var(--space-2) 0 0;
+  padding-inline-start: 1.25rem;
+}
+
+.authoring-errors a {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+.authoring-actions {
+  margin-top: var(--space-5);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.authoring-compare {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  margin-top: var(--space-4);
+}
+
+/* ------------------------------------------------------------------ conflict */
+
+.authoring-conflict {
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  border: 2px solid var(--hue-amber);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.authoring-conflict h2 {
+  margin-top: 0;
+  font-size: 1.125rem;
+}
+
+.authoring-revert {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+}
+
+/* ---------------------------------------------------------------- revisions */
+
+.revision-list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.revision-row {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+}
+
+.revision-head {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.revision-number {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.revision-action[data-action="reverted"] {
+  color: var(--hue-amber);
+  font-weight: 600;
+}
+
+.revision-reason,
+.revision-meta {
+  margin: var(--space-2) 0 0;
+  font-size: 0.9375rem;
+}
+
+.revision-meta {
+  color: var(--text-muted);
+}
+
+.revision-actions {
+  margin: var(--space-2) 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* --------------------------------------------------------------------- diff */
+
+.diff-summary {
+  margin: var(--space-3) 0 0;
+  font-weight: 600;
+}
+
+.diff-list {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.diff-change {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  background: var(--surface-raised);
+}
+
+.diff-change-head {
+  margin: 0 0 var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.diff-kind {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  padding: 0.125rem 0.4rem;
+  color: var(--brand-contrast);
+  background: var(--text-muted);
+}
+
+.diff-kind[data-kind="added"] {
+  background: var(--hue-green);
+}
+
+.diff-kind[data-kind="removed"] {
+  background: var(--hue-red);
+}
+
+.diff-kind[data-kind="changed"] {
+  background: var(--hue-indigo);
+}
+
+.diff-path {
+  font-weight: 600;
+}
+
+.diff-pointer {
+  font-size: 0.8125rem;
+  color: var(--text-faint);
+}
+
+.diff-values {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.diff-values dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.diff-values dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.diff-absent {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.diff-prose {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+/*
+ * Removed and added text.
+ *
+ * `<del>` and `<ins>` carry the meaning; these only make it visible. Both keep
+ * their own decoration as well as their tint — a strike-through and an
+ * underline — so the difference is legible in a screenshot, on a projector, and
+ * to anybody who does not distinguish these two hues.
+ */
+.diff-removed {
+  background: color-mix(in oklab, var(--hue-red) 14%, transparent);
+  color: var(--text);
+  text-decoration: line-through;
+}
+
+.diff-added {
+  background: color-mix(in oklab, var(--hue-green) 16%, transparent);
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}

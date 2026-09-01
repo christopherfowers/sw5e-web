@@ -87,6 +87,28 @@ const ACCOUNT_PATHS = [
 ] as const;
 
 /**
+ * The authoring workspace, prerendered as signed-out skeletons like the account
+ * area and for exactly the same reasons: these addresses have to exist as files
+ * or nginx answers 404 for them, and none of the three has a loader, so what
+ * gets written to disk is a heading and nothing else.
+ *
+ * Three routes rather than one per document. The document being edited travels
+ * in the query string — `/authoring/edit?type=class&key=guardian` — which is
+ * what makes it possible to open the editor on something that does not exist
+ * yet, and what keeps this list from growing with the corpus. A query string
+ * does not change which file is served.
+ *
+ * Adding these raised the prerendered route count by three. The container job
+ * in .github/workflows/ci.yml adds a fixed number of content-free pages to the
+ * document count, and that number went from 47 to 50 with this block.
+ */
+const AUTHORING_PATHS = [
+  "/authoring",
+  "/authoring/edit",
+  "/authoring/history",
+] as const;
+
+/**
  * The dataset this build renders from. `app/data/generated` is the full
  * archive-derived library and is gitignored; `app/data/fixture` is the small
  * committed sample that lets a contributor without the archive build the site.
@@ -138,7 +160,15 @@ export default {
     // page that can afford to need JavaScript before it says anything.
     // `/credits` prerenders for the same reason: attribution that only exists
     // once JavaScript has run is attribution a crawler never sees.
-    const paths = ["/", "/about", "/search", "/sources", "/credits", ...ACCOUNT_PATHS];
+    const paths = [
+      "/",
+      "/about",
+      "/search",
+      "/sources",
+      "/credits",
+      ...ACCOUNT_PATHS,
+      ...AUTHORING_PATHS,
+    ];
 
     // Kept in step with SOURCE_META in app/content/source-meta.ts. A source
     // page is a static page over the whole dataset, so it costs one route per
