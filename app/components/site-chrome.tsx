@@ -46,32 +46,16 @@ export function SiteHeader() {
               loading="eager"
             />
           ) : null}
-          <span className="site-wordmark-text">
-            <span className="site-wordmark-name">Star Wars 5e</span>
-            {/*
-              The tagline is the only self-description that appears on every
-              page, so what it does with four words matters more than its size
-              suggests: a reader who deep-links into a single power from a
-              search result never sees the home page, and the footer speaks
-              about licensing rather than about what the site is.
-
-              It read "Continuing sw5e.com", and before that "Community
-              reference". Both were wrong in the same direction. "Community
-              reference" filed the site as one fan project among many;
-              "Continuing sw5e.com" was worse, because it described the site as
-              standing outside Star Wars 5e and carrying its work along behind
-              it. This is Star Wars 5e. It is the same project it has always
-              been, on new foundations, and a site that has changed where it is
-              served from does not introduce itself by naming its old address —
-              it says what it is.
-
-              So the tag now states the plain fact and nothing else: this is
-              the reference, and it is the current one. There is no verb of
-              succession in it to be read as a claim about somebody else, and
-              no article that makes it one option among several.
-            */}
-            <span className="site-wordmark-tag">The current reference</span>
-          </span>
+          {/*
+            The wordmark is the name and nothing else. It carried a tagline
+            for a while — "Community reference", then "Continuing sw5e.com",
+            then "The current reference" — each trying to say in four words
+            what the site is. Beside a logo that already reads SW5e and a
+            name that already reads Star Wars 5e, all of them were saying it
+            a third time. The about page and the footer say what needs
+            saying, at the length it actually takes.
+          */}
+          <span className="site-wordmark-name">Star Wars 5e</span>
         </Link>
         <SiteSearch />
         <AccountControl />

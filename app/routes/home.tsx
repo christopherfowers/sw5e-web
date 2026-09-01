@@ -17,7 +17,7 @@ import type { Route } from "./+types/home";
  * other direction — "The maintained continuation of sw5e.com" — and traded one
  * wrong self-description for another. A continuation is something that stands
  * outside a project and carries it forward. This is not outside it. It is Star
- * Wars 5e, on new foundations, and the description a search result shows should
+ * Wars 5e, and the description a search result shows should
  * say what the site is rather than what it succeeded.
  *
  * So the lineage has come out of this description entirely and lives on

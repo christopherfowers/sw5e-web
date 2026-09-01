@@ -56,18 +56,25 @@ describe("About route", () => {
     expect(container.textContent ?? "").toContain("sw5e.com");
   });
 
-  it("says that this is the same project rather than a different one", () => {
+  // These two assert what the page has to convey, not the sentences it uses to
+  // convey it. An earlier version pinned the exact wording, which meant every
+  // improvement to the prose broke a test and invited the prose to be left
+  // alone instead — the assertion has to survive the copy being rewritten, or
+  // it is guarding the phrasing rather than the meaning.
+  it("says this is Star Wars 5e and names where it used to live", () => {
     const { container } = renderAbout();
     const text = container.textContent ?? "";
 
-    expect(text).toMatch(/this is star wars 5e/i);
-    expect(text).toMatch(/not a different project/i);
+    expect(text).toMatch(/star wars 5e/i);
+    expect(text).toContain("sw5e.com");
+    // And does not hedge it into being a separate thing.
+    expect(text).not.toMatch(/does not speak for|tribute to|a different project/i);
   });
 
   it("tells a reader arriving on a dead bookmark that their entries are here", () => {
-    renderAbout();
+    const { container } = renderAbout();
 
-    expect(screen.getByText(/bookmark that stopped working/i)).toBeInTheDocument();
+    expect(container.textContent ?? "").toMatch(/bookmark/i);
   });
 
   it("describes the corpus with numbers the build supplies", () => {

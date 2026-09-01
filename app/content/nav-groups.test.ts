@@ -131,6 +131,11 @@ describe("a content type that declares no group fails the build", () => {
           "wall of object literal and nobody can act on it",
       ).toMatch(new RegExp(`Property '"?${type}"?' is missing`));
     },
+    // Each case runs the TypeScript compiler over the real source, which takes
+    // seconds rather than milliseconds. The default 5s budget covered it on a
+    // fast runner and not on a slower machine, so this was a flake waiting to
+    // be blamed on whatever change happened to be in flight when it fired.
+    120_000,
   );
 });
 

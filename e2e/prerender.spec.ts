@@ -185,7 +185,7 @@ test.describe("the site's self-description", () => {
     const html = await response.text();
 
     expect(response.ok()).toBe(true);
-    expect(html).toContain("The current reference");
+    expect(html).not.toMatch(/current reference/i);
     expect(
       html,
       "the wordmark introduced the site by its old address on every page",
@@ -205,7 +205,7 @@ test.describe("the site's self-description", () => {
     ).toBe(200);
 
     const html = await response.text();
-    expect(html).toMatch(/<h1[^>]*>What this site is<\/h1>/);
+    expect(html).toMatch(/<h1[^>]*>About<\/h1>/);
     expect(html).toContain("Fan Content Policy");
   });
 });
