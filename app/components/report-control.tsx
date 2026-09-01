@@ -94,7 +94,7 @@ type Outcome =
   | { kind: "sending" }
   | { kind: "filed" }
   | { kind: "duplicate" }
-  | { kind: "failed"; message: string; field: string | null };
+  | { kind: "failed"; message: string };
 
 export function ReportControl({ target, label = "Report a problem" }: ReportControlProps) {
   const session = useSession();
@@ -151,10 +151,7 @@ export function ReportControl({ target, label = "Report a problem" }: ReportCont
           ? error.message
           : "That report could not be sent. Try again in a moment.";
 
-      const field =
-        error instanceof ApiError ? (Object.keys(error.fieldErrors)[0] ?? null) : null;
-
-      setOutcome({ kind: "failed", message, field });
+      setOutcome({ kind: "failed", message });
     }
   }
 
