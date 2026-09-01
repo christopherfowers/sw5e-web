@@ -29,6 +29,7 @@ export default [
     route("passkeys", "routes/account-passkeys.tsx"),
     route("security", "routes/account-security.tsx"),
     route("contributions", "routes/account-contributions.tsx"),
+    route("flags", "routes/account-flags.tsx"),
   ]),
 
   route(":type", "routes/type-index.tsx"),

@@ -58,6 +58,15 @@ const ACCOUNT_PATHS = [
   "/account/passkeys",
   "/account/security",
   "/account/contributions",
+
+  // Reports. Prerendered like the rest of the area, and — like the rest of it
+  // — as a signed-out skeleton: the page has no loader, so nothing about a
+  // moderation queue or anybody's reports is written into the static file.
+  //
+  // Adding this raised the prerendered route count by one. The container job in
+  // .github/workflows/ci.yml adds a fixed number of content-free pages to the
+  // document count, and that number went from 43 to 44 with this line.
+  "/account/flags",
 ] as const;
 
 /**

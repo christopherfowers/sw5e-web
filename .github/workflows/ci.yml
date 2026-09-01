@@ -249,12 +249,19 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 44 pages that do not come from content:
+          # One page per document, plus 45 pages that do not come from content:
           # the home page, the about page, the search page, the sources index,
           # five source pages, the credits page, twenty-seven type indexes, and
-          # the seven account routes listed in ACCOUNT_PATHS in
+          # the eight account routes listed in ACCOUNT_PATHS in
           # react-router.config.ts. `source` is the only directory that is not a
           # browsable type, so the other twenty-seven contribute item pages.
+          #
+          # It went from 44 to 45 when content flagging added
+          # `/account/flags`. One route rather than one per report, and for the
+          # same reason the credits page is one route: what it shows arrives
+          # after hydration. Prerendering a moderation queue would bake one
+          # build machine's view of it — including the display name of everyone
+          # who had reported anything — into a file served to every visitor.
           #
           # The credits page is one page rather than one per credit: the
           # credit, credit-category and asset-credit directories in the
@@ -279,7 +286,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 44))
+          expected=$((items + 45))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
