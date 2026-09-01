@@ -41,6 +41,15 @@ jobs:
       - name: End-to-end tests
         run: npm run test:e2e
 
+      # The same interaction specs against the development server, because a
+      # bug got all the way to a deployed site with every other gate green.
+      # The header's group menus would not open under `react-router dev` and
+      # opened correctly in a production build; the fault was a race that
+      # development and production resolve differently, and nothing here ran
+      # the second one. See playwright.dev.config.ts.
+      - name: End-to-end tests against the development server
+        run: npm run test:e2e:dev
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 

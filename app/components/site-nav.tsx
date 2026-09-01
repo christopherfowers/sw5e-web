@@ -37,6 +37,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -55,6 +56,19 @@ import { isContentTypeId, type ContentTypeId } from "~/content/types";
 import { TypeIcon } from "./type-icon";
 
 const SUBSCRIBE_NEVER = () => () => {};
+
+/**
+ * `useLayoutEffect`, except on the server, where it is `useEffect`.
+ *
+ * Effects do not run during prerendering at all, so the two are equivalent
+ * there — but React warns about the layout variant on the server, and a build
+ * that prints a warning for every one of ~7,900 pages is a build nobody reads
+ * the output of. The distinction only matters in the browser, where it has to
+ * be the layout one: what it does is settle the disclosure's open state, and
+ * doing that after the browser has painted is a visible flicker.
+ */
+const useIsomorphicLayoutEffect =
+  typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /**
  * False while the server-rendered markup is being produced and during the
@@ -195,6 +209,9 @@ export function GroupedNav() {
                       : { group: group.id, at: location.pathname },
                   )
                 }
+                onAdopt={() =>
+                  setOpened({ group: group.id, at: location.pathname })
+                }
                 onNavigate={close}
               />
             )}
@@ -224,33 +241,92 @@ function GroupMenu({
   isOpen,
   isCurrent,
   onToggle,
+  onAdopt,
   onNavigate,
 }: {
   group: NavGroup;
   isOpen: boolean;
   isCurrent: boolean;
   onToggle: () => void;
+  /**
+   * Called when the element is already open and React did not open it — see
+   * the effect below. Setting rather than toggling, so that calling it on a
+   * menu that is already open in state does nothing.
+   */
+  onAdopt: () => void;
   onNavigate: () => void;
 }) {
   const panelId = useId();
   const supportingId = useId();
   const hydrated = useHydrated();
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+
+  /*
+   * `open` is written here rather than passed as a prop, and the reason is the
+   * seconds between a page being readable and being hydrated.
+   *
+   * Every page on this site is static HTML, which means the header works
+   * before the bundle has loaded: the browser's own disclosure opens the menu
+   * on a click, because none of this component's handlers exist yet. Passing
+   * `open={isOpen}` made React overrule that the moment it arrived — a reader
+   * who clicked during the gap watched the menu open and then shut itself,
+   * which is indistinguishable from a navigation bar that does not work. The
+   * bigger the page, the wider the gap; the heaviest indexes on this site are
+   * exactly where somebody is most likely to reach for the menu.
+   *
+   * So the first pass adopts whatever the browser has already done, and only
+   * after that does React drive the attribute. `adopted` is a ref rather than
+   * state because it must not cause a render of its own: the whole point is
+   * that this settles before the browser paints.
+   */
+  const adopted = useRef(false);
+
+  useIsomorphicLayoutEffect(() => {
+    const details = detailsRef.current;
+    if (!details) return;
+
+    if (!adopted.current) {
+      adopted.current = true;
+
+      // Open before React knew about it. The browser did that, or find-in-page
+      // did; either way it is not this component's place to undo it.
+      if (details.open && !isOpen) {
+        onAdopt();
+        return;
+      }
+    }
+
+    if (details.open !== isOpen) details.open = isOpen;
+  }, [isOpen, onAdopt]);
 
   return (
     <details
+      ref={detailsRef}
       className="nav-group"
       data-group={group.id}
-      open={isOpen}
       /*
-        The state lives in React so that only one menu is open at a time, so
-        `preventDefault` here stops the browser toggling `open` underneath it.
-        A click is what Enter and Space on a `<summary>` produce as well, so
-        this one handler covers pointer and keyboard alike; without JavaScript
-        nothing runs and the native toggle takes over.
+        No `onToggle` and no `open` prop. Both were here, and between them they
+        were why the menus did not open.
+
+        `toggle` is dispatched asynchronously, and the click handler below
+        already prevents every native toggle — so once React is running, the
+        only thing that can emit one is React's own write of the attribute. The
+        handler mirrored the element's state back into React state whenever the
+        two disagreed, which meant it fired on React's write, found them
+        momentarily out of step, read that as the reader closing the menu, and
+        put it back. Under the development server that was reliable enough to
+        make the menus unopenable; in a production build the timing usually
+        landed the other way, which is the worst version of a bug to have.
+
+        The case it was there for is real, and the effect above handles it
+        without the race: a menu the browser opened before React arrived is
+        adopted once, on the first pass, rather than argued with on every
+        toggle. Without JavaScript nothing here runs at all and the native
+        disclosure works unassisted — `e2e/navigation.spec.ts` covers that with
+        scripting switched off.
+
+        So the click handler on the summary is the only thing that decides.
       */
-      onToggle={(event) => {
-        if (event.currentTarget.open !== isOpen) onToggle();
-      }}
     >
       <summary
         className={
