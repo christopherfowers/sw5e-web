@@ -431,7 +431,13 @@ export default function SignIn() {
     if (digits.length !== 6) {
       setFailure({
         title: "Enter the six-digit code.",
-        body: "It is the number in the email that was just sent.",
+        // The last sentence on this page that asserted a message had been sent.
+        // It is shown when the field is short, which is exactly when somebody
+        // is hunting for a code — so telling them to look in an email that was
+        // never sent is the same harm as the panel above, in smaller type.
+        body: mailDelivering
+          ? "It is the number in the email that was just sent."
+          : "It is the number from a code email, if you have one from earlier.",
       });
       return;
     }

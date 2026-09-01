@@ -1037,6 +1037,27 @@ describe("when mail is not getting out", () => {
   });
 
   /**
+   * The last sentence on the page that asserted a message had been sent, and
+   * the easiest one to miss: it is the validation message for a short code,
+   * shown at precisely the moment somebody is hunting for a number that was
+   * never emailed to them.
+   */
+  it("does not tell a short code to look in an email that was never sent", async () => {
+    const authenticator = installAuthenticator();
+    restore = authenticator.uninstall;
+    mount(new AuthApiContract({ session: null, accountEmailDelivering: false }));
+
+    await requestCodeFor(VALID_VERIFICATION_EMAIL);
+    await userEvent.type(codeField(), "123");
+    await userEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/enter the six-digit code/i);
+    expect(alert).not.toHaveTextContent(/that was just sent/i);
+    expect(alert).toHaveTextContent(/if you have one from earlier/i);
+  });
+
+  /**
    * The resend notice was the other sentence that claimed a message. It also
    * has to keep saying that the previous code is dead: the service issued a new
    * one and superseded it regardless of whether the message carrying it got

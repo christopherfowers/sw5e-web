@@ -174,9 +174,9 @@ async function read(signal?: AbortSignal): Promise<SiteEnvironment | null> {
 
     // During a partial deploy the static host answers `/api/*` with this app's
     // own HTML shell and a 200. Parsing that as JSON throws, which the catch
-    // below turns into "production" — but checking the content type first keeps
-    // the common case out of the exception path and says what is being guarded
-    // against.
+    // below turns into "no answer" anyway — but checking the content type first
+    // keeps the common case out of the exception path and says what is being
+    // guarded against.
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.includes("application/json")) return null;
 
