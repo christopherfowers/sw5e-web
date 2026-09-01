@@ -36,26 +36,30 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="site-header-inner">
+        {/*
+          The mark alone. It reads "SW5e", so setting the name beside it said
+          the same thing twice in an inch of screen — as did the tagline that
+          used to sit under it. What the site is belongs on the about page and
+          in the footer, at the length it actually takes.
+
+          The alt text carries the whole job now. It was empty while the name
+          sat next to it, which was right then and would leave the only link to
+          the home page unnamed now. The written fallback stays for the case
+          where the image does not resolve: a header whose home link is an
+          empty box is worse than one that repeats itself.
+        */}
         <Link to="/" className="site-wordmark">
           {logo ? (
             <AssetImage
               className="site-wordmark-logo"
               image={logo}
-              alt=""
+              alt="Star Wars 5e"
               sizes="44px"
               loading="eager"
             />
-          ) : null}
-          {/*
-            The wordmark is the name and nothing else. It carried a tagline
-            for a while — "Community reference", then "Continuing sw5e.com",
-            then "The current reference" — each trying to say in four words
-            what the site is. Beside a logo that already reads SW5e and a
-            name that already reads Star Wars 5e, all of them were saying it
-            a third time. The about page and the footer say what needs
-            saying, at the length it actually takes.
-          */}
-          <span className="site-wordmark-name">Star Wars 5e</span>
+          ) : (
+            <span className="site-wordmark-name">Star Wars 5e</span>
+          )}
         </Link>
         <SiteSearch />
         <AccountControl />
