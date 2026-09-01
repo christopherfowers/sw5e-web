@@ -1,5 +1,5 @@
 /**
- * What this site is, and what it is not.
+ * Where the reference lives now, and who owns what.
  *
  * This page exists because a reader arriving from a dead bookmark needs more
  * than a hero can hold. The hero has room for what the site is and nothing
@@ -50,7 +50,7 @@ import type { Route } from "./+types/about";
 
 export function meta() {
   return [
-    { title: "What this site is — Star Wars 5e" },
+    { title: "About — Star Wars 5e" },
     {
       name: "description",
       content:
@@ -85,61 +85,48 @@ export default function About({ loaderData }: Route.ComponentProps) {
       <Breadcrumbs trail={[{ label: "About" }]} />
       <div className="page-head">
         <p className="page-eyebrow">About</p>
-        <h1>What this site is</h1>
+        <h1>About</h1>
         <p className="lede">
-          This is Star Wars 5e. The same conversion, the same books, rebuilt on
-          new foundations.
+          Star Wars 5e moved here. Same conversion, same books.
         </p>
       </div>
 
       <div className="prose-body">
         <p>
           Star Wars 5e is a fan conversion of fifth-edition Dungeons &amp;
-          Dragons, made by Galiphile and a community of contributors. Its
-          reference was served from sw5e.com for years. It is served from here
-          now — not a different project, and not a tribute to one: the same
-          reference, rewritten from the ground up because the thing it ran on
-          had reached the end of what it could be asked to do.
+          Dragons, made by Galiphile and a community of contributors. It was
+          served from sw5e.com for years and is served from here now.
         </p>
         <p>
-          It is the same conversion and the same books —{" "}
-          {bookList} — rebuilt as a reference that is kept current:{" "}
-          {total.toLocaleString("en-US")} entries across {TYPE_ORDER.length}{" "}
-          categories, every one of them a real page at its own address, every
-          one of them prerendered as plain HTML so it loads instantly, works
-          without JavaScript and can be found by a search engine.
+          If a bookmark stopped working, this is where it points. The reference
+          holds {total.toLocaleString("en-US")} entries across{" "}
+          {TYPE_ORDER.length} categories, drawn from {bookList}. That includes{" "}
+          {(counts.classes ?? 0).toLocaleString("en-US")} classes and{" "}
+          {(counts.archetypes ?? 0).toLocaleString("en-US")} archetypes,
+          Starships of the Galaxy, the enhanced items and the rules text.
         </p>
         <p>
-          If you arrived on a bookmark that stopped working, this is where it
-          points now. Nothing was dropped on the way across, and a good deal was
-          added: the {(counts.classes ?? 0).toLocaleString("en-US")} classes and
-          their {(counts.archetypes ?? 0).toLocaleString("en-US")} archetypes,
-          the whole of Starships of the Galaxy, the enhanced item catalogue, and
-          the rules text itself.
+          Every entry is its own page, served as plain HTML. Pages load without
+          JavaScript and search engines can read them.
         </p>
 
-        <h2>What this site is not</h2>
+        <h2>Ownership</h2>
         <p>
-          It is not official, and that is the one distinction on this page worth
-          reading twice. Star Wars and everything in it belong to Lucasfilm. The
-          conversion is community work made under Wizards of the Coast&rsquo;s
-          Fan Content Policy. This site is unofficial fan content and is not
-          affiliated with, endorsed by or sponsored by Lucasfilm or Wizards of
-          the Coast — being Star Wars 5e and being licensed by the people who
-          own Star Wars are entirely different things, and only the first of
-          them is true here.
+          Star Wars belongs to Lucasfilm. The conversion is community work made
+          under Wizards of the Coast&rsquo;s Fan Content Policy. This site is
+          unofficial fan content, and is not affiliated with, endorsed by or
+          sponsored by Lucasfilm or Wizards of the Coast.
         </p>
 
-        <h2>Where to start</h2>
+        <h2>Finding things</h2>
         <p>
-          Press <kbd>/</kbd> anywhere on the site to search everything at once,
-          or browse{" "}
+          Press <kbd>/</kbd> to search everything, or browse{" "}
           <Link to="/species">species</Link>,{" "}
           <Link to="/classes">classes</Link>,{" "}
           <Link to="/powers">powers</Link> or{" "}
-          <Link to="/monsters">creature stat blocks</Link>. Every entry says
-          which book it came from, and the{" "}
-          <Link to="/sources">source books</Link> page collects them.
+          <Link to="/monsters">creature stat blocks</Link>. Every entry names
+          the book it came from; the <Link to="/sources">source books</Link>{" "}
+          page lists them.
         </p>
       </div>
     </div>

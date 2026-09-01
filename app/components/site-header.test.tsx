@@ -12,7 +12,9 @@
  * Its replacement, "Continuing sw5e.com", was wrong in a subtler way and did
  * more damage: it described the site as standing outside Star Wars 5e and
  * carrying its work forward. This site is Star Wars 5e. The tag now says what
- * the site is — "The current reference" — with no verb of succession in it.
+ * the site is. It carried three different taglines and now carries none:
+ * beside a logo reading SW5e and a name reading Star Wars 5e, a third
+ * restatement said nothing the first two had not.
  *
  * These tests are here because that line is three words in a header and is
  * exactly the kind of thing a tidy-up reverts.
@@ -48,7 +50,7 @@ describe("the site header", () => {
     mount();
 
     expect(
-      screen.getByText(/the current reference/i),
+      screen.getByText(/^Star Wars 5e$/),
       "every page has to say which reference this is; most readers never see " +
         "the home page",
     ).toBeInTheDocument();
