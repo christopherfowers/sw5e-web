@@ -50,6 +50,8 @@ import type {
   AssignableRole,
   AssignRolesResponse,
   CurrentUser,
+  EmailCodeResponse,
+  EmailCodeVerifyResponse,
   PasskeyAuthenticationCredential,
   PasskeyLoginBeginResponse,
   PasskeyLoginCompleteResponse,
@@ -84,6 +86,25 @@ export type ApiFailure =
   | "rate-limited"
   | "server"
   | "unavailable";
+
+/**
+ * The `code` on the 403 that means "this session is not strong enough", as
+ * opposed to "this account is not allowed".
+ *
+ * The two are worth telling apart everywhere they can be. A plain forbidden is
+ * the end of the conversation — the account does not hold the role, and
+ * nothing the reader does in this browser changes that. This one is the
+ * opposite: the account holds the role, the session was simply established
+ * with an emailed code rather than with a passkey or an authenticator, and
+ * enrolling either one fixes it in about a minute. Rendering the first
+ * sentence at somebody in the second situation tells them to give up on
+ * something they are two clicks from having.
+ *
+ * The literal lives here rather than at the call sites so that a rename on the
+ * service is one edit, and so that a typo is a compile error at every site
+ * that imports it rather than a branch that silently stops matching.
+ */
+export const STRONG_AUTHENTICATION_REQUIRED = "strong-authentication-required";
 
 export class ApiError extends Error {
   readonly kind: ApiFailure;
@@ -314,6 +335,49 @@ export function verifyEmail(email: string, token: string): Promise<VerifyEmailRe
   return request<VerifyEmailResponse>("/email/verify", {
     method: "POST",
     body: { email, token },
+  });
+}
+
+/* ------------------------------------------------- signing in with a code */
+
+/**
+ * Asks for a one-time code to be emailed to `email`.
+ *
+ * The answer is a 202 for every address the service will parse — registered,
+ * unregistered, or already over its budget of codes for the last quarter hour.
+ * A caller that tries to read anything else out of it has misunderstood the
+ * endpoint; see `EmailCodeResponse`.
+ *
+ * A 400 means the address was malformed and a 429 means this caller's own IP
+ * budget is spent, and those two really are different from each other and from
+ * the 202. Both arrive as an `ApiError` like every other refusal here.
+ */
+export function requestSignInCode(email: string): Promise<EmailCodeResponse> {
+  return request<EmailCodeResponse>("/email/code", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+/**
+ * Redeems a code for the address it was sent to.
+ *
+ * Both halves are required and both are checked: a code is issued for one
+ * address, and offering it with another fails the same way a wrong code does.
+ *
+ * A 401 is a real answer rather than a bug — the same 401 for every possible
+ * reason, by design — so callers report it as "that code was not accepted" and
+ * must not try to say which of the reasons applied. `getCurrentUser` is the
+ * only place in this module where a 401 is converted into a value instead of
+ * being thrown.
+ */
+export function verifySignInCode(
+  email: string,
+  code: string,
+): Promise<EmailCodeVerifyResponse> {
+  return request<EmailCodeVerifyResponse>("/email/code/verify", {
+    method: "POST",
+    body: { email, code },
   });
 }
 

@@ -99,6 +99,45 @@ export interface CurrentUser {
   twoFactorEnabled: boolean;
   /** Every credential on the account, not a count. May be empty. */
   passkeys: PasskeyCredential[];
+  /**
+   * How **this session** was established, not what the account is capable of.
+   *
+   * The distinction is the whole reason the field exists. `passkeys` and
+   * `twoFactorEnabled` describe the account and are the same on every device;
+   * this describes the browser holding the cookie right now, and it is the
+   * only way the UI can say "you signed in with an emailed code" to the person
+   * who did, without saying it to the same account on the phone that used a
+   * passkey ten minutes ago.
+   *
+   * `null` is a session established before the server started recording this
+   * — an older cookie that is still valid. Every reader of this field has to
+   * treat that as "no claim either way" rather than as "email", because
+   * guessing the weaker answer would nag people who did nothing wrong.
+   */
+  authenticationMethod: "passkey" | "totp" | "email" | null;
+  /**
+   * Whether the method above counts as a second factor: true for a passkey or
+   * an authenticator code, false for an emailed one-time code.
+   *
+   * It is a separate field rather than something derived from
+   * `authenticationMethod` because the server owns that judgement. An emailed
+   * code proves control of an inbox and nothing about a device, so a session
+   * built on one is deliberately weaker than the account it belongs to — and
+   * the API refuses contributor and administrator work to it with a 403 whose
+   * `code` is `strong-authentication-required`.
+   */
+  strongAuthentication: boolean;
+  /**
+   * Whether this account's roles oblige it to hold a passkey or an
+   * authenticator app at all.
+   *
+   * True for Contributor and Administrator. It is answered by the server
+   * rather than computed from `roles` here, so that a policy change on the
+   * service does not need a deploy of this client to be obeyed — and so that
+   * a role added later is covered without anybody remembering to add it to a
+   * list.
+   */
+  secondFactorRequired: boolean;
 }
 
 /** `POST /api/auth/register` */
@@ -278,6 +317,86 @@ export type PasskeyLoginCompleteResponse =
   | { status: "authenticated"; user: CurrentUser }
   | { status: "mfaRequired"; user: null };
 
+/* ------------------------------------------------- signing in with a code */
+
+/**
+ * `POST /api/auth/email/code`
+ *
+ * The alternative to a passkey, for the machines a passkey cannot reach: a
+ * borrowed laptop, a desktop old enough to have no platform authenticator, a
+ * work device whose policy forbids enrolling one. It is deliberately the
+ * second path and not the first — an emailed code proves control of an inbox
+ * and nothing about the device typing it — but a sign-in page with only one
+ * door is a sign-in page a real proportion of readers cannot open.
+ */
+export interface EmailCodeRequest {
+  email: string;
+}
+
+/**
+ * Always a 202, and always this shape.
+ *
+ * The answer is byte-identical whether the address has an account, has never
+ * been seen, or has already spent its budget of codes for the quarter hour.
+ * That is not vagueness for its own sake: any difference at all — a different
+ * status, a different message, a measurably different delay — turns this
+ * endpoint into a way to ask the service which of a list of addresses are
+ * registered, which is exactly what `register` was built not to answer either.
+ *
+ * The consequence for this client is a rule with no exceptions: **nothing in
+ * the UI may branch on this response.** There is no "we could not find that
+ * address" to show, because the client was not told. The only honest screen is
+ * the one that says a code is on its way if the address has an account, and
+ * then asks for it.
+ *
+ * The two numbers are the server's own, carried rather than assumed. They are
+ * currently 60 and 600, and hard-coding either here would put the countdown
+ * this page shows out of step with the budget the service is actually keeping
+ * the moment somebody tunes it.
+ */
+export interface EmailCodeResponse {
+  status: "pending";
+  /** The server's own wording for the non-answer. May be empty. */
+  message: string;
+  /** How long the resend control must stay disabled, in seconds. */
+  resendAfterSeconds: number;
+  /** How long the code remains redeemable, in seconds. */
+  expiresInSeconds: number;
+}
+
+/**
+ * `POST /api/auth/email/code/verify`
+ *
+ * Six digits, paired with the address they were sent to. The pairing is not
+ * decoration: a code is issued *for* an address, so submitting it with a
+ * different one fails exactly as if it were wrong.
+ */
+export interface EmailCodeVerifyRequest {
+  email: string;
+  code: string;
+}
+
+/**
+ * The same two-legged shape as the passkey path, and the same literals — see
+ * `PasskeyLoginCompleteResponse` for why `mfaRequired` is camelCase and why
+ * the branch carries nothing but `user: null`.
+ *
+ * That sameness is the point. An account with an authenticator app is asked
+ * for its code whichever door it came through, and the client's second step is
+ * the same `POST /mfa/totp/verify` in both cases rather than a parallel one
+ * that has to be kept in step.
+ *
+ * Every failure is a single 401 with no distinction drawn between a wrong
+ * code, an expired one, one already redeemed, one issued for another address,
+ * a code whose five attempts are spent, an address with no account, and a
+ * locked-out account. The client must not invent that distinction back: a
+ * message saying "that code has expired" tells whoever is guessing that the
+ * previous five digits were at least aimed at a real account.
+ */
+export type EmailCodeVerifyResponse =
+  | { status: "authenticated"; user: CurrentUser }
+  | { status: "mfaRequired"; user: null };
+
 /** `POST /api/auth/mfa/totp/enroll` */
 export interface TotpEnrollResponse {
   /**
@@ -346,4 +465,17 @@ export interface AssignRolesRequest {
 export interface AssignRolesResponse {
   userId: string;
   roles: Role[];
+  /**
+   * True when the grant landed on an account holding neither a passkey nor an
+   * authenticator app — so it now has a role it cannot actually use until it
+   * enrols one, because the API refuses contributor and administrator work to
+   * a session that was established with an emailed code alone.
+   *
+   * Worth reporting rather than swallowing. An administrator who grants
+   * `Contributor` and hears nothing has every reason to believe the person can
+   * now upload; the person, meanwhile, meets a 403 and reads it as the grant
+   * having failed. One flag on the reply is the difference between that and a
+   * sentence telling the administrator what to say to them.
+   */
+  awaitingSecondFactor: boolean;
 }
