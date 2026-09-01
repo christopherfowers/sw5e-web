@@ -293,13 +293,28 @@ describe.skipIf(!API)("the account client against the real API", () => {
      * `"true"`, or dropped it, would not fail anything on either side: the
      * client would default to "delivering" and the site would go back to
      * promising mail through an outage, silently, which is the original bug.
+     *
+     * It is asserted strictly, including presence, and that has a consequence
+     * worth stating rather than discovering: this job runs against
+     * `sw5e-api:latest`, which is published from that repository's `main`, so
+     * this test is red on a client change that lands before the service change
+     * it depends on. That is the suite reporting a real fact — the shipped
+     * service does not yet say what this client reads — and the fix is to land
+     * the service first, never to soften the assertion. The failure message
+     * below says so, because a cryptic red build is how a true finding gets
+     * dismissed as flake.
      */
     it("agrees that the site document carries a boolean delivery flag", async () => {
       const response = await fetch("/api/site/environment");
       const actual = (await response.json()) as Record<string, unknown>;
 
       expect(response.status).toBe(200);
-      expect(typeof actual.accountEmailDelivering).toBe("boolean");
+      expect(
+        typeof actual.accountEmailDelivering,
+        "sw5e-api:latest does not publish accountEmailDelivering. If the API " +
+          "change is still unmerged, land it first: this client reads the field " +
+          "to decide whether it may tell somebody a message is on its way.",
+      ).toBe("boolean");
       expect(typeof actual.isProduction).toBe("boolean");
 
       // Exhaustive rather than a presence check. This body is anonymous, and
