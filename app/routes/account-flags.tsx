@@ -44,6 +44,7 @@ import { Link, useOutletContext } from "react-router";
 import { ApiError } from "~/api/http";
 import { editorPath } from "~/authoring/paths";
 import { RequireSession } from "~/auth/guard";
+import { ReauthenticatePrompt } from "~/auth/reauthenticate";
 import { canUploadContent } from "~/auth/roles";
 import type { CurrentUser } from "~/auth/types";
 import { Banner, SessionPending } from "~/components/auth-ui";
@@ -502,24 +503,19 @@ function Sections({ user }: { user: CurrentUser }) {
         user.strongAuthentication ? (
           <ReviewQueue />
         ) : (
-          // The account holds the role and this session cannot use it. Worth
-          // saying rather than drawing an empty queue: the API refuses
-          // contributor work to a session established with an emailed code, and
-          // enrolling a passkey clears it in about a minute.
+          // The account holds the role and this session cannot use it. The
+          // queue carries the names of everybody who has reported anything and
+          // what they wrote, so it stays closed to a session that only proved a
+          // mailbox — but the way out of that is offered here rather than
+          // described, because in the ordinary case the credential it asks for
+          // is already on the account.
+          //
+          // Not the route guard: this page belongs to every signed-in account
+          // and the reports above are theirs. Only the queue is gated, so only
+          // the queue is replaced.
           <section className="account-section" aria-labelledby="queue-locked-heading">
             <h2 id="queue-locked-heading">Review queue</h2>
-            <Banner
-              tone="error"
-              title="The queue needs a passkey or an authenticator app."
-            >
-              You signed in with a code sent to your email address, which
-              confirms the address but says nothing about this device. The queue
-              carries the names of everybody who has reported anything and what
-              they wrote, so it stays closed to this session.{" "}
-              <Link to="/account/passkeys">Add a passkey</Link> or{" "}
-              <Link to="/account/security">set up an authenticator app</Link>,
-              then sign in again with it.
-            </Banner>
+            <ReauthenticatePrompt user={user} purpose="the queue" />
           </section>
         )
       ) : null}

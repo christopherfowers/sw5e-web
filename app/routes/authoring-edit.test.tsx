@@ -36,6 +36,7 @@ import {
   type StoredRevision,
 } from "../../tests/authoring-api-stub";
 import { marker, renderWithSession } from "../../tests/harness";
+import { installAuthenticator, removeWebAuthn } from "../../tests/webauthn-stub";
 import type { CurrentUser } from "~/auth/types";
 import { recoveryKey } from "~/authoring/recovery";
 import { resetContentTypeCache } from "~/authoring/use-content-types";
@@ -91,6 +92,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  removeWebAuthn();
 });
 
 /* --------------------------------------------------------------- who gets in */
@@ -127,6 +129,7 @@ describe("who can reach the editor", () => {
   });
 
   it("explains itself to a contributor who signed in with an emailed code", async () => {
+    installAuthenticator();
     // The account holds the role; the session does not clear the bar. The API
     // refuses this with a 403 whose code says so, and drawing an editor that
     // could not save anything would be worse than saying why.
@@ -140,9 +143,12 @@ describe("who can reach the editor", () => {
     );
 
     expect(
-      await screen.findByText(/needs a passkey or an authenticator app/i),
+      await screen.findByRole("button", { name: /confirm with a passkey/i }),
     ).toBeInTheDocument();
 
+    // The editor stays unfetched behind the prompt. Drawing a form whose save
+    // the API would refuse is worse than saying why, and loading the document
+    // to populate it would be work done for a screen nobody reached.
     await act(async () => {});
     expect(stub.touchedAuthoring).toBe(false);
   });

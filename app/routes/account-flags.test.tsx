@@ -26,6 +26,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthApiContract, user } from "../../tests/auth-api-contract";
 import { flag, FlagApiStub, serveBoth } from "../../tests/flag-api-stub";
 import { renderWithSession } from "../../tests/harness";
+import { installAuthenticator, removeWebAuthn } from "../../tests/webauthn-stub";
 import type { CurrentUser } from "~/auth/types";
 import Account from "./account";
 import AccountFlags from "./account-flags";
@@ -54,6 +55,7 @@ const contributor = () =>
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  removeWebAuthn();
 });
 
 describe("your own reports", () => {
@@ -130,6 +132,7 @@ describe("who gets the queue", () => {
   });
 
   it("explains itself to a contributor who signed in with an emailed code", async () => {
+    installAuthenticator();
     const { flags } = mount(
       user({
         roles: ["Contributor"],
@@ -140,17 +143,14 @@ describe("who gets the queue", () => {
     );
 
     // Not an empty queue, and not silence. The API refuses contributor work to
-    // a session that only proved a mailbox, and enrolling a passkey clears it
-    // in about a minute — so the copy has to say that rather than read as
-    // "you do not have access".
+    // a session that only proved a mailbox — and this account has a passkey on
+    // it, so what it meets is the offer to use it rather than an instruction
+    // to go and enrol the thing it already has.
     expect(
-      await screen.findByText(/needs a passkey or an authenticator app/i),
+      await screen.findByRole("button", { name: /confirm with a passkey/i }),
     ).toBeInTheDocument();
 
-    expect(screen.getByRole("link", { name: /add a passkey/i })).toHaveAttribute(
-      "href",
-      "/account/passkeys",
-    );
+    expect(screen.queryByRole("link", { name: /add a passkey/i })).toBeNull();
 
     expect(flags.calls.some((call) => call.path.startsWith("/api/flags?"))).toBe(false);
   });

@@ -24,6 +24,7 @@ import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
 import { Banner, SessionPending } from "~/components/auth-ui";
+import { ReauthenticatePrompt } from "./reauthenticate";
 import { signInPathFor } from "./redirect";
 import { hasAtLeast, ROLE_META } from "./roles";
 import { useSession } from "./session";
@@ -112,11 +113,15 @@ export function RequireSession({ role, children }: RequireSessionProps) {
    * administrator request from a session that only proved an inbox is refused
    * with a 403 whose `code` is `strong-authentication-required` — and it
    * exists here for the same reason the role check does: so the reader meets
-   * an explanation instead of an action that silently fails. The refusal is
-   * deliberately worded as temporary and actionable, because it is. Enrolling
-   * either factor and signing in with it clears it in about a minute, and the
-   * role-refusal wording above ("does not have access") would tell somebody
-   * two clicks from the answer to give up.
+   * an explanation instead of an action that silently fails.
+   *
+   * What it does *not* do any more is end the journey. The first version of
+   * this branch told the reader to enrol a factor and sign in again, which was
+   * wrong for the commonest case by some distance: an administrator who signed
+   * in by code and enrolled a passkey two minutes later was told, by a page
+   * listing that passkey, to go and add a passkey. `ReauthenticatePrompt`
+   * decides what to offer from what the account actually holds, and asks them
+   * to prove it here rather than sending them round the sign-in loop.
    *
    * Only gated when an area names a role. `/account`, `/account/passkeys` and
    * `/account/security` must stay reachable from exactly this kind of session
@@ -126,15 +131,10 @@ export function RequireSession({ role, children }: RequireSessionProps) {
   if (role && role !== "Community" && !session.user.strongAuthentication) {
     return (
       <div className="page">
-        <Banner tone="error" title="This area needs a passkey or an authenticator app.">
-          You signed in with a code sent to your email address, which confirms
-          the address but says nothing about this device, so{" "}
-          {ROLE_META[role].label.toLowerCase()} tools stay closed until there is
-          a second factor on the account.{" "}
-          <Link to="/account/passkeys">Add a passkey</Link> or{" "}
-          <Link to="/account/security">set up an authenticator app</Link>, then
-          sign in again with it.
-        </Banner>
+        <ReauthenticatePrompt
+          user={session.user}
+          purpose={`${ROLE_META[role].label.toLowerCase()} tools`}
+        />
       </div>
     );
   }
