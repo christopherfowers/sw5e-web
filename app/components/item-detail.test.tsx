@@ -257,3 +257,54 @@ describe("a stat that points at another item", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe("the line under the heading", () => {
+  it("is dropped when it only repeats the table below it", () => {
+    // A species reads "Medium · Byss" directly above Size: Medium and
+    // Homeworld: Byss. Two lines saying the same thing, one after the other,
+    // read as a rendering fault rather than as a summary.
+    renderItem({
+      ...feat,
+      type: "species",
+      tagline: "Medium · Byss",
+      stats: [
+        { label: "Size", value: "Medium" },
+        { label: "Homeworld", value: "Byss" },
+      ],
+    });
+
+    expect(screen.queryByText("Medium · Byss")).toBeNull();
+
+    // And the table it was duplicating is still there, so nothing was lost.
+    expect(screen.getByText("Byss")).toBeInTheDocument();
+  });
+
+  it("is kept when it says something the table does not", () => {
+    // The control. Dropping this one would take away the only summary a
+    // creature page has.
+    renderItem({
+      ...feat,
+      type: "monsters",
+      tagline: "Large droid, unaligned",
+      stats: [{ label: "Armor Class", value: "19 (armor plating)" }],
+    });
+
+    expect(screen.getByText("Large droid, unaligned")).toBeInTheDocument();
+  });
+
+  it("is kept when only part of it repeats the table", () => {
+    // Half a duplicate is still half a summary, and the reader loses the other
+    // half if this drops.
+    renderItem({
+      ...feat,
+      type: "species",
+      tagline: "Medium · Ryloth",
+      stats: [
+        { label: "Size", value: "Medium" },
+        { label: "Homeworld", value: "Tatooine" },
+      ],
+    });
+
+    expect(screen.getByText("Medium · Ryloth")).toBeInTheDocument();
+  });
+});
