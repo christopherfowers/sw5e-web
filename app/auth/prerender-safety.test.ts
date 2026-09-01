@@ -40,6 +40,15 @@ const AUTH_ROUTE_MODULES = [
   "account-flags.tsx",
   "account-people.tsx",
   "account-audit.tsx",
+
+  // The authoring workspace. Same rule, and if anything a sharper version of
+  // it: a loader here would bake a build machine's view of the draft queue —
+  // the name of every document somebody has unfinished work on, and of everyone
+  // who has it — into a static file served to every visitor of a public site.
+  "authoring.tsx",
+  "authoring-worklist.tsx",
+  "authoring-edit.tsx",
+  "authoring-history.tsx",
 ];
 
 function source(file: string): string {
@@ -89,6 +98,9 @@ describe("the account routes are prerendered rather than left to the fallback", 
     "/account/flags",
     "/account/people",
     "/account/audit",
+    "/authoring",
+    "/authoring/edit",
+    "/authoring/history",
   ])("%s is in the prerender list", (route) => {
     // A path missing from this list is served by nginx's SPA fallback, which
     // is wired to `error_page 404`. It would render correctly in a browser

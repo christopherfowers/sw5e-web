@@ -86,3 +86,22 @@ export function canAdministerAccounts(
 ): boolean {
   return hasAtLeast(user, "Administrator");
 }
+
+/**
+ * Turning a draft into a published revision, and putting an earlier one back.
+ *
+ * Separate from {@link canUploadContent} because the service separates them:
+ * writing a draft needs `Contributor`, and publishing or reverting needs
+ * `Administrator`. That is an editorial policy rather than an accident — a
+ * contributor proposes a correction and somebody with the books to hand agrees
+ * to it — and it is the reason the authoring interface is shaped as two acts
+ * rather than one save button.
+ *
+ * Written as its own function rather than reusing {@link canAdministerAccounts}
+ * even though both are `Administrator` today. They answer different questions,
+ * they will be read in different places, and the moment one of them moves the
+ * other must not move with it silently.
+ */
+export function canPublishContent(user: Pick<CurrentUser, "roles"> | null): boolean {
+  return hasAtLeast(user, "Administrator");
+}

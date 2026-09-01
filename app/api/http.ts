@@ -97,6 +97,22 @@ export class ApiError extends Error {
   readonly code: string | null;
   /** Field name to message, for a response that rejected specific input. */
   readonly fieldErrors: Record<string, string>;
+  /**
+   * Everything else the problem document carried.
+   *
+   * RFC 9457 lets a problem document carry members beyond the five it defines,
+   * and this API uses that: a schema refusal carries `schemaErrors`, a refused
+   * flag transition carries the `status` the report actually reached. Those are
+   * facts about one feature, and teaching this transport the name of each one
+   * would make a module that is supposed to know nothing about features
+   * accumulate a field per feature.
+   *
+   * So the standard members are lifted out above and the rest is handed over
+   * whole, for the feature that understands it to read. It is `unknown` on
+   * purpose: this is a document written by somebody else, and the only honest
+   * type for it is one that forces the reader to check.
+   */
+  readonly extensions: Readonly<Record<string, unknown>>;
 
   constructor(
     kind: ApiFailure,
@@ -105,6 +121,7 @@ export class ApiError extends Error {
       status?: number;
       code?: string | null;
       fieldErrors?: Record<string, string>;
+      extensions?: Record<string, unknown>;
     } = {},
   ) {
     super(message);
@@ -113,6 +130,7 @@ export class ApiError extends Error {
     this.status = options.status ?? 0;
     this.code = options.code ?? null;
     this.fieldErrors = options.fieldErrors ?? {};
+    this.extensions = options.extensions ?? {};
   }
 }
 
@@ -157,6 +175,36 @@ interface ErrorBody {
   title?: unknown;
   message?: unknown;
   fieldErrors?: unknown;
+}
+
+/**
+ * The five members RFC 9457 defines, plus the ones this module already reads
+ * out of the body by name above. Everything outside this set is an extension
+ * and is handed to the caller untouched.
+ *
+ * `message` is here because {@link readMessage} reads it — it is not an RFC
+ * member, and it is listed for the same reason the real ones are: a member this
+ * module has already turned into a field must not also arrive as an extension,
+ * or a feature reading extensions would find a second copy of something it has
+ * been given properly.
+ */
+const STANDARD_PROBLEM_MEMBERS = new Set([
+  "type",
+  "title",
+  "status",
+  "detail",
+  "instance",
+  "message",
+  "code",
+  "fieldErrors",
+]);
+
+function readExtensions(body: ErrorBody): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [member, value] of Object.entries(body as Record<string, unknown>)) {
+    if (!STANDARD_PROBLEM_MEMBERS.has(member)) out[member] = value;
+  }
+  return out;
 }
 
 function readFieldErrors(value: unknown): Record<string, string> {
@@ -274,6 +322,7 @@ export async function apiRequest<T>(
       status: response.status,
       code: typeof body.code === "string" ? body.code : null,
       fieldErrors: readFieldErrors(body.fieldErrors),
+      extensions: readExtensions(body),
     });
   }
 

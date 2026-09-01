@@ -43,6 +43,18 @@ export default [
     route("audit", "routes/account-audit.tsx"),
   ]),
 
+  // The authoring workspace. A static segment like the account routes, and
+  // ranked above `:type` for the same reason — `/authoring` cannot be mistaken
+  // for a content type. Three addresses, and the subject of the edit travels in
+  // the query string rather than the path: there is no runtime server here, so
+  // a path segment would need a prerendered file per document and could not
+  // address a document that does not exist yet. See `app/routes/authoring.tsx`.
+  route("authoring", "routes/authoring.tsx", [
+    index("routes/authoring-worklist.tsx"),
+    route("edit", "routes/authoring-edit.tsx"),
+    route("history", "routes/authoring-history.tsx"),
+  ]),
+
   route(":type", "routes/type-index.tsx"),
   route(":type/:slug", "routes/item-detail.tsx"),
 ] satisfies RouteConfig;

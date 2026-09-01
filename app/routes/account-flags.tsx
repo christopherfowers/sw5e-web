@@ -42,6 +42,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useOutletContext } from "react-router";
 
 import { ApiError } from "~/api/http";
+import { editorPath } from "~/authoring/paths";
 import { RequireSession } from "~/auth/guard";
 import { canUploadContent } from "~/auth/roles";
 import type { CurrentUser } from "~/auth/types";
@@ -362,6 +363,27 @@ function ReviewQueue() {
                 </p>
               ) : null}
               <p className="flag-actions">
+                {/*
+                  Accepting a report used to be the end of the road: a reviewer
+                  could agree that something was wrong and then had nowhere to
+                  go. This is the other half of it. The link carries the
+                  report's identifier, so the draft it opens is tied to the
+                  report and publishing that draft closes it for the person who
+                  filed it.
+
+                  Offered from `accepted` only. An open report has not been
+                  triaged, and correcting something before deciding it needs
+                  correcting is how a queue stops meaning anything.
+                */}
+                {flag.status === "accepted" ? (
+                  <Link
+                    className="button button-primary"
+                    to={editorPath(flag.targetType, flag.targetKey, flag.id)}
+                    aria-label={`Correct this — ${flag.targetName}`}
+                  >
+                    Correct this
+                  </Link>
+                ) : null}
                 {(NEXT_STATUSES[flag.status] ?? []).map((next) => (
                   <button
                     key={next}
