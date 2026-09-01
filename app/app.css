@@ -284,6 +284,62 @@ main:focus {
   border: 0;
 }
 
+/* The test-environment strip.
+ *
+ * The live region is always in the document and is empty on production — see
+ * app/components/environment-banner.tsx for why it outlives its own contents.
+ * `:empty` strips its padding, border and ground so an empty region is a block
+ * box of zero height: the production page is laid out exactly as it was before
+ * this existed, and there is nothing to flash on first paint.
+ *
+ * Not `display: none`, and this is the one rule here that is not cosmetic. A
+ * `display: none` element is out of the accessibility tree, so a screen reader
+ * is not observing it, so inserting text into it announces nothing — it would
+ * be indistinguishable from mounting the region and its contents together,
+ * which is the failure the always-present region exists to avoid. A zero-height
+ * box is still rendered, still in the tree, and still watched.
+ *
+ * Static, in normal flow, at the top of the body: it displaces the page rather
+ * than covering it, so no content is hidden behind it at any width and the
+ * sticky header below still sticks to the right place. Not `position: fixed`,
+ * which would sit over the content at small heights and would need a body
+ * offset that every page would have to know about.
+ *
+ * The colour is --hue-amber rather than the brand red. Red on this site means
+ * "Star Wars 5e", and the one strip that has to read as "not the real site"
+ * is the last place to borrow the site's own mark. Amber is already the
+ * caution hue in the information ramp, and it is checked against --surface at
+ * 4.5:1 in both schemes. */
+.environment-banner:empty {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.environment-banner {
+  background: color-mix(in oklab, var(--hue-amber) 14%, var(--bg));
+  border-bottom: 2px solid var(--hue-amber);
+  color: var(--text);
+  padding: var(--space-2) var(--space-4);
+  text-align: center;
+  /* Above the sticky header, so scrolling can never slide the header over it. */
+  position: relative;
+  z-index: 40;
+}
+
+.environment-banner-text {
+  margin: 0 auto;
+  max-width: var(--page);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.environment-banner-text strong {
+  color: var(--hue-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .skip-link {
   position: absolute;
   left: var(--space-2);

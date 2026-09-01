@@ -539,6 +539,57 @@ jobs:
             exit 1
           fi
 
+      - name: The image is promotable, and says nothing about its environment
+        run: |
+          set -euo pipefail
+
+          # The banner that tells a reader they are on QA is drawn after
+          # hydration, from what the API says about the deployment — see
+          # app/site/environment.ts for why it cannot be baked in here. This is
+          # the step that proves it was not baked in anyway.
+          #
+          # The image has no environment configuration and must not acquire any:
+          # QA and production are handed the identical artifact, and the only
+          # thing that differs is a variable on a service in front of it. So the
+          # words the banner would use must appear in none of the ~2,200
+          # prerendered files. If they did, production would paint
+          # "TEST ENVIRONMENT" on first byte, on every page, and take it away
+          # again once JavaScript ran.
+          #
+          # Every prerendered file rather than one page: this is the one
+          # assertion where checking a sample would miss a single route having
+          # picked it up.
+          #
+          # Restricted to index.html, and that restriction is load-bearing
+          # rather than an optimisation. The banner's words are of course in
+          # /assets/root-*.js — they are the component's own copy, and they have
+          # to ship or QA could not draw anything. What must never happen is
+          # that they reach the *markup*, because markup is what is served
+          # before JavaScript runs and is therefore what would paint on
+          # production's first byte. Widen this to the whole document root and
+          # it fails on a correct build.
+          if docker exec sw5e-web sh -c \
+               'grep -rliE --include="*.html" "test environment|not the live site" \
+                  /usr/share/nginx/html'; then
+            echo "::error::The published image carries the test-environment" \
+              "banner in its prerendered markup. The same image is promoted to" \
+              "production, so this would tell every reader of the live site" \
+              "that their data is temporary."
+            exit 1
+          fi
+
+          # And the other half: the live region the banner is inserted into has
+          # to be in that markup, empty. A region that arrives together with its
+          # text is often not announced at all, so a reader using a screen
+          # reader would get no warning on QA.
+          if ! curl --fail --silent http://127.0.0.1:8080/ \
+               | grep -q '<div class="environment-banner" role="status"></div>'; then
+            echo "::error::The empty live region is missing from the" \
+              "prerendered markup; the QA banner would be inserted into a" \
+              "region nothing is watching."
+            exit 1
+          fi
+
       - name: A prerendered index page serves its own markup
         run: |
           curl --fail --silent http://127.0.0.1:8080/species | grep -q "<h1>Species</h1>"
