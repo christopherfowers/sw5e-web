@@ -36,6 +36,27 @@
  * at `connect-src 'self'` with no host named in it: the deployment routes
  * `/api` to the service through the same reverse proxy that serves this site.
  *
+ * ## Why not `apiRequest` from `app/api/http.ts`
+ *
+ * That transport exists and is the right one for everything the account and
+ * flagging features do. It is the wrong one here, for three reasons, and the
+ * first is not a preference.
+ *
+ * It sends `credentials: "same-origin"`, so every call carries the session
+ * cookie. Which deployment this is has nothing to do with who is reading, and a
+ * public endpoint that receives the session cookie has quietly joined the
+ * authenticated surface. This one sends no credentials at all.
+ *
+ * It also throws an `ApiError` classified into a failure taxonomy the caller is
+ * expected to branch on, and it has no deadline. Both are right for a form that
+ * has to tell somebody why their submission failed. Here there is exactly one
+ * answer for every failure, and a request still in flight after a few seconds
+ * has already missed its purpose — so the classification would only be thrown
+ * away and the deadline would still have to be added.
+ *
+ * If this file ever needs a second endpoint, that is the moment to revisit it.
+ * One anonymous GET is not.
+ *
  * ## Fail closed, always
  *
  * `isTestEnvironment` returns true only when the service explicitly says it is
