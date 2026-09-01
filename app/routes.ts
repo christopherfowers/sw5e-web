@@ -30,6 +30,17 @@ export default [
     route("security", "routes/account-security.tsx"),
     route("contributions", "routes/account-contributions.tsx"),
     route("flags", "routes/account-flags.tsx"),
+
+    // The administration screens. Static segments beneath `/account`, and
+    // deliberately no `:userId` among them: a dynamic administrative route
+    // could not be prerendered — there is no bounded list of accounts, and an
+    // account identifier is not something the build machine should be
+    // enumerating — so it would fall through to nginx's SPA fallback, which is
+    // wired to `error_page 404` and answers 404 to everything that reads the
+    // status line. The open account is a query parameter on a static path
+    // instead. See `app/routes/account-people.tsx`.
+    route("people", "routes/account-people.tsx"),
+    route("audit", "routes/account-audit.tsx"),
   ]),
 
   route(":type", "routes/type-index.tsx"),

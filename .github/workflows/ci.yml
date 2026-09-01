@@ -249,12 +249,20 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 45 pages that do not come from content:
+          # One page per document, plus 47 pages that do not come from content:
           # the home page, the about page, the search page, the sources index,
           # five source pages, the credits page, twenty-seven type indexes, and
-          # the eight account routes listed in ACCOUNT_PATHS in
+          # the ten account routes listed in ACCOUNT_PATHS in
           # react-router.config.ts. `source` is the only directory that is not a
           # browsable type, so the other twenty-seven contribute item pages.
+          #
+          # It went from 45 to 47 when administrator-facing account management
+          # added `/account/people` and `/account/audit`. Two static addresses
+          # rather than one per account: a dynamic administrative route could
+          # not be prerendered at all, and neither page has a loader, so what
+          # lands on disk is the signed-out skeleton — no directory of
+          # addresses, no audit trail, nothing identity-shaped in a file behind
+          # a CDN.
           #
           # It went from 44 to 45 when content flagging added
           # `/account/flags`. One route rather than one per report, and for the
@@ -286,7 +294,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 45))
+          expected=$((items + 47))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)

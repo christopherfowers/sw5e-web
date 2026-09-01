@@ -28,6 +28,8 @@ const ACCOUNT_PATHS = [
   "/account/security",
   "/account/contributions",
   "/account/flags",
+  "/account/people",
+  "/account/audit",
 ];
 
 test.describe("the account routes are real files, not the SPA fallback", () => {
@@ -80,6 +82,31 @@ test.describe("no identity is baked into the static files", () => {
     expect(html).not.toContain("@example.com");
     expect(html).not.toMatch(/"roles"\s*:/);
     expect(html).not.toMatch(/"passkeys"\s*:/);
+  });
+
+  test("the administration pages are skeletons with no directory in them", async ({
+    request,
+  }) => {
+    // The sharpest version of the rule this whole file exists for. These two
+    // addresses are the only ones on the site that ever see other people's
+    // email addresses, and what nginx serves for them is a file every visitor
+    // and every cache in between is free to keep. A loader on either would put
+    // the account directory, or a record of who suspended whom, into it.
+    for (const path of ["/account/people", "/account/audit"]) {
+      const html = await (await request.get(path)).text();
+
+      expect(html).toContain("Checking your account");
+      expect(html).not.toContain("@example.com");
+      expect(html).not.toMatch(/"users"\s*:/);
+      expect(html).not.toMatch(/"actions"\s*:/);
+      expect(html).not.toMatch(/"suspension"\s*:/);
+
+      // And the words themselves, since a directory that leaked would carry
+      // them: the section headings only appear once an administrator's session
+      // has resolved in the browser.
+      expect(html).not.toContain("Suspend this account");
+      expect(html).not.toContain("Delete this account");
+    }
   });
 
   test("no account route ships a data payload beside it", () => {
@@ -204,6 +231,8 @@ const ACCOUNT_SECTIONS = [
     title: "Contributions — Your account — Star Wars 5e",
   },
   { path: "/account/flags", title: "Reports — Your account — Star Wars 5e" },
+  { path: "/account/people", title: "People — Your account — Star Wars 5e" },
+  { path: "/account/audit", title: "Audit log — Your account — Star Wars 5e" },
 ];
 
 test.describe("every account route names itself in its own markup", () => {

@@ -67,6 +67,23 @@ const ACCOUNT_PATHS = [
   // .github/workflows/ci.yml adds a fixed number of content-free pages to the
   // document count, and that number went from 43 to 44 with this line.
   "/account/flags",
+
+  // Administration. Two more content-free skeletons, for the same reason as
+  // every other address here: leaving them to the SPA fallback would make them
+  // answer 404 to a crawler, a monitor and a shared link while rendering
+  // correctly in a browser.
+  //
+  // What is written to disk for each is the signed-out skeleton and nothing
+  // else. Neither has a loader — see `app/routes/account-people.tsx` — so no
+  // account directory and no audit trail can reach a static file. That is
+  // load-bearing here in a way it is not on `/account/passkeys`: this is the
+  // only part of the site that ever sees other people's email addresses.
+  //
+  // Adding these raised the prerendered route count by two. The container job
+  // in .github/workflows/ci.yml adds a fixed number of content-free pages to
+  // the document count, and that number went from 45 to 47 with these lines.
+  "/account/people",
+  "/account/audit",
 ] as const;
 
 /**
