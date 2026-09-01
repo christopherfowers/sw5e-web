@@ -27,6 +27,7 @@ const ACCOUNT_PATHS = [
   "/account/passkeys",
   "/account/security",
   "/account/contributions",
+  "/account/flags",
 ];
 
 test.describe("the account routes are real files, not the SPA fallback", () => {
@@ -102,6 +103,25 @@ test.describe("no identity is baked into the static files", () => {
     // The control: routes that legitimately have a loader do produce one, so a
     // renamed output directory cannot make this test vacuously pass.
     expect(existsSync(path.resolve("build/client/species.data"))).toBe(true);
+  });
+
+  test("the reporting control is in the static file and says nothing about the reader", async ({
+    request,
+  }) => {
+    const html = await (await request.get("/species/abyssin")).text();
+
+    // The control is prerendered like everything else on this page — it has to
+    // be, or a reader without scripts is offered nothing and a crawler sees a
+    // page that differs from the one a browser assembles.
+    //
+    // What it must not do is resolve a session at build time. It renders
+    // collapsed for everybody, and what it expands into is decided after
+    // hydration, so the file every visitor shares contains a button and no
+    // claim about who is holding it.
+    expect(html).toContain("report-trigger");
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain("report-form");
+    expect(html).not.toContain("Sign in</a> to report");
   });
 
   test("a content page carries the neutral header control, not a session", async ({
@@ -183,6 +203,7 @@ const ACCOUNT_SECTIONS = [
     path: "/account/contributions",
     title: "Contributions — Your account — Star Wars 5e",
   },
+  { path: "/account/flags", title: "Reports — Your account — Star Wars 5e" },
 ];
 
 test.describe("every account route names itself in its own markup", () => {

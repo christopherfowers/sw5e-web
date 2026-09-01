@@ -14,7 +14,7 @@
  * the reader's own machine.
  */
 
-import { useOutletContext } from "react-router";
+import { Link, useOutletContext } from "react-router";
 
 import { RequireSession } from "~/auth/guard";
 import { ROLE_META } from "~/auth/roles";
@@ -50,6 +50,14 @@ export default function AccountContributions() {
             reviewed before it is published. The upload tool is not part of this
             release; until it lands, send corrections through the repository&apos;s
             issue tracker and they will be applied to the canonical content set.
+          </p>
+
+          <p className="auth-note">
+            What readers report is in <Link to="/account/flags">the review
+            queue</Link>. It is worth starting there rather than with the
+            issue tracker: it is where the community can reach you, and it is
+            the only place a picture&apos;s missing artist can be recorded by
+            the person who recognised the work.
           </p>
         </section>
       )}

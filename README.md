@@ -569,6 +569,77 @@ protocol rather than stubbing `navigator.credentials`, so a credential is
 really created, really signed, and really verified against the challenge that
 issued it.
 
+## Reporting a problem
+
+The first thing on this site that sends anything a reader wrote to a server.
+
+A **report** is raised from the page or the picture it is about. It never
+changes what it points at: the API stores it in a schema of its own and the
+reference is served from somewhere else entirely. What it produces is a queue,
+and the queue is the point — around a hundred and fifty of the pictures this
+site publishes were inherited from the original sw5e.com with no record of who
+drew them, the credit under each one says so, and the only people who can close
+that gap are readers who recognise the work.
+
+### Where the control lives
+
+At the foot of a content page, and under the caption of every picture the build
+carries. It is one quiet line of text, collapsed, and it stays that way until
+somebody asks for it — this is a reference people read at the table, not a
+moderation tool with a reference attached.
+
+Under an uncredited picture it changes its wording to **“Do you know who made
+this?”**, because the caption directly above has just said the artist was never
+recorded, and the next line a reader who recognises the work should meet is the
+question rather than a generic offer to complain.
+
+A picture is reported through its attribution record — API content type
+`asset-credit`, key `{group}-{key}`, the same `species-wookiee` naming
+`app/content/imagery.ts` resolves the files by — so the report lands on exactly
+the document a reviewer edits to write the credit.
+
+### What a reader can say
+
+Ten reasons, five about pictures, four about writing, and `other`. The menu is
+chosen by what is being reported, so nobody is offered “this does not match the
+book” about a portrait. `app/flags/reasons.ts` holds the wording; the service
+owns the taxonomy. The two are separate because the service's names are routing
+keys and the question a reader is answering is “what is wrong with this?” — a
+menu of routing keys gets the wrong answer picked, and a wrongly-routed report
+lands in a queue somebody has already decided not to work today.
+
+### `/account/flags`
+
+One route, two audiences. Every signed-in account sees what it reported and
+what became of it; a contributor sees the review queue underneath. That is one
+address rather than two on purpose: reporting is intended to open wider over
+time, and a site where “your reports” and “the queue” are separate pages is one
+where widening the first means inventing the second's navigation again.
+
+Like every other page in the account area it exports **no `loader`**. A loader
+here would run once on a build machine and write its result into a file served
+to everybody — which for a moderation queue means the display name of everyone
+who had reported anything, behind a CDN.
+`app/auth/prerender-safety.test.ts` fails the build if one appears.
+
+Adding the route raised the prerendered page count by one, from 44 to 45
+content-free pages. `react-router.config.ts` lists it and the container job in
+`.github/workflows/ci.yml` does the arithmetic.
+
+### Untrusted text
+
+Report details, reviewer notes and display names are all written by people, and
+all three are rendered to contributors and administrators. Every one of them is
+a text node. There is no raw-HTML escape hatch anywhere on the reports page or
+in the reporting control, none of it goes near `app/content/markdown.ts`, and
+`app/routes/account-flags.test.tsx` searches both files by name to keep it that
+way — including in comments, which is where the prop lands first when somebody
+is about to reach for it.
+
+The escaping tests assert that no element was created, not that the payload
+“looks escaped”. A test for the absence of the literal text would pass on a page
+that had just executed it.
+
 ## Container image
 
 The site ships as a container: a content stage carries the canonical library,

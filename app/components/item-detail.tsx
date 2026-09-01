@@ -20,6 +20,7 @@ import { Link } from "react-router";
 
 import { Badge, SourceBadge } from "./badges";
 import { AssetImage, ImageCredit, MonogramPlate } from "./media";
+import { ReportControl } from "./report-control";
 import { classArt, speciesPortrait } from "~/content/imagery";
 import { TYPE_META } from "~/content/type-meta";
 import type { AssetCredit, ContentItem, Entry } from "~/content/types";
@@ -33,6 +34,19 @@ interface Figure {
   caption: string;
   /** Shown in place of the picture when the archive has none. */
   fallbackNote: string;
+  /**
+   * How the picture is named in `app/assets`, and therefore how the service
+   * knows which picture is being reported.
+   *
+   * These two strings are exactly what `app/content/imagery.ts` looks the image
+   * up by, and they have to be, because the attribution record for a picture is
+   * keyed `{group}-{key}` on the same naming. Deriving them a second way here —
+   * from the item's name, say — would produce a report pointing at a record
+   * that does not exist, which the service refuses. So they are computed
+   * alongside the lookup rather than near it.
+   */
+  assetGroup: string;
+  assetKey: string;
 }
 
 function itemFigure(item: ContentItem): Figure | null {
@@ -46,6 +60,8 @@ function itemFigure(item: ContentItem): Figure | null {
       // naming nobody.
       caption: `Illustration of the ${item.name}`,
       fallbackNote: `No illustration of the ${item.name} exists in the archive.`,
+      assetGroup: "species",
+      assetKey: item.slug,
     };
   }
 
@@ -55,6 +71,8 @@ function itemFigure(item: ContentItem): Figure | null {
       alt: `Illustration of a ${item.name}`,
       caption: `${item.name} — illustration from the Star Wars 5e archive`,
       fallbackNote: `No illustration of the ${item.name} exists in the archive.`,
+      assetGroup: "classes",
+      assetKey: item.name.toLowerCase(),
     };
   }
 
@@ -72,6 +90,8 @@ function itemFigure(item: ContentItem): Figure | null {
           ? `${className} — the class this archetype branches from`
           : `${className} — the class this improvement belongs to`,
       fallbackNote: `No illustration of the ${className} class exists in the archive.`,
+      assetGroup: "classes",
+      assetKey: className.toLowerCase(),
     };
   }
 
@@ -139,6 +159,46 @@ export function ItemDetail({
             {figure.image ? figure.caption : figure.fallbackNote}
             {figure.image ? <ImageCredit credit={artCredit} /> : null}
           </figcaption>
+
+          {/*
+            Only when there is a picture. There is nothing to report about art
+            that does not exist, and the monogram plate below is this site's own
+            drawing rather than anybody's inherited work.
+
+            This is the control that matters most on the whole site right now.
+            Around a hundred and fifty of these pictures came from the original
+            sw5e.com with no record of who drew them, and the only people who
+            can close that gap are readers who recognise the work — which they
+            do here, looking at it, rather than on a contact page later.
+
+            The target is the picture's attribution record rather than the page:
+            content type `asset-credit`, key `{group}-{key}`. That record is
+            what a reviewer edits to write the credit, so the report lands on
+            the document that resolves it.
+          */}
+          {figure.image ? (
+            <ReportControl
+              target={{
+                kind: "image",
+                type: "asset-credit",
+                key: `${figure.assetGroup}-${figure.assetKey}`,
+                name: item.name,
+              }}
+              /*
+                The wording follows the citation directly above it. On the 149
+                pictures whose artist was never recorded, the caption has just
+                said so — and the next line a reader who recognises the work
+                should meet is the question, not a generic offer to complain.
+                On the one picture that is properly cited, and on any that
+                becomes so, it goes back to the ordinary quiet line.
+              */
+              label={
+                artCredit?.status === "inherited-unattributed"
+                  ? "Do you know who made this?"
+                  : "Report a problem with this picture"
+              }
+            />
+          ) : null}
         </figure>
       ) : null}
 
@@ -260,6 +320,23 @@ export function ItemDetail({
             </div>
           </section>
         ))}
+        {/*
+          At the foot of the page, after everything it is about. A reference is
+          read from the top; an affordance for reporting it belongs where
+          somebody has finished reading and found the thing that is wrong.
+
+          `item.type` is the site's own route segment — `species`,
+          `enhanced-items` — which the service resolves against its content
+          registry, so no mapping table has to be kept in step here.
+        */}
+        <ReportControl
+          target={{
+            kind: "document",
+            type: item.type,
+            key: item.slug,
+            name: item.name,
+          }}
+        />
       </div>
     </article>
   );

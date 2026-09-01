@@ -136,6 +136,20 @@ function AccountFrame({ user }: { user: CurrentUser }) {
                 Two-factor
               </NavLink>
             </li>
+            {/*
+              Reports is offered to every signed-in account, not only to
+              contributors. What it shows differs — a community account sees
+              what it filed, a contributor sees the queue underneath — and that
+              is a decision the page makes from the session rather than one the
+              navigation makes by hiding a link. Hiding it would mean the
+              reader who filed a report has nowhere to find out what happened
+              to it.
+            */}
+            <li>
+              <NavLink to="/account/flags" className={navClass}>
+                Reports
+              </NavLink>
+            </li>
             {canUploadContent(user) ? (
               <li>
                 <NavLink to="/account/contributions" className={navClass}>

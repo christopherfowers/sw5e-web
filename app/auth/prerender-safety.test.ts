@@ -37,6 +37,7 @@ const AUTH_ROUTE_MODULES = [
   "account-passkeys.tsx",
   "account-security.tsx",
   "account-contributions.tsx",
+  "account-flags.tsx",
 ];
 
 function source(file: string): string {
@@ -83,6 +84,7 @@ describe("the account routes are prerendered rather than left to the fallback", 
     "/account/passkeys",
     "/account/security",
     "/account/contributions",
+    "/account/flags",
   ])("%s is in the prerender list", (route) => {
     // A path missing from this list is served by nginx's SPA fallback, which
     // is wired to `error_page 404`. It would render correctly in a browser

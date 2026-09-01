@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 
 import { AssetImage, MonogramPlate } from "~/components/media";
+import { ReportControl } from "~/components/report-control";
 import { Breadcrumbs } from "~/components/site-chrome";
 import { TypeIcon } from "~/components/type-icon";
 import { countsBySource } from "~/content/dataset.server";
@@ -60,13 +61,31 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
 
       <div className="source-hero">
         {cover ? (
-          <AssetImage
-            className="source-cover"
-            image={cover}
-            alt={`Cover of ${source.name}`}
-            sizes="(min-width: 46rem) 192px, 60vw"
-            loading="eager"
-          />
+          <div>
+            <AssetImage
+              className="source-cover"
+              image={cover}
+              alt={`Cover of ${source.name}`}
+              sizes="(min-width: 46rem) 192px, 60vw"
+              loading="eager"
+            />
+            {/*
+              Book covers are the pictures on this site most likely to attract a
+              rights complaint, and the ones whose provenance is least
+              documented. The attribution record is keyed on the same source
+              code the image file is — `sources-phb` — so the report points at
+              the record a reviewer edits.
+            */}
+            <ReportControl
+              target={{
+                kind: "image",
+                type: "asset-credit",
+                key: `sources-${source.code.toLowerCase()}`,
+                name: source.name,
+              }}
+              label="Report a problem with this cover"
+            />
+          </div>
         ) : (
           /*
             Expanded Content is community material and has no cover art
