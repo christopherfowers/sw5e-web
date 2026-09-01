@@ -60,6 +60,21 @@ describe("the site footer", () => {
     );
   });
 
+  /**
+   * The header carries the lineage and the footer carries the attribution, and
+   * the two have to read as one voice. The footer borrows the wordmark's verb
+   * — "Continuing sw5e.com" / "continues that work" — and repeats, on every
+   * page, the limit the about page sets out at length.
+   */
+  it("continues sw5e.com without claiming to speak for it", () => {
+    const footer = renderFooter().container;
+
+    expect(footer).toHaveTextContent(/continues that work/i);
+    expect(footer).toHaveTextContent(
+      /does not speak for sw5e\.com or the people who ran it/i,
+    );
+  });
+
   it("links to the credits, so the claim about who made it is reachable", () => {
     renderFooter();
 

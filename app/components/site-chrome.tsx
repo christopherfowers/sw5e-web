@@ -87,6 +87,14 @@ export function SiteHeader() {
  *
  * The credits link is not decoration. An assertion about who made something,
  * with no way to reach the list of who, is the failure this replaces.
+ *
+ * The header carries the lineage and this block carries the attribution and the
+ * licensing, which is the division the wordmark's own comment describes. They
+ * have to read as one voice rather than two, so the second sentence borrows the
+ * header's verb: the tagline says "Continuing sw5e.com" and this says the site
+ * continues that work. It also repeats, in the one place that appears on every
+ * page, the limit the about page sets out at length — that continuing somebody
+ * else's work is not the same as speaking for them.
  */
 export function SiteFooter() {
   return (
@@ -96,10 +104,11 @@ export function SiteFooter() {
           <p>
             Star Wars 5e is a fan conversion of fifth-edition D&amp;D, made by
             Galiphile and a community of contributors in accordance with Wizards
-            of the Coast&rsquo;s Fan Content Policy. Star Wars and all related
-            properties belong to Lucasfilm. This site is unofficial, and is not
-            affiliated with, endorsed by, or sponsored by Lucasfilm or Wizards
-            of the Coast.
+            of the Coast&rsquo;s Fan Content Policy. This site continues that
+            work and does not speak for sw5e.com or the people who ran it. Star
+            Wars and all related properties belong to Lucasfilm. This site is
+            unofficial, and is not affiliated with, endorsed by, or sponsored by
+            Lucasfilm or Wizards of the Coast.
           </p>
           <p>
             This website&rsquo;s source code is MIT licensed. The game content
