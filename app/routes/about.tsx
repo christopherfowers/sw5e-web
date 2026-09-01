@@ -1,19 +1,37 @@
 /**
  * What this site is, and what it is not.
  *
- * This page exists because the two facts a returning reader needs cannot both
- * be said in a hero. The hero has room for "this picks up where sw5e.com left
- * off" and nothing more; it has no room for what carried over, what did not,
- * or the distinction between continuing somebody's work and speaking for them.
- * That last one is the reason this is a page rather than another sentence:
- * being the successor is not being official, the gap between the two is legally
- * load-bearing, and a claim that big should be stated somewhere it can be read
- * in full rather than compressed until it overclaims.
+ * This page exists because a reader arriving from a dead bookmark needs more
+ * than a hero can hold. The hero has room for what the site is and nothing
+ * more; it has no room for the address that stopped answering, for what came
+ * across, or for the one distinction that genuinely matters — that being Star
+ * Wars 5e is not being official. That last one is the reason this is a page
+ * rather than another sentence: the gap between "this is the project" and
+ * "this is licensed by Lucasfilm" is legally load-bearing, and a claim that
+ * big should be stated somewhere it can be read in full rather than compressed
+ * until it overclaims.
  *
- * It is also the page a search for "what happened to sw5e.com" can land on. A
+ * The page used to make a second distinction as well, at length, and that one
+ * was false. It said the site "does not speak for sw5e.com or for the people
+ * who ran it", that it "claims no authority they gave it and no standing they
+ * did not", and that "continuing something is not the same as being it". Every
+ * one of those sentences described a relationship that does not exist. This is
+ * not a third party keeping somebody else's reference warm; it is Star Wars
+ * 5e, the same project, rebuilt. A modest disclaimer about a relationship you
+ * are actually inside of is not modesty — it is telling the reader something
+ * untrue, and the one page whose entire job is to say where the site went was
+ * the worst place on the site to say it.
+ *
+ * What survives from that draft, and must, is the Lucasfilm and Wizards of the
+ * Coast disclaimer below. The two used to sit as adjacent paragraphs and are
+ * easy to mistake for one point. They are not: the removed one was a claim
+ * about which project this is, and it was wrong; the remaining one is a claim
+ * about rights this project has never held, and it is right.
+ *
+ * It is still the page a search for "what happened to sw5e.com" lands on. A
  * reader whose bookmark went quiet does not search for this site by name —
- * they search for the one they lost. Nothing on the site answered that query
- * before, which is exactly how a continuation ends up looking like a rival.
+ * they search for the address they lost. It simply answers that as a move
+ * rather than as a succession.
  *
  * The counts come from the manifest rather than from prose. Every number in
  * here is one the build can check, for the same reason the meta description
@@ -36,10 +54,10 @@ export function meta() {
     {
       name: "description",
       content:
-        "Star Wars 5e's reference lived at sw5e.com until its maintainer " +
-        "stepped down. This site is the continuation: the same fan " +
-        "conversion and the same books, maintained and searchable. " +
-        "Unofficial, and not affiliated with Lucasfilm or Wizards of the Coast.",
+        "Star Wars 5e's reference used to be served from sw5e.com. It is " +
+        "served from here now: the same conversion and the same books, " +
+        "rebuilt and searchable. Unofficial, and not affiliated with " +
+        "Lucasfilm or Wizards of the Coast.",
     },
   ];
 }
@@ -69,23 +87,22 @@ export default function About({ loaderData }: Route.ComponentProps) {
         <p className="page-eyebrow">About</p>
         <h1>What this site is</h1>
         <p className="lede">
-          The maintained continuation of the Star Wars 5e reference that lived
-          at sw5e.com.
+          This is Star Wars 5e. The same conversion, the same books, rebuilt on
+          new foundations.
         </p>
       </div>
 
       <div className="prose-body">
         <p>
           Star Wars 5e is a fan conversion of fifth-edition Dungeons &amp;
-          Dragons, made by Galiphile and a community of contributors. For years
-          the reference for it lived at sw5e.com. The person maintaining that
-          site stepped down, and it stopped being updated — which is an ordinary
-          thing to happen to a project somebody ran for free, and no criticism
-          of anyone. What it left behind was a rulebook nobody was tending.
+          Dragons, made by Galiphile and a community of contributors. Its
+          reference was served from sw5e.com for years. It is served from here
+          now — not a different project, and not a tribute to one: the same
+          reference, rewritten from the ground up because the thing it ran on
+          had reached the end of what it could be asked to do.
         </p>
         <p>
-          This site is where that work continues. It is the same conversion and
-          the same books —{" "}
+          It is the same conversion and the same books —{" "}
           {bookList} — rebuilt as a reference that is kept current:{" "}
           {total.toLocaleString("en-US")} entries across {TYPE_ORDER.length}{" "}
           categories, every one of them a real page at its own address, every
@@ -103,17 +120,14 @@ export default function About({ loaderData }: Route.ComponentProps) {
 
         <h2>What this site is not</h2>
         <p>
-          It is not official, and the difference matters. Star Wars and
-          everything in it belong to Lucasfilm. The conversion is community work
-          made under Wizards of the Coast&rsquo;s Fan Content Policy. This site
-          is unofficial fan content and is not affiliated with, endorsed by or
-          sponsored by Lucasfilm or Wizards of the Coast.
-        </p>
-        <p>
-          It also does not speak for sw5e.com or for the people who ran it. It
-          carries their work forward, with thanks and with credit; it claims no
-          authority they gave it and no standing they did not. Continuing
-          something is not the same as being it.
+          It is not official, and that is the one distinction on this page worth
+          reading twice. Star Wars and everything in it belong to Lucasfilm. The
+          conversion is community work made under Wizards of the Coast&rsquo;s
+          Fan Content Policy. This site is unofficial fan content and is not
+          affiliated with, endorsed by or sponsored by Lucasfilm or Wizards of
+          the Coast — being Star Wars 5e and being licensed by the people who
+          own Star Wars are entirely different things, and only the first of
+          them is true here.
         </p>
 
         <h2>Where to start</h2>

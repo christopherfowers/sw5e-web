@@ -34,13 +34,9 @@ describe("Home route", () => {
   });
 
   /**
-   * The site is the maintained continuation of sw5e.com, and for a long time
-   * it said so nowhere. Worse, its own lede opened "A community reference" —
-   * an indefinite article that filed it alongside every other fan project
-   * instead of saying which one it is. Both halves of that are asserted here,
-   * because fixing one without the other leaves the page still wrong: dropping
-   * the article without naming the lineage says nothing, and naming the lineage
-   * under "a community reference" contradicts itself in the same paragraph.
+   * The lede opened "A community reference", and the indefinite article filed
+   * the site alongside every other fan project instead of saying which one it
+   * is. That is still forbidden.
    */
   it("does not file itself as one community reference among several", () => {
     renderHome();
@@ -48,22 +44,36 @@ describe("Home route", () => {
     expect(screen.queryByText(/a community reference/i)).toBeNull();
   });
 
-  it("tells a reader off an old bookmark which site this continues", () => {
-    renderHome();
+  /**
+   * The sentence that replaced it overshot the other way. "This site picks up
+   * where sw5e.com left off" is a succession claim, and a succession claim puts
+   * the speaker outside the thing it succeeds. This site is Star Wars 5e, so
+   * the hero says what the site is and the lineage moved to `/about`, where it
+   * has room to be stated as a change of address rather than a handover.
+   */
+  it("does not describe itself as picking up somebody else's work", () => {
+    const { container } = renderHome();
+    const lede = container.querySelector(".lede")?.textContent ?? "";
 
-    expect(
-      screen.getByText(/picks up where sw5e\.com left off/i),
-      "the home page has to name the site it continues, in words a reader " +
-        "arriving from that site will recognise",
-    ).toBeInTheDocument();
+    expect(lede).not.toMatch(/picks up where/i);
+    expect(lede).not.toMatch(/sw5e\.com/i);
+    expect(lede).toMatch(/the whole conversion and every book/i);
   });
 
-  it("offers that reader somewhere to read what happened", () => {
+  /**
+   * The redirect notice, which is a different thing from the lede and stays.
+   * Somebody who followed a dead bookmark needs to be told, in the words they
+   * are holding, that this is where it points now.
+   */
+  it("still answers the reader who arrived on a dead sw5e.com link", () => {
     renderHome();
 
+    const note = screen.getByText(/arrived from an sw5e\.com link/i);
+
+    expect(note).toBeInTheDocument();
     expect(
       document.querySelector('a[href="/about"]'),
-      "the continuity claim needs a page behind it; the hero has room for one " +
+      "the redirect notice needs a page behind it; the hero has room for one " +
         "sentence and the question deserves more",
     ).not.toBeNull();
   });
@@ -145,13 +155,17 @@ describe("Home route metadata", () => {
     expect(descriptionFrom(tags)).not.toMatch(/a community reference/i);
   });
 
-  it("names the site it continues, where a search result will show it", () => {
-    // Containment rather than a bare `/sw5e\.com/` regex: CodeQL reads an
-    // unanchored hostname pattern as a host check that arbitrary domains can
-    // slip past, and it is right to in general. Here the subject is a sentence
-    // rather than a URL, so the substring is both the honest assertion and the
-    // one that does not train the team to wave the rule through.
-    expect(descriptionFrom(tagsFor())).toContain("sw5e.com");
+  it("says what the site is, where a search result will show it", () => {
+    // This asserted that the description named sw5e.com, because it read "The
+    // maintained continuation of sw5e.com" — a phrase that spent every search
+    // result describing the site as standing outside the project it is. The
+    // description now states the site rather than its predecessor; `/about`
+    // carries the address a returning reader searches for, and carries it with
+    // the paragraph that phrase could never hold.
+    const description = descriptionFrom(tagsFor());
+
+    expect(description).toContain("Star Wars 5e, the whole reference");
+    expect(description).not.toMatch(/continuation|picks up where|successor/i);
   });
 
   it("counts the corpus rather than listing the types it began with", () => {
@@ -184,7 +198,7 @@ describe("Home route metadata", () => {
       >,
     );
 
-    expect(description).toContain("sw5e.com");
+    expect(description).toContain("Star Wars 5e, the whole reference");
     expect(description).not.toMatch(/undefined|NaN/);
   });
 });

@@ -9,7 +9,12 @@
  * positioned the site as one option among several rather than as the
  * continuation of the reference that went quiet.
  *
- * These tests are here because that line is four words in a header and is
+ * Its replacement, "Continuing sw5e.com", was wrong in a subtler way and did
+ * more damage: it described the site as standing outside Star Wars 5e and
+ * carrying its work forward. This site is Star Wars 5e. The tag now says what
+ * the site is — "The current reference" — with no verb of succession in it.
+ *
+ * These tests are here because that line is three words in a header and is
  * exactly the kind of thing a tidy-up reverts.
  */
 
@@ -39,11 +44,11 @@ afterEach(() => {
 });
 
 describe("the site header", () => {
-  it("states the site's lineage beside the wordmark", () => {
+  it("says what the site is beside the wordmark", () => {
     mount();
 
     expect(
-      screen.getByText(/continuing sw5e\.com/i),
+      screen.getByText(/the current reference/i),
       "every page has to say which reference this is; most readers never see " +
         "the home page",
     ).toBeInTheDocument();
@@ -55,12 +60,34 @@ describe("the site header", () => {
     expect(screen.queryByText(/community reference/i)).toBeNull();
   });
 
-  it("does not claim to be that site, only to continue it", () => {
+  /**
+   * The assertion this file exists for now.
+   *
+   * "Continuing sw5e.com" put the site outside the project it is part of, on
+   * every page, in the one line a reader who deep-linked into a single power
+   * ever sees. A site that has changed where it is served from does not
+   * introduce itself by its old address, and no verb of succession belongs in
+   * the wordmark at all — "continuing", "successor" and "formerly" are three
+   * ways of saying the same untrue thing.
+   */
+  it("does not describe itself as succeeding something else", () => {
+    const { container } = mount();
+    const text = container.textContent ?? "";
+
+    expect(text).not.toMatch(/continuing/i);
+    expect(text).not.toMatch(/sw5e\.com/i);
+    expect(text).not.toMatch(/successor|formerly/i);
+  });
+
+  /**
+   * The claim that stays forbidden, and for a reason unrelated to the one
+   * above. Being Star Wars 5e is not being official: Star Wars belongs to
+   * Lucasfilm and the conversion is fan content under the Fan Content Policy.
+   * The header must never imply otherwise, whatever else it says.
+   */
+  it("never claims to be official", () => {
     const { container } = mount();
 
-    // "Continuing sw5e.com" is a claim of stewardship. Anything that reads as
-    // the site announcing itself *as* sw5e.com, or as official, is a claim
-    // nobody granted and one with legal weight behind it.
     expect(container.textContent ?? "").not.toMatch(/\bofficial\b/i);
   });
 });

@@ -2,12 +2,19 @@
  * The page that carries the site's claim about itself.
  *
  * These assertions are unusually literal about wording, and that is deliberate.
- * The distinction between "this continues sw5e.com" and "this is sw5e.com" is
- * legally load-bearing — the first is a statement of stewardship, the second is
- * an impersonation and an implied endorsement the site has no right to claim.
- * A future edit tightening the prose could erase that distinction in one pass
- * without anybody noticing, so the disclaimers are pinned here rather than left
- * to review.
+ * There is exactly one distinction on this page that is legally load-bearing,
+ * and it is the Lucasfilm and Wizards of the Coast one: this is Star Wars 5e,
+ * and Star Wars 5e is fan content that nobody has licensed. A future edit
+ * tightening the prose could erase that in one pass without anybody noticing,
+ * so it is pinned here rather than left to review.
+ *
+ * The page used to pin a second distinction as well — that the site "does not
+ * speak for sw5e.com", "claims no authority they gave it and no standing they
+ * did not", and that "continuing something is not the same as being it" — and
+ * those tests were worse than useless, because they held a false claim in
+ * place. This site is Star Wars 5e. The assertions below now check that those
+ * sentences are gone and stay gone, which is the same protection pointed the
+ * right way round.
  */
 
 import { render, screen, within } from "@testing-library/react";
@@ -34,23 +41,27 @@ function renderAbout(data: typeof loaderData = loaderData) {
 }
 
 describe("About route", () => {
-  it("names the site it continues", () => {
+  it("still names the address a reader is searching for", () => {
     const { container } = renderAbout();
 
     // Asserted against the page's text rather than with a `/sw5e\.com/` regex.
     // CodeQL reads an unanchored hostname pattern as a host check anything can
     // slip past; the subject here is prose, so a substring says what is meant
     // without teaching anyone to dismiss that rule.
+    //
+    // The domain has to stay on the page even though the site no longer
+    // describes itself in terms of it: somebody whose bookmark went quiet
+    // searches for the address they lost, not for a site they have never heard
+    // of, and this is the page that has to answer them.
     expect(container.textContent ?? "").toContain("sw5e.com");
   });
 
-  it("says plainly that the previous site stopped being updated, and why", () => {
-    renderAbout();
+  it("says that this is the same project rather than a different one", () => {
+    const { container } = renderAbout();
+    const text = container.textContent ?? "";
 
-    expect(
-      screen.getByText(/stepped down/i),
-      "a reader whose bookmark went quiet needs the reason, not a redirect",
-    ).toBeInTheDocument();
+    expect(text).toMatch(/this is star wars 5e/i);
+    expect(text).toMatch(/not a different project/i);
   });
 
   it("tells a reader arriving on a dead bookmark that their entries are here", () => {
@@ -79,16 +90,32 @@ describe("About route", () => {
     expect(disclaimer).toBeInTheDocument();
   });
 
-  it("never claims to be the previous site or to speak for it", () => {
+  /**
+   * The four sentences this page no longer carries, each pinned by the phrase
+   * that made it false.
+   *
+   * They all said a version of the same thing: that this site stands beside
+   * Star Wars 5e rather than being it. It is it. A revert that reads as
+   * humility in a diff would put every one of them straight back, so the
+   * absence is asserted rather than assumed.
+   */
+  it("no longer disclaims a relationship with sw5e.com that exists", () => {
     const { container } = renderAbout();
     const text = container.textContent ?? "";
 
-    // The claim the site is entitled to make is that it continues the work.
-    // The claims it is not entitled to make are that it *is* that site, that it
-    // is official, or that anyone handed it authority.
-    expect(text).toMatch(/where that work continues/i);
-    expect(text).toMatch(/does not speak for sw5e\.com/i);
-    expect(text).not.toMatch(/\bthe official\b/i);
+    expect(text).not.toMatch(/does not speak for/i);
+    expect(text).not.toMatch(/no standing/i);
+    expect(text).not.toMatch(/claims no authority/i);
+    expect(text).not.toMatch(/not the same as being it/i);
+    expect(text).not.toMatch(/where that work continues/i);
+  });
+
+  it("does not claim to be licensed, whatever else it claims", () => {
+    const { container } = renderAbout();
+
+    // Unrelated to the assertion above and must survive it. The site may say
+    // which project it is; it may never say anyone signed off on it.
+    expect(container.textContent ?? "").not.toMatch(/\bthe official\b/i);
   });
 
   it("credits the conversion to the people who made it", () => {
