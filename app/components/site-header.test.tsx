@@ -46,14 +46,19 @@ afterEach(() => {
 });
 
 describe("the site header", () => {
-  it("says what the site is beside the wordmark", () => {
+  it("names the site on its only link home, without printing the name twice", () => {
     mount();
 
-    expect(
-      screen.getByText(/^Star Wars 5e$/),
-      "every page has to say which reference this is; most readers never see " +
-        "the home page",
-    ).toBeInTheDocument();
+    // The mark reads "SW5e" already, so the name is carried by the alt text
+    // rather than set beside it. That makes this the assertion that matters:
+    // the link has to keep an accessible name, and dropping the visible text
+    // without moving the name onto the image would leave it an unlabelled
+    // picture — a change that looks tidier and is worse.
+    const home = screen.getByRole("link", { name: /star wars 5e/i });
+
+    expect(home).toHaveAttribute("href", "/");
+    // And the name appears once, not once in the image and again beside it.
+    expect(screen.queryAllByText(/^Star Wars 5e$/)).toHaveLength(0);
   });
 
   it("no longer describes the site as a community reference", () => {
