@@ -11,6 +11,7 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 // way — `/account` cannot be mistaken for a content type.
 export default [
   index("routes/home.tsx"),
+  route("about", "routes/about.tsx"),
   route("search", "routes/search.tsx"),
   route("sources", "routes/sources.tsx"),
   route("sources/:slug", "routes/source-detail.tsx"),

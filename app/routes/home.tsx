@@ -8,13 +8,43 @@ import { SOURCE_META, SOURCE_ORDER } from "~/content/source-meta";
 import { TYPE_META, TYPE_ORDER } from "~/content/type-meta";
 import type { Route } from "./+types/home";
 
-export function meta() {
+/**
+ * The page's own description of itself, and the two things it has to get right.
+ *
+ * The first is the article. This used to open "A community reference", and the
+ * indefinite article did real damage: it filed the site alongside every other
+ * fan project rather than saying what it is. Star Wars 5e had a reference, at
+ * sw5e.com, and when its maintainer stepped down it stopped being updated. This
+ * is where that work continues. Saying so is not a boast — it is the single
+ * fact a reader arriving on an old bookmark needs, and the site never said it
+ * anywhere. `/about` says it at length; this is the version that fits in a
+ * search result.
+ *
+ * The second is that the description no longer lists content types by hand.
+ * The old one named eight, and was already wrong: classes, features, starships,
+ * enhanced items, the property glossaries and the rules text all landed after
+ * it was written, and nobody edits a meta tag when they add a content type. It
+ * now counts what the build actually holds, so it cannot fall behind the
+ * library again. The named examples that remain are chosen to be the ones a
+ * reader would doubt were here — not a manifest.
+ *
+ * `loaderData` is checked rather than trusted because meta also renders when
+ * the loader has thrown — the type says it is always there, the error path says
+ * otherwise — so there is a sentence that reads without any counts at all.
+ */
+export function meta({ loaderData }: Route.MetaArgs) {
+  const corpus = loaderData
+    ? `${loaderData.total.toLocaleString("en-US")} entries across ${TYPE_ORDER.length} categories`
+    : "The whole library";
+
   return [
-    { title: "Star Wars 5e — Community Reference" },
+    { title: "Star Wars 5e — The Maintained Reference" },
     {
       name: "description",
       content:
-        "A community reference for Star Wars 5e: species, archetypes, backgrounds, feats, powers, maneuvers, equipment and creature stat blocks, searchable in one place.",
+        `The maintained continuation of sw5e.com. ${corpus} — classes, ` +
+        "archetypes, features, powers, starships, enhanced items and creature " +
+        "stat blocks — searchable in one place.",
     },
   ];
 }
@@ -85,9 +115,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           ) : null}
           <h1>Star Wars 5e</h1>
           <p className="lede">
-            A community reference for the Star Wars 5e tabletop roleplaying game.
-            Every species, power, creature and piece of gear in one searchable
-            place, built to be read at the table.
+            The maintained home for the Star Wars 5e tabletop roleplaying game.
+            This site picks up where sw5e.com left off — the same conversion,
+            the same books, every entry searchable and built to be read at the
+            table.
           </p>
           <p className="home-hero-meta">
             {total.toLocaleString("en-US")} entries across {TYPE_ORDER.length}{" "}
@@ -101,6 +132,19 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               Creature stat blocks
             </Link>
           </div>
+          {/*
+            Below the buttons rather than beside them, and phrased as the
+            question the reader is actually holding. Somebody who followed a
+            dead bookmark is not looking for an "About" link — they are looking
+            for an answer to "is this the same site, and is my stuff here". The
+            two browse buttons stay first because most arrivals do not need
+            this sentence at all.
+          */}
+          <p className="home-hero-note">
+            <Link to="/about">
+              Coming from sw5e.com? Here is what happened, and what carried over.
+            </Link>
+          </p>
         </div>
       </section>
 

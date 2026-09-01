@@ -249,13 +249,17 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 42 pages that do not come from content:
-          # the home page, the search page, the sources index, five source
-          # pages, twenty-seven type indexes, and the seven account routes
-          # listed in ACCOUNT_PATHS in react-router.config.ts. `source` is the
-          # only directory that is not a browsable type, so the other
+          # One page per document, plus 43 pages that do not come from content:
+          # the home page, the about page, the search page, the sources index,
+          # five source pages, twenty-seven type indexes, and the seven account
+          # routes listed in ACCOUNT_PATHS in react-router.config.ts. `source`
+          # is the only directory that is not a browsable type, so the other
           # twenty-seven
           # contribute item pages.
+          #
+          # The count went from 42 to 43 when `/about` was added. It is a
+          # content-free page — the site explaining what it is and whose work it
+          # continues — so it is one route flat rather than one per anything.
           #
           # The account routes are prerendered deliberately, as signed-out
           # skeletons: nothing in that area has a loader, so there is no
@@ -270,7 +274,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 42))
+          expected=$((items + 43))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)

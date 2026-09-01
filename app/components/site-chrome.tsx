@@ -48,7 +48,18 @@ export function SiteHeader() {
           ) : null}
           <span className="site-wordmark-text">
             <span className="site-wordmark-name">Star Wars 5e</span>
-            <span className="site-wordmark-tag">Community reference</span>
+            {/*
+              The tagline reads "Continuing sw5e.com" and not "Community
+              reference" because it is the only self-description that appears on
+              every page. A reader who deep-links into a single power from a
+              search result never sees the home page, and the footer speaks
+              about licensing rather than about lineage — so this line is the
+              one chance the site gets to tell them, wherever they landed, that
+              this is where the reference they knew went. "Continuing" is the
+              strongest verb the facts support: this site carries that work
+              forward, it is not operated by the people who ran it.
+            */}
+            <span className="site-wordmark-tag">Continuing sw5e.com</span>
           </span>
         </Link>
         <SiteSearch />
