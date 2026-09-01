@@ -26,6 +26,7 @@ export { AuthApiContract } from "../tests/auth-api-contract";
 export {
   user,
   passkey,
+  VALID_EMAIL_CODE,
   VALID_TOTP_CODE,
   VALID_VERIFICATION_EMAIL,
   VALID_VERIFICATION_TOKEN,

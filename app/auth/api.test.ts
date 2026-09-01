@@ -26,7 +26,10 @@ import {
   logout,
   register,
   removePasskey,
+  requestSignInCode,
+  STRONG_AUTHENTICATION_REQUIRED,
   verifyEmail,
+  verifySignInCode,
 } from "./api";
 
 interface RecordedRequest {
@@ -331,6 +334,37 @@ describe("error decoding", () => {
     expect((error as ApiError).code).toBe("last-credential");
   });
 
+  it("tells the two 403s apart, because one of them is fixable", async () => {
+    /*
+     * A plain forbidden is the end of the conversation: the account does not
+     * hold the role. This one is not — the account holds it, and the session
+     * behind the request was simply established with an emailed code, so
+     * enrolling a passkey or an authenticator app clears it in a minute. The
+     * client can only draw that distinction if the code survives the decode,
+     * and only shows the useful sentence if the server's `detail` survives it
+     * too rather than being replaced by the generic default.
+     */
+    recordFetch(() =>
+      respond(
+        {
+          code: STRONG_AUTHENTICATION_REQUIRED,
+          detail:
+            "This action needs a passkey or an authenticator app. Sign in again with one, or add one to your account.",
+        },
+        { status: 403, contentType: "application/problem+json" },
+      ),
+    );
+
+    const error = await assignRoles("user-2", ["Contributor"]).catch(
+      (thrown: unknown) => thrown,
+    );
+
+    expect((error as ApiError).kind).toBe("forbidden");
+    expect((error as ApiError).code).toBe("strong-authentication-required");
+    expect((error as ApiError).message).toMatch(/passkey or an authenticator app/i);
+    expect((error as ApiError).message).not.toMatch(/does not have access/i);
+  });
+
   it("maps 403 to forbidden rather than to signed out", async () => {
     recordFetch(() =>
       respond({ detail: "Administrators only." }, {
@@ -400,6 +434,44 @@ describe("request bodies", () => {
     expect(calls[0]?.init.method).toBe("PUT");
     expect(calls[0]?.url).toBe("/api/auth/admin/users/user-2/roles");
     expect(bodyOf(calls[0])).toEqual({ roles: ["Contributor"] });
+  });
+
+  it("asks for a sign-in code with the address and nothing else", async () => {
+    const calls = recordFetch(() =>
+      respond(
+        {
+          status: "pending",
+          message: "If that address has an account, a sign-in code is on its way.",
+          resendAfterSeconds: 60,
+          expiresInSeconds: 600,
+        },
+        { status: 202 },
+      ),
+    );
+
+    await requestSignInCode("reader@example.com");
+
+    expect(calls[0]?.url).toBe("/api/auth/email/code");
+    expect(calls[0]?.init.method).toBe("POST");
+    expect(bodyOf(calls[0])).toEqual({ email: "reader@example.com" });
+  });
+
+  it("sends both halves when redeeming a sign-in code", async () => {
+    // The code is issued *for* an address and the server checks the pair, so a
+    // client that sent only the digits would be refused every time — and would
+    // be indistinguishable, from the reader's side, from one sending a wrong
+    // code.
+    const calls = recordFetch(() =>
+      respond({ status: "mfaRequired", user: null }),
+    );
+
+    await verifySignInCode("reader@example.com", "654321");
+
+    expect(calls[0]?.url).toBe("/api/auth/email/code/verify");
+    expect(bodyOf(calls[0])).toEqual({
+      email: "reader@example.com",
+      code: "654321",
+    });
   });
 
   it("percent-encodes a user id into the admin path", async () => {

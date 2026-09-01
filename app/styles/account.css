@@ -85,6 +85,37 @@
   color: var(--accent-hover);
 }
 
+/* The second door on the sign-in page.
+ *
+ * Separated by a rule and set in smaller, muted type on purpose. Passkeys are
+ * the recommendation, and a block styled to match the primary action would say
+ * the opposite of what the copy says — two equal choices, where the page means
+ * one recommendation and one fallback. It has to be easy to find and obviously
+ * secondary at the same time, which is what the divider plus the plain button
+ * buys. */
+.auth-alternative {
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border);
+}
+
+.auth-alternative > h2 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.auth-alternative > p {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  max-width: var(--measure);
+}
+
+.auth-alternative > .auth-actions {
+  margin-top: var(--space-3);
+}
+
 .auth-disclosure {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);

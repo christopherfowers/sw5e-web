@@ -108,6 +108,108 @@ Note the literal is **`mfaRequired`** (camelCase, no hyphen), and the
 `mfaRequired` branch carries **no** `methods` array and no account detail at
 all. Every failure is 401 with the same wording.
 
+## `POST /api/auth/email/code` — 202
+
+Anonymous. Request: `{ "email": string }`
+
+Response, **always 202 and always this shape**:
+```json
+{ "status": "pending",
+  "message": "If that address has an account, a sign-in code is on its way.",
+  "resendAfterSeconds": 60, "expiresInSeconds": 600 }
+```
+
+**The answer is identical whether or not the address has an account, and
+whether or not it has any budget left.** Same status, same body, same wording.
+That is the whole point of the endpoint's design and it is the same rule
+`register` follows: any observable difference — a different status, a different
+sentence, a measurably different delay — turns this into a way to ask the
+service which of a list of addresses are registered. **Clients must not branch
+on this response**, and must not word the next screen differently for an
+address they think they recognise. There is nothing in the body to recognise it
+by.
+
+The address decides exactly one thing, and it is invisible from the client:
+whether a code is actually issued. An unregistered address, or a registered one
+over its budget, gets this reply and no email.
+
+`resendAfterSeconds` and `expiresInSeconds` are the server's own numbers.
+Clients must use them rather than hard-coding 60 and 600, which are merely what
+they are today.
+
+Rate limits, all enforced server-side and none of them the client's to
+reimplement:
+
+- **5 requests per 15 minutes per caller** (per IP). Exceeding it is the one
+  refusal this endpoint may show, because it is about the caller and not about
+  any address: **429** problem document.
+- **3 codes per address per 15 minutes.** Exceeding it is invisible — still a
+  202, still the same body, no email sent.
+- **60-second resend cooldown** per address, reported as `resendAfterSeconds`.
+- **10-minute lifetime** per code, reported as `expiresInSeconds`.
+- **5 attempts per code**, spent on `email/code/verify` below.
+
+400 for a malformed address. Saying so leaks nothing: the caller already knows
+what they typed.
+
+## `POST /api/auth/email/code/verify` — 200
+
+Anonymous. Request: `{ "email": string, "code": string }` — six digits, and
+**both fields are required**. A code is issued *for* an address and the server
+checks the pair, so submitting a valid code with a different address fails
+exactly as a wrong code does.
+
+Response is one of, with the same literals as the passkey path:
+```json
+{ "status": "authenticated", "user": { ...CurrentUser } }
+{ "status": "mfaRequired", "user": null }
+```
+
+`mfaRequired` means the account has an authenticator app, and the client must
+now post to **`POST /api/auth/mfa/totp/verify`** — the same second step the
+passkey flow already uses, not a parallel one. The cookie set alongside this
+reply carries what that call needs. The code is spent at this point whether or
+not the second leg is completed.
+
+**Every failure is 401, with no distinction drawn between any of them:** wrong
+code, expired code, code already redeemed, code issued for a different address,
+attempts exhausted, unknown address, locked-out account. The wording is the
+same for all seven. A client must not invent the distinction back — "that code
+has expired" told to somebody guessing is confirmation that the address they
+guessed has an account.
+
+429 on the existing sensitive per-IP budget.
+
+## Strong authentication, and the second 403
+
+Three fields on `CurrentUser` describe **the session**, not the account. The
+distinction matters: `passkeys` and `twoFactorEnabled` are the same on every
+device, while these describe the browser holding the cookie right now.
+
+- **`authenticationMethod`**: `"passkey" | "totp" | "email" | null`. How this
+  session was established. `null` is a session that predates the field — still
+  valid, and a client must treat it as "no claim either way" rather than as the
+  weakest answer.
+- **`strongAuthentication`**: whether that method counts as a second factor.
+  True for `passkey` and `totp`, false for `email`. An emailed code proves
+  control of an inbox and nothing about a device, so the session it creates is
+  deliberately weaker than the account it belongs to.
+- **`secondFactorRequired`**: whether this account's roles oblige it to hold a
+  passkey or an authenticator app. True for `Contributor` and `Administrator`.
+  Answered by the server rather than computed from `roles`, so a policy change
+  does not need a client deploy to be obeyed.
+
+Contributor and administrator actions require `strongAuthentication`. A session
+established with an emailed code alone is refused with **403** and
+`code: "strong-authentication-required"`, plus a `detail` explaining that a
+passkey or an authenticator app is needed.
+
+That is **not** the same refusal as the plain 403 for an account that does not
+hold the role. The first is final; this one is temporary and the reader is
+about a minute from clearing it. Clients branch on `code` and say so — see
+`app/routes/account-passkeys.tsx` for the same pattern applied to
+`last-credential`.
+
 ## `GET /api/auth/me` — 200
 
 No envelope — the account object is the whole body:
@@ -120,13 +222,20 @@ No envelope — the account object is the whole body:
   "twoFactorEnabled": false,
   "passkeys": [
     { "id": "base64url", "name": "Work laptop", "createdAt": "2026-...Z" }
-  ]
+  ],
+  "authenticationMethod": "passkey",
+  "strongAuthentication": true,
+  "secondFactorRequired": false
 }
 ```
 - The field is **`twoFactorEnabled`**, not `mfa.totp`.
 - `passkeys` is a list, not a count. `name` may be null.
 - There is **no `lastUsedAt`**: the framework's passkey record does not track
   one, and inventing a value would be worse than omitting it.
+- `authenticationMethod`, `strongAuthentication` and `secondFactorRequired`
+  describe **this session**, not the account — see "Strong authentication, and
+  the second 403" above. `authenticationMethod` may be null for a session
+  established before the service recorded it.
 - `roles` is sorted ordinal. The values are **`Community`**, **`Contributor`**,
   **`Administrator`** — capitalised, and the highest one is spelled
   `Administrator`, not `admin`. These are the names seeded into the database
@@ -186,6 +295,18 @@ revoked.
 Request: `{ "roles": ["Contributor"] }` — only `Contributor` and
 `Administrator` may be assigned. `Community` is the floor every account stands
 on and is rejected.
-Response: `{ "userId": "guid", "roles": ["Community", "Contributor"] }`
+Response:
+`{ "userId": "guid", "roles": ["Community", "Contributor"],
+   "awaitingSecondFactor": false }`
 
-400 unknown role, 401, 403 not an administrator, 404 no such account.
+`awaitingSecondFactor` is true when the grant landed on an account holding
+neither a passkey nor an authenticator app — so it now has a role it cannot
+use until it enrols one, because every contributor and administrator call will
+answer 403 `strong-authentication-required` to it. Worth reporting rather than
+swallowing: an administrator who grants `Contributor` and hears nothing has
+every reason to believe the person can now upload, while the person meets a 403
+and reads it as the grant having failed.
+
+400 unknown role, 401, 403 not an administrator, 403
+`strong-authentication-required` when the administrator's own session was
+established with an emailed code, 404 no such account.

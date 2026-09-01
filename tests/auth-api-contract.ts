@@ -64,6 +64,49 @@ export const VALID_VERIFICATION_EMAIL = "reader@example.com";
 /** The only TOTP code this fixture accepts. */
 export const VALID_TOTP_CODE = "123456";
 
+/**
+ * The only emailed sign-in code this fixture accepts.
+ *
+ * Deliberately not the same six digits as `VALID_TOTP_CODE`. The two codes
+ * enter the client through different endpoints and mean different things, and
+ * a fixture where either value satisfies either check cannot notice a client
+ * that posts the emailed code to `/mfa/totp/verify` — which is precisely the
+ * mistake available now that both steps look identical on screen.
+ */
+export const VALID_EMAIL_CODE = "654321";
+
+/**
+ * The budgets the real service keeps on emailed codes, modelled here so that a
+ * client which ignores them fails against the fixture rather than against
+ * production.
+ *
+ * The per-address budget is the interesting one, because exhausting it is
+ * *invisible*: the caller still gets the same 202, and simply never receives a
+ * code. That is the contract, not an oversight — a different answer for an
+ * address that has run out is a different answer for an address that exists.
+ */
+export const EMAIL_CODE_REQUEST_BUDGET = 5;
+export const EMAIL_CODES_PER_ADDRESS = 3;
+export const EMAIL_CODE_ATTEMPT_BUDGET = 5;
+
+/** What the 202 promises, in seconds. Both are the service's own numbers. */
+export const EMAIL_CODE_RESEND_AFTER_SECONDS = 60;
+export const EMAIL_CODE_EXPIRES_IN_SECONDS = 600;
+
+/**
+ * The non-answer `POST /email/code` gives every caller.
+ *
+ * Held as a constant so that a test can assert two responses are identical by
+ * comparing them to the same object, rather than by comparing them to two
+ * literals somebody could drift apart.
+ */
+export const EMAIL_CODE_PENDING_BODY = {
+  status: "pending",
+  message: "If that address has an account, a sign-in code is on its way.",
+  resendAfterSeconds: EMAIL_CODE_RESEND_AFTER_SECONDS,
+  expiresInSeconds: EMAIL_CODE_EXPIRES_IN_SECONDS,
+} as const;
+
 export const TOTP_SHARED_KEY = "JBSWY3DPEHPK3PXP";
 export const TOTP_AUTHENTICATOR_URI =
   "otpauth://totp/Star%20Wars%205e:reader@example.com?secret=JBSWY3DPEHPK3PXP&issuer=Star%20Wars%205e&algorithm=SHA1&digits=6&period=30";
@@ -80,15 +123,51 @@ export function passkey(overrides: Partial<PasskeyCredential> = {}): PasskeyCred
   };
 }
 
+/**
+ * Whether a role set obliges the account to hold a second factor.
+ *
+ * The server answers `secondFactorRequired` itself rather than letting clients
+ * compute it, so the fixture has to compute it the same way the server does or
+ * it is modelling a different policy. Contributor and Administrator; nothing
+ * else.
+ */
+function requiresSecondFactor(roles: readonly Role[]): boolean {
+  return roles.some((role) => role === "Contributor" || role === "Administrator");
+}
+
+/**
+ * The account this fixture knows about.
+ *
+ * The three session fields default to a strongly authenticated passkey
+ * session, because that is what almost every test means by "signed in" and
+ * because the weaker case is the one worth spelling out at the call site. A
+ * test about the emailed-code path says so explicitly —
+ * `user({ authenticationMethod: "email", strongAuthentication: false })` — and
+ * reads as what it is.
+ *
+ * `secondFactorRequired` is derived from the roles rather than defaulted flat,
+ * so that `user({ roles: ["Contributor"] })` produces the account the server
+ * would produce instead of one that quietly disagrees with it about its own
+ * obligations. An explicit override still wins, for the test that wants the
+ * combination the policy does not currently produce.
+ */
 export function user(overrides: Partial<CurrentUser> = {}): CurrentUser {
-  return {
+  const account: CurrentUser = {
     id: "user-1",
     email: VALID_VERIFICATION_EMAIL,
     displayName: "Jen Ordo",
     roles: ["Community"] as Role[],
     twoFactorEnabled: false,
     passkeys: [passkey()],
+    authenticationMethod: "passkey",
+    strongAuthentication: true,
+    secondFactorRequired: false,
     ...overrides,
+  };
+  return {
+    ...account,
+    secondFactorRequired:
+      overrides.secondFactorRequired ?? requiresSecondFactor(account.roles),
   };
 }
 
@@ -135,6 +214,17 @@ export interface ContractOptions {
   offline?: boolean;
   /** The page origin unsafe methods must arrive from. */
   origin?: string;
+  /**
+   * How long the service says a caller must wait before asking for another
+   * emailed code. Defaults to the real sixty seconds.
+   *
+   * Configurable because the number is the *server's*, and the client is
+   * required to obey whatever it is told rather than counting to sixty on its
+   * own. A test that shortens it and then watches the resend control come back
+   * is proving exactly that; one that could only ever see sixty could not tell
+   * an obedient client from a hard-coded one.
+   */
+  resendAfterSeconds?: number;
 }
 
 /**
@@ -148,6 +238,7 @@ export class AuthApiContract {
   mfaRequired: boolean;
   offline: boolean;
   readonly origin: string;
+  readonly resendAfterSeconds: number;
 
   /** Every request that reached the API, in order. */
   readonly calls: { method: string; path: string; body: unknown }[] = [];
@@ -168,11 +259,30 @@ export class AuthApiContract {
    */
   private enrolmentTicketExpiresAt: number | null = null;
 
+  /**
+   * Emailed sign-in codes, by address.
+   *
+   * One live code per address — asking for another replaces the previous one,
+   * which is why `redeemed` is reset rather than a second entry appended.
+   * `issued` counts against the per-address budget and is never reset, since
+   * the budget is what makes the endpoint useless as a way to mail somebody
+   * repeatedly.
+   */
+  private emailCodes = new Map<
+    string,
+    { attempts: number; redeemed: boolean; issued: number }
+  >();
+
+  /** Requests this caller has spent against its own per-IP budget. */
+  private emailCodeRequests = 0;
+
   constructor(options: ContractOptions = {}) {
     this.session = options.session ?? null;
     this.mfaRequired = options.mfaRequired ?? false;
     this.offline = options.offline ?? false;
     this.origin = options.origin ?? PAGE_ORIGIN;
+    this.resendAfterSeconds =
+      options.resendAfterSeconds ?? EMAIL_CODE_RESEND_AFTER_SECONDS;
   }
 
   /** Whether an unexpired enrolment ticket is being held. */
@@ -181,6 +291,21 @@ export class AuthApiContract {
       this.enrolmentTicketExpiresAt !== null &&
       this.enrolmentTicketExpiresAt > Date.now()
     );
+  }
+
+  /**
+   * Whether the fixture would post a code to this address at all.
+   *
+   * It holds exactly one account, so "known" is that account's address — the
+   * configured session's when there is one, and the registered address the
+   * rest of the fixture uses when there is not. Crucially, the answer to
+   * `POST /email/code` does not depend on this in any way; only whether a code
+   * is actually issued does, and that difference is invisible until somebody
+   * tries to redeem one.
+   */
+  private knowsAddress(address: string): boolean {
+    const known = (this.session?.email ?? VALID_VERIFICATION_EMAIL).toLowerCase();
+    return address.trim().toLowerCase() === known;
   }
 
   /** A base64url challenge, distinct per ceremony so replay is detectable. */
@@ -221,6 +346,10 @@ export class AuthApiContract {
         this.session = null;
         this.enrolmentTicketExpiresAt = null;
         this.awaitingTotpEnrolment = false;
+        // "Every half-finished flow" includes a code that was mailed and never
+        // redeemed; leaving it live past a sign-out would keep a credential
+        // usable that the reader has every reason to believe is gone.
+        this.emailCodes.clear();
         return { status: 204 };
 
       case "POST /register": {
@@ -274,6 +403,114 @@ export class AuthApiContract {
             enrollmentExpiresAt: new Date(this.enrolmentTicketExpiresAt).toISOString(),
           },
         };
+      }
+
+      /*
+       * The whole point of this endpoint is that it answers the same thing to
+       * everybody, so the code below is written to make that hard to break:
+       * there is exactly one `return` for the success path, it is the same
+       * frozen object every time, and every branch above it either falls
+       * through to it or is about the *caller* rather than about the address.
+       *
+       * The address decides one thing only, and it is invisible from here:
+       * whether a code is actually put in the map for `verify` to find later.
+       */
+      case "POST /email/code": {
+        const payload = body as { email?: string };
+        const address = typeof payload?.email === "string" ? payload.email.trim() : "";
+
+        // A malformed address is a bad request, and saying so leaks nothing:
+        // the caller already knows what they typed.
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+          return problem(400, "That is not a valid email address.", "invalid-email");
+        }
+
+        // The caller's own budget, which is about this caller and not about
+        // any address — so it is the one refusal this endpoint may show.
+        this.emailCodeRequests += 1;
+        if (this.emailCodeRequests > EMAIL_CODE_REQUEST_BUDGET) {
+          return problem(
+            429,
+            "Too many sign-in codes requested. Wait a few minutes and try again.",
+            "rate-limited",
+          );
+        }
+
+        if (this.knowsAddress(address)) {
+          const key = address.toLowerCase();
+          const existing = this.emailCodes.get(key);
+          const issued = existing?.issued ?? 0;
+          // Over its own budget, the address silently stops receiving codes.
+          // The reply below is unchanged, which is the contract: an address
+          // that has run out must not be distinguishable from one that never
+          // had an account.
+          if (issued < EMAIL_CODES_PER_ADDRESS) {
+            this.emailCodes.set(key, {
+              attempts: 0,
+              redeemed: false,
+              issued: issued + 1,
+            });
+          }
+        }
+
+        return {
+          status: 202,
+          body: {
+            ...EMAIL_CODE_PENDING_BODY,
+            resendAfterSeconds: this.resendAfterSeconds,
+          },
+        };
+      }
+
+      /*
+       * And the mirror image: one 401, for every possible reason.
+       *
+       * Wrong code, expired code, code already redeemed, code issued for a
+       * different address, attempts exhausted, address with no account,
+       * locked-out account — all of them land on the same problem document
+       * with the same wording. A fixture that distinguished any of them would
+       * let a client ship copy that distinguishes them too, and that copy is
+       * an account-existence oracle written in reader-facing English.
+       */
+      case "POST /email/code/verify": {
+        const payload = body as { email?: string; code?: string };
+        const address =
+          typeof payload?.email === "string" ? payload.email.trim().toLowerCase() : "";
+        const refused = problem(
+          401,
+          "That code was not accepted. Request a new one and try again.",
+          "invalid-code",
+        );
+
+        const record = this.emailCodes.get(address);
+        if (!record || record.redeemed) return refused;
+        if (record.attempts >= EMAIL_CODE_ATTEMPT_BUDGET) return refused;
+        if (payload?.code !== VALID_EMAIL_CODE) {
+          record.attempts += 1;
+          return refused;
+        }
+
+        // One use, and the code is spent whether or not a second factor is
+        // still to come — otherwise a code that stopped at `mfaRequired` would
+        // remain redeemable by whoever else had it.
+        record.redeemed = true;
+
+        if (this.mfaRequired) {
+          return { status: 200, body: { status: "mfaRequired", user: null } };
+        }
+        /*
+         * The session an emailed code establishes is deliberately the weaker
+         * kind. It proves control of an inbox and nothing about this device,
+         * so it is marked as such and the contributor endpoints refuse it —
+         * see the roles endpoint below.
+         */
+        this.session = {
+          ...(this.session ?? user()),
+          authenticationMethod: "email",
+          strongAuthentication: false,
+        };
+        this.enrolmentTicketExpiresAt = null;
+        return { status: 200, body: { status: "authenticated", user: this.session } };
       }
 
       case "POST /passkey/register/begin": {
@@ -382,7 +619,13 @@ export class AuthApiContract {
           // still an unauthenticated one.
           return { status: 200, body: { status: "mfaRequired", user: null } };
         }
-        this.session = this.session ?? user();
+        // A passkey is a second factor in its own right, so the session it
+        // establishes is the strong kind.
+        this.session = {
+          ...(this.session ?? user()),
+          authenticationMethod: "passkey",
+          strongAuthentication: true,
+        };
         this.enrolmentTicketExpiresAt = null;
         return { status: 200, body: { status: "authenticated", user: this.session } };
       }
@@ -439,7 +682,15 @@ export class AuthApiContract {
           };
         }
         this.mfaRequired = false;
-        this.session = this.session ?? user({ twoFactorEnabled: true });
+        // Whichever door the first leg came through, answering an
+        // authenticator challenge makes the session a strong one: the reader
+        // has demonstrated a second factor.
+        this.session = {
+          ...(this.session ?? user({ twoFactorEnabled: true })),
+          twoFactorEnabled: true,
+          authenticationMethod: "totp",
+          strongAuthentication: true,
+        };
         return { status: 200, body: { status: "authenticated", user: this.session } };
       }
 
@@ -473,6 +724,22 @@ export class AuthApiContract {
           if (!this.session.roles.includes("Administrator")) {
             return problem(403, "Administrators only.", "forbidden");
           }
+          /*
+           * The role check and this one are both 403s and they are not the
+           * same refusal. The first is final — the account does not hold the
+           * role. This one is temporary — the account holds it, but the
+           * session behind the request was established with an emailed code,
+           * which proves an inbox and not a device. Enrolling a passkey or an
+           * authenticator app clears it in a minute, and the client is
+           * expected to say so rather than showing the dead-end wording.
+           */
+          if (!this.session.strongAuthentication) {
+            return problem(
+              403,
+              "This action needs a passkey or an authenticator app. Sign in again with one, or add one to your account.",
+              "strong-authentication-required",
+            );
+          }
           const payload = body as { roles?: unknown };
           const requested = Array.isArray(payload?.roles)
             ? (payload.roles as string[])
@@ -483,11 +750,31 @@ export class AuthApiContract {
           if (requested.some((role) => !assignable.includes(role))) {
             return problem(400, "That is not a role that can be assigned.", "invalid-role");
           }
+          /*
+           * True when the grant landed on an account that holds neither a
+           * passkey nor an authenticator app, and therefore now has a role it
+           * cannot use until it enrols one.
+           *
+           * This fixture holds exactly one account, so it can only answer
+           * honestly about that one; a grant aimed at any other id is reported
+           * as `false` rather than guessed at. That is a limit of the fixture
+           * and not of the contract, and it is written down here so nobody
+           * reads the `false` as a claim.
+           */
+          const target = decodeURIComponent(roles[1] ?? "");
+          const grantedToKnownAccount = target === this.session.id;
+          const awaitingSecondFactor =
+            grantedToKnownAccount &&
+            requested.length > 0 &&
+            this.session.passkeys.length === 0 &&
+            !this.session.twoFactorEnabled;
+
           return {
             status: 200,
             body: {
-              userId: decodeURIComponent(roles[1] ?? ""),
+              userId: target,
               roles: ["Community", ...requested],
+              awaitingSecondFactor,
             },
           };
         }
