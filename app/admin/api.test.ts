@@ -205,8 +205,13 @@ describe("what a refusal says", () => {
       user({ roles: ["Community"] }),
     );
 
-    const known = await getUser("real").catch((error: unknown) => error as ApiError);
-    const unknown = await getUser("invented").catch((error: unknown) => error as ApiError);
+    // Cast after the await rather than inside the handler: `.catch` widens the
+    // result to the union of the resolved value and whatever the handler
+    // returns, and asserting on that union is a type error rather than a test.
+    const known = (await getUser("real").catch((error: unknown) => error)) as ApiError;
+    const unknown = (await getUser("invented").catch(
+      (error: unknown) => error,
+    )) as ApiError;
 
     expect(known.status).toBe(unknown.status);
     expect(known.message).toBe(unknown.message);
