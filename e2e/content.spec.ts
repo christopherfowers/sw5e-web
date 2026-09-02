@@ -217,6 +217,7 @@ test.describe("searching", () => {
    */
   test("both search fields hold the query the results are for", async ({ page }) => {
     await page.goto("/search?q=speeder");
+    await hydrated(page);
 
     const fields = page.locator('input[name="q"]');
 
@@ -231,6 +232,15 @@ test.describe("searching", () => {
     // not navigated yet, and a field that reverts on every render is a field
     // nobody can type in.
     await page.goto("/search?q=speeder");
+
+    /*
+      The wait is the point of the test working at all. The served HTML has an
+      empty field — it is prerendered without a query string — and React fills
+      it in from the address during hydration. Clearing it before that happens
+      clears nothing, and the seeding then puts "speeder" in, which is exactly
+      what CI saw.
+    */
+    await hydrated(page);
 
     const header = page.locator("header").locator('input[name="q"]');
 
@@ -256,7 +266,9 @@ test.describe("searching", () => {
 
   test("a fresh search re-seeds the field", async ({ page }) => {
     await page.goto("/search?q=speeder");
+    await hydrated(page);
     await page.goto("/search?q=blaster");
+    await hydrated(page);
 
     await expect(page.locator("header").locator('input[name="q"]')).toHaveValue(
       "blaster",
@@ -277,6 +289,7 @@ test.describe("finding a rule", () => {
     page,
   }) => {
     await page.goto("/search?q=difficult+terrain");
+    await hydrated(page);
 
     const result = page.locator(".result-link").first();
 
@@ -299,6 +312,7 @@ test.describe("finding a rule", () => {
     // A result that asserts a match without showing it makes a reader open the
     // page to find out whether it was worth opening.
     await page.goto("/search?q=difficult+terrain");
+    await hydrated(page);
 
     await expect(page.locator(".result-evidence").first()).toContainText(
       /difficult/i,
