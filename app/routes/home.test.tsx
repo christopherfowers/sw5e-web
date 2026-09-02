@@ -8,6 +8,20 @@ import type { Route } from "./+types/home";
 
 const loaderData = {
   counts: { species: 141, monsters: 271, powers: 465 },
+  /*
+    Keyed by address rather than by type, as the loader hands it over. Most of
+    what the category grid draws is not a content type any more — three of the
+    cards are books, eight are slices of a type and one is the customization
+    hub — so a count per type could not label them.
+  */
+  destinationCounts: {
+    "/species": 141,
+    "/monsters": 271,
+    "/force-powers": 233,
+    "/tech-powers": 232,
+    "/customization-options": 219,
+    "/sources/phb": 900,
+  } as Record<string, number>,
   total: 1820,
   curated: false,
   sourceTotals: { PHB: 900, EC: 700, WH: 120, SnV: 271 },
@@ -110,23 +124,32 @@ describe("Home route", () => {
     expect(within(creatureCard).getByText("271")).toBeInTheDocument();
   });
 
-  it("links to every content type index", () => {
+  /**
+   * The grid is the header's menus, drawn as cards. It is not a list of content
+   * types and has not been one since the header stopped being one: three of
+   * these are books, four are slices of a type and one is a hub over seven.
+   * Asserting the addresses rather than the types is the only way to notice the
+   * front page drifting away from the navigation.
+   */
+  it("offers the same destinations the header does", () => {
     renderHome();
 
     for (const path of [
+      "/sources/phb",
+      "/variant-rules",
       "/species",
-      "/archetypes",
-      "/backgrounds",
-      "/feats",
-      "/powers",
-      "/maneuvers",
-      "/fighting-styles",
-      "/fighting-masteries",
-      "/lightsaber-forms",
-      "/weapon-focuses",
-      "/weapon-supremacies",
-      "/equipment",
+      "/customization-options",
+      "/force-powers",
+      "/armor",
+      "/weapons",
+      "/other-equipment",
+      "/starship-weapons",
       "/monsters",
+      // The quiet half, which is quiet rather than absent: these are the
+      // destinations the owner's menu does not name and the corpus does have.
+      "/features",
+      "/starship-base-sizes",
+      "/rules",
     ]) {
       expect(
         document.querySelector(`a[href="${path}"]`),
@@ -299,15 +322,60 @@ describe("the order the page puts things in", () => {
   /**
    * Seven separate cards — feats, fighting styles, masteries, lightsaber forms
    * and the two weapon tiers — are seven answers to one question. The
-   * Player's Handbook introduces them together, and so does this page now.
+   * Player's Handbook introduces them together under one chapter heading, so
+   * the front page offers one card and the seven live behind it.
    */
-  it("gathers the customization options under one heading", () => {
+  it("gathers the customization options behind a single card", () => {
     renderHome();
 
-    const group = screen.getByRole("region", { name: /^customization$/i });
+    const characters = screen.getByRole("region", { name: /^characters$/i });
 
-    for (const name of [/^feats/i, /^fighting styles/i, /^lightsaber forms/i]) {
-      expect(within(group).getByRole("link", { name })).toBeInTheDocument();
+    expect(
+      within(characters).getByRole("link", { name: /^customization options/i }),
+    ).toHaveAttribute("href", "/customization-options");
+
+    for (const name of [/^fighting styles/i, /^lightsaber forms/i]) {
+      expect(
+        within(characters).queryByRole("link", { name }),
+        "the seven options are one answer, not seven cards in a grid",
+      ).toBeNull();
     }
+  });
+
+  /**
+   * A destination that is not a type still has to be countable, or the card is
+   * a bare label in a grid where every neighbour carries a number. Three of the
+   * counts on this page are now sums or filtered tallies rather than manifest
+   * lookups.
+   */
+  it("counts what is behind a destination that is not a content type", () => {
+    renderHome();
+
+    const hub = screen.getByRole("link", { name: /^customization options/i });
+
+    expect(within(hub).getByText("219")).toBeInTheDocument();
+  });
+
+  /**
+   * The loader omits an address it cannot honestly count — `/sources` is a page
+   * about five books rather than a page of anything — and the card has to read
+   * as a card with no number rather than as a card claiming zero. Exercised by
+   * withholding a count the page would otherwise have, because the destination
+   * that really has none is in the quiet half and never draws a card.
+   */
+  it("leaves the count off a destination it was given no number for", () => {
+    const withoutSpecies = { ...loaderData.destinationCounts };
+    delete withoutSpecies["/species"];
+    renderHome({ ...loaderData, destinationCounts: withoutSpecies });
+
+    const species = screen.getByRole("link", { name: /^species/i });
+
+    expect(species.querySelector(".type-card-count")).toBeNull();
+    expect(
+      screen.getByRole("link", { name: /^creatures/i }).querySelector(
+        ".type-card-count",
+      ),
+      "withholding one count must not blank the rest of the grid",
+    ).not.toBeNull();
   });
 });

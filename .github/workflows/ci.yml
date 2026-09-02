@@ -277,15 +277,24 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 57 pages that do not come from content:
+          # One page per document, plus 60 pages that do not come from content:
           # the home page, the about page, the search page, the sources index,
-          # five source pages, the credits page, twenty-seven type indexes, the
-          # six subcategory views listed in
+          # five source pages, the credits page, the customization options hub,
+          # twenty-seven type indexes, the eight subcategory views listed in
           # app/content/subcategory-views.ts, the eleven account routes listed
           # in ACCOUNT_PATHS in react-router.config.ts, and the three authoring
           # routes listed in AUTHORING_PATHS beside them. `source` is the only
           # directory that is not a browsable type, so the other twenty-seven
           # contribute item pages.
+          #
+          # It went from 57 to 60 when the header was rebuilt to the structure
+          # the site's owner specified. Two of the three are `/variant-rules`
+          # and `/expanded-rules`, which cut the rule text the way /weapons cuts
+          # equipment: the menu names both and neither is a content type. The
+          # third is `/customization-options`, one address standing for the
+          # seven types the Player's Handbook introduces in that chapter, so
+          # that a menu offering them as one entry has somewhere to lead. None
+          # of the three adds a document.
           #
           # It went from 51 to 57 when the subcategory views landed —
           # /weapons, /armor, /other-equipment, /force-powers, /tech-powers and
@@ -352,7 +361,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 57))
+          expected=$((items + 60))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
@@ -499,7 +508,22 @@ jobs:
 
           grep -q '<h1>Weapon properties</h1>' <<< "$body"
 
-          if grep -qE 'href="/sources/(phb|ec|wh|snv)"' <<< "$body"; then
+          # Narrowed to the page from the whole document. The header names the
+          # source books in its Rules menu now, so every page in the site links
+          # to /sources/phb, and the old whole-body grep failed here on a page
+          # that cites nothing. The claim is about what this index says about
+          # its own entries, and <main> is where it says it: the header and the
+          # rail are siblings of <main>, not children of it.
+          page=$(awk 'BEGIN { RS = "<main" } NR == 2' <<< "$body" \
+               | awk 'BEGIN { RS = "</main>" } NR == 1')
+
+          if [ -z "$page" ]; then
+            echo "could not find the page's <main>; the check below would pass" \
+              "by looking at nothing."
+            exit 1
+          fi
+
+          if grep -qE 'href="/sources/(phb|ec|wh|snv)"' <<< "$page"; then
             echo "the weapon-property index cites a source book; the archive" \
               "records none for any of these entries."
             exit 1

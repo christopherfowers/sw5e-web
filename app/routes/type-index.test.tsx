@@ -148,7 +148,7 @@ describe("Type index", () => {
     // lives in the list's own status line, which is the one that has to change
     // when a filter narrows it. Having both said "3" was the duplication this
     // replaced.
-    expect(screen.getByText("Combat")).toBeInTheDocument();
+    expect(screen.getByText("Characters")).toBeInTheDocument();
     expect(screen.getByText("3 maneuvers")).toBeInTheDocument();
   });
 
@@ -216,7 +216,7 @@ describe("Type index", () => {
 
     // The page still says where it sits, so an empty type is a page that
     // explains itself rather than a heading floating on its own.
-    expect(screen.getByText("Combat")).toBeInTheDocument();
+    expect(screen.getByText("Characters")).toBeInTheDocument();
     expect(screen.getByText("0 maneuvers")).toBeInTheDocument();
   });
 });

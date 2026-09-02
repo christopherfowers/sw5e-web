@@ -2,7 +2,7 @@
  * What each subcategory view selects, and — the half that is easy to get
  * wrong — what it leaves out.
  *
- * Three of the six are ordinary equality on a field and would be hard to break
+ * Most of the eight are ordinary equality on a field and would be hard to break
  * subtly. `/other-equipment` is not: it is defined by exclusion, so it is
  * correct only relative to its siblings, and every way of getting it wrong
  * produces a page that still renders a plausible list. Miss the negation and a
@@ -31,6 +31,7 @@ import type {
   AnySummary,
   EquipmentSummary,
   PowerSummary,
+  RuleSummary,
   StarshipEquipmentSummary,
 } from "./types";
 
@@ -111,6 +112,32 @@ const SHIP_PARTS: StarshipEquipmentSummary[] = [
   shipPart("Class 1 hyperdrive", "Hyperdrive"),
 ];
 
+function rule(name: string, source: string, ruleType: string): RuleSummary {
+  return {
+    slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    name,
+    source,
+    tagline: null,
+    ruleType,
+    chapterNumber: ruleType === "Chapter" ? 1 : null,
+    sectionCount: 3,
+  };
+}
+
+/**
+ * One row of each combination the rule corpus carries: chapters from three
+ * books, and the variant rules that all happen to come from Expanded Content
+ * today. The handbook variant is the row that matters — there is none in the
+ * data yet, and the predicate is written for the day there is.
+ */
+const RULES: RuleSummary[] = [
+  rule("Combat", "PHB", "Chapter"),
+  rule("Entertainment and Downtime", "WH", "Chapter"),
+  rule("Customization Options", "EC", "Chapter"),
+  rule("Called Shots", "EC", "Variant"),
+  rule("Hero Points", "PHB", "Variant"),
+];
+
 /** The names a view selects out of a set of rows, which is what a page shows. */
 function selected(slug: string, rows: AnySummary[]): string[] {
   return selectSubcategoryRows(requireSubcategoryView(slug), rows).map(
@@ -119,7 +146,7 @@ function selected(slug: string, rows: AnySummary[]): string[] {
 }
 
 describe("the registry", () => {
-  it("registers exactly the six addresses the navigation needs", () => {
+  it("registers exactly the addresses the navigation needs", () => {
     expect(SUBCATEGORY_VIEWS.map((view) => view.slug)).toEqual([
       "weapons",
       "armor",
@@ -127,6 +154,8 @@ describe("the registry", () => {
       "force-powers",
       "tech-powers",
       "starship-weapons",
+      "variant-rules",
+      "expanded-rules",
     ]);
   });
 
@@ -141,6 +170,8 @@ describe("the registry", () => {
       "powers",
       "powers",
       "starship-equipment",
+      "rules",
+      "rules",
     ]);
   });
 
@@ -152,8 +183,8 @@ describe("the registry", () => {
 
   it("throws by name rather than rendering a page with no heading", () => {
     // What a route declared with no matching entry would hit. The slug is in
-    // the message because that is the only thing that identifies which of six
-    // identical-looking routes was wrong.
+    // the message because that is the only thing that identifies which of
+    // several identical-looking routes was wrong.
     expect(() => requireSubcategoryView("blasters")).toThrow(/blasters/);
   });
 });
@@ -240,11 +271,68 @@ describe("the starship view", () => {
   });
 });
 
+/**
+ * The two cuts of the rule text, which are the two axes a rule document has and
+ * the only two views here that are not a single equality.
+ *
+ * `/variant-rules` is cut on `ruleType` alone, and the Player's Handbook
+ * variant in the fixture above is the whole reason: every variant rule in the
+ * corpus today is Expanded Content, so a predicate that also tested the source
+ * would pass every test written against real data and silently drop the first
+ * variant rule printed anywhere else.
+ *
+ * `/expanded-rules` is cut on both, and has to be. Dropping the `ruleType` half
+ * would swallow the forty variant rules into a page about ten chapters;
+ * dropping the source half would put every chapter of every book on it.
+ */
+describe("the rule views", () => {
+  it("takes every variant rule, whichever book printed it", () => {
+    expect(selected("variant-rules", RULES)).toEqual([
+      "Called Shots",
+      "Hero Points",
+    ]);
+  });
+
+  it("takes Expanded Content's chapters and nothing else", () => {
+    expect(selected("expanded-rules", RULES)).toEqual([
+      "Customization Options",
+    ]);
+  });
+
+  it("keeps the two apart rather than overlapping them", () => {
+    // Expanded Content is the source of both the chapters and every variant
+    // rule in the corpus, so these two views are one careless predicate away
+    // from being the same page twice.
+    const variants = selected("variant-rules", RULES);
+    const expanded = selected("expanded-rules", RULES);
+
+    expect(variants.filter((name) => expanded.includes(name))).toEqual([]);
+  });
+
+  it("leaves the other books' chapters to their own pages", () => {
+    // The handbook, Wretched Hives and Starships of the Galaxy each have an
+    // entry of their own in the Rules menu, pointing at the book rather than at
+    // a slice of the rule type.
+    const filed = [
+      ...selected("variant-rules", RULES),
+      ...selected("expanded-rules", RULES),
+    ];
+
+    expect(filed).not.toContain("Combat");
+    expect(filed).not.toContain("Entertainment and Downtime");
+  });
+
+  it("does not read a rule field the equipment rows do not have", () => {
+    expect(selected("variant-rules", EQUIPMENT)).toEqual([]);
+    expect(selected("expanded-rules", EQUIPMENT)).toEqual([]);
+  });
+});
+
 describe("an empty view", () => {
   it("selects nothing rather than failing when the dataset has no rows", () => {
     // Not hypothetical: the committed fixture in `app/data/fixture` holds no
-    // starship equipment and no weapons at all, so four of these six views
-    // render empty on a contributor's machine and in CI.
+    // starship equipment and no weapons at all, so half of these views render
+    // empty on a contributor's machine and in CI.
     for (const view of SUBCATEGORY_VIEWS) {
       expect(selectSubcategoryRows(view, [])).toEqual([]);
     }
@@ -276,11 +364,12 @@ describe("every view is prerendered rather than left to the SPA fallback", () =>
     },
   );
 
-  it("adds six paths and no more, which is what CI counts", () => {
+  it("adds eight paths and no more, which is what CI counts", () => {
     // `.github/workflows/ci.yml` asserts the total number of prerendered
     // routes against the canonical content set by adding a fixed number of
-    // content-free pages to it. That number went from 51 to 57 for these six,
-    // and a seventh view moves it again.
-    expect(SUBCATEGORY_VIEWS).toHaveLength(6);
+    // content-free pages to it. That number went from 51 to 57 for the first
+    // six and from 58 to 60 for the two rule views, and a ninth moves it
+    // again.
+    expect(SUBCATEGORY_VIEWS).toHaveLength(8);
   });
 });

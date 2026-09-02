@@ -1,8 +1,16 @@
 /**
- * The header used to be one flat strip of twenty-three destinations. The count
- * is the failure — nobody scans twenty-three items, and the strip scrolled
- * sideways at every width — so the first test here is a count, and it is
- * written so that it fails against the flat strip it replaced.
+ * The header used to be one flat strip of twenty-three destinations, and the
+ * count was the failure — nobody scans twenty-three items, and the strip
+ * scrolled sideways at every width. So the first test here is a count, and it
+ * is written so that it fails against the flat strip it replaced.
+ *
+ * The second is the menu the site's owner specified, asserted entry by entry
+ * and in order. That is a blunt test and it is meant to be: the menus are an
+ * editorial decision rather than a projection of the data, so the only thing
+ * that can catch a well-meaning reshuffle is a written-down copy of what was
+ * agreed. Whether every content type remains *reachable* through it is a
+ * different question and is answered against the dataset in
+ * `app/content/nav-groups.test.ts`.
  *
  * The rest is the part of a disclosure menu that is easy to ship broken: state
  * that is announced, one menu open at a time, Escape that does not strand
@@ -18,7 +26,6 @@ import { describe, expect, it } from "vitest";
 
 import { GroupRail, GroupedNav } from "./site-nav";
 import { NAVIGATION } from "~/content/nav-groups";
-import { TYPE_META } from "~/content/type-meta";
 import { CONTENT_TYPE_IDS } from "~/content/types";
 
 /**
@@ -26,11 +33,13 @@ import { CONTENT_TYPE_IDS } from "~/content/types";
  *
  * Not a target the grouping was designed to hit — the groups came out of the
  * material — but a ceiling on what a reader has to scan before choosing. Eight
- * leaves room for the Tools area that is coming without this number moving.
+ * leaves room for the Tools area that is coming, and for the Resources menu
+ * that is specified and cannot be built until somebody supplies its five
+ * addresses, without this number moving.
  */
 const MAX_TOP_LEVEL = 8;
 
-function renderNav(path = "/powers") {
+function renderNav(path = "/maneuvers") {
   const Stub = createRoutesStub([
     { path: "*", Component: () => <GroupedNav /> },
   ]);
@@ -86,50 +95,31 @@ describe("the header's top level", () => {
     renderNav();
 
     expect(topLevelItems().map((item) => item.textContent?.trim())).toEqual([
+      // The books first, because a reader who does not yet know the game needs
+      // the rules before a list of things to choose from.
+      "Rules",
       "Characters",
-      // The options a character takes on top of its class. Seven separate
-      // menus' worth of types — feats, fighting styles, masteries, lightsaber
-      // forms and the two weapon tiers — which the Player's Handbook
-      // introduces together under one chapter, and which are now one menu.
-      "Customization",
-      "Combat",
-      // Named after the chapter rather than after a word for the category, for
-      // the same reason.
+      // Named after the chapter rather than after a word for the category:
+      // Equipment is chapter 5 of the Player's Handbook, and "Gear" is a word
+      // the reader has never seen in print.
       "Equipment",
       "Starships",
-      "Bestiary",
-      "Reference",
+      "NPC statblocks",
     ]);
-  });
-
-  it("still leads to every content type, one menu deep", () => {
-    renderNav();
-
-    const links = [
-      ...screen
-        .getByRole("navigation", { name: "Content" })
-        .querySelectorAll<HTMLAnchorElement>("a[href]"),
-    ].map((anchor) => anchor.getAttribute("href"));
-
-    for (const type of CONTENT_TYPE_IDS) {
-      expect(
-        links,
-        `${TYPE_META[type].plural} is no longer reachable from the header`,
-      ).toContain(`/${type}`);
-    }
   });
 
   it("renders a group with a single destination as a link, not a menu", () => {
     renderNav();
 
-    // Bestiary is one type today. A disclosure whose only job is to reveal one
+    // Creatures is the whole of the group: there is no vehicle or starship stat
+    // block anywhere in the corpus. A disclosure whose only job is to reveal one
     // link is a keystroke spent on nothing.
-    const bestiary = topLevelItems().find(
-      (item) => item.textContent?.trim() === "Bestiary",
+    const statblocks = topLevelItems().find(
+      (item) => item.textContent?.trim() === "NPC statblocks",
     );
 
-    expect(bestiary?.tagName).toBe("A");
-    expect(bestiary).toHaveAttribute("href", "/monsters");
+    expect(statblocks?.tagName).toBe("A");
+    expect(statblocks).toHaveAttribute("href", "/monsters");
   });
 
   it("marks the group the current page belongs to", () => {
@@ -141,6 +131,26 @@ describe("the header's top level", () => {
 
     expect(current?.textContent?.trim()).toBe("Starships");
   });
+
+  /*
+    Most of what the header now offers is not a content type, so resolving the
+    current group by looking the first path segment up in `TYPE_NAV` would leave
+    the reader unmarked on the majority of the pages the menus send them to.
+  */
+  it.each([
+    ["/weapons", "Equipment"],
+    ["/customization-options", "Characters"],
+    ["/variant-rules", "Rules"],
+    ["/equipment/vibrorapier", "Equipment"],
+  ])("marks the group on %s", (path, group) => {
+    renderNav(path);
+
+    const current = topLevelItems().find((item) =>
+      item.classList.contains("is-current"),
+    );
+
+    expect(current?.textContent?.trim()).toBe(group);
+  });
 });
 
 /** The `<details>` for a group, by the word in the header. */
@@ -148,6 +158,119 @@ function menuFor(label: string): HTMLDetailsElement {
   const summary = screen.getByText(label, { selector: "summary" });
   return summary.closest("details")!;
 }
+
+function entriesIn(menu: HTMLElement, selector: string) {
+  return [...menu.querySelectorAll<HTMLAnchorElement>(`${selector} a[href]`)].map(
+    (anchor) => [anchor.getAttribute("href"), anchor.textContent?.trim()],
+  );
+}
+
+/**
+ * The menu the site's owner specified, written out.
+ *
+ * Order is asserted along with membership because the order is the argument:
+ * Rules opens with the three books that teach something and only then offers
+ * the two cuts of the rule text; Characters walks a reader down the character
+ * sheet — what you are, what you become, where you came from, what you take on
+ * top — rather than listing types alphabetically.
+ */
+describe("the menu behind each group", () => {
+  it.each([
+    [
+      "Rules",
+      [
+        ["/sources/phb", "Player's Handbook"],
+        ["/sources/wh", "Wretched Hives"],
+        ["/sources/sotg", "Starships of the Galaxy"],
+        ["/variant-rules", "Variant rules"],
+        ["/expanded-rules", "Expanded rules"],
+      ],
+      [
+        ["/rules", "All rules"],
+        ["/reference-tables", "Reference tables"],
+        ["/sources", "Source books"],
+      ],
+    ],
+    [
+      "Characters",
+      [
+        ["/species", "Species"],
+        ["/classes", "Classes"],
+        ["/archetypes", "Archetypes"],
+        ["/backgrounds", "Backgrounds"],
+        ["/feats", "Feats"],
+        ["/customization-options", "Customization options"],
+        ["/force-powers", "Force powers"],
+        ["/tech-powers", "Tech powers"],
+        ["/maneuvers", "Maneuvers"],
+      ],
+      [["/features", "Features"]],
+    ],
+    [
+      "Equipment",
+      [
+        ["/armor", "Armor"],
+        ["/weapons", "Weapons"],
+        ["/other-equipment", "Other equipment"],
+        ["/enhanced-items", "Enhanced items"],
+      ],
+      [
+        ["/weapon-properties", "Weapon properties"],
+        ["/armor-properties", "Armor properties"],
+      ],
+    ],
+    [
+      "Starships",
+      [
+        ["/starship-deployments", "Character deployments"],
+        ["/starship-ventures", "Character ventures"],
+        ["/starship-modifications", "Starship modifications"],
+        ["/starship-equipment", "Starship equipment"],
+        ["/starship-weapons", "Starship weapons"],
+      ],
+      [
+        // Not in the owner's table, and six documents that everything else in
+        // this menu is fitted to. Quiet rather than absent.
+        ["/starship-base-sizes", "Starship hulls"],
+        ["/starship-rules", "Starship rules"],
+      ],
+    ],
+  ])("%s leads where it was asked to", (label, primary, supporting) => {
+    renderNav();
+    const menu = menuFor(label as string);
+
+    expect(entriesIn(menu, ".nav-group-types")).toEqual(primary);
+    expect(entriesIn(menu, ".nav-group-supporting")).toEqual(supporting);
+  });
+
+  /*
+    The two halves are marked up differently and read differently, and that has
+    to survive: the quiet half is a separate list under its own subhead, not
+    four more entries in the same run. Without the subhead a screen reader hears
+    thirteen equally-weighted links in Characters.
+  */
+  it("separates what the menu is for from what it merely keeps reachable", async () => {
+    const user = userEvent.setup();
+    renderNav();
+
+    const equipment = menuFor("Equipment");
+    await user.click(within(equipment).getByText("Equipment"));
+
+    const supporting = equipment.querySelector(".nav-group-supporting");
+    expect(
+      supporting,
+      "a weapon property is read from the weapon that cites it and must not " +
+        "take a primary slot",
+    ).not.toBeNull();
+    expect(supporting).toHaveAccessibleName("Also here");
+
+    expect(
+      within(supporting as HTMLElement).getByRole("link", {
+        name: "Weapon properties",
+      }),
+    ).toHaveAttribute("href", "/weapon-properties");
+  });
+});
 
 describe("a group menu", () => {
   it("starts closed, so the prerendered page is the same for everyone", () => {
@@ -163,27 +286,27 @@ describe("a group menu", () => {
     const user = userEvent.setup();
     renderNav();
 
-    const combat = menuFor("Combat");
-    await user.click(within(combat).getByText("Combat"));
-    expect(combat.open).toBe(true);
+    const characters = menuFor("Characters");
+    await user.click(within(characters).getByText("Characters"));
+    expect(characters.open).toBe(true);
 
-    await user.click(within(combat).getByText("Combat"));
-    expect(combat.open).toBe(false);
+    await user.click(within(characters).getByText("Characters"));
+    expect(characters.open).toBe(false);
   });
 
   it("shows only one menu at a time", async () => {
     const user = userEvent.setup();
     renderNav();
 
-    const combat = menuFor("Combat");
+    const equipment = menuFor("Equipment");
     const characters = menuFor("Characters");
 
-    await user.click(within(combat).getByText("Combat"));
+    await user.click(within(equipment).getByText("Equipment"));
     await user.click(within(characters).getByText("Characters"));
 
     expect(characters.open).toBe(true);
     expect(
-      combat.open,
+      equipment.open,
       "two panels open at once overlap each other and both are unreadable",
     ).toBe(false);
   });
@@ -192,16 +315,16 @@ describe("a group menu", () => {
     const user = userEvent.setup();
     renderNav();
 
-    const combat = menuFor("Combat");
-    const summary = within(combat).getByText("Combat");
+    const characters = menuFor("Characters");
+    const summary = within(characters).getByText("Characters");
 
     await user.click(summary);
-    expect(combat.open).toBe(true);
+    expect(characters.open).toBe(true);
 
     summary.focus();
     await user.keyboard("{Escape}");
 
-    expect(combat.open).toBe(false);
+    expect(characters.open).toBe(false);
     expect(
       summary,
       "Escape must not leave focus inside a panel that has just been hidden",
@@ -212,9 +335,9 @@ describe("a group menu", () => {
     const user = userEvent.setup();
     renderNav();
 
-    const combat = menuFor("Combat");
-    await user.click(within(combat).getByText("Combat"));
-    expect(combat.open).toBe(true);
+    const characters = menuFor("Characters");
+    await user.click(within(characters).getByText("Characters"));
+    expect(characters.open).toBe(true);
 
     // A reader who opened the menu with a pointer can have focus anywhere.
     // Escape bound to the bar itself would only answer while focus happened to
@@ -222,37 +345,7 @@ describe("a group menu", () => {
     (document.activeElement as HTMLElement | null)?.blur();
     await user.keyboard("{Escape}");
 
-    expect(combat.open).toBe(false);
-  });
-
-  it("separates the types a reader browses from the ones they are sent to", async () => {
-    const user = userEvent.setup();
-    renderNav();
-
-    // Class improvements moved with the rest of the customization options:
-    // they are one of the things a character takes on top of its class, and
-    // they are still reached from the class rather than browsed.
-    const characters = menuFor("Customization");
-    await user.click(within(characters).getByText("Customization"));
-
-    const supporting = characters.querySelector(".nav-group-supporting");
-    expect(
-      supporting,
-      "class improvements are reached from a class, never browsed, and must " +
-        "not take a primary slot",
-    ).not.toBeNull();
-    expect(
-      within(supporting as HTMLElement).getByRole("link", {
-        name: TYPE_META["class-improvements"].plural,
-      }),
-    ).toHaveAttribute("href", "/class-improvements");
-
-    // Still a primary destination in the same menu.
-    expect(
-      within(characters.querySelector(".nav-group-types")!).getByRole("link", {
-        name: /Feats/,
-      }),
-    ).toHaveAttribute("href", "/feats");
+    expect(characters.open).toBe(false);
   });
 });
 
@@ -264,35 +357,35 @@ describe("the group rail", () => {
     return render(<Stub initialEntries={[path]} />);
   }
 
-  it("lists the siblings of the type being read", () => {
+  it("lists the siblings of the page being read", () => {
     renderRail("/maneuvers");
 
-    const rail = screen.getByRole("navigation", { name: "Combat sections" });
+    const rail = screen.getByRole("navigation", { name: "Characters sections" });
 
+    expect(within(rail).getByRole("link", { name: "Species" })).toHaveAttribute(
+      "href",
+      "/species",
+    );
+    // The customization options are one sibling now rather than seven, which is
+    // the whole reason the hub exists.
     expect(
-      within(rail).getByRole("link", { name: /Powers/ }),
-    ).toHaveAttribute("href", "/powers");
-
-    // And the styles are no longer siblings of a maneuver: they moved to
-    // Customization with the rest of the options a character chooses.
-    expect(
-      within(rail).queryByRole("link", { name: /Fighting Styles/ }),
-    ).toBeNull();
+      within(rail).getByRole("link", { name: "Customization options" }),
+    ).toHaveAttribute("href", "/customization-options");
   });
 
-  it("lists the customization options as siblings of each other", () => {
-    renderRail("/fighting-styles");
+  /*
+    A filtered view is not a content type, so a rail that resolved its group
+    through `TYPE_NAV` alone would render nothing on the pages the header sends
+    most readers to.
+  */
+  it("follows a filtered view as well as a type index", () => {
+    renderRail("/weapons");
 
-    const rail = screen.getByRole("navigation", {
-      name: "Customization sections",
-    });
+    const rail = screen.getByRole("navigation", { name: "Equipment sections" });
 
-    expect(
-      within(rail).getByRole("link", { name: /Lightsaber Forms/ }),
-    ).toHaveAttribute("href", "/lightsaber-forms");
-    expect(within(rail).getByRole("link", { name: /Feats/ })).toHaveAttribute(
+    expect(within(rail).getByRole("link", { name: "Armor" })).toHaveAttribute(
       "href",
-      "/feats",
+      "/armor",
     );
   });
 
@@ -300,7 +393,7 @@ describe("the group rail", () => {
     renderRail("/powers/absorb-energy");
 
     expect(
-      screen.getByRole("navigation", { name: "Combat sections" }),
+      screen.getByRole("navigation", { name: "Characters sections" }),
     ).toBeInTheDocument();
   });
 
@@ -311,6 +404,15 @@ describe("the group rail", () => {
       container.querySelector(".group-rail"),
       "a rail on the account area would be orientation for a group the " +
         "reader is not in",
+    ).toBeNull();
+  });
+
+  it("renders nothing for a group that leads to one place", () => {
+    const { container } = renderRail("/monsters");
+
+    expect(
+      container.querySelector(".group-rail"),
+      "there are no siblings to orient against in a group of one",
     ).toBeNull();
   });
 });

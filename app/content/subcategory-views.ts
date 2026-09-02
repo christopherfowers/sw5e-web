@@ -2,10 +2,11 @@
  * The addresses that name a slice of a content type rather than a type.
  *
  * The navigation the site wants offers Weapons, Armor, Other equipment, Force
- * powers, Tech powers and Starship weapons. Not one of them is a content type.
- * "Weapon" is a value of `category` on 215 of the 505 equipment documents;
- * "Force" is a value of `powerType` on 233 of the 465 powers. Until now a
- * reader could not address any of them at all — `app/routes/type-index.tsx`
+ * powers, Tech powers, Starship weapons, Variant rules and Expanded rules. Not
+ * one of them is a content type. "Weapon" is a value of `category` on 215 of
+ * the 505 equipment documents; "Force" is a value of `powerType` on 233 of the
+ * 465 powers; a variant rule is 40 of the 75 rule documents. A reader could not
+ * address any of them at all — `app/routes/type-index.tsx`
  * reads no search parameters, so the list a reader assembled with the Category
  * dropdown had no URL to share, and a menu entry had nothing to point at.
  *
@@ -20,13 +21,13 @@
  * that ran the script. A path segment gets its own file. See
  * `react-router.config.ts`, which prerenders one per entry below.
  *
- * A registry rather than six route modules, because six near-identical modules
- * is six places for one page to drift. Every view here is the same table with
- * fewer rows in it: the columns, the sorting and the facet dropdowns all come
+ * A registry rather than one route module per view, because eight near-identical
+ * modules is eight places for one page to drift. Every view here is the same
+ * table with fewer rows in it: the columns, the sorting and the facet dropdowns all come
  * from the source type's entry in `./list-config.tsx`, and the row links go to
  * the same canonical `/equipment/<slug>` addresses they always did. The only
  * things that differ are the address, the words at the top, and which rows
- * qualify — which is exactly what an entry below declares. A seventh view is
+ * qualify — which is exactly what an entry below declares. A ninth view is
  * one more entry: `app/routes.ts` declares a route per entry and
  * `react-router.config.ts` prerenders a path per entry, so neither of them is
  * a step anybody has to remember.
@@ -57,11 +58,11 @@ function equals(value: string | null, expected: string): boolean {
 }
 
 /**
- * The two field reads the views need, each guarded by an `in` check.
+ * The field reads the views need, each guarded by an `in` check.
  *
  * `AnySummary` is the union of all twenty-seven row shapes and most of them
- * have neither field — a species has no category — so the guard is what makes
- * a predicate total over the union rather than a cast that would quietly
+ * have none of these fields — a species has no category — so the guard is what
+ * makes a predicate total over the union rather than a cast that would quietly
  * return `undefined` if a view were ever pointed at the wrong type.
  */
 function categoryIs(row: AnySummary, category: string): boolean {
@@ -70,6 +71,22 @@ function categoryIs(row: AnySummary, category: string): boolean {
 
 function powerTypeIs(row: AnySummary, powerType: string): boolean {
   return "powerType" in row && equals(row.powerType, powerType);
+}
+
+/**
+ * Whether a rule document is a chapter of a book or an optional rule.
+ *
+ * The same `in` guard as the two above, and for the same reason: only
+ * `RuleSummary` carries the field, so reading it off `AnySummary` unguarded
+ * would compile into `undefined` on the other twenty-six row shapes.
+ */
+function ruleTypeIs(row: AnySummary, ruleType: string): boolean {
+  return "ruleType" in row && equals(row.ruleType, ruleType);
+}
+
+/** The book a row came from. Unguarded, because every summary carries `source`. */
+function sourceIs(row: AnySummary, code: string): boolean {
+  return equals(row.source, code);
 }
 
 /**
@@ -114,7 +131,8 @@ export interface SubcategoryView {
 
 /**
  * Declared in the order the header offers them: the three equipment shelves,
- * the two halves of the power list, then the starship one.
+ * the two halves of the power list, the starship one, then the two cuts of the
+ * rule text.
  */
 export const SUBCATEGORY_VIEWS: readonly SubcategoryView[] = [
   {
@@ -175,6 +193,47 @@ export const SUBCATEGORY_VIEWS: readonly SubcategoryView[] = [
     blurb: "Ship-mounted weapons by mounting, damage and cost.",
     type: "starship-equipment",
     includes: (row) => categoryIs(row, "weapon"),
+  },
+
+  /*
+    The two cuts of the rule text, which are the two axes a rule document has.
+
+    `ruleType` separates a chapter of a book from an optional rule a table
+    switches on; `source` says which book it came from. Variant rules are cut on
+    ruleType alone, and that is deliberate rather than lazy: all forty of them
+    are Expanded Content today, but a variant rule printed in a future book is
+    still a variant rule — the handbook's own Appendix B recommends a list of
+    them — and adding `source` to this predicate would silently drop it.
+
+    Expanded rules are cut on both, and have to be. Expanded Content's ten
+    chapters are the only chapters in the corpus with no book of their own in
+    the header: the Player's Handbook, Wretched Hives and Starships of the
+    Galaxy each get an entry, and EC's chapters extend chapters those books
+    already have rather than teaching something new. Without this view they are
+    reachable only through `/sources/ec`, which is a page about a book.
+
+    Neither of these covers the rule type on its own and they are not meant to —
+    fifty of the seventy-five rows between them. `/rules` is still the index
+    that holds all of them, and `nav-groups.test.ts` is what notices if it ever
+    stops being offered.
+  */
+  {
+    slug: "variant-rules",
+    label: "Variant rules",
+    counted: "variant rules",
+    blurb:
+      "The optional rules a table can turn on, from ability score changes to called shots and combination weapons.",
+    type: "rules",
+    includes: (row) => ruleTypeIs(row, "variant"),
+  },
+  {
+    slug: "expanded-rules",
+    label: "Expanded rules",
+    counted: "chapters",
+    blurb:
+      "Expanded Content's own chapters: the community's additions to species, archetypes, equipment, powers and the rest.",
+    type: "rules",
+    includes: (row) => sourceIs(row, "ec") && ruleTypeIs(row, "chapter"),
   },
 ];
 

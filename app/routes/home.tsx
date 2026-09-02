@@ -9,9 +9,15 @@ import {
   totalForSource,
 } from "~/content/dataset.server";
 import { brandImage, sourceCover } from "~/content/imagery";
-import { NAVIGATION } from "~/content/nav-groups";
+import {
+  NAVIGATION,
+  faceOf,
+  type NavDestination,
+} from "~/content/nav-groups";
 import { SOURCE_META, SOURCE_ORDER } from "~/content/source-meta";
-import { TYPE_META, TYPE_ORDER } from "~/content/type-meta";
+import { selectSubcategoryRows } from "~/content/subcategory-views";
+import { TYPE_ORDER } from "~/content/type-meta";
+import type { AnySummary } from "~/content/types";
 import type { Route } from "./+types/home";
 
 /**
@@ -86,6 +92,43 @@ const HOW_TO_PLAY = "PHB";
  */
 const FIRST_CHAPTER = 0;
 
+/**
+ * How many entries sit behind one destination in the header's menus.
+ *
+ * The category cards used to be one per content type, so the count was one
+ * lookup in the manifest. It is four different questions now, because the menu
+ * holds four different kinds of thing: a type index is still a manifest lookup,
+ * a slice of a type has to be counted by running the slice's own predicate over
+ * the rows, a book already has `totalForSource`, and a hub is the sum of what it
+ * stands for.
+ *
+ * Null rather than zero where there is no honest number. `/sources` is a page
+ * about five books and not a page of anything, and a card reading "0 entries"
+ * under it would be a claim rather than an omission.
+ */
+function countBehind(
+  destination: NavDestination,
+  counts: Record<string, number>,
+): number | null {
+  switch (destination.kind) {
+    case "type":
+      return counts[destination.type] ?? 0;
+    case "view":
+      return selectSubcategoryRows(
+        destination.view,
+        getSummaries(destination.view.type) as AnySummary[],
+      ).length;
+    case "book":
+      return totalForSource(destination.code);
+    case "page":
+      if (destination.covers.length === 0) return null;
+      return destination.covers.reduce(
+        (sum, type) => sum + (counts[type] ?? 0),
+        0,
+      );
+  }
+}
+
 export async function loader() {
   const manifest = getManifest();
 
@@ -106,11 +149,29 @@ export async function loader() {
       chapterNumber: rule.chapterNumber,
     }));
 
+  const counts = Object.fromEntries(
+    manifest.types.map((type) => [type.id, type.count]),
+  ) as Record<string, number>;
+
   return {
     chapters,
     variantRules: rules.filter((rule) => rule.ruleType === "Variant").length,
-    counts: Object.fromEntries(
-      manifest.types.map((type) => [type.id, type.count]),
+    counts,
+    /*
+      Keyed by address rather than by type, because two of the menu's
+      destinations are not types and one of them stands for seven. Computed
+      here, in a loader that only ever runs at build time, so that a page which
+      ships its own data does not also ship the predicate that produced it.
+    */
+    destinationCounts: Object.fromEntries(
+      NAVIGATION.flatMap((group) => [...group.primary, ...group.supporting])
+        .map(
+          (destination) =>
+            [destination.to, countBehind(destination, counts)] as const,
+        )
+        .filter(
+          (entry): entry is readonly [string, number] => entry[1] !== null,
+        ),
     ) as Record<string, number>,
     total: manifest.types.reduce((sum, type) => sum + type.count, 0),
     curated: isCuratedDataset(),
@@ -121,8 +182,14 @@ export async function loader() {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { counts, total, curated, sourceTotals, chapters, variantRules } =
-    loaderData;
+  const {
+    destinationCounts,
+    total,
+    curated,
+    sourceTotals,
+    chapters,
+    variantRules,
+  } = loaderData;
 
   const start =
     chapters.find((chapter) => chapter.chapterNumber === FIRST_CHAPTER) ??
@@ -334,14 +401,18 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           when you already know the rule.
         </p>
         {/*
-          Grouped, not flat. Twenty-seven cards in one grid is a wall: seven of
-          them were feats, fighting styles, masteries, lightsaber forms and the
-          two weapon tiers, which the Player's Handbook introduces together as
-          Customization Options and which a reader has no way to see as one
-          answer when they are seven boxes in a run of twenty-seven.
+          Grouped, not flat, and grouped by the header's own model rather than
+          by a second one kept alongside it. Twenty-seven cards in a single grid
+          is a wall — seven of them were the customization options, which the
+          Player's Handbook introduces together and which a reader has no way to
+          see as one answer when they are seven boxes in a run of twenty-seven.
 
-          The grouping is the header's own, so the front page and the navigation
-          cannot drift into two different accounts of where a thing lives.
+          Because it is the header's model, a card here is a destination rather
+          than a content type: three of them are books, eight are slices of a
+          type, one is the customization hub. That is the point of sharing the
+          model. The front page and the navigation cannot drift into two
+          different accounts of where a thing lives, and neither can they drift
+          into two different accounts of what a thing is.
         */}
         {NAVIGATION.map((group) => (
           <section
@@ -355,40 +426,45 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <p className="type-group-blurb">{group.blurb}</p>
 
             <ul className="type-grid">
-              {group.primary.map((type) => (
-                <li key={type}>
-                  <Link
-                    to={`/${type}`}
-                    className="type-card"
-                    data-accent={TYPE_META[type].accent}
-                  >
-                    <TypeIcon type={type} />
-                    <span className="type-card-name">
-                      {TYPE_META[type].plural}
-                    </span>
-                    <span className="type-card-count">
-                      {(counts[type] ?? 0).toLocaleString("en-US")}
-                      <span className="sr-only"> entries</span>
-                    </span>
-                    <span className="type-card-blurb">
-                      {TYPE_META[type].blurb}
-                    </span>
-                  </Link>
-                </li>
-              ))}
+              {group.primary.map((destination) => {
+                const face = faceOf(destination);
+                const count = destinationCounts[face.to];
+                return (
+                  <li key={face.to}>
+                    <Link
+                      to={face.to}
+                      className="type-card"
+                      data-accent={face.accent ?? undefined}
+                    >
+                      {face.icon ? <TypeIcon type={face.icon} /> : null}
+                      <span className="type-card-name">{face.label}</span>
+                      {count != null ? (
+                        <span className="type-card-count">
+                          {count.toLocaleString("en-US")}
+                          <span className="sr-only"> entries</span>
+                        </span>
+                      ) : null}
+                      <span className="type-card-blurb">{face.blurb}</span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
 
             {/*
-              Reached from something else rather than browsed — a weapon
-              property is read from the weapon that has it. Listed so they are
-              findable, sized so they do not compete.
+              The quiet half of the menu, rendered quietly here too: one line of
+              links rather than a row of cards. A weapon property is read from
+              the weapon that cites it, and the hulls and the rules index are
+              destinations the owner's menu simply does not name — neither kind
+              should be competing with the cards above for a first-time
+              reader's attention, and neither should be unreachable.
             */}
             {group.supporting.length > 0 ? (
               <p className="type-group-supporting">
-                {group.supporting.map((type, index) => (
-                  <span key={type}>
+                {group.supporting.map((destination, index) => (
+                  <span key={destination.to}>
                     {index > 0 ? ", " : null}
-                    <Link to={`/${type}`}>{TYPE_META[type].plural}</Link>
+                    <Link to={destination.to}>{destination.label}</Link>
                   </span>
                 ))}
               </p>
