@@ -120,6 +120,13 @@ function compareValues(
 export const WINDOW = 100;
 
 export function ContentList({ type, typeLabel, rows, config }: ContentListProps) {
+  /*
+    The noun to put a number in front of, which is not always the noun in the
+    heading. "Equipment" is the right word above the page and the wrong one
+    after a numeral — the count line read "4 equipment" — so the two types
+    whose plural is a mass noun carry a separate one. See TypeMeta.counted.
+  */
+  const countedNoun = TYPE_META[type].counted ?? typeLabel.toLowerCase();
   const filterId = useId();
   const [nameFilter, setNameFilter] = useState("");
   const [facetValues, setFacetValues] = useState<Record<string, string>>({});
@@ -305,7 +312,7 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
       </div>
 
       <p className="result-count" role="status">
-        {describeCount(visible.length, windowed.length, rows.length, typeLabel)}
+        {describeCount(visible.length, windowed.length, rows.length, countedNoun)}
       </p>
 
       <div ref={resultsRef}>
@@ -363,7 +370,7 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
         </div>
       ) : null}
 
-      <FullIndex type={type} typeLabel={typeLabel} rows={rows} />
+      <FullIndex type={type} countedNoun={countedNoun} rows={rows} />
     </>
   );
 }
@@ -377,9 +384,8 @@ function describeCount(
   matching: number,
   drawn: number,
   total: number,
-  typeLabel: string,
+  noun: string,
 ): string {
-  const noun = typeLabel.toLowerCase();
   const shown = drawn.toLocaleString("en-US");
 
   if (drawn < matching) {
@@ -427,11 +433,11 @@ function escapeHtml(value: string): string {
  */
 function FullIndex({
   type,
-  typeLabel,
+  countedNoun,
   rows,
 }: {
   type: ContentTypeId;
-  typeLabel: string;
+  countedNoun: string;
   rows: AnySummary[];
 }) {
   // Nothing to add when the list already fits inside one window: the table
@@ -452,7 +458,7 @@ function FullIndex({
   return (
     <details className="full-index">
       <summary>
-        All {rows.length.toLocaleString("en-US")} {typeLabel.toLowerCase()}, A–Z
+        All {rows.length.toLocaleString("en-US")} {countedNoun}, A–Z
       </summary>
       <ul
         className="full-index-list"

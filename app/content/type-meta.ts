@@ -38,6 +38,20 @@ export interface TypeMeta {
   plural: string;
   /** Singular noun used in breadcrumbs and result labels. */
   singular: string;
+  /**
+   * The noun to use after a number, when `plural` cannot take one.
+   *
+   * Most types read correctly as "141 species" or "271 creatures", so most do
+   * not set this. Two do not: `plural` is what the heading and the navigation
+   * say, and for a mass noun that is "Equipment" — which produced "4
+   * equipment" on the index, and "4 ship equipment" on the other one.
+   *
+   * Written out rather than derived, because the alternative is an English
+   * pluraliser and this data set contains "Species", "Weapon Focuses",
+   * "Weapon Supremacies" and "Armor properties". A rule that handles those is
+   * a rule with more exceptions than the two entries it would save.
+   */
+  counted?: string;
   /** One line explaining what a reader will find. */
   blurb: string;
   /** The hue this type is drawn in across cards, rules and badges. */
@@ -132,6 +146,7 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
   equipment: {
     plural: "Equipment",
     singular: "Item",
+    counted: "items",
     blurb: "Weapons, armor and gear with cost, weight and damage.",
     accent: "steel",
   },
@@ -189,6 +204,7 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
   "starship-equipment": {
     plural: "Ship equipment",
     singular: "Ship part",
+    counted: "ship parts",
     blurb: "Weapons, ammunition, armor, shields, reactors, couplings and hyperdrives.",
     accent: "cyan",
   },

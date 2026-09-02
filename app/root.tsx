@@ -27,6 +27,29 @@ import "./app.css";
 // into this app's Content-Security-Policy for as long as they existed.
 export const links: Route.LinksFunction = () => [];
 
+/**
+ * The title of last resort.
+ *
+ * Every page defines its own, so this is only ever what a reader sees when
+ * none of them ran — which is exactly the case that was broken. When a route
+ * throws, React Router renders the boundary and does not call that route's
+ * `meta`, so `/anything-mistyped` came back as a 404 page with an empty
+ * `<title>`: the browser tab, the bookmark and the history entry all showed
+ * the raw URL. The dead branch in `type-index.tsx` that answers "Not found"
+ * was written for this and never reached it.
+ *
+ * It has to live on the root because the root is the one route that cannot
+ * have errored — if it had, there would be no document at all. A child that
+ * renders normally overrides this in the ordinary way.
+ *
+ * No description here on purpose. A title is a label and a wrong one is merely
+ * unhelpful; a description is a claim about the page, and one inherited by an
+ * error page would be a claim about a page that does not exist.
+ */
+export function meta(): Route.MetaDescriptors {
+  return [{ title: "Star Wars 5e" }];
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">

@@ -3,6 +3,7 @@ import { Breadcrumbs } from "~/components/site-chrome";
 import { TypeIcon } from "~/components/type-icon";
 import { getSummaries } from "~/content/dataset.server";
 import { getListConfig } from "~/content/list-config";
+import { groupOfType, NAV_GROUP_META } from "~/content/nav-groups";
 import { TYPE_META } from "~/content/type-meta";
 import { isContentTypeId, type AnySummary, type ContentTypeId } from "~/content/types";
 import type { Route } from "./+types/type-index";
@@ -53,14 +54,29 @@ export default function TypeIndex({ loaderData }: Route.ComponentProps) {
   const { type, rows } = loaderData;
   const meta = TYPE_META[type];
   const config = getListConfig(type);
+  const group = groupOfType(type);
 
   return (
     <div className="page" data-accent={meta.accent}>
       <Breadcrumbs trail={[{ label: meta.plural }]} />
       <div className="page-head">
+        {/*
+          The group this type sits in, rather than a count.
+
+          It used to be the count, and the count was already on screen: the
+          list below announces "141 species" in a live region a few lines
+          down, because that line has to change when a filter narrows it. Two
+          statements of the same number, four elements apart, read as a
+          rendering fault rather than as emphasis.
+
+          Naming the group instead turns a duplicate into a wayfinder — it is
+          the word in the header menu this page was reached through, and the
+          rail beside it is the same group's contents. A type that belongs to
+          no group draws the icon alone.
+        */}
         <p className="page-eyebrow">
           <TypeIcon type={type} />
-          {rows.length.toLocaleString("en-US")} entries
+          {group ? NAV_GROUP_META[group].label : null}
         </p>
         <h1>{meta.plural}</h1>
         <p className="lede">{meta.blurb}</p>

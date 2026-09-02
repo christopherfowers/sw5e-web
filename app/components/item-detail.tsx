@@ -189,6 +189,73 @@ export function ItemDetail({
         </p>
       </header>
 
+
+      {/*
+        The numbers, in a band of their own between the heading and the prose.
+        They used to sit at the top of `item-body`, which made them one block
+        with it — and a picture can only go before or after one block, so on a
+        phone the picture came first and the numbers began a full screen down.
+        Measured on a species page, the statistics started 898px into a 812px
+        viewport: a screen of decorative art before a single number, on the
+        device this reference is most read from.
+
+        Splitting them out lets the narrow layout read heading, numbers,
+        picture, prose. The wide layout is unchanged — there the picture has a
+        column of its own and costs the text nothing.
+
+        Done by moving the markup rather than by reordering with CSS, because
+        the document order is what a screen reader announces and what the tab
+        sequence follows. A page that reads one way on screen and another to
+        everybody else is two layouts to keep right instead of one.
+      */}
+      <div className="item-glance">
+        {item.stats.length > 0 ? (
+          <div className="stat-block">
+            <h2 className="sr-only">At a glance</h2>
+            <dl>
+              {item.stats.map((stat) => (
+                <div className="stat-row" key={stat.label}>
+                  <dt>{stat.label}</dt>
+                  <dd>
+                    {stat.lost || stat.value == null ? (
+                      <LostValue />
+                    ) : stat.href ? (
+                      <Link to={stat.href}>
+                        <SourceText value={stat.value} />
+                      </Link>
+                    ) : (
+                      <SourceText value={stat.value} />
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
+
+        {item.abilityScores && item.abilityScores.length > 0 ? (
+          <section aria-labelledby="ability-scores" className="ability-scores">
+            <h2 id="ability-scores">Ability scores</h2>
+            <ul>
+              {item.abilityScores.map((ability) => (
+                <li key={ability.ability}>
+                  <span className="ability-name">{ability.ability.slice(0, 3)}</span>
+                  <span className="ability-score">{ability.score}</span>
+                  <span className="ability-modifier">
+                    {ability.modifier >= 0 ? `+${ability.modifier}` : ability.modifier}
+                  </span>
+                  <span className="sr-only">
+                    {ability.ability} {ability.score}, modifier{" "}
+                    {ability.modifier >= 0 ? "plus" : "minus"}{" "}
+                    {Math.abs(ability.modifier)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
+
       {figure ? (
         <figure className="item-figure">
           {figure.image ? (
@@ -249,52 +316,6 @@ export function ItemDetail({
       ) : null}
 
       <div className="item-body">
-        {item.stats.length > 0 ? (
-          <div className="stat-block">
-            <h2 className="sr-only">At a glance</h2>
-            <dl>
-              {item.stats.map((stat) => (
-                <div className="stat-row" key={stat.label}>
-                  <dt>{stat.label}</dt>
-                  <dd>
-                    {stat.lost || stat.value == null ? (
-                      <LostValue />
-                    ) : stat.href ? (
-                      <Link to={stat.href}>
-                        <SourceText value={stat.value} />
-                      </Link>
-                    ) : (
-                      <SourceText value={stat.value} />
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        ) : null}
-
-        {item.abilityScores && item.abilityScores.length > 0 ? (
-          <section aria-labelledby="ability-scores" className="ability-scores">
-            <h2 id="ability-scores">Ability scores</h2>
-            <ul>
-              {item.abilityScores.map((ability) => (
-                <li key={ability.ability}>
-                  <span className="ability-name">{ability.ability.slice(0, 3)}</span>
-                  <span className="ability-score">{ability.score}</span>
-                  <span className="ability-modifier">
-                    {ability.modifier >= 0 ? `+${ability.modifier}` : ability.modifier}
-                  </span>
-                  <span className="sr-only">
-                    {ability.ability} {ability.score}, modifier{" "}
-                    {ability.modifier >= 0 ? "plus" : "minus"}{" "}
-                    {Math.abs(ability.modifier)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
         {item.sections.map((section, index) =>
           section.heading ? (
             <section key={index} className="item-section">

@@ -308,3 +308,46 @@ describe("the line under the heading", () => {
     expect(screen.getByText("Medium · Ryloth")).toBeInTheDocument();
   });
 });
+
+describe("the order a page is read in", () => {
+  /**
+   * The document order is the reading order on both layouts, and it is the
+   * narrow one that made this matter.
+   *
+   * A species page put the illustration between the heading and the numbers.
+   * On a 375px screen that is 550px of decorative art, and the statistics
+   * began 898px down — a full screen of scrolling before a single number, on
+   * the device this reference is most used from. The numbers are now a band of
+   * their own, above the picture, and the wide layout is unchanged because
+   * there the picture has a column to itself.
+   *
+   * Asserted on the DOM rather than on the CSS, deliberately. Reordering with
+   * `order` or `grid-row` would leave the document saying one thing and the
+   * screen another, which is what a screen reader and the tab sequence follow.
+   */
+  it("puts the numbers between the heading and the picture", () => {
+    // A species, because that is the shape with a picture in it — a creature
+    // page carries no illustration and so cannot exercise the ordering.
+    const { container } = renderItem({ ...feat, type: "species", slug: "wookiee" });
+
+    const layout = container.querySelector(".item-layout")!;
+    const order = [...layout.children].map((child) => child.className.split(" ")[0]);
+
+    expect(order).toEqual([
+      "item-header",
+      "item-glance",
+      "item-figure",
+      "item-body",
+    ]);
+  });
+
+  it("keeps the same order on an item with no picture", () => {
+    const { container } = renderItem(feat);
+
+    const layout = container.querySelector(".item-layout")!;
+    const order = [...layout.children].map((child) => child.className.split(" ")[0]);
+
+    // No figure to place, and nothing else moves for its absence.
+    expect(order).toEqual(["item-header", "item-glance", "item-body"]);
+  });
+});
