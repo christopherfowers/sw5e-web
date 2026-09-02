@@ -14,21 +14,45 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithSession } from "../../tests/harness";
 import Search from "./search";
 
-/** One group of one result, in the service's own shape. */
+/**
+ * One group of one result, in the service's own shape.
+ *
+ * <b>Copied from a real response, not invented.</b> An earlier version of this
+ * said the same thing in its comment and was wrong in two places: it named the
+ * type `rules` where the service says `rule`, and it put the slug in `slug` and
+ * the book in `source` where the service sends `key` and `sourceKey`. It was
+ * written to match the client rather than the server, so it agreed with the
+ * client's mistakes and these tests passed while the deployed page showed
+ * "240 results (showing 0)".
+ *
+ * See `app/content/__fixtures__/search-response.json` for the captured
+ * response this mirrors, and `tests/contract/live-api.test.ts` for the check
+ * that the two still agree with the running service.
+ */
 function serviceAnswer(name: string, snippet: string) {
   return {
     query: "difficult terrain",
     totalMatches: 1,
     groups: [
       {
-        type: "rules",
+        // Singular, as the service sends it. The plural `routeSegment` below
+        // is what this application identifies the type by.
+        type: "rule",
         name: "Rule",
         pluralName: "Rules",
         routeSegment: "rules",
         totalMatches: 1,
         results: [
           {
-            item: { slug: "phb-adventuring", name, source: "PHB" },
+            item: {
+              type: "rule",
+              key: "phb-adventuring",
+              name,
+              sourceKey: "phb",
+              contentSet: "core",
+              summary: "",
+              facets: {},
+            },
             matchedIn: "text",
             matchedField: null,
             snippet,
