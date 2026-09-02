@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { hydrated } from "./hydration";
 
 /**
  * Content pages are the reason this site pre-renders. These tests look at what
@@ -167,6 +168,7 @@ test.describe("browsing", () => {
 
   test("previous and next move within a content type", async ({ page }) => {
     await page.goto("/species/advozse");
+    await hydrated(page);
 
     const next = page.getByRole("link", { name: /^Next/ });
     await expect(next).toBeVisible();
@@ -191,13 +193,18 @@ test.describe("browsing", () => {
 
   test("filtering an index narrows the rows it shows", async ({ page }) => {
     await page.goto("/powers");
+    await hydrated(page);
 
-    const before = await page.getByRole("row").count();
+    const rows = page.getByRole("row");
+    const before = await rows.count();
+
     await page.getByLabel("Filter by name").fill("absorb");
-    const after = await page.getByRole("row").count();
 
-    expect(after).toBeLessThan(before);
-    expect(after).toBeGreaterThan(1);
+    // Polled, not read once. Filtering is a React state change, so the count
+    // an instant after the keystroke is whatever happened to be on screen —
+    // which is the old one often enough to matter.
+    await expect.poll(() => rows.count()).toBeLessThan(before);
+    expect(await rows.count()).toBeGreaterThan(1);
   });
 });
 

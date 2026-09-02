@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { visit } from "./hydration";
 
 import {
   attachVirtualAuthenticator,
@@ -30,7 +31,7 @@ test.describe("route protection", () => {
   }) => {
     await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/account");
+    await visit(page, "/account");
 
     await expect(page).toHaveURL(/\/sign-in/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Sign in");
@@ -39,7 +40,7 @@ test.describe("route protection", () => {
   test("the redirect remembers where they were going", async ({ page, context }) => {
     await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/account/security");
+    await visit(page, "/account/security");
 
     await expect(page).toHaveURL(/next=%2Faccount%2Fsecurity/);
   });
@@ -47,7 +48,7 @@ test.describe("route protection", () => {
   test("a signed-in reader is not bounced anywhere", async ({ page, context }) => {
     await serveAccountApi(page, context, { session: user({ displayName: "Jen Ordo" }) });
 
-    await page.goto("/account");
+    await visit(page, "/account");
 
     // Sign-out is drawn only once the session has resolved to an account, so
     // it separates "recognised" from the guard's states. The heading is not:
@@ -62,7 +63,7 @@ test.describe("route protection", () => {
     // The one thing route protection must never touch.
     await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/species/abyssin");
+    await visit(page, "/species/abyssin");
 
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Abyssin");
   });
@@ -72,7 +73,7 @@ test.describe("the header control", () => {
   test("offers a way in to a signed-out reader", async ({ page, context }) => {
     await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/");
+    await visit(page, "/");
 
     await expect(page.getByRole("link", { name: /^sign in$/i })).toBeVisible();
   });
@@ -80,7 +81,7 @@ test.describe("the header control", () => {
   test("names the account of a signed-in reader", async ({ page, context }) => {
     await serveAccountApi(page, context, { session: user({ displayName: "Jen Ordo" }) });
 
-    await page.goto("/");
+    await visit(page, "/");
 
     await expect(
       page.getByRole("link", { name: /jen ordo/i }),
@@ -100,7 +101,7 @@ test.describe("passkeys, end to end", () => {
     await attachVirtualAuthenticator(page);
 
     // --- enrol -----------------------------------------------------------
-    await page.goto("/account/passkeys");
+    await visit(page, "/account/passkeys");
     await expect(page.getByText(/no passkeys yet/i)).toBeVisible();
 
     await page.getByLabel(/name this passkey/i).fill("Test device");
@@ -116,7 +117,7 @@ test.describe("passkeys, end to end", () => {
     await expect(page.getByRole("link", { name: /^sign in$/i })).toBeVisible();
 
     // --- sign back in with the passkey just created ----------------------
-    await page.goto("/sign-in");
+    await visit(page, "/sign-in");
     await page.getByRole("button", { name: /continue with a passkey/i }).click();
 
     await expect(page).toHaveURL(/\/account$/);
@@ -141,7 +142,7 @@ test.describe("passkeys, end to end", () => {
       }),
     });
 
-    await page.goto("/account/passkeys");
+    await visit(page, "/account/passkeys");
     await expect(page.locator(".credential-name", { hasText: "iPhone" })).toBeVisible();
 
     await page.getByRole("button", { name: /remove the passkey “iPhone”/i }).click();
@@ -162,7 +163,7 @@ test.describe("passkeys, end to end", () => {
       session: user({ passkeys: [passkey({ id: "a", name: "Work laptop" })] }),
     });
 
-    await page.goto("/account/passkeys");
+    await visit(page, "/account/passkeys");
     await page.getByRole("button", { name: /remove the passkey/i }).click();
     await page.getByRole("button", { name: /yes, remove it/i }).click();
 
@@ -190,7 +191,7 @@ test.describe("when WebAuthn is unavailable", () => {
   }) => {
     await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/sign-in");
+    await visit(page, "/sign-in");
 
     await expect(page.getByRole("alert")).toContainText(
       /this browser does not support passkeys/i,
@@ -203,7 +204,7 @@ test.describe("when WebAuthn is unavailable", () => {
   test("the reference is entirely unaffected", async ({ page, context }) => {
     await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/powers/absorb-energy");
+    await visit(page, "/powers/absorb-energy");
 
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Absorb Energy",
@@ -223,14 +224,14 @@ test.describe("two-factor authentication", () => {
     await attachVirtualAuthenticator(page);
 
     // Enrol a credential first, so there is something to sign in with.
-    await page.goto("/account/passkeys");
+    await visit(page, "/account/passkeys");
     await page.getByRole("button", { name: /add a passkey/i }).click();
     await expect(page.locator("main").getByRole("status")).toContainText(/can now sign you in/i);
 
     await page.getByRole("button", { name: /sign out/i }).click();
     await expect(page.getByRole("link", { name: /^sign in$/i })).toBeVisible();
 
-    await page.goto("/sign-in");
+    await visit(page, "/sign-in");
     await page.getByRole("button", { name: /continue with a passkey/i }).click();
 
     // The passkey alone is not enough.
@@ -257,7 +258,7 @@ test.describe("two-factor authentication", () => {
   }) => {
     await serveAccountApi(page, context, { session: user({ twoFactorEnabled: false }) });
 
-    await page.goto("/account/security");
+    await visit(page, "/account/security");
     await page.getByRole("button", { name: /set up an authenticator app/i }).click();
 
     // Both paths, because a QR code alone excludes screen reader users and
@@ -286,7 +287,7 @@ test.describe("roles", () => {
       session: user({ roles: ["Community"] }),
     });
 
-    await page.goto("/account");
+    await visit(page, "/account");
 
     const nav = page.getByRole("navigation", { name: /account sections/i });
     await expect(nav).toBeVisible();
@@ -299,7 +300,7 @@ test.describe("roles", () => {
       session: user({ roles: ["Community"] }),
     });
 
-    await page.goto("/account/contributions");
+    await visit(page, "/account/contributions");
 
     await expect(page.getByRole("alert")).toContainText(
       /this area is for contributor accounts/i,
@@ -314,7 +315,7 @@ test.describe("roles", () => {
       session: user({ roles: ["Contributor"] }),
     });
 
-    await page.goto("/account");
+    await visit(page, "/account");
     const nav = page.getByRole("navigation", { name: /account sections/i });
     await nav.getByRole("link", { name: /contributions/i }).click();
 
@@ -331,7 +332,7 @@ test.describe("registration", () => {
   }) => {
     const contract = await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/register");
+    await visit(page, "/register");
     await page.getByLabel(/email address/i).fill("reader@example.com");
     await page.getByLabel(/display name/i).fill("Jen Ordo");
     await page.getByRole("button", { name: /send verification link/i }).click();
@@ -355,7 +356,8 @@ test.describe("registration", () => {
     const contract = await serveAccountApi(page, context, { session: null });
     await attachVirtualAuthenticator(page);
 
-    await page.goto(
+    await visit(
+      page,
       `/verify-email?email=${encodeURIComponent(VALID_VERIFICATION_EMAIL)}` +
         `&token=${VALID_VERIFICATION_TOKEN}`,
     );
@@ -386,7 +388,7 @@ test.describe("registration", () => {
   }) => {
     const contract = await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/register");
+    await visit(page, "/register");
     await page.getByLabel(/email address/i).fill("not-an-address");
     await page.getByLabel(/display name/i).fill("Jen Ordo");
     await page.getByRole("button", { name: /send verification link/i }).click();
@@ -414,7 +416,7 @@ test.describe("signing in with an emailed code", () => {
   }) => {
     const contract = await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/sign-in");
+    await visit(page, "/sign-in");
 
     // The recommendation is still the recommendation: the passkey button is
     // the primary action and the code is offered underneath it.
@@ -460,7 +462,7 @@ test.describe("signing in with an emailed code", () => {
     // field with the same digits still in the reader's hand.
     await serveAccountApi(page, context, { session: null, mfaRequired: true });
 
-    await page.goto("/sign-in");
+    await visit(page, "/sign-in");
     await page.getByRole("button", { name: /email me a sign-in code/i }).click();
     await page.getByLabel(/email address/i).fill(VALID_VERIFICATION_EMAIL);
     await page.getByRole("button", { name: /^email me a code$/i }).click();
@@ -494,7 +496,7 @@ test.describe("signing in with an emailed code", () => {
     // identically. Nothing on this screen may hint that the address is unknown.
     await serveAccountApi(page, context, { session: null });
 
-    await page.goto("/sign-in");
+    await visit(page, "/sign-in");
     await page.getByRole("button", { name: /email me a sign-in code/i }).click();
     await page.getByLabel(/email address/i).fill("stranger@example.com");
     await page.getByRole("button", { name: /^email me a code$/i }).click();
@@ -518,7 +520,7 @@ test.describe("signing in with an emailed code", () => {
       }),
     });
 
-    await page.goto("/account");
+    await visit(page, "/account");
 
     await expect(page.locator("main").getByRole("status")).toContainText(
       /add a passkey while you are here/i,
@@ -547,7 +549,7 @@ test.describe("signing in with an emailed code", () => {
       }),
     });
 
-    await page.goto("/account/contributions");
+    await visit(page, "/account/contributions");
 
     await expect(
       page.getByRole("button", { name: /confirm with a passkey/i }),
@@ -559,7 +561,7 @@ test.describe("signing in with an emailed code", () => {
 
     // And the way out is genuinely open: locking the account area behind the
     // credential the account area is where you enrol would be a catch-22.
-    await page.goto("/account/passkeys");
+    await visit(page, "/account/passkeys");
     await expect(
       page.getByRole("heading", { name: /your passkeys/i }),
     ).toBeVisible();
@@ -573,7 +575,7 @@ test.describe("keyboard operation", () => {
   }) => {
     await serveAccountApi(page, context, { session: user({ roles: ["Community"] }) });
 
-    await page.goto("/account");
+    await visit(page, "/account");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
     const passkeys = page.getByRole("link", { name: /^passkeys/i });
@@ -592,7 +594,7 @@ test.describe("keyboard operation", () => {
   }) => {
     await serveAccountApi(page, context, { session: user() });
 
-    await page.goto("/account/passkeys");
+    await visit(page, "/account/passkeys");
     await expect(page.getByRole("heading", { name: /your passkeys/i })).toBeVisible();
 
     for (let step = 0; step < 14; step += 1) {

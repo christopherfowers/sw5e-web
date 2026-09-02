@@ -247,7 +247,22 @@ export class AuthApiContract {
   session: CurrentUser | null;
   mfaRequired: boolean;
   offline: boolean;
-  readonly origin: string;
+  /**
+   * The page origin unsafe methods must arrive from.
+   *
+   * Settable rather than readonly, for one caller: the browser adapter cannot
+   * know it at construction time. It builds the contract before the page has
+   * navigated anywhere, so `page.url()` is still `about:blank`, and hard-coding
+   * a port meant the same specs could only ever run against one server — which
+   * is how eleven account tests came to fail against the development server for
+   * a reason that had nothing to do with accounts.
+   *
+   * It is set once, from the first intercepted request's own URL. That is the
+   * server the browser is really talking to, so the property being defended
+   * here — that the origin is a header the browser writes and a client cannot
+   * forge — is untouched.
+   */
+  origin: string;
   readonly resendAfterSeconds: number;
 
   /**
