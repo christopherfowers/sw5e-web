@@ -1,5 +1,5 @@
 /**
- * The account directory, and what it refuses.
+ * The account directory: what it refuses, and where it sends you.
  *
  * The assertions that matter, and what would break each of them:
  *
@@ -11,10 +11,17 @@
  *                                             from the answer to give up
  *   nobody's address is in the markup         the page rendering the list
  *   before the server answers                 optimistically, or a loader
- *   a suspension is described honestly        copy that promises something the
- *                                             service does not do
- *   the last administrator cannot act on      the self-guards being dropped,
- *   themselves                                leaving buttons that only 400
+ *   Manage goes somewhere                     managing an account sliding back
+ *                                             into a panel below the fold,
+ *                                             which is what it used to be
+ *   the search survives the trip into an      the two pages being made
+ *   account and back                          siblings, so the directory
+ *                                             unmounts and the term — which
+ *                                             may not be stored anywhere — is
+ *                                             gone
+ *
+ * What one account can be *done to* lives in `account-people-manage.test.tsx`,
+ * beside the page that does it.
  *
  * Everything here mounts the real `AuthProvider` against the contract fixture,
  * so the session resolves the way it does in a browser — through a genuine
@@ -22,33 +29,86 @@
  * decide what to refuse. A test cannot hand itself an administrator.
  */
 
-import { screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Outlet, useLocation } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AuthApiContract, user } from "../../tests/auth-api-contract";
 import {
   AdminApiStub,
-  adminAction,
   adminUser,
   serveAdministration,
 } from "../../tests/admin-api-stub";
 import { renderWithSession } from "../../tests/harness";
 import { installAuthenticator, removeWebAuthn } from "../../tests/webauthn-stub";
+import routeConfig from "~/routes";
 import Account from "./account";
 import AccountPeople from "./account-people";
+import AccountPeopleManage from "./account-people-manage";
 
 const ADMINISTRATOR = user({ roles: ["Community", "Administrator"] });
 
+/**
+ * Where the router thinks it is.
+ *
+ * `createRoutesStub` drives a memory router, so `window.location` never moves
+ * and an assertion against it passes whatever the page does — including the
+ * thing it is checking for. Two of the assertions below are about an email
+ * address never reaching a URL, which is the last claim in this file that may
+ * be made vacuously, so the address bar under test is this one.
+ */
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <p data-testid="address-bar">{`${location.pathname}${location.search}`}</p>
+  );
+}
+
+function Shell() {
+  return (
+    <>
+      <LocationProbe />
+      <Outlet />
+    </>
+  );
+}
+
+/** What the router currently has in the address bar. */
+function address(): string {
+  return screen.getByTestId("address-bar").textContent ?? "";
+}
+
+/**
+ * The route table, shaped like the real one in `app/routes.ts`.
+ *
+ * The nesting is not a filing convenience here either: it is what keeps the
+ * directory mounted while one account is being managed, and therefore what
+ * keeps the administrator's search alive. That the shipped configuration has
+ * the same shape is asserted separately, at the bottom of this file, because
+ * `createRoutesStub` cannot read it.
+ */
 function routes() {
   return [
     {
-      path: "/account",
-      Component: Account,
-      children: [{ path: "people", Component: AccountPeople }],
+      path: "/",
+      Component: Shell,
+      children: [
+        { index: true, Component: () => <p>home</p> },
+        { path: "sign-in", Component: () => <p>sign-in page</p> },
+        {
+          path: "account",
+          Component: Account,
+          children: [
+            {
+              path: "people",
+              Component: AccountPeople,
+              children: [{ path: "manage", Component: AccountPeopleManage }],
+            },
+          ],
+        },
+      ],
     },
-    { path: "/sign-in", Component: () => <p>sign-in page</p> },
-    { path: "/", Component: () => <p>home</p> },
   ];
 }
 
@@ -60,6 +120,14 @@ function mount(
   const auth = new AuthApiContract({ session });
   vi.stubGlobal("fetch", serveAdministration(auth, admin));
   return { admin, ...renderWithSession(routes(), [at]) };
+}
+
+/** How many times the directory itself has been asked for. */
+function directoryFetches(admin: AdminApiStub): number {
+  return admin.calls.filter(
+    (call) =>
+      call.method === "GET" && call.path.split("?")[0] === "/api/auth/admin/users",
+  ).length;
 }
 
 afterEach(() => {
@@ -203,303 +271,207 @@ describe("finding somebody", () => {
       ).toBe("zeb@example.test"),
     );
 
-    expect(window.location.search).not.toContain("zeb");
+    expect(address()).not.toContain("zeb");
   });
 });
 
-/* --------------------------------------------------------------- suspending */
+/* --------------------------------------------------------- opening somebody */
 
-describe("suspending an account", () => {
-  async function open(admin: AdminApiStub) {
+describe("opening an account", () => {
+  it("offers a link to that account's own page, named after the account", async () => {
+    const admin = new AdminApiStub({
+      users: [
+        adminUser({ id: "u-1", displayName: "Zeb Orrelios", email: "zeb@example.test" }),
+        adminUser({ id: "u-2", displayName: "Hera Syndulla", email: "hera@example.test" }),
+      ],
+    });
+
     mount(admin);
+
     await screen.findByText("zeb@example.test");
-    await userEvent.click(screen.getByRole("button", { name: /manage/i }));
-    return screen.findByRole("heading", { name: /suspension/i });
-  }
 
-  it("will not suspend without a reason", async () => {
-    const admin = new AdminApiStub({
-      users: [adminUser({ id: "u", email: "zeb@example.test" })],
-    });
-
-    await open(admin);
-
-    // Disabled rather than refused after the fact. The service requires the
-    // reason, and a button that exists only to produce a 400 is a button that
-    // reads as broken.
-    expect(
-      screen.getByRole("button", { name: /suspend this account/i }),
-    ).toBeDisabled();
-
-    expect(admin.lastCall("PUT", "/api/auth/admin/users/u/suspension")).toBeUndefined();
-  });
-
-  it("suspends with a reason, and says what that actually does", async () => {
-    const admin = new AdminApiStub({
-      users: [adminUser({ id: "u", email: "zeb@example.test" })],
-    });
-
-    await open(admin);
-
-    await userEvent.type(
-      screen.getByRole("textbox", { name: /^why$/i }),
-      "Scraping the powers index.",
+    // A link, so it behaves like one: it says where it goes, it opens in a tab
+    // on a middle click, and it does not need JavaScript to have run to be
+    // understood. The identifier is opaque; nothing else about the account is
+    // in it.
+    expect(screen.getByRole("link", { name: "Manage Zeb Orrelios" })).toHaveAttribute(
+      "href",
+      "/account/people/manage?user=u-1",
     );
-    await userEvent.click(screen.getByRole("button", { name: /suspend this account/i }));
-
-    await waitFor(() =>
-      expect(admin.users[0].suspension?.reason).toBe("Scraping the powers index."),
+    expect(screen.getByRole("link", { name: "Manage Hera Syndulla" })).toHaveAttribute(
+      "href",
+      "/account/people/manage?user=u-2",
     );
 
-    // The two facts an administrator has to know before pressing it, and which
-    // they would otherwise have to learn from the API documentation.
-    expect(
-      await screen.findByText(/cannot use a session it already had/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/passkeys are untouched/i)).toBeInTheDocument();
+    // And there is no disclosure control left. Twenty rows each carrying a
+    // button called "Manage" that expands something below the fold is what this
+    // page stopped doing, and a regression to it would put one back.
+    expect(screen.queryByRole("button", { name: /manage/i })).not.toBeInTheDocument();
   });
 
-  it("renders a suspension reason as text and never as markup", async () => {
-    // Written by an administrator, and rendered to other administrators. An
-    // administrator's session is the most valuable one on the platform, so
-    // "written by somebody trusted" is not the same as "safe to interpolate".
-    const hostile = '<img src=x onerror="alert(1)">';
-
+  it("replaces the directory rather than appending to it", async () => {
+    // The complaint this work exists for: pressing Manage on a list long enough
+    // to scroll left the reader looking at an unchanged list, because what they
+    // asked for had been drawn underneath it. Arriving somewhere has to look
+    // like arriving somewhere.
     const admin = new AdminApiStub({
-      users: [
-        adminUser({
-          id: "u",
-          email: "zeb@example.test",
-          suspension: { at: "2026-09-01T00:00:00.000Z", reason: hostile, byUserId: "a" },
-        }),
-      ],
+      users: [adminUser({ id: "u", displayName: "Zeb Orrelios", email: "zeb@example.test" })],
     });
 
-    await open(admin);
-
-    expect(await screen.findByText(hostile)).toBeInTheDocument();
-    expect(document.querySelector("img")).toBeNull();
-  });
-
-  it("offers to lift a suspension that is standing", async () => {
-    const admin = new AdminApiStub({
-      users: [
-        adminUser({
-          id: "u",
-          email: "zeb@example.test",
-          suspension: { at: "2026-09-01T00:00:00.000Z", reason: "Because", byUserId: "a" },
-        }),
-      ],
-    });
-
-    await open(admin);
-
-    await userEvent.click(screen.getByRole("button", { name: /lift the suspension/i }));
-
-    await waitFor(() => expect(admin.users[0].suspension).toBeNull());
-
-    // And it did not send a reason, which the service refuses on this branch.
-    expect(admin.lastCall("PUT", "/api/auth/admin/users/u/suspension")?.body).toEqual({
-      suspended: false,
-      reason: null,
-    });
-  });
-});
-
-/* ----------------------------------------------------------------- deleting */
-
-describe("deleting an account", () => {
-  async function open(admin: AdminApiStub) {
     mount(admin);
+
     await screen.findByText("zeb@example.test");
-    await userEvent.click(screen.getByRole("button", { name: /manage/i }));
-    return screen.findByRole("heading", { name: /^delete$/i });
-  }
-
-  it("says that the account's revisions and reports survive it", async () => {
-    // The sentence that most changes what somebody expects. An administrator
-    // who believed deletion erased authorship would be reaching for it to do
-    // something it does not do.
-    const admin = new AdminApiStub({
-      users: [adminUser({ id: "u", email: "zeb@example.test" })],
-    });
-
-    await open(admin);
-
-    expect(screen.getByText(/coming from a removed account/i)).toBeInTheDocument();
-  });
-
-  it("takes two deliberate presses", async () => {
-    const admin = new AdminApiStub({
-      users: [adminUser({ id: "u", email: "zeb@example.test" })],
-    });
-
-    await open(admin);
-
-    await userEvent.click(screen.getByRole("button", { name: /^delete this account$/i }));
-
-    // Nothing has happened yet.
-    expect(admin.lastCall("DELETE", "/api/auth/admin/users/u")).toBeUndefined();
-
-    await userEvent.click(
-      screen.getByRole("button", { name: /yes, delete this account/i }),
-    );
-
-    await waitFor(() => expect(admin.users).toHaveLength(0));
-  });
-
-  it("refuses while the account owns unpublished drafts, before anything is pressed", async () => {
-    const admin = new AdminApiStub({
-      users: [adminUser({ id: "u", email: "zeb@example.test" })],
-      outstandingDrafts: 2,
-    });
-
-    await open(admin);
-
-    expect(screen.getByText(/2 drafts are outstanding/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /^delete this account$/i }),
-    ).toBeDisabled();
-
-    expect(admin.lastCall("DELETE", "/api/auth/admin/users/u")).toBeUndefined();
-  });
-});
-
-/* ------------------------------------------------------- the last administrator */
-
-describe("an administrator acting on their own account", () => {
-  it("cannot suspend, delete or demote themselves", async () => {
-    // The companion to the rule the service enforces. With self-demotion,
-    // self-suspension and self-deletion all closed, the number of
-    // administrators cannot reach zero — and a page that offered the buttons
-    // anyway would be a page whose three most alarming controls only ever
-    // produce a 400.
-    const admin = new AdminApiStub({
-      users: [
-        adminUser({
-          id: ADMINISTRATOR.id,
-          email: ADMINISTRATOR.email,
-          displayName: ADMINISTRATOR.displayName,
-          roles: ["Community", "Administrator"],
-        }),
-      ],
-    });
-
-    mount(admin, ADMINISTRATOR, `/account/people?user=${ADMINISTRATOR.id}`);
-
-    await screen.findByRole("heading", { name: /^delete$/i });
-
-    expect(screen.getByRole("button", { name: /save roles/i })).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: /suspend this account/i }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: /^delete this account$/i }),
-    ).toBeDisabled();
+    await userEvent.click(screen.getByRole("link", { name: "Manage Zeb Orrelios" }));
 
     expect(
-      screen.getByText(/you cannot delete your own account/i),
+      await screen.findByRole("heading", { name: "Zeb Orrelios" }),
     ).toBeInTheDocument();
+
+    // The list, its search box and its paging are gone rather than scrolled off.
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /^people$/i })).not.toBeInTheDocument();
   });
 
-  it("can act on somebody else, which is what makes the refusal above mean something", async () => {
+  it("sends a link to the address an account used to open at on to the new page", async () => {
+    // `/account/people?user=…` was a link administrators sent each other, and
+    // some of those are in inboxes. It carries the same opaque identifier the
+    // new address does, so it is honoured rather than dropped on the floor.
     const admin = new AdminApiStub({
-      users: [adminUser({ id: "someone-else", email: "zeb@example.test" })],
+      users: [adminUser({ id: "u", displayName: "Zeb Orrelios", email: "zeb@example.test" })],
     });
 
-    mount(admin, ADMINISTRATOR, "/account/people?user=someone-else");
+    mount(admin, ADMINISTRATOR, "/account/people?user=u");
 
-    await screen.findByRole("heading", { name: /^delete$/i });
-
-    expect(screen.getByRole("button", { name: /save roles/i })).toBeEnabled();
     expect(
-      screen.getByRole("button", { name: /^delete this account$/i }),
-    ).toBeEnabled();
+      await screen.findByRole("heading", { name: "Zeb Orrelios" }),
+    ).toBeInTheDocument();
+    expect(address()).toBe("/account/people/manage?user=u");
   });
 });
 
-/* ------------------------------------------------------------------- roles */
+/* ------------------------------------------------------------ and back again */
 
-describe("changing roles", () => {
-  it("sends the complete set rather than the one that changed", async () => {
-    // The API is declarative: anything absent is revoked. A client that sent
-    // only the box it just ticked would silently strip every other role.
+describe("coming back to the directory", () => {
+  it("brings the administrator's search and filters back with them", async () => {
+    // The annoyance this must not trade the old one for. A search here is an
+    // email address, so it cannot be put in the URL, in `history.state` or in
+    // storage to be recovered — the only thing that can carry it across the
+    // trip is the directory staying mounted, which is why the two pages are
+    // nested rather than siblings.
     const admin = new AdminApiStub({
       users: [
         adminUser({
           id: "u",
-          email: "zeb@example.test",
+          displayName: "Hera Syndulla",
+          email: "hera@example.test",
           roles: ["Community", "Contributor"],
         }),
       ],
     });
 
-    mount(admin, ADMINISTRATOR, "/account/people?user=u");
+    mount(admin);
 
-    await screen.findByRole("heading", { name: /^roles$/i });
+    await screen.findByText("hera@example.test");
 
-    await userEvent.click(screen.getByRole("checkbox", { name: /^Administrator/ }));
-    await userEvent.click(screen.getByRole("button", { name: /save roles/i }));
+    await userEvent.type(
+      screen.getByRole("searchbox", { name: /search by address or name/i }),
+      "hera",
+    );
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: /^role$/i }),
+      "Contributor",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^search$/i }));
 
     await waitFor(() =>
-      expect(admin.lastCall("PUT", "/api/auth/admin/users/u/roles")?.body).toEqual({
-        roles: ["Contributor", "Administrator"],
-      }),
+      expect(
+        new URLSearchParams(
+          admin.lastCall("GET", "/api/auth/admin/users")?.path.split("?")[1],
+        ).get("q"),
+      ).toBe("hera"),
     );
+
+    const before = directoryFetches(admin);
+
+    await userEvent.click(screen.getByRole("link", { name: "Manage Hera Syndulla" }));
+    await screen.findByRole("heading", { name: "Hera Syndulla" });
+
+    await userEvent.click(screen.getByRole("link", { name: /back to the directory/i }));
+
+    // The box still holds what they typed, and so does the filter beside it.
+    expect(
+      await screen.findByRole("searchbox", { name: /search by address or name/i }),
+    ).toHaveValue("hera");
+    expect(screen.getByRole("combobox", { name: /^role$/i })).toHaveValue("Contributor");
+
+    // And the refetch on arrival asked the server the same question, so the row
+    // they come back to reflects whatever they just did to it rather than the
+    // whole directory unfiltered.
+    await waitFor(() => expect(directoryFetches(admin)).toBeGreaterThan(before));
+
+    const query = new URLSearchParams(
+      admin.lastCall("GET", "/api/auth/admin/users")?.path.split("?")[1],
+    );
+    expect(query.get("q")).toBe("hera");
+    expect(query.get("role")).toBe("Contributor");
   });
 
-  it("says when a granted role cannot be used yet", async () => {
+  it("still keeps the search term out of the address bar on the way there and back", async () => {
     const admin = new AdminApiStub({
       users: [
-        adminUser({ id: "u", email: "zeb@example.test", secondFactorEnrolled: false }),
+        adminUser({ id: "u", displayName: "Zeb Orrelios", email: "zeb@example.test" }),
       ],
     });
 
-    mount(admin, ADMINISTRATOR, "/account/people?user=u");
+    mount(admin);
 
-    await screen.findByRole("heading", { name: /^roles$/i });
+    await screen.findByText("zeb@example.test");
 
-    // Anchored: the Administrator checkbox's own label says "Everything a
-    // contributor can do", so an unanchored match finds two.
-    await userEvent.click(screen.getByRole("checkbox", { name: /^Contributor/ }));
-    await userEvent.click(screen.getByRole("button", { name: /save roles/i }));
+    await userEvent.type(
+      screen.getByRole("searchbox", { name: /search by address or name/i }),
+      "zeb@example.test",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^search$/i }));
+    await screen.findByText(/matching that search/i);
 
-    // Reported rather than swallowed. An administrator who grants Contributor
-    // and hears nothing has every reason to believe the person can now upload,
-    // while the person meets a 403 and reads it as the grant having failed.
-    expect(
-      await screen.findByText(/cannot use an elevated role until it enrols one/i),
-    ).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("link", { name: "Manage Zeb Orrelios" }));
+    await screen.findByRole("heading", { name: "Zeb Orrelios" });
+
+    // The one thing in the URL is the identifier. Moving the panel to its own
+    // address must not have moved the address into one along with it.
+    expect(address()).toBe("/account/people/manage?user=u");
+    expect(address()).not.toContain("zeb");
   });
 });
 
-/* --------------------------------------------------------------- the history */
+/* ---------------------------------------------------- and in the real config */
 
-describe("what has been done to an account", () => {
-  it("is shown on the account, filtered to it", async () => {
-    const admin = new AdminApiStub({
-      users: [adminUser({ id: "u", email: "zeb@example.test" })],
-      actions: [
-        adminAction({ subjectUserId: "u", actorDisplayName: "Jen Ordo" }),
-        adminAction({ id: "other", subjectUserId: "somebody-else" }),
-      ],
-    });
+describe("the shipped route configuration", () => {
+  /** The route that renders one module, wherever it sits in the tree. */
+  function find(
+    routes: readonly unknown[],
+    file: string,
+  ): { path?: string; children?: readonly unknown[] } | undefined {
+    for (const entry of routes) {
+      const route = entry as { file?: string; path?: string; children?: unknown[] };
+      if (route.file === file) return route;
+      const nested = route.children && find(route.children, file);
+      if (nested) return nested;
+    }
+    return undefined;
+  }
 
-    mount(admin, ADMINISTRATOR, "/account/people?user=u");
+  it("nests the management page inside the directory", () => {
+    // `createRoutesStub` above builds its own table, so nothing in this file
+    // would notice the shipped one being flattened — and flattening it is the
+    // one change that silently undoes the search-survives-the-trip behaviour
+    // two tests up. React Router keeps a parent route's component mounted while
+    // a child renders; it keeps nothing at all for a sibling.
+    const directory = find(routeConfig, "routes/account-people.tsx");
 
-    const history = await screen.findByRole("region", {
-      name: /administrative history/i,
-    });
-
-    // `findBy`, not `getBy`. The section itself is in the markup from the first
-    // render — it draws its own heading and a pending state — so waiting for
-    // the region only waits for the panel, and the entries arrive a round trip
-    // later. A `getBy` here passes on a fast machine and fails on a slow one.
-    expect(await within(history).findByText(/roles changed/i)).toBeInTheDocument();
-    expect(within(history).getByText(/Jen Ordo/)).toBeInTheDocument();
-
-    // Filtered by the server, on the identifier of the account being looked at.
-    const call = admin.lastCall("GET", "/api/auth/admin/audit");
-    expect(new URLSearchParams(call?.path.split("?")[1]).get("subjectId")).toBe("u");
+    expect(directory).toBeDefined();
+    expect(find(directory?.children ?? [], "routes/account-people-manage.tsx")).toEqual(
+      expect.objectContaining({ path: "manage" }),
+    );
   });
 });

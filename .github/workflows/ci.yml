@@ -277,14 +277,23 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 50 pages that do not come from content:
+          # One page per document, plus 51 pages that do not come from content:
           # the home page, the about page, the search page, the sources index,
           # five source pages, the credits page, twenty-seven type indexes, the
-          # ten account routes listed in ACCOUNT_PATHS in
+          # eleven account routes listed in ACCOUNT_PATHS in
           # react-router.config.ts, and the three authoring routes listed in
           # AUTHORING_PATHS beside them. `source` is the only directory that is
           # not a browsable type, so the other twenty-seven contribute item
           # pages.
+          #
+          # It went from 50 to 51 when managing an account became its own page
+          # rather than a panel underneath the directory. One address —
+          # `/account/people/manage` — and not one per account: a dynamic
+          # segment could not be prerendered, so the account being managed
+          # travels in the query string, which does not change which file nginx
+          # serves. That query string carries an opaque GUID and nothing else;
+          # the directory's search term is somebody's email address and stays
+          # out of the URL entirely.
           #
           # It went from 47 to 50 when the authoring workspace landed. Three
           # routes rather than one per editable document, and deliberately: the
@@ -332,7 +341,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 50))
+          expected=$((items + 51))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)

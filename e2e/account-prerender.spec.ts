@@ -29,6 +29,10 @@ const ACCOUNT_PATHS = [
   "/account/contributions",
   "/account/flags",
   "/account/people",
+  // Managing one account is its own address. One address rather than one per
+  // account: the account being managed travels in the query string, which does
+  // not change which file is served.
+  "/account/people/manage",
   "/account/audit",
 ];
 
@@ -92,7 +96,11 @@ test.describe("no identity is baked into the static files", () => {
     // email addresses, and what nginx serves for them is a file every visitor
     // and every cache in between is free to keep. A loader on either would put
     // the account directory, or a record of who suspended whom, into it.
-    for (const path of ["/account/people", "/account/audit"]) {
+    for (const path of [
+      "/account/people",
+      "/account/people/manage",
+      "/account/audit",
+    ]) {
       const html = await (await request.get(path)).text();
 
       expect(html).toContain("Checking your account");
@@ -232,6 +240,10 @@ const ACCOUNT_SECTIONS = [
   },
   { path: "/account/flags", title: "Reports — Your account — Star Wars 5e" },
   { path: "/account/people", title: "People — Your account — Star Wars 5e" },
+  {
+    path: "/account/people/manage",
+    title: "Manage an account — Your account — Star Wars 5e",
+  },
   { path: "/account/audit", title: "Audit log — Your account — Star Wars 5e" },
 ];
 
