@@ -188,6 +188,49 @@ describe("violations the service sent with their parts intact", () => {
   });
 });
 
+describe("the case that made this worth doing", () => {
+  /**
+   * A property that does not belong to a content type.
+   *
+   * `additionalProperties: false` is implemented as a false schema, and a false
+   * schema fails with no keyword at all — the line reads
+   * `/quantumEntanglement:  — All values fail against the false schema`. The
+   * line parser cannot place that, because its pattern requires a keyword of
+   * at least one letter, so it went into the list of things shown above the
+   * form with no field attached.
+   *
+   * This is not a contrived example. It is what the service answers for the
+   * commonest authoring mistake there is: a stray property.
+   */
+  const line = "/quantumEntanglement:  — All values fail against the false schema";
+
+  it("could not be placed from the line", () => {
+    const parsed = parseSchemaErrors([line]);
+
+    expect(parsed.byPointer.size).toBe(0);
+    expect(parsed.unplaced).toEqual([line]);
+  });
+
+  it("lands on the property when the parts arrive apart", () => {
+    const placed = placeSchemaViolations([
+      {
+        instanceLocation: "/quantumEntanglement",
+        keyword: "",
+        message: "All values fail against the false schema",
+      },
+    ]);
+
+    expect([...placed.byPointer.keys()]).toEqual(["/quantumEntanglement"]);
+    expect(placed.unplaced).toEqual([]);
+
+    // No plain-English wording for a keyword that does not exist, so the
+    // validator's own sentence is shown. Better a sentence written for the
+    // wrong audience than a guess.
+    const [violation] = placed.byPointer.get("/quantumEntanglement")!;
+    expect(violation!.message).toBe("All values fail against the false schema");
+  });
+});
+
 describe("reading the structured field off a refusal", () => {
   it("answers null when the service did not send it", () => {
     // Null and empty mean different things: null sends the caller to the line
