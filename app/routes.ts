@@ -1,5 +1,7 @@
 import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
+import { SUBCATEGORY_VIEWS } from "./content/subcategory-views";
+
 // The two dynamic content routes cover every content type. Each type
 // still gets its own columns, filters and detail shaping — that lives in the
 // per-type configuration, not in a duplicated route module.
@@ -64,6 +66,25 @@ export default [
     route("edit", "routes/authoring-edit.tsx"),
     route("history", "routes/authoring-history.tsx"),
   ]),
+
+  // The subcategory views: `/weapons`, `/armor`, `/force-powers` and the rest.
+  // Static segments, declared from the registry so that a seventh view is one
+  // entry in `app/content/subcategory-views.ts` rather than an entry plus two
+  // lines nobody remembers. They rank above `:type` the way every other static
+  // segment on this page does — "weapons" is not read as one more content type
+  // — and each is a real prerendered file rather than `?category=weapon` on
+  // `/equipment`, because a query string does not change which file nginx
+  // serves and the filtering would only ever happen in a browser that ran the
+  // script. `react-router.config.ts` prerenders one path per entry.
+  //
+  // One module behind all six, with explicit ids: React Router derives a
+  // route's id from its file, so six routes sharing `subcategory-index.tsx`
+  // would collide without them.
+  ...SUBCATEGORY_VIEWS.map((view) =>
+    route(view.slug, "routes/subcategory-index.tsx", {
+      id: `subcategory-${view.slug}`,
+    }),
+  ),
 
   route(":type", "routes/type-index.tsx"),
   route(":type/:slug", "routes/item-detail.tsx"),

@@ -3,6 +3,8 @@ import path from "node:path";
 
 import type { Config } from "@react-router/dev/config";
 
+import { SUBCATEGORY_VIEWS } from "./app/content/subcategory-views";
+
 const CONTENT_TYPES = [
   "species",
   "classes",
@@ -180,6 +182,25 @@ export default {
       "/credits",
       ...ACCOUNT_PATHS,
       ...AUTHORING_PATHS,
+
+      // The subcategory views — `/weapons`, `/armor`, `/other-equipment`,
+      // `/force-powers`, `/tech-powers`, `/starship-weapons`. Read from the
+      // registry rather than listed, so this list cannot fall out of step with
+      // `app/routes.ts`, which declares its routes from the same array.
+      //
+      // These are the reason the views are paths at all. A filtered list is
+      // only a real address on this site if it has a file: `?category=weapon`
+      // would be answered by the unfiltered `/equipment/index.html`, so
+      // everything that does not run the script — a crawler, a monitor, a
+      // shared link opened with JavaScript off — would be handed all 505 rows
+      // by an address claiming 215. Six more files buys six addresses that are
+      // true before any script runs.
+      //
+      // Adding these raised the prerendered route count by six. The container
+      // job in .github/workflows/ci.yml adds a fixed number of pages that do
+      // not come from content to the document count, and that number went from
+      // 51 to 57 with this block.
+      ...SUBCATEGORY_VIEWS.map((view) => `/${view.slug}`),
     ];
 
     // Kept in step with SOURCE_META in app/content/source-meta.ts. A source
