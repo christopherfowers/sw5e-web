@@ -28,8 +28,12 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { readSearchResponse, searchContent } from "../../app/content/search-api";
 import { isContentTypeId } from "../../app/content/types";
 import fixture from "../../app/content/__fixtures__/search-response.json";
+import { readOnlyContractTarget } from "./target";
 
-const API = process.env.SW5E_CONTRACT_API;
+// Unguarded on purpose: this suite only reads, and running it against a
+// deployed environment is how a client that disagrees with a live service
+// gets caught. See tests/contract/target.ts.
+const API = readOnlyContractTarget();
 const ORIGIN = process.env.SW5E_CONTRACT_ORIGIN ?? "http://localhost:4173";
 
 const platformFetch = globalThis.fetch;
