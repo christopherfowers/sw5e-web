@@ -185,6 +185,138 @@
   border-width: 2px;
 }
 
+/* ------------------------------------------------------- the markdown editor */
+
+/*
+ * A toolbar, the text under it, and a preview under that, read as one control
+ * rather than as three things that happen to be adjacent — so the toolbar sits
+ * flush on top of the text area and the pair share one outer edge. Without
+ * that, six markdown fields on a class document read as eighteen boxes.
+ */
+.authoring-editor {
+  display: grid;
+}
+
+.authoring-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-strong);
+  border-bottom: 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--surface-sunken);
+}
+
+.authoring-editor > .authoring-prose {
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
+.authoring-tool {
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.1875rem 0.5rem;
+  cursor: pointer;
+}
+
+.authoring-tool:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--surface-raised);
+  border-color: var(--border);
+}
+
+/* The one tab stop the toolbar has is worth seeing clearly; a roving tabindex
+   makes focus arrive somewhere the eye was not already looking. */
+.authoring-tool:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.authoring-tool:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+
+.authoring-tool[aria-pressed="true"] {
+  color: var(--text);
+  background: var(--surface-raised);
+  border-color: var(--border-strong);
+}
+
+/* Bold and italic say what they do in the shape of the word, which is the one
+   place on this site where the type style carries meaning rather than tone. */
+.authoring-tool:nth-child(1) {
+  font-weight: 800;
+}
+
+.authoring-tool:nth-child(2) {
+  font-style: italic;
+}
+
+.authoring-tool-preview {
+  margin-inline-start: auto;
+}
+
+.authoring-link-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-bottom: 0;
+  background: var(--surface-raised);
+}
+
+.authoring-link-panel > label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.authoring-link-panel > .authoring-input {
+  width: auto;
+  flex: 1 1 14rem;
+}
+
+.authoring-link-panel > .auth-field-hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/*
+ * The preview is inset rather than boxed, so it reads as an annotation on the
+ * field above it and never as a second field somebody might try to type into.
+ */
+.authoring-preview {
+  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border-inline-start: 2px solid var(--border-strong);
+  background: var(--surface-sunken);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.authoring-preview-label {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.authoring-preview .prose-body > :first-child {
+  margin-top: 0;
+}
+
+.authoring-preview .prose-body > :last-child {
+  margin-bottom: 0;
+}
+
 /* Depth by rule and indent rather than by nested boxes. */
 .authoring-group {
   margin: var(--space-5) 0 0;
