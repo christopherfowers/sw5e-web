@@ -2644,3 +2644,18 @@ h6:hover > .heading-anchor,
 :target {
   scroll-margin-top: 7rem;
 }
+
+/*
+ * An abbreviated column header.
+ *
+ * Browsers underline `<abbr title>` with a dotted line by default, which is a
+ * useful signal that there is something to hover — but inside a sort button
+ * that already underlines on hover it reads as two states of the same
+ * control. The dots stay, quieter, and the cursor says the rest.
+ */
+.column-abbr {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--border);
+  text-underline-offset: 0.25em;
+  cursor: help;
+}

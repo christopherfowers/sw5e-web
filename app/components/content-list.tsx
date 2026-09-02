@@ -609,6 +609,35 @@ function Chapters({
   );
 }
 
+/**
+ * A column's header, expanded when it is an abbreviation.
+ *
+ * Two audiences, and it took two mechanisms because the obvious one only
+ * serves one of them.
+ *
+ * `title` on an `<abbr>` is the hover affordance, and that is all it is: it
+ * does not reach a touch screen, it does not reach a keyboard, and — the part
+ * that is easy to get wrong — it does not reach the accessible name either.
+ * The name of an element with text content is its text content; `title` is
+ * only consulted when there is nothing else, so `<abbr title="Challenge
+ * rating">CR</abbr>` is still announced "C R".
+ *
+ * So the words are also present as text, hidden visually. A screen reader
+ * announces "CR Challenge rating" and a sighted reader sees the two
+ * characters the column has room for — "Challenge rating" set in full would
+ * make a column three times wider than the numbers in it.
+ */
+function ColumnHeader<Row>({ column }: { column: Column<Row> }) {
+  if (!column.expands) return <>{column.header}</>;
+
+  return (
+    <abbr className="column-abbr" title={column.expands}>
+      {column.header}
+      <span className="sr-only"> {column.expands}</span>
+    </abbr>
+  );
+}
+
 function ContentTable({
   type,
   typeLabel,
@@ -657,7 +686,7 @@ function ContentTable({
                       className="sort-button"
                       onClick={() => onSort(column)}
                     >
-                      {column.header}
+                      <ColumnHeader column={column} />
                       <span aria-hidden="true" className="sort-indicator">
                         {isSorted ? (direction === "ascending" ? "↑" : "↓") : "↕"}
                       </span>
@@ -668,7 +697,7 @@ function ContentTable({
                       </span>
                     </button>
                   ) : (
-                    column.header
+                    <ColumnHeader column={column} />
                   )}
                 </th>
               );

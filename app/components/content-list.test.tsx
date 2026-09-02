@@ -564,3 +564,54 @@ describe("a very long index", () => {
     expect(screen.queryByRole("button", { name: /Show/ })).toBeNull();
   });
 });
+
+describe("an abbreviated column header", () => {
+  /**
+   * "AC", "CR" and "HP" are the language of the books and the right width for
+   * a numeric column, and they are also jargon that the site expanded nowhere.
+   * A reader who did not already know what CR meant had no way to find out
+   * from the page in front of them.
+   */
+  it("shows the words on hover", () => {
+    renderList();
+
+    expect(screen.getByTitle("Challenge rating")).toHaveTextContent("CR");
+    expect(screen.getByTitle("Armor class")).toHaveTextContent("AC");
+    expect(screen.getByTitle("Hit points")).toHaveTextContent("HP");
+  });
+
+  it("reads the words out as well, which the title alone does not", () => {
+    /*
+      The trap this pins. `title` on an `<abbr>` looks like it names the
+      element and does not: the accessible name of something with text content
+      is its text content, and `title` is consulted only when there is nothing
+      else. So `<abbr title="Challenge rating">CR</abbr>` is announced "C R",
+      and a hover affordance reaches neither a touch screen nor a keyboard
+      anyway.
+
+      Asserted through the sort button's name, because that is the thing a
+      screen reader actually announces for this column.
+    */
+    renderList();
+
+    const sort = screen.getByRole("button", { name: /challenge rating/i });
+
+    // Both halves are in the name: the abbreviation a sighted reader sees, and
+    // the words it stands for. The separator between them is not asserted —
+    // jsdom's accessible-name computation collapses the space that a browser
+    // keeps, and pinning that would be pinning the test environment rather
+    // than the behaviour.
+    expect(sort).toHaveAccessibleName(/CR/);
+    expect(sort).toHaveAccessibleName(/Challenge rating/);
+  });
+
+  it("leaves a header that is already a word alone", () => {
+    // The control. Wrapping every header in an <abbr> would put a help cursor
+    // and a dotted underline on columns with nothing to explain.
+    renderList();
+
+    const sort = screen.getByRole("button", { name: /^Type/ });
+
+    expect(sort.querySelector("abbr")).toBeNull();
+  });
+});
