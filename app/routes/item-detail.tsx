@@ -1,9 +1,10 @@
 import { ItemDetail } from "~/components/item-detail";
 import { Breadcrumbs, Pager } from "~/components/site-chrome";
 import { assetCredit } from "~/content/credits.server";
-import { getItem, getNeighbours } from "~/content/dataset.server";
+import { getItem, getNeighbours, getSummaries } from "~/content/dataset.server";
+import { listHolding } from "~/content/subcategory-views";
 import { TYPE_META } from "~/content/type-meta";
-import { isContentTypeId } from "~/content/types";
+import { isContentTypeId, type AnySummary } from "~/content/types";
 import type { Route } from "./+types/item-detail";
 
 /** A plain-text summary for search engines, drawn from whatever the item has. */
@@ -37,6 +38,21 @@ export async function loader({ params }: Route.LoaderArgs) {
   const { previous, next } = getNeighbours(type, params.slug);
 
   /*
+   * Where the crumb above this document points, which is `/<type>` for
+   * twenty-six of the twenty-seven types and cannot be for the twenty-seventh.
+   * `/class-improvements` is the class-only cut of that type rather than an
+   * index over all thirty of them, so a multiclass improvement crumbing there
+   * would be offering a reader a list that does not contain the page they are
+   * standing on. Resolved from the row, so each document goes up to whichever
+   * of the three lists actually holds it. Null everywhere else, and the
+   * component keeps the ordinary type crumb.
+   */
+  const summary = (getSummaries(type) as AnySummary[]).find(
+    (row) => row.slug === params.slug,
+  );
+  const holder = summary ? listHolding(type, summary) : undefined;
+
+  /*
    * The citation for this page's picture, resolved here because the credits
    * document is build-time data and only this one entry of it should end up
    * in the page. Species are keyed by slug and archetypes by the class their
@@ -55,6 +71,7 @@ export async function loader({ params }: Route.LoaderArgs) {
     type,
     item,
     artCredit,
+    list: holder ? { label: holder.label, to: `/${holder.slug}` } : null,
     previous: previous ? { slug: previous.slug, name: previous.name } : null,
     next: next ? { slug: next.slug, name: next.name } : null,
   };
@@ -80,14 +97,14 @@ export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
 }
 
 export default function ItemDetailRoute({ loaderData }: Route.ComponentProps) {
-  const { type, item, artCredit, previous, next } = loaderData;
+  const { type, item, artCredit, list, previous, next } = loaderData;
   const meta = TYPE_META[type];
 
   return (
     <div className="page" data-accent={meta.accent}>
       <Breadcrumbs
         trail={[
-          { label: meta.plural, to: `/${type}` },
+          list ?? { label: meta.plural, to: `/${type}` },
           { label: item.name },
         ]}
       />

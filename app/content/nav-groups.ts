@@ -21,9 +21,9 @@
  *     documents; "Variant rules" is 40 of the 75 rule documents. See
  *     `./subcategory-views.ts` for why those are paths with files behind them
  *     rather than query strings.
- *   - A hub. "Customization options" is one entry standing for seven types,
+ *   - A hub. "Customization options" is one entry standing for nine lists,
  *     because the Player's Handbook introduces them together in one chapter and
- *     seven boxes in a menu is seven answers to a question the reader has asked
+ *     nine boxes in a menu is nine answers to a question the reader has asked
  *     once.
  *   - A type index, which is the only case the old model could express.
  *
@@ -202,12 +202,31 @@ export type NavDestination = {
   | {
       kind: "page";
       /**
-       * The types a reader can reach from this page. It is a claim about what
+       * The types whose own index this page links. It is a claim about what
        * the page renders, and `customization-options.test.tsx` holds the page
-       * to it — otherwise a hub could go on claiming to cover seven types after
+       * to it — otherwise a hub could go on claiming to cover six types after
        * somebody deleted three cards from it.
+       *
+       * A type belongs here only if the page leads to the whole of it. That is
+       * why the class improvements are not in the hub's `covers` even though
+       * the hub is where a reader finds them: what the hub links is three cuts
+       * of that type, and three cuts add up to the type only while every row
+       * lands on one of them. That is a question about the dataset, so it is
+       * asked of the dataset — see `offers` and `nav-groups.test.ts`.
        */
       covers: readonly ContentTypeId[];
+      /**
+       * The filtered views this page links, beside the indexes in `covers`.
+       *
+       * Kept apart from `covers` rather than folded into it because the two
+       * claims are different strengths and the difference is the whole point:
+       * an index covers its type on its own, a view covers its type only
+       * together with its siblings. The reachability check treats them as such.
+       * The front page also needs them told apart to put an honest number on
+       * the card — a hub's count is the sum of what it holds, and half of what
+       * this one holds has to be counted by running a predicate.
+       */
+      offers: readonly SubcategoryView[];
       blurb: string;
       /**
        * A hub has no type to borrow a hue from and needs one anyway: the card
@@ -218,29 +237,6 @@ export type NavDestination = {
       accent: Accent;
     }
 );
-
-/**
- * The seven types the Player's Handbook introduces under Customization Options.
- *
- * Named once, here, because two things have to agree about it and disagreeing
- * silently is the failure mode: the menu entry claims to cover them, and
- * `app/routes/customization-options.tsx` renders a card for each. Reading the
- * same array is what makes the claim and the page the same statement.
- *
- * Class improvements go last and are the odd one out — nobody browses them,
- * they are reached from the class table that grants one — but they are a
- * customization option and the chapter says so, so the hub is where they live
- * rather than in a menu nobody would look in.
- */
-export const CUSTOMIZATION_OPTION_TYPES: readonly ContentTypeId[] = [
-  "feats",
-  "fighting-styles",
-  "fighting-masteries",
-  "lightsaber-forms",
-  "weapon-focuses",
-  "weapon-supremacies",
-  "class-improvements",
-];
 
 type Prominence = NavDestination["prominence"];
 
@@ -294,11 +290,82 @@ function page(
   label: string,
   blurb: string,
   accent: Accent,
-  covers: readonly ContentTypeId[],
+  contents: readonly NavDestination[],
   prominence: Prominence = "primary",
 ): NavDestination {
-  return { kind: "page", to, label, blurb, accent, covers, prominence };
+  return {
+    kind: "page",
+    to,
+    label,
+    blurb,
+    accent,
+    prominence,
+    /*
+      The two coverage claims, split out of the one list the page renders, so
+      that the page and the claims cannot be written down separately and drift.
+      A hub built from a list of destinations knows which of them are indexes
+      and which are slices; asking the caller to restate that would be asking
+      it to say the same thing twice.
+    */
+    covers: contents.flatMap((destination) =>
+      destination.kind === "type" ? [destination.type] : [],
+    ),
+    offers: contents.flatMap((destination) =>
+      destination.kind === "view" ? [destination.view] : [],
+    ),
+  };
 }
+
+/**
+ * What the Customization Options hub holds: the chapter, as a list of places.
+ *
+ * Written once, here, because three things have to agree about it and
+ * disagreeing silently is the failure mode. The menu entry derives its
+ * coverage claims from it, `app/routes/customization-options.tsx` renders a
+ * card per entry, and the front page puts a count on the hub's own card by
+ * adding up what is behind each one. Reading the same array is what makes
+ * those three the same statement rather than three statements that happen to
+ * match today.
+ *
+ * The three class-improvement views go last and are the odd ones out — nobody
+ * browses a class improvement, they are reached from the class table that
+ * grants one — but they are customization options and the chapter says so, so
+ * the hub is where they live rather than in a menu nobody would look in.
+ *
+ * Three entries rather than one, and that is the change this list exists to
+ * record. `class-improvements` is a single content type holding three
+ * unrelated answers — what advancing in a class gives you, what multiclassing
+ * into it gives you, what one splashed level is worth — and the site this one
+ * replaces published them as three pages. One merged page of thirty rows hands
+ * a reader who asked about multiclassing twenty rows about something else.
+ */
+export const CUSTOMIZATION_OPTION_DESTINATIONS: readonly NavDestination[] = [
+  typeIndex("feats", "Feats"),
+  typeIndex("fighting-styles", "Fighting styles"),
+  typeIndex("fighting-masteries", "Fighting masteries"),
+  typeIndex("lightsaber-forms", "Lightsaber forms"),
+  typeIndex("weapon-focuses", "Weapon focuses"),
+  typeIndex("weapon-supremacies", "Weapon supremacies"),
+  subcategory("class-improvements"),
+  subcategory("multiclass-improvements"),
+  subcategory("splashclass-improvements"),
+];
+
+/**
+ * The six types the hub leads to in their entirety.
+ *
+ * Derived rather than written, and deliberately not the same thing as "the
+ * types the hub mentions": the class improvements are on the page and are not
+ * in here, because what the page links is three cuts of them. A hub that
+ * claimed the type outright would satisfy the reachability check by assertion,
+ * and the check would stop looking at the rows — which is precisely the check
+ * that would catch a fourth kind of improvement appearing in the archive with
+ * no page to land on.
+ */
+export const CUSTOMIZATION_OPTION_TYPES: readonly ContentTypeId[] =
+  CUSTOMIZATION_OPTION_DESTINATIONS.flatMap((destination) =>
+    destination.kind === "type" ? [destination.type] : [],
+  );
 
 /**
  * The menus, in the order they are offered.
@@ -359,17 +426,18 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
       // Clay is the rules hue. The index of the books belongs to the same body
       // of material as the prose in them.
       "clay",
-      // Covers nothing, deliberately. A book page is a view over every type at
-      // once, so letting it claim coverage would make one link to `/sources`
-      // satisfy the reachability of the entire corpus.
+      // Holds nothing, and therefore covers nothing — deliberately. A book
+      // page is a view over every type at once, so letting it claim coverage
+      // would make one link to `/sources` satisfy the reachability of the
+      // entire corpus.
       [],
       "supporting",
     ),
   ],
 
   /*
-    Nine entries for fifteen types, which is the point of the hub in the middle
-    of them. Force and tech powers are separated here and joined in the data,
+    Twelve entries for fifteen types, which is the point of the hub in the
+    middle of them. Force and tech powers are separated here and joined in the data,
     for the reason a reader would expect: nobody is ever choosing between a
     force power and a tech power, because no character casts both from the same
     list.
@@ -383,16 +451,31 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
     page(
       "/customization-options",
       "Customization options",
-      "Everything a character takes on top of its class: feats, fighting styles and masteries, lightsaber forms, the weapon tiers and the class improvements.",
-      // Amber is feats' hue, and feats are the largest of the seven and the one
+      "Everything a character takes on top of its class: feats, fighting styles and masteries, lightsaber forms, the weapon tiers and the three kinds of class improvement.",
+      // Amber is feats' hue, and feats are the largest of the nine and the one
       // a reader arrives looking for.
       "amber",
-      CUSTOMIZATION_OPTION_TYPES,
+      CUSTOMIZATION_OPTION_DESTINATIONS,
     ),
     subcategory("force-powers"),
     subcategory("tech-powers"),
     typeIndex("maneuvers", "Maneuvers"),
     typeIndex("features", "Features", "supporting"),
+
+    /*
+      The three cuts of the class improvements, quiet like the features beside
+      them and for the same reason: they are read from the class that grants
+      one, not browsed. They are in the menu as well as on the hub because the
+      hub is a page and this is the header — a reader on `/multiclass-
+      improvements` needs the other two beside them without a trip through a
+      third address — and because a menu entry is what the reachability check
+      reads. Between them they are the whole of the type, which is a claim
+      about the rows and is proved against the rows in `nav-groups.test.ts`
+      exactly the way the three equipment shelves are.
+    */
+    subcategory("class-improvements", "supporting"),
+    subcategory("multiclass-improvements", "supporting"),
+    subcategory("splashclass-improvements", "supporting"),
   ],
 
   /*
@@ -583,7 +666,19 @@ export function typesBehind(
     case "view":
       return [destination.view.type];
     case "page":
-      return destination.covers;
+      /*
+        Both halves of what a hub holds, which is right for this question and
+        wrong for reachability. A reader who opens the customization hub and
+        clicks through to `/multiclass-improvements` is in the class-improvement
+        corpus, so a hub that led to a type declared to be site metadata would
+        be caught here whether it linked the index or a slice of it. Whether the
+        slices *add up* to the type is the other question, and it is asked of
+        the dataset rather than of this list.
+      */
+      return [
+        ...destination.covers,
+        ...destination.offers.map((view) => view.type),
+      ];
     case "book":
       // A book page is a view over every type at once and leads into none of
       // them in particular. Claiming otherwise would make any book entry

@@ -2,13 +2,21 @@
  * What each subcategory view selects, and — the half that is easy to get
  * wrong — what it leaves out.
  *
- * Most of the eight are ordinary equality on a field and would be hard to break
- * subtly. `/other-equipment` is not: it is defined by exclusion, so it is
- * correct only relative to its siblings, and every way of getting it wrong
- * produces a page that still renders a plausible list. Miss the negation and a
- * weapon appears on two indexes; over-negate and 23 ammo pouches vanish from
- * the site's navigation entirely, because "Weapon or armor accessory" is the
- * one category value that starts with the word this view has to exclude.
+ * Most of the eleven are ordinary equality on a field and would be hard to break
+ * subtly. Two shapes are not, and they fail the same way — a page that still
+ * renders a plausible list.
+ *
+ * `/other-equipment` is defined by exclusion, so it is correct only relative to
+ * its siblings. Miss the negation and a weapon appears on two indexes;
+ * over-negate and 23 ammo pouches vanish from the site's navigation entirely,
+ * because "Weapon or armor accessory" is the one category value that starts
+ * with the word this view has to exclude.
+ *
+ * The three class-improvement views are equalities on values that contain one
+ * another: "Class", "Multiclass" and "Splashclass". Any test that is not
+ * whole-string selects all thirty rows onto all three pages, so those views are
+ * asserted on their counts and on what they exclude, not on a representative
+ * row.
  *
  * The values matched are the printed ones — "Weapon", not `weapon`. The
  * archive's enums are expanded by `humanize` in `scripts/lib/normalize.mjs`
@@ -24,11 +32,14 @@ import prerenderConfig from "../../react-router.config";
 import {
   SUBCATEGORY_VIEWS,
   getSubcategoryView,
+  listHolding,
+  parentCrumbOf,
   requireSubcategoryView,
   selectSubcategoryRows,
 } from "./subcategory-views";
 import type {
   AnySummary,
+  ClassImprovementSummary,
   EquipmentSummary,
   PowerSummary,
   RuleSummary,
@@ -138,6 +149,56 @@ const RULES: RuleSummary[] = [
   rule("Hero Points", "PHB", "Variant"),
 ];
 
+/**
+ * The ten classes the corpus carries an improvement for, in each of the three
+ * kinds — which is the real shape of the type: thirty documents, ten per kind,
+ * one per class per kind.
+ *
+ * Built at full size rather than one row per kind because the counts are the
+ * assertion. "Selects its ten and leaves the other twenty" is a claim a
+ * three-row fixture cannot make, and the thing most likely to go wrong here is
+ * a predicate that takes too much: "Multiclass" and "Splashclass" both end in
+ * the word the type is named after, so a substring match on "class" selects all
+ * thirty and every page still renders a plausible list.
+ */
+const IMPROVEMENT_CLASSES = [
+  "Berserker",
+  "Consular",
+  "Engineer",
+  "Fighter",
+  "Guardian",
+  "Monk",
+  "Operative",
+  "Scholar",
+  "Scout",
+  "Sentinel",
+];
+
+function improvement(
+  className: string,
+  improvementType: string | null,
+): ClassImprovementSummary {
+  const kind = (improvementType ?? "unfiled").toLowerCase();
+  return {
+    slug: `${className.toLowerCase()}-${kind}-improvement`,
+    name: `${className} ${improvementType ?? "Unfiled"} Improvement`,
+    source: "EC",
+    tagline: null,
+    className,
+    improvementType,
+    prerequisite: `At least 3 levels in ${className.toLowerCase()}`,
+  };
+}
+
+const IMPROVEMENTS: ClassImprovementSummary[] = [
+  // The printed values, as `humanize` leaves them. Matching the raw enum —
+  // `multiclass` — would pass against a fixture written the same wrong way and
+  // select nothing at all in production.
+  ...IMPROVEMENT_CLASSES.map((name) => improvement(name, "Class")),
+  ...IMPROVEMENT_CLASSES.map((name) => improvement(name, "Multiclass")),
+  ...IMPROVEMENT_CLASSES.map((name) => improvement(name, "Splashclass")),
+];
+
 /** The names a view selects out of a set of rows, which is what a page shows. */
 function selected(slug: string, rows: AnySummary[]): string[] {
   return selectSubcategoryRows(requireSubcategoryView(slug), rows).map(
@@ -156,6 +217,9 @@ describe("the registry", () => {
       "starship-weapons",
       "variant-rules",
       "expanded-rules",
+      "class-improvements",
+      "multiclass-improvements",
+      "splashclass-improvements",
     ]);
   });
 
@@ -172,6 +236,9 @@ describe("the registry", () => {
       "starship-equipment",
       "rules",
       "rules",
+      "class-improvements",
+      "class-improvements",
+      "class-improvements",
     ]);
   });
 
@@ -328,6 +395,171 @@ describe("the rule views", () => {
   });
 });
 
+/**
+ * The three cuts of the class improvements, which are three subjects the
+ * archive files as one type.
+ *
+ * Each is a single equality, so what is worth testing is not that the equality
+ * works but that it is an equality: the three values are "Class",
+ * "Multiclass" and "Splashclass", two of which end in the first. A substring
+ * or a suffix test selects thirty rows on all three pages and looks entirely
+ * correct doing it, which is why every assertion below is about the twenty
+ * rows a page must not have as much as the ten it must.
+ */
+describe("the class improvement views", () => {
+  it("puts the ten class improvements on /class-improvements", () => {
+    const rows = selected("class-improvements", IMPROVEMENTS);
+
+    expect(rows).toHaveLength(10);
+    expect(rows).toContain("Guardian Class Improvement");
+  });
+
+  it("puts the ten multiclass improvements on /multiclass-improvements", () => {
+    const rows = selected("multiclass-improvements", IMPROVEMENTS);
+
+    expect(rows).toHaveLength(10);
+    expect(rows).toContain("Guardian Multiclass Improvement");
+  });
+
+  it("puts the ten splashclass improvements on /splashclass-improvements", () => {
+    const rows = selected("splashclass-improvements", IMPROVEMENTS);
+
+    expect(rows).toHaveLength(10);
+    expect(rows).toContain("Guardian Splashclass Improvement");
+  });
+
+  it("keeps the other twenty off each of the three", () => {
+    /*
+      The assertion the whole split exists for. A reader who arrives from the
+      multiclassing rules must not be handed twenty rows about advancing in a
+      class and dipping a level into one, and vice versa. "Multiclass" and
+      "Splashclass" both end in "class", so this is what a careless predicate
+      breaks first and nothing else would report.
+    */
+    for (const [slug, kept] of [
+      ["class-improvements", "Class"],
+      ["multiclass-improvements", "Multiclass"],
+      ["splashclass-improvements", "Splashclass"],
+    ] as const) {
+      const rows = selected(slug, IMPROVEMENTS);
+
+      expect(
+        rows.filter((name) => !name.endsWith(`${kept} Improvement`)),
+        `/${slug} is showing rows of another kind`,
+      ).toEqual([]);
+    }
+  });
+
+  it("covers every improvement exactly once between the three", () => {
+    /*
+      The property that lets `/class-improvements` be one of the three rather
+      than an index above them: the three add up to the type, so nothing is
+      stranded by there no longer being a page with all thirty on it. It is
+      also the property `nav-groups.test.ts` re-checks against the real
+      dataset, because this fixture cannot know what the archive adds next.
+    */
+    const filed = [
+      ...selected("class-improvements", IMPROVEMENTS),
+      ...selected("multiclass-improvements", IMPROVEMENTS),
+      ...selected("splashclass-improvements", IMPROVEMENTS),
+    ];
+
+    expect(filed).toHaveLength(IMPROVEMENTS.length);
+    expect(new Set(filed).size).toBe(IMPROVEMENTS.length);
+  });
+
+  it("strands a row whose kind is one nobody has written a view for", () => {
+    /*
+      Not a wish — a demonstration that the coverage assertion above and the
+      dataset one in `nav-groups.test.ts` can actually fail. A fourth kind of
+      improvement, or a record the reader failed to stamp, lands on none of the
+      three; that is the failure those checks exist to report, and it is worth
+      knowing it is reachable.
+    */
+    const withUnfiled = [...IMPROVEMENTS, improvement("Sentinel", null)];
+
+    const filed = [
+      ...selected("class-improvements", withUnfiled),
+      ...selected("multiclass-improvements", withUnfiled),
+      ...selected("splashclass-improvements", withUnfiled),
+    ];
+
+    expect(filed).toHaveLength(IMPROVEMENTS.length);
+    expect(filed).not.toContain("Sentinel Unfiled Improvement");
+  });
+
+  it("does not read an improvement field the equipment rows do not have", () => {
+    expect(selected("class-improvements", EQUIPMENT)).toEqual([]);
+    expect(selected("multiclass-improvements", POWERS)).toEqual([]);
+  });
+});
+
+/**
+ * Where a page sends a reader who has decided this was the wrong list.
+ *
+ * For eight of the eleven views that is the type's own index, and for the three
+ * class-improvement ones it cannot be: the type's segment is one of the three.
+ * Without an answer here `/multiclass-improvements` would crumb up to a page
+ * holding ten rows, none of them its own, and `/class-improvements` would crumb
+ * up to itself.
+ */
+describe("the crumb above a view", () => {
+  it("is the type's index for a shelf inside a type", () => {
+    expect(parentCrumbOf(requireSubcategoryView("weapons"))).toEqual({
+      label: "Equipment",
+      to: "/equipment",
+    });
+  });
+
+  it("is the hub for the three that have no index above them", () => {
+    for (const slug of [
+      "class-improvements",
+      "multiclass-improvements",
+      "splashclass-improvements",
+    ]) {
+      expect(
+        parentCrumbOf(requireSubcategoryView(slug)),
+        `/${slug} must not crumb up to a sibling that holds none of its rows`,
+      ).toEqual({ label: "Customization options", to: "/customization-options" });
+    }
+  });
+});
+
+/**
+ * The same question asked from a document's own page.
+ *
+ * A weapon crumbs up to `/equipment`, which holds it. A multiclass improvement
+ * crumbing up to `/class-improvements` would be offered a list of ten rows that
+ * does not contain it — so for the one type whose segment a view has taken, the
+ * crumb follows the row.
+ */
+describe("the list a document belongs to", () => {
+  it("is left to the type index for every type that still has one", () => {
+    expect(listHolding("equipment", EQUIPMENT[0]!)).toBeUndefined();
+    expect(listHolding("powers", POWERS[0]!)).toBeUndefined();
+  });
+
+  it("sends each improvement to whichever of the three actually holds it", () => {
+    expect(listHolding("class-improvements", IMPROVEMENTS[0]!)?.slug).toBe(
+      "class-improvements",
+    );
+    expect(listHolding("class-improvements", IMPROVEMENTS[10]!)?.slug).toBe(
+      "multiclass-improvements",
+    );
+    expect(listHolding("class-improvements", IMPROVEMENTS[20]!)?.slug).toBe(
+      "splashclass-improvements",
+    );
+  });
+
+  it("admits it has no list for a row none of the three claims", () => {
+    // The caller falls back to the type crumb, which is the least wrong thing
+    // available — better than throwing on a page that renders fine otherwise.
+    expect(
+      listHolding("class-improvements", improvement("Sentinel", null)),
+    ).toBeUndefined();
+  });
+});
+
 describe("an empty view", () => {
   it("selects nothing rather than failing when the dataset has no rows", () => {
     // Not hypothetical: the committed fixture in `app/data/fixture` holds no
@@ -364,12 +596,30 @@ describe("every view is prerendered rather than left to the SPA fallback", () =>
     },
   );
 
-  it("adds eight paths and no more, which is what CI counts", () => {
+  it("adds eleven paths and no more, which is what CI counts", () => {
     // `.github/workflows/ci.yml` asserts the total number of prerendered
     // routes against the canonical content set by adding a fixed number of
     // content-free pages to it. That number went from 51 to 57 for the first
-    // six and from 58 to 60 for the two rule views, and a ninth moves it
-    // again.
-    expect(SUBCATEGORY_VIEWS).toHaveLength(8);
+    // six, from 58 to 60 for the two rule views and from 60 to 62 for the
+    // three class-improvement ones — three views less the type index they
+    // replace — and a twelfth moves it again.
+    expect(SUBCATEGORY_VIEWS).toHaveLength(11);
+  });
+
+  /*
+    The other half of that arithmetic, and the half nothing else would notice.
+    `/class-improvements` is a view now, so the build must stop writing a type
+    index at that address — not because a duplicate path would break anything
+    visible, but because the same page would be rendered twice under one
+    filename and the prerender listing would be claiming a page the site does
+    not have. Every other type keeps its index.
+  */
+  it("stops prerendering a type index at an address a view has taken", async () => {
+    const paths = await prerenderConfig.prerender!();
+    const indexes = paths.filter((path) => path === "/class-improvements");
+
+    expect(indexes).toHaveLength(1);
+    expect(paths).toContain("/feats");
+    expect(paths).toContain("/class-improvements/berserker-class-improvement");
   });
 });
