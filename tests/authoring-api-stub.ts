@@ -78,6 +78,16 @@ export interface AuthoringStubOptions {
   schemas?: Record<string, unknown>;
   /** Revisions by `"type/key"`, oldest first. */
   revisions?: Record<string, StoredRevision[]>;
+  /**
+   * Published documents by `"type/key"`, as the read API serves them.
+   *
+   * Separate from {@link revisions} because the two are genuinely independent:
+   * a document published through the authoring API has both, and a document
+   * that arrived through the importer has only this. The deployed site is
+   * almost entirely the second kind, which is the case the editor used to get
+   * wrong.
+   */
+  published?: Record<string, unknown>;
   /** Drafts by `"type/key"`. */
   drafts?: Record<string, Partial<StoredDraft> & { document: unknown }>;
   /**
@@ -330,6 +340,26 @@ export class AuthoringApiStub {
 
     if (route === "/api/content-types" && method === "GET") {
       return { status: 200, body: { types: this.contentTypes } };
+    }
+
+    /* --------------------------------------------- the published document */
+
+    const item = /^\/api\/content\/([^/]+)\/([^/]+)$/.exec(route);
+    if (item && method === "GET") {
+      const [, type, key] = item;
+      const address = `${decodeURIComponent(type)}/${decodeURIComponent(key)}`;
+      const document = this.options.published?.[address];
+
+      // Anonymous, like the real read API: what is published is not a question
+      // about who is asking.
+      if (document === undefined) {
+        return { status: 404, body: { title: "Not found" } };
+      }
+
+      return {
+        status: 200,
+        body: { type, key, name: String(key), data: document },
+      };
     }
 
     /* ------------------------------------------------------------- schemas */
@@ -585,7 +615,11 @@ export function serveAuthoring(
      * that did not exist. The account prefix is written with its trailing slash
      * for the same reason.
      */
-    if (url.startsWith("/api/authoring") || url.startsWith("/api/content-types")) {
+    if (
+      url.startsWith("/api/authoring") ||
+      url.startsWith("/api/content-types") ||
+      url.startsWith("/api/content/")
+    ) {
       return respond(authoring.handle(method, url, body));
     }
 

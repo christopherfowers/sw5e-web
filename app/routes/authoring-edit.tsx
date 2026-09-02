@@ -61,6 +61,7 @@ import {
   discardDraft,
   getContentSchema,
   getDraft,
+  getPublishedDocument,
   getRevision,
   listRevisions,
   publishDraft,
@@ -181,6 +182,36 @@ async function loadSubject(
     };
   }
 
+  // No draft and no revision, which is the state almost every document on this
+  // site is in: revisions are written when somebody publishes through the
+  // authoring API, and the corpus arrived through the importer, which writes
+  // none. Reading the newest revision and giving up when there is not one made
+  // the editor offer a blank form for 7,877 published documents — an edit
+  // button that could only ever add.
+  //
+  // The published document is still there to be read, so read it. The base
+  // revision stays null because there genuinely is no revision to be based on,
+  // and publishing this will create the first one. The store compares a draft's
+  // base against the document's current revision to detect that somebody
+  // published underneath you; null against null is not a conflict, which is the
+  // right answer here.
+  const published = await getPublishedDocument(type, key, signal);
+
+  if (published !== null) {
+    return {
+      type,
+      key,
+      descriptor,
+      control,
+      schemaMissing: schema === null,
+      draft: null,
+      currentRevisionId: null,
+      baseRevisionId: null,
+      document: published,
+    };
+  }
+
+  // Genuinely not here yet. This is what creating a document looks like.
   return {
     type,
     key,
