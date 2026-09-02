@@ -180,12 +180,26 @@ export default {
       "/search",
       "/sources",
       "/credits",
+
+      // The customization options hub — one address standing for the seven
+      // types the Player's Handbook introduces in that chapter. It is a menu
+      // entry, so it needs a file: without one it would fall through to
+      // nginx's SPA fallback, which is wired to `error_page 404`, and the
+      // header would be offering an address that answers 404 to everything
+      // that reads a status line.
+      //
+      // Adding this raised the prerendered route count by one. The container
+      // job in .github/workflows/ci.yml adds a fixed number of pages that do
+      // not come from content to the document count, and that number went from
+      // 57 to 58 with this line.
+      "/customization-options",
       ...ACCOUNT_PATHS,
       ...AUTHORING_PATHS,
 
       // The subcategory views — `/weapons`, `/armor`, `/other-equipment`,
-      // `/force-powers`, `/tech-powers`, `/starship-weapons`. Read from the
-      // registry rather than listed, so this list cannot fall out of step with
+      // `/force-powers`, `/tech-powers`, `/starship-weapons`, `/variant-rules`
+      // and `/expanded-rules`. Read from the registry rather than listed, so
+      // this list cannot fall out of step with
       // `app/routes.ts`, which declares its routes from the same array.
       //
       // These are the reason the views are paths at all. A filtered list is
@@ -196,10 +210,13 @@ export default {
       // by an address claiming 215. Six more files buys six addresses that are
       // true before any script runs.
       //
-      // Adding these raised the prerendered route count by six. The container
-      // job in .github/workflows/ci.yml adds a fixed number of pages that do
-      // not come from content to the document count, and that number went from
-      // 51 to 57 with this block.
+      // Adding these raised the prerendered route count by six, and then by
+      // two more when `/variant-rules` and `/expanded-rules` cut the rule text
+      // the same way — the header names both, and neither is a content type.
+      // The container job in .github/workflows/ci.yml adds a fixed number of
+      // pages that do not come from content to the document count, and that
+      // number went from 51 to 57 with this block and from 58 to 60 with the
+      // two rule views.
       ...SUBCATEGORY_VIEWS.map((view) => `/${view.slug}`),
     ];
 

@@ -14,7 +14,7 @@ import type { AnySummary } from "~/content/types";
 import type { Route } from "./+types/subcategory-index";
 
 /**
- * One module behind all six subcategory addresses.
+ * One module behind every subcategory address.
  *
  * `app/routes.ts` declares a route per entry in `SUBCATEGORY_VIEWS` and points
  * every one of them at this file, so what varies between `/weapons` and
@@ -24,9 +24,9 @@ import type { Route } from "./+types/subcategory-index";
  */
 
 /**
- * Which of the six is being rendered, read off the address.
+ * Which one is being rendered, read off the address.
  *
- * Six routes share this module, so there is no `:param` to carry the answer
+ * Every subcategory route shares this module, so there is no `:param` to carry the answer
  * and no route id available to a loader — the path itself is the only thing
  * that distinguishes the matches. The `.data` suffix is stripped because
  * React Router asks for a route's data at `/weapons.data` on a client

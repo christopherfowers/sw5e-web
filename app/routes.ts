@@ -19,6 +19,14 @@ export default [
   route("sources/:slug", "routes/source-detail.tsx"),
   route("credits", "routes/credits.tsx"),
 
+  // The customization options hub. A static segment like the ones above it, and
+  // a real page rather than an anchor into a longer one: the header offers
+  // "Customization options" as a single entry standing for seven content types,
+  // and a menu entry has to lead somewhere with a file behind it. See
+  // `app/routes/customization-options.tsx` for why it is a hub of seven links
+  // rather than one merged list of 219 options.
+  route("customization-options", "routes/customization-options.tsx"),
+
   // Account routes. Every one of these prerenders to a signed-out skeleton and
   // resolves its identity in the browser; none of them exports a `loader`.
   // `app/routes/account.tsx` explains why that rule exists and what breaks
@@ -67,8 +75,9 @@ export default [
     route("history", "routes/authoring-history.tsx"),
   ]),
 
-  // The subcategory views: `/weapons`, `/armor`, `/force-powers` and the rest.
-  // Static segments, declared from the registry so that a seventh view is one
+  // The subcategory views: `/weapons`, `/armor`, `/force-powers`, `/variant-rules`
+  // and the rest. Static segments, declared from the registry so that a ninth
+  // view is one
   // entry in `app/content/subcategory-views.ts` rather than an entry plus two
   // lines nobody remembers. They rank above `:type` the way every other static
   // segment on this page does — "weapons" is not read as one more content type
@@ -77,8 +86,8 @@ export default [
   // serves and the filtering would only ever happen in a browser that ran the
   // script. `react-router.config.ts` prerenders one path per entry.
   //
-  // One module behind all six, with explicit ids: React Router derives a
-  // route's id from its file, so six routes sharing `subcategory-index.tsx`
+  // One module behind all of them, with explicit ids: React Router derives a
+  // route's id from its file, so routes sharing `subcategory-index.tsx`
   // would collide without them.
   ...SUBCATEGORY_VIEWS.map((view) =>
     route(view.slug, "routes/subcategory-index.tsx", {

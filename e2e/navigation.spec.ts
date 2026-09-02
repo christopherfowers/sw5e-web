@@ -28,25 +28,25 @@ function trigger(page: Page, group: string) {
 }
 
 const GROUPS = [
+  // The books first: a reader who does not yet know the game needs the rules
+  // before a list of things to choose from.
+  "Rules",
+  // Fifteen types behind nine entries, because the customization options are
+  // one of them. Feats, fighting styles, masteries, lightsaber forms and the
+  // two weapon tiers were five separate menus' worth of types; the Player's
+  // Handbook introduces them together under one chapter and so does the header.
   "Characters",
-  // The options a character takes on top of its class. Feats, fighting styles,
-  // masteries, lightsaber forms and the two weapon tiers were five separate
-  // menus' worth of types; the Player's Handbook introduces them together under
-  // one chapter and so does the header.
-  "Customization",
-  "Combat",
   // Named after the chapter, not after a word for the category.
   "Equipment",
   "Starships",
-  "Bestiary",
-  "Reference",
+  "NPC statblocks",
 ];
 
 test.describe("grouped navigation", () => {
   test("the header offers groups rather than one item per content type", async ({
     page,
   }) => {
-    await page.goto("/powers");
+    await page.goto("/maneuvers");
 
     const items = page.locator(".site-nav > ul > li");
 
@@ -59,50 +59,74 @@ test.describe("grouped navigation", () => {
   test("a menu opens from the keyboard and announces that it is open", async ({
     page,
   }) => {
-    await page.goto("/powers");
+    await page.goto("/maneuvers");
 
-    const combat = trigger(page, "combat");
+    const characters = trigger(page, "characters");
 
     // The disclosure reports itself closed before it is touched, which is the
     // state a screen reader reads out. It is set after hydration rather than
     // served, so this also proves hydration reached the header.
-    await expect(combat).toHaveAttribute("aria-expanded", "false");
+    await expect(characters).toHaveAttribute("aria-expanded", "false");
 
-    await combat.focus();
+    await characters.focus();
     await page.keyboard.press("Enter");
 
-    await expect(combat).toHaveAttribute("aria-expanded", "true");
+    await expect(characters).toHaveAttribute("aria-expanded", "true");
     await expect(
-      menu(page, "combat").getByRole("link", { name: "Maneuvers" }),
+      menu(page, "characters").getByRole("link", { name: "Maneuvers" }),
     ).toBeVisible();
   });
 
   test("Escape closes the menu and hands focus back", async ({ page }) => {
-    await page.goto("/powers");
+    await page.goto("/maneuvers");
 
-    const combat = trigger(page, "combat");
-    await combat.focus();
+    const characters = trigger(page, "characters");
+    await characters.focus();
     await page.keyboard.press("Enter");
-    await expect(combat).toHaveAttribute("aria-expanded", "true");
+    await expect(characters).toHaveAttribute("aria-expanded", "true");
 
     await page.keyboard.press("Escape");
 
-    await expect(combat).toHaveAttribute("aria-expanded", "false");
+    await expect(characters).toHaveAttribute("aria-expanded", "false");
     await expect(
-      combat,
+      characters,
       "closing a menu must not leave focus on something that is now hidden",
     ).toBeFocused();
   });
 
-  test("a group's menu leads to the types in it", async ({ page }) => {
-    await page.goto("/powers");
+  test("a group's menu leads to the destinations in it", async ({ page }) => {
+    await page.goto("/maneuvers");
 
     await trigger(page, "starships").click();
-    await page.getByRole("link", { name: "Deployments" }).click();
+    await page.getByRole("link", { name: "Character deployments" }).click();
 
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       "Deployments",
     );
+  });
+
+  /*
+    Most of what the header offers is no longer a content type, and a menu entry
+    is only worth having if the address behind it is a real prerendered file
+    rather than something nginx answers 404 for. These four are four of the
+    kinds of destination a menu can hold — a book, a slice of a type, a hub and
+    a filtered rules view — none of which the old model could express at all.
+  */
+  test("every kind of destination in a menu is a real page", async ({
+    page,
+  }) => {
+    for (const [group, name, heading] of [
+      ["rules", "Wretched Hives", "Wretched Hives"],
+      ["rules", "Variant rules", "Variant rules"],
+      ["characters", "Customization options", "Customization options"],
+      ["equipment", "Other equipment", "Other equipment"],
+    ] as const) {
+      await page.goto("/maneuvers");
+      await trigger(page, group).click();
+      await menu(page, group).getByRole("link", { name, exact: true }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
+    }
   });
 
   test("a menu opened with the pointer is still open a moment later", async ({
@@ -119,7 +143,7 @@ test.describe("grouped navigation", () => {
     // So this waits, and then asks. `toHaveAttribute` would retry until it
     // succeeded and hide exactly the failure being looked for, which is why the
     // state is read once, after settling, rather than polled.
-    await page.goto("/powers");
+    await page.goto("/maneuvers");
 
     const characters = trigger(page, "characters");
     await characters.click();
@@ -134,21 +158,21 @@ test.describe("grouped navigation", () => {
   });
 
   test("only one menu is open at a time", async ({ page }) => {
-    await page.goto("/powers");
+    await page.goto("/maneuvers");
 
     // One-at-a-time is React's doing: without it the browser's own disclosure
     // opens both, quite correctly. So this has to wait, unlike the tests above
     // it that are about the menus working before React arrives at all.
     await hydrated(page);
 
-    const combat = trigger(page, "combat");
+    const equipment = trigger(page, "equipment");
     const characters = trigger(page, "characters");
 
-    await combat.click();
+    await equipment.click();
     await characters.click();
 
     await expect(characters).toHaveAttribute("aria-expanded", "true");
-    await expect(combat).toHaveAttribute("aria-expanded", "false");
+    await expect(equipment).toHaveAttribute("aria-expanded", "false");
   });
 
   test("an open menu never pushes the page sideways", async ({ page }) => {
@@ -158,9 +182,9 @@ test.describe("grouped navigation", () => {
     // layout. This is the failure the flat strip had, arriving by another door.
     for (const width of [375, 768, 1280]) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto("/powers");
+      await page.goto("/maneuvers");
 
-      for (const group of ["characters", "combat", "starships"]) {
+      for (const group of ["rules", "characters", "starships"]) {
         const overflows = await menu(page, group).evaluate((details) => {
           (details as HTMLDetailsElement).open = true;
           const wide =
@@ -181,17 +205,17 @@ test.describe("grouped navigation", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/maneuvers");
 
-    const rail = page.getByRole("navigation", { name: "Combat sections" });
+    const rail = page.getByRole("navigation", { name: "Characters sections" });
     await expect(rail).toBeVisible();
 
     // The point of the rail: moving between siblings costs no trip through a
-    // menu. Powers rather than the fighting styles this used to click — the
-    // styles are a customization option now, and Combat is what a character
-    // casts and the maneuvers it knows.
-    await rail.getByRole("link", { name: /Powers/ }).click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Powers");
+    // menu. Species rather than the fighting styles this used to click — the
+    // styles live behind the customization hub now, and a maneuver's siblings
+    // are everything else a character is assembled from.
+    await rail.getByRole("link", { name: "Species", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Species");
     await expect(
-      page.getByRole("navigation", { name: "Combat sections" }),
+      page.getByRole("navigation", { name: "Characters sections" }),
     ).toBeVisible();
   });
 
@@ -200,9 +224,9 @@ test.describe("grouped navigation", () => {
     await page.goto("/maneuvers");
 
     await expect(
-      page.getByRole("navigation", { name: "Combat sections" }),
+      page.getByRole("navigation", { name: "Characters sections" }),
     ).toBeHidden();
-    await expect(trigger(page, "combat")).toBeVisible();
+    await expect(trigger(page, "characters")).toBeVisible();
   });
 
   test.describe("with JavaScript disabled", () => {
@@ -211,18 +235,23 @@ test.describe("grouped navigation", () => {
     test("every group's destinations are in the served HTML", async ({
       request,
     }) => {
-      const html = await (await request.get("/powers")).text();
+      const html = await (await request.get("/maneuvers")).text();
 
       for (const path of [
+        // One of each kind the menus hold: a book, two slices of a type, the
+        // customization hub, three type indexes, and the quiet entries that
+        // keep the types the owner's table does not name reachable.
+        "/sources/phb",
+        "/variant-rules",
+        "/force-powers",
+        "/customization-options",
         "/species",
-        "/classes",
-        "/class-improvements",
-        "/features",
         "/maneuvers",
-        "/lightsaber-forms",
-        "/equipment",
         "/monsters",
+        "/other-equipment",
         "/starship-ventures",
+        "/features",
+        "/starship-base-sizes",
         "/sources",
       ]) {
         expect(
@@ -233,19 +262,19 @@ test.describe("grouped navigation", () => {
     });
 
     test("a menu still opens", async ({ page }) => {
-      await page.goto("/powers");
+      await page.goto("/maneuvers");
 
       // Native `<details>` disclosure, with nothing hydrated behind it. The
       // explicit aria-expanded is deliberately absent here: without JavaScript
       // React is not the thing changing the state, so an attribute frozen at
       // "false" would contradict the element it sits on.
-      const combat = trigger(page, "combat");
-      await expect(combat).not.toHaveAttribute("aria-expanded", /.*/);
+      const characters = trigger(page, "characters");
+      await expect(characters).not.toHaveAttribute("aria-expanded", /.*/);
 
-      await combat.click();
+      await characters.click();
 
       await expect(
-        menu(page, "combat").getByRole("link", { name: "Maneuvers" }),
+        menu(page, "characters").getByRole("link", { name: "Maneuvers" }),
       ).toBeVisible();
     });
   });

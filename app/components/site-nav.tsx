@@ -7,7 +7,7 @@
  * me" — it keeps a reader's siblings on screen so moving from maneuvers to
  * fighting styles is one click rather than a round trip through a menu they
  * have to open, aim at and close again. A dropdown alone makes lateral movement
- * expensive; a sidebar alone cannot hold twenty-two destinations.
+ * expensive; a sidebar alone cannot hold thirty destinations.
  *
  * Both are built on `<details>`/`<summary>` rather than a div with a click
  * handler, and that is a deliberate accessibility decision rather than a
@@ -15,7 +15,7 @@
  *
  *   - It works with JavaScript switched off. Every page of this site is static
  *     HTML and the whole point is that it is readable without a bundle; a menu
- *     that needs hydration to open would put twenty of the site's twenty-three
+ *     that needs hydration to open would put all but one of the site's
  *     destinations behind JavaScript.
  *   - Enter and Space operate it natively, and it is in the tab order once, as
  *     one stop, rather than as a widget with its own key handling to get wrong.
@@ -47,12 +47,15 @@ import { Link, NavLink, useLocation } from "react-router";
 import {
   NAVIGATION,
   destinationCount,
+  faceOf,
   groupOfType,
   soleDestination,
+  type NavDestination,
   type NavGroup,
+  type NavGroupId,
 } from "~/content/nav-groups";
-import { TYPE_META } from "~/content/type-meta";
-import { isContentTypeId, type ContentTypeId } from "~/content/types";
+import { getSubcategoryView } from "~/content/subcategory-views";
+import { isContentTypeId } from "~/content/types";
 import { TypeIcon } from "./type-icon";
 
 const SUBSCRIBE_NEVER = () => () => {};
@@ -93,23 +96,58 @@ function useHydrated(): boolean {
   );
 }
 
-/** The content type the current URL is showing, if it is showing one. */
-function currentType(pathname: string): ContentTypeId | null {
+/**
+ * The group the current address belongs to, or null outside content entirely.
+ *
+ * Read off the first path segment, and answered from the menus before it is
+ * answered from `TYPE_NAV`. That order matters now that most of what the header
+ * offers is not a content type: `/weapons` is a slice of equipment and
+ * `/customization-options` is a hub over seven types, and neither resolves
+ * through `TYPE_NAV` at all. A reader standing on one of them is in a group,
+ * and the rail beside them has to say which.
+ *
+ * The two fallbacks catch the addresses no menu names. `/equipment` is one — it
+ * is the crumb above the three shelves rather than a destination in its own
+ * right — and so is every item page under a type, `/features/deflect` as much
+ * as `/weapons` itself.
+ */
+function groupOfPath(pathname: string): NavGroupId | null {
   const segment = pathname.split("/")[1] ?? "";
-  return isContentTypeId(segment) ? segment : null;
+  if (!segment) return null;
+
+  const to = `/${segment}`;
+  for (const group of NAVIGATION) {
+    for (const destination of [...group.primary, ...group.supporting]) {
+      if (destination.to === to) return group.id;
+    }
+  }
+
+  if (isContentTypeId(segment)) return groupOfType(segment);
+  const view = getSubcategoryView(segment);
+  return view ? groupOfType(view.type) : null;
 }
 
-function typeLink(type: ContentTypeId, onNavigate?: () => void) {
+/**
+ * One menu line.
+ *
+ * The mark beside it is the destination's own — a type's, or for a slice of a
+ * type the mark of the type it is a slice of, so that `/weapons` carries
+ * equipment's. A book and a hub have no mark, which is why the icon is
+ * conditional rather than assumed: the alternative would be inventing one for
+ * the Player's Handbook.
+ */
+function destinationLink(destination: NavDestination, onNavigate?: () => void) {
+  const face = faceOf(destination);
   return (
     <NavLink
-      to={`/${type}`}
+      to={face.to}
       onClick={onNavigate}
       className={({ isActive }) =>
         isActive ? "nav-type-link is-current" : "nav-type-link"
       }
     >
-      <TypeIcon type={type} />
-      {TYPE_META[type].plural}
+      {face.icon ? <TypeIcon type={face.icon} /> : null}
+      {face.label}
     </NavLink>
   );
 }
@@ -118,10 +156,11 @@ function typeLink(type: ContentTypeId, onNavigate?: () => void) {
  * The header's menu bar.
  *
  * A group with a single destination is rendered as a plain link rather than a
- * disclosure. `Bestiary` is one type today and `Gear` is one until enhanced
- * items land, and a button that reveals exactly one link is a button that
- * wastes a keystroke. The moment either group grows it becomes a menu on its
- * own, with nothing here to change.
+ * disclosure. NPC statblocks is one destination today — creatures, with no
+ * vehicle or starship stat block anywhere in the corpus to sit beside it — and
+ * a button that reveals exactly one link is a button that wastes a keystroke.
+ * The moment that group grows it becomes a menu on its own, with nothing here
+ * to change.
  */
 export function GroupedNav() {
   const location = useLocation();
@@ -186,8 +225,7 @@ export function GroupedNav() {
     };
   }, [openGroup, close]);
 
-  const active = currentType(location.pathname);
-  const activeGroup = active ? groupOfType(active) : null;
+  const activeGroup = groupOfPath(location.pathname);
 
   return (
     <nav aria-label="Content" className="site-nav" ref={navRef}>
@@ -346,34 +384,34 @@ function GroupMenu({
       <div className="nav-group-panel" id={panelId}>
         <p className="nav-group-blurb">{group.blurb}</p>
         <ul className="nav-group-types">
-          {group.primary.map((type) => (
-            <li key={type}>{typeLink(type, onNavigate)}</li>
-          ))}
-          {group.extras.map((extra) => (
-            <li key={extra.to}>
-              <NavLink
-                to={extra.to}
-                onClick={onNavigate}
-                className={({ isActive }) =>
-                  isActive ? "nav-type-link is-current" : "nav-type-link"
-                }
-              >
-                {extra.label}
-              </NavLink>
+          {group.primary.map((destination) => (
+            <li key={destination.to}>
+              {destinationLink(destination, onNavigate)}
             </li>
           ))}
         </ul>
 
+        {/*
+          "Also here", where this used to say "Referenced from these". That
+          phrase was right while the quiet half of a menu was only the two
+          property glossaries, which really are read from the weapon that cites
+          them. It is now also where the starship hulls, the rules index and the
+          source-book list sit — destinations a reader may well set out for,
+          kept quiet because the owner's menu does not name them rather than
+          because nobody arrives at them directly. A subhead claiming to say why
+          they are here would be wrong about half of them; one that says where
+          they are is right about all of them.
+        */}
         {group.supporting.length > 0 ? (
           <>
             <p className="nav-group-subhead" id={supportingId}>
-              Referenced from these
+              Also here
             </p>
             <ul className="nav-group-supporting" aria-labelledby={supportingId}>
-              {group.supporting.map((type) => (
-                <li key={type}>
-                  <Link to={`/${type}`} onClick={onNavigate}>
-                    {TYPE_META[type].plural}
+              {group.supporting.map((destination) => (
+                <li key={destination.to}>
+                  <Link to={destination.to} onClick={onNavigate}>
+                    {destination.label}
                   </Link>
                 </li>
               ))}
@@ -401,8 +439,7 @@ function GroupMenu({
  */
 export function GroupRail() {
   const location = useLocation();
-  const type = currentType(location.pathname);
-  const groupId = type ? groupOfType(type) : null;
+  const groupId = groupOfPath(location.pathname);
   const group = groupId
     ? NAVIGATION.find((candidate) => candidate.id === groupId)
     : undefined;
@@ -413,36 +450,24 @@ export function GroupRail() {
     <nav aria-label={`${group.label} sections`} className="group-rail">
       <p className="group-rail-heading">{group.label}</p>
       <ul className="group-rail-types">
-        {group.primary.map((each) => (
-          <li key={each}>{typeLink(each)}</li>
-        ))}
-        {group.extras.map((extra) => (
-          <li key={extra.to}>
-            <NavLink
-              to={extra.to}
-              className={({ isActive }) =>
-                isActive ? "nav-type-link is-current" : "nav-type-link"
-              }
-            >
-              {extra.label}
-            </NavLink>
-          </li>
+        {group.primary.map((destination) => (
+          <li key={destination.to}>{destinationLink(destination)}</li>
         ))}
       </ul>
 
       {group.supporting.length > 0 ? (
         <>
-          <p className="group-rail-subhead">Referenced from these</p>
+          <p className="group-rail-subhead">Also here</p>
           <ul className="group-rail-supporting">
-            {group.supporting.map((each) => (
-              <li key={each}>
+            {group.supporting.map((destination) => (
+              <li key={destination.to}>
                 <NavLink
-                  to={`/${each}`}
+                  to={destination.to}
                   className={({ isActive }) =>
                     isActive ? "is-current" : undefined
                   }
                 >
-                  {TYPE_META[each].plural}
+                  {destination.label}
                 </NavLink>
               </li>
             ))}
