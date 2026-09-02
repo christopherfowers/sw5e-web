@@ -11,6 +11,17 @@ const loaderData = {
   total: 1820,
   curated: false,
   sourceTotals: { PHB: 900, EC: 700, WH: 120, SnV: 271 },
+  /*
+    Chapters as the loader hands them over: already filtered to the handbook,
+    already in the book's order, and including the front matter numbered below
+    one so the rendering of an unnumbered chapter is exercised.
+  */
+  chapters: [
+    { slug: "phb-whats-different", name: "What's Different?", chapterNumber: -1 },
+    { slug: "phb-introduction", name: "Introduction", chapterNumber: 0 },
+    { slug: "phb-species", name: "Species", chapterNumber: 2 },
+  ],
+  variantRules: 42,
 };
 
 function renderHome(data: typeof loaderData = loaderData) {
@@ -212,5 +223,91 @@ describe("Home route metadata", () => {
 
     expect(description).toMatch(/Star Wars 5e/);
     expect(description).not.toMatch(/undefined|NaN/);
+  });
+});
+
+/**
+ * The page's order, which is the whole reason it was rebuilt.
+ *
+ * The complaint was that a newcomer opens the site and meets twenty-seven
+ * category cards — "all the various options in a blob" — with the books at the
+ * bottom and nothing saying how to play. Reading order is therefore the
+ * assertion, not an implementation detail: how to play, then the supplements,
+ * then the lists.
+ */
+describe("the order the page puts things in", () => {
+  it("leads with how to play, then supplements, then categories", () => {
+    renderHome();
+
+    const headings = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((heading) => heading.textContent ?? "");
+
+    const at = (text: string) =>
+      headings.findIndex((heading) => new RegExp(text, "i").test(heading));
+
+    expect(at("how to play")).toBeGreaterThanOrEqual(0);
+    expect(at("how to play")).toBeLessThan(at("supplemental rules"));
+    expect(at("supplemental rules")).toBeLessThan(at("categories"));
+  });
+
+  it("sends a newcomer to the handbook before anything else", () => {
+    renderHome();
+
+    const actions = screen.getByRole("link", {
+      name: /start with the player.s handbook/i,
+    });
+
+    // The introduction, not "What's Different?", which is numbered lower and
+    // would otherwise sort first. Somebody who has never played needs the
+    // chapter that says what the game is.
+    expect(actions).toHaveAttribute("href", "/rules/phb-introduction");
+  });
+
+  it("lists the handbook's chapters in the book's own order", () => {
+    renderHome();
+
+    const chapters = within(
+      screen.getByRole("region", { name: /how to play/i }),
+    )
+      .getAllByRole("link")
+      .map((link) => link.textContent ?? "");
+
+    expect(chapters).toEqual([
+      "What's Different?",
+      "Introduction",
+      "2Species",
+    ]);
+  });
+
+  /**
+   * The handbook is what "how to play" means; the other books are what you
+   * reach for afterwards. Listing it among the supplements would put the thing
+   * a newcomer needs into the row they are meant to skip.
+   */
+  it("keeps the handbook out of the supplemental books", () => {
+    renderHome();
+
+    const supplemental = within(
+      screen.getByRole("region", { name: /supplemental rules/i }),
+    );
+
+    expect(supplemental.queryByText(/player.s handbook/i)).toBeNull();
+    expect(supplemental.getByText(/wretched hives/i)).toBeInTheDocument();
+  });
+
+  /**
+   * Seven separate cards — feats, fighting styles, masteries, lightsaber forms
+   * and the two weapon tiers — are seven answers to one question. The
+   * Player's Handbook introduces them together, and so does this page now.
+   */
+  it("gathers the customization options under one heading", () => {
+    renderHome();
+
+    const group = screen.getByRole("region", { name: /^customization$/i });
+
+    for (const name of [/^feats/i, /^fighting styles/i, /^lightsaber forms/i]) {
+      expect(within(group).getByRole("link", { name })).toBeInTheDocument();
+    }
   });
 });

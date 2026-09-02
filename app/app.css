@@ -2697,3 +2697,95 @@ main :where(h1, h2, h3, h4, h5, h6)[id],
   font-size: 0.9375rem;
   max-width: var(--measure);
 }
+
+/*
+  The front page's three parts: how to play, what else there is, and the lists.
+
+  The ordering is Drake's and it is editorial rather than visual — a reader
+  should meet the game before the catalogue. These rules only give each part
+  enough separation to read as a part; the cards inside them are the same cards
+  the site already uses.
+*/
+
+.section-lede {
+  margin-top: calc(-1 * var(--space-2));
+  margin-bottom: var(--space-4);
+  max-width: 60ch;
+  color: var(--text-muted);
+}
+
+/*
+  The handbook's table of contents. A numbered list, because it is one: the
+  numbers are the book's own and a reader cites them.
+*/
+.chapter-list {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.chapter-link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.chapter-link:hover,
+.chapter-link:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+}
+
+/*
+  Fixed width so the names line up whether or not a chapter is numbered. The
+  front matter has no number and must not sit half an em to the left of
+  everything under it.
+*/
+.chapter-number {
+  flex: 0 0 1.5rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.chapter-name {
+  font-weight: 500;
+}
+
+.home-variants {
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+}
+
+/*
+  A group of categories. The heading is smaller than the section headings above
+  it: these are subdivisions of "Categories", not peers of "How to play".
+*/
+.type-group {
+  margin-top: var(--space-6);
+}
+
+.type-group-heading {
+  margin-bottom: var(--space-1);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.type-group-blurb {
+  margin-bottom: var(--space-3);
+  color: var(--text-muted);
+}
+
+/* Findable, and deliberately not competing with the cards above them. */
+.type-group-supporting {
+  margin-top: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}

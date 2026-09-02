@@ -56,6 +56,7 @@ import type { ContentTypeId } from "./types";
 
 export type NavGroupId =
   | "characters"
+  | "customization"
   | "combat"
   | "gear"
   | "starships"
@@ -92,6 +93,7 @@ export type TypePlacement =
  */
 export const NAV_GROUP_ORDER: NavGroupId[] = [
   "characters",
+  "customization",
   "combat",
   "gear",
   "starships",
@@ -111,12 +113,32 @@ export const NAV_GROUP_META: Record<NavGroupId, NavGroupMeta> = {
     label: "Characters",
     blurb: "What a character is and what it becomes.",
   },
+  /*
+    Named after the chapter it comes from rather than after what the site
+    happens to store. Feats, fighting styles, masteries, lightsaber forms and
+    the weapon tiers were each their own card, which is how a reader ends up
+    with seven boxes and no idea that they are seven answers to one question.
+    The Player's Handbook introduces all of them together under Customization
+    Options, so that is what they are called here.
+  */
+  customization: {
+    label: "Customization",
+    blurb: "The options a character takes on top of its class.",
+  },
   combat: {
     label: "Combat",
-    blurb: "Everything a character chooses from to act in a fight.",
+    blurb: "What a character casts and the maneuvers it knows.",
   },
+  /*
+    "Equipment", not "Gear". The heading a reader is looking for is the one the
+    book uses — Equipment is chapter 5 of the Player's Handbook — and a menu
+    named after a category the reader has never seen in print makes them open it
+    to find out what is inside. The rule is the same one that gathered the
+    customization options: name the button after the thing, and hang the
+    subcategories off it.
+  */
   gear: {
-    label: "Gear",
+    label: "Equipment",
     blurb: "What a character carries, and what its properties mean.",
   },
   starships: {
@@ -162,20 +184,26 @@ export const TYPE_NAV: Record<ContentTypeId, TypePlacement> = {
   archetypes: { group: "characters", prominence: "primary" },
   features: { group: "characters", prominence: "primary" },
   backgrounds: { group: "characters", prominence: "primary" },
-  feats: { group: "characters", prominence: "primary" },
+  feats: { group: "customization", prominence: "primary" },
+  "fighting-styles": { group: "customization", prominence: "primary" },
+  "fighting-masteries": { group: "customization", prominence: "primary" },
+  "lightsaber-forms": { group: "customization", prominence: "primary" },
+  "weapon-focuses": { group: "customization", prominence: "primary" },
+  "weapon-supremacies": { group: "customization", prominence: "primary" },
   /*
     Reached from the class that grants it, never browsed. Thirty rows that only
     mean anything next to a class table.
   */
-  "class-improvements": { group: "characters", prominence: "supporting" },
+  "class-improvements": { group: "customization", prominence: "supporting" },
 
+  /*
+    Powers and maneuvers stay separate from the options above. A reader
+    choosing a fighting style is customising a character; a reader looking up a
+    power is looking up something it does. Both are choices, but only one of
+    them is what the Player's Handbook files under Customization Options.
+  */
   powers: { group: "combat", prominence: "primary" },
   maneuvers: { group: "combat", prominence: "primary" },
-  "fighting-styles": { group: "combat", prominence: "primary" },
-  "fighting-masteries": { group: "combat", prominence: "primary" },
-  "lightsaber-forms": { group: "combat", prominence: "primary" },
-  "weapon-focuses": { group: "combat", prominence: "primary" },
-  "weapon-supremacies": { group: "combat", prominence: "primary" },
 
   equipment: { group: "gear", prominence: "primary" },
   /*
