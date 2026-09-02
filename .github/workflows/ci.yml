@@ -508,7 +508,22 @@ jobs:
 
           grep -q '<h1>Weapon properties</h1>' <<< "$body"
 
-          if grep -qE 'href="/sources/(phb|ec|wh|snv)"' <<< "$body"; then
+          # Narrowed to the page from the whole document. The header names the
+          # source books in its Rules menu now, so every page in the site links
+          # to /sources/phb, and the old whole-body grep failed here on a page
+          # that cites nothing. The claim is about what this index says about
+          # its own entries, and <main> is where it says it: the header and the
+          # rail are siblings of <main>, not children of it.
+          page=$(awk 'BEGIN { RS = "<main" } NR == 2' <<< "$body" \
+               | awk 'BEGIN { RS = "</main>" } NR == 1')
+
+          if [ -z "$page" ]; then
+            echo "could not find the page's <main>; the check below would pass" \
+              "by looking at nothing."
+            exit 1
+          fi
+
+          if grep -qE 'href="/sources/(phb|ec|wh|snv)"' <<< "$page"; then
             echo "the weapon-property index cites a source book; the archive" \
               "records none for any of these entries."
             exit 1
