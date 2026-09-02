@@ -181,25 +181,50 @@ A refused write answers **400**, `application/problem+json`, with:
   "schemaErrors": [
     ": required — Required properties [\"description\"] were not present",
     "/name: minLength — Value should have at least 1 character"
+  ],
+  "schemaViolations": [
+    { "instanceLocation": "",
+      "keyword": "required",
+      "message": "Required properties [\"description\"] were not present" },
+    { "instanceLocation": "/name",
+      "keyword": "minLength",
+      "message": "Value should have at least 1 character" }
   ] }
 ```
 
-`schemaErrors` is **`string[]`**, not structured. Each line from the schema
-evaluator is `{instance location}: {keyword} — {message}`, where the instance
-location is a JSON Pointer and the separator is an em dash with a space either
-side. The array also carries lines that are not in that form at all — a document
-that is not an object, a `key` that disagrees with its address, a type with no
-schema published — and those name no location.
+Two shapes of the same failures, in the same order, and both are sent.
 
-`app/authoring/violations.ts` parses the pointer out so an error can be put
-beside the control that caused it, and treats the parse as a bet it might lose:
-a line that does not parse is shown in full, in the service's own words, above
-the form. The failure mode of a wrong guess is therefore an error message in the
-wrong *place*, never a missing one.
+**`schemaViolations`** is the one to read. `instanceLocation` is a JSON Pointer
+— empty for the document root — and it is what lets an error be put beside the
+control that caused it. `keyword` is a JSON Schema vocabulary term, so a client
+can key its own wording off it rather than off prose; **it may be the empty
+string**, because `additionalProperties: false` is implemented as a false
+schema and a false schema fails with no keyword at all. `message` is the
+validator's own sentence, written for somebody debugging a schema rather than
+somebody correcting a rules page, so a client is expected to prefer its own
+wording where it has one and show this where it does not.
+
+**`schemaErrors`** is `string[]`, one line per violation, formatted
+`{instance location}: {keyword} — {message}`. It predates the structured field
+and is still sent: the browser application and the service are separate images,
+either can be ahead of the other, and a client that only knows the lines has to
+keep working. The array also carries lines with no location behind them at all —
+a document that is not an object, a `key` that disagrees with its address, a
+type with no schema published — and for those `schemaViolations` is empty.
+
+`app/authoring/violations.ts` prefers the structured field and keeps a parser
+for the lines. That parser treats itself as a bet it might lose: a line it
+cannot read is shown in full, in the service's own words, above the form, so a
+wrong guess puts a message in the wrong *place* and never loses one. It had
+already lost that bet once — the false-schema line above has no keyword, the
+pattern required one, and so a property that does not belong to a content type
+could not be placed on a field.
 
 A `required` failure is reported at the **parent's** location, with the missing
 property names quoted in the message. Left there, every missing field on a
-document stacks up at the root; the client moves each onto the property it names.
+document stacks up at the root; the client moves each onto the property it
+names. That is the one thing still read out of a message, and it is a fact
+about the JSON Schema vocabulary rather than about this validator's prose.
 
 ## Schemas
 
