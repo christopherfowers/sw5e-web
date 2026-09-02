@@ -72,6 +72,17 @@ interface ContentListProps {
   typeLabel: string;
   rows: AnySummary[];
   config: ListConfig<AnySummary>;
+  /**
+   * The noun after the numeral, when the type's own is wrong for this list.
+   *
+   * Only the subcategory views set it. They render a slice of a type — 215 of
+   * equipment's 505 rows — through this component, so `type` is still
+   * `equipment` and everything that follows from it is still right: the row
+   * links, the accent, the columns. The count line is the one thing that is
+   * not, because `TypeMeta.counted` would announce "215 items" above a page
+   * headed Weapons. See `app/content/subcategory-views.ts`.
+   */
+  countedNoun?: string;
 }
 
 /** Facet options, derived from the rows actually present. */
@@ -120,14 +131,25 @@ function compareValues(
  */
 export const WINDOW = 100;
 
-export function ContentList({ type, typeLabel, rows, config }: ContentListProps) {
+export function ContentList({
+  type,
+  typeLabel,
+  rows,
+  config,
+  countedNoun: countedNounOverride,
+}: ContentListProps) {
   /*
     The noun to put a number in front of, which is not always the noun in the
     heading. "Equipment" is the right word above the page and the wrong one
     after a numeral — the count line read "4 equipment" — so the two types
     whose plural is a mass noun carry a separate one. See TypeMeta.counted.
+
+    A caller may override it outright, which is what a subcategory view does:
+    it draws equipment's rows under its own heading, so neither the type's noun
+    nor the heading is the right word for its count.
   */
-  const countedNoun = TYPE_META[type].counted ?? typeLabel.toLowerCase();
+  const countedNoun =
+    countedNounOverride ?? TYPE_META[type].counted ?? typeLabel.toLowerCase();
   const filterId = useId();
   const [nameFilter, setNameFilter] = useState("");
   const [facetValues, setFacetValues] = useState<Record<string, string>>({});

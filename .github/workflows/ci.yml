@@ -277,14 +277,25 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 51 pages that do not come from content:
+          # One page per document, plus 57 pages that do not come from content:
           # the home page, the about page, the search page, the sources index,
           # five source pages, the credits page, twenty-seven type indexes, the
-          # eleven account routes listed in ACCOUNT_PATHS in
-          # react-router.config.ts, and the three authoring routes listed in
-          # AUTHORING_PATHS beside them. `source` is the only directory that is
-          # not a browsable type, so the other twenty-seven contribute item
-          # pages.
+          # six subcategory views listed in
+          # app/content/subcategory-views.ts, the eleven account routes listed
+          # in ACCOUNT_PATHS in react-router.config.ts, and the three authoring
+          # routes listed in AUTHORING_PATHS beside them. `source` is the only
+          # directory that is not a browsable type, so the other twenty-seven
+          # contribute item pages.
+          #
+          # It went from 51 to 57 when the subcategory views landed —
+          # /weapons, /armor, /other-equipment, /force-powers, /tech-powers and
+          # /starship-weapons. Six real files rather than six query strings on
+          # two existing pages: a query string does not change which file nginx
+          # serves, so `/equipment?category=weapon` would answer with all 505
+          # equipment rows to everything that does not run the script. None of
+          # the six adds a document — a weapon is still one page, at
+          # /equipment/<slug> — so they are content-free pages by this count's
+          # arithmetic even though every one of them is full of rows.
           #
           # It went from 50 to 51 when managing an account became its own page
           # rather than a panel underneath the directory. One address —
@@ -341,7 +352,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 51))
+          expected=$((items + 57))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
