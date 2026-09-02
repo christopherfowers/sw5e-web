@@ -186,7 +186,13 @@
     --text-muted: #9aa8bb;
     --text-faint: #7d8ca3;
 
-    --brand: #ef2b39;
+    /* Darkened from #ef2b39, which carried white text at 4.14:1 and so put
+       every primary button on the site — "Browse species", "Continue with a
+       passkey", "Add a passkey" — below AA in the dark theme. This is the
+       nearest red to the old one that clears 4.5, and it is safe to change
+       globally because `--brand` is never a text colour: it is a background,
+       a border and a gradient stop, and none of those got worse. */
+    --brand: #e02a3a;
     --brand-text: #ff6b76;
     --brand-contrast: #ffffff;
 
@@ -1736,7 +1742,13 @@ kbd {
 }
 
 .sort-indicator {
-  color: var(--border-strong);
+  /*
+    Muted text rather than the border colour, which put this at 2.1:1 in dark
+    and 2.4:1 in light. It is the only thing on screen saying a column can be
+    sorted at all — the rest of that message is in text only a screen reader
+    hears — so it was the affordance that was hardest to see.
+  */
+  color: var(--text-muted);
   font-size: 0.875em;
 }
 

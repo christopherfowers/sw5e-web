@@ -200,3 +200,44 @@ test.describe("browsing", () => {
     expect(after).toBeGreaterThan(1);
   });
 });
+
+test.describe("searching", () => {
+  /**
+   * The results page carries two fields for one job — its own, and the one in
+   * the header that is on every page of the site. They used to disagree: the
+   * page's showed what you searched for and the header's showed a placeholder,
+   * so refining from the header meant starting again from nothing.
+   */
+  test("both search fields hold the query the results are for", async ({ page }) => {
+    await page.goto("/search?q=speeder");
+
+    const fields = page.locator('input[name="q"]');
+
+    await expect(fields).toHaveCount(2);
+    await expect(fields.nth(0)).toHaveValue("speeder");
+    await expect(fields.nth(1)).toHaveValue("speeder");
+  });
+
+  test("typing a new query is not yanked back to the old one", async ({ page }) => {
+    // The reason this is seeded rather than bound to the address. The two are
+    // the same field for one keystroke and then diverge: somebody typing has
+    // not navigated yet, and a field that reverts on every render is a field
+    // nobody can type in.
+    await page.goto("/search?q=speeder");
+
+    const header = page.locator("header").locator('input[name="q"]');
+    await header.fill("blaster");
+
+    await expect(header).toHaveValue("blaster");
+    await expect(page).toHaveURL(/q=speeder/);
+  });
+
+  test("a fresh search re-seeds the field", async ({ page }) => {
+    await page.goto("/search?q=speeder");
+    await page.goto("/search?q=blaster");
+
+    await expect(page.locator("header").locator('input[name="q"]')).toHaveValue(
+      "blaster",
+    );
+  });
+});
