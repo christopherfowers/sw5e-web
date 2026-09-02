@@ -68,21 +68,33 @@ const ACCOUNT_PATHS = [
   // document count, and that number went from 43 to 44 with this line.
   "/account/flags",
 
-  // Administration. Two more content-free skeletons, for the same reason as
+  // Administration. Three more content-free skeletons, for the same reason as
   // every other address here: leaving them to the SPA fallback would make them
   // answer 404 to a crawler, a monitor and a shared link while rendering
   // correctly in a browser.
   //
   // What is written to disk for each is the signed-out skeleton and nothing
-  // else. Neither has a loader — see `app/routes/account-people.tsx` — so no
+  // else. None has a loader — see `app/routes/account-people.tsx` — so no
   // account directory and no audit trail can reach a static file. That is
   // load-bearing here in a way it is not on `/account/passkeys`: this is the
   // only part of the site that ever sees other people's email addresses.
   //
-  // Adding these raised the prerendered route count by two. The container job
-  // in .github/workflows/ci.yml adds a fixed number of content-free pages to
-  // the document count, and that number went from 45 to 47 with these lines.
+  // `/account/people/manage` is one address rather than one per account, and it
+  // has to be. There is no bounded list of accounts to enumerate at build time,
+  // and an account directory is the last thing a build machine should be
+  // walking, so `/account/people/<id>` could not be prerendered at all — it
+  // would render correctly in a browser while answering 404 to everything that
+  // reads a status line. The account travels in the query string instead, which
+  // does not change which file nginx serves. Only ever an opaque GUID: the
+  // directory's search term is somebody's email address and never reaches a URL.
+  //
+  // Adding these raised the prerendered route count by two, then by one more
+  // when managing an account became its own page. The container job in
+  // .github/workflows/ci.yml adds a fixed number of content-free pages to the
+  // document count, and that number went from 45 to 47 with the first two and
+  // from 50 to 51 with the third.
   "/account/people",
+  "/account/people/manage",
   "/account/audit",
 ] as const;
 

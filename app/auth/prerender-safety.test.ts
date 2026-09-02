@@ -39,6 +39,14 @@ const AUTH_ROUTE_MODULES = [
   "account-contributions.tsx",
   "account-flags.tsx",
   "account-people.tsx",
+
+  // Managing one account. Its own route module since it became its own page,
+  // and covered here for the sharpest version of the reason this file exists:
+  // a loader on it would run at build time against a query string the build
+  // machine invented, and anything it returned about an account would be
+  // written into a static file every visitor is served.
+  "account-people-manage.tsx",
+
   "account-audit.tsx",
 
   // The authoring workspace. Same rule, and if anything a sharper version of
@@ -97,6 +105,7 @@ describe("the account routes are prerendered rather than left to the fallback", 
     "/account/contributions",
     "/account/flags",
     "/account/people",
+    "/account/people/manage",
     "/account/audit",
     "/authoring",
     "/authoring/edit",
