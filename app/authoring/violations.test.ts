@@ -17,7 +17,9 @@ import {
   isEmpty,
   noViolations,
   parseSchemaErrors,
+  placeSchemaViolations,
   readSchemaErrors,
+  readSchemaViolations,
 } from "./violations";
 
 describe("reading the extension off a refusal", () => {
@@ -125,5 +127,94 @@ describe("the empty state", () => {
     // A refusal nobody can place is still a refusal. Treating this as empty
     // would show a save that silently did nothing.
     expect(isEmpty(parseSchemaErrors(["root value is not a JSON object."]))).toBe(false);
+  });
+});
+
+describe("violations the service sent with their parts intact", () => {
+  /**
+   * The point of the structured field: none of this is parsed. The pointer
+   * arrives as a pointer and the keyword as a keyword, so a reworded message
+   * cannot stop an error landing on the field it belongs to.
+   */
+  const wire = (
+    instanceLocation: string,
+    keyword: string,
+    message: string,
+  ) => ({ instanceLocation, keyword, message });
+
+  it("is preferred to the lines, and needs no regular expression", () => {
+    const placed = placeSchemaViolations([
+      wire("/name", "minLength", "Value should have at least 1 character"),
+    ]);
+
+    expect([...placed.byPointer.keys()]).toEqual(["/name"]);
+    expect(placed.unplaced).toEqual([]);
+  });
+
+  it("keeps the line the service would have sent, so nothing is hidden", () => {
+    // A contributor is never shown a paraphrase without the thing it
+    // paraphrases; the plain-English message replaces the validator's wording
+    // in the summary, and `detail` is what it replaced.
+    const placed = placeSchemaViolations([
+      wire("/key", "pattern", "The string value was not a match for the indicated regular expression"),
+    ]);
+
+    const [violation] = placed.byPointer.get("/key")!;
+
+    expect(violation!.message).toBe(
+      "This is not written in the form this field accepts.",
+    );
+    expect(violation!.detail).toContain("regular expression");
+  });
+
+  it("moves a missing property onto the property, not the object", () => {
+    // `required` is reported at the parent, because a missing property is a
+    // failure of the object that should have contained it. Left there, every
+    // missing field would stack up at the root.
+    const placed = placeSchemaViolations([
+      wire("", "required", 'Required properties ["name", "size"] were not present'),
+    ]);
+
+    expect([...placed.byPointer.keys()].sort()).toEqual(["/name", "/size"]);
+  });
+
+  it("does not try to place a location it cannot use", () => {
+    const placed = placeSchemaViolations([
+      wire("#/definitions/thing", "type", "Wrong kind of value"),
+    ]);
+
+    expect(placed.byPointer.size).toBe(0);
+    expect(placed.unplaced).toHaveLength(1);
+  });
+});
+
+describe("reading the structured field off a refusal", () => {
+  it("answers null when the service did not send it", () => {
+    // Null and empty mean different things: null sends the caller to the line
+    // parser, empty says there was nothing to place.
+    expect(readSchemaViolations({})).toBeNull();
+    expect(readSchemaViolations({ schemaErrors: ["a"] })).toBeNull();
+    expect(readSchemaViolations({ schemaViolations: [] })).toEqual([]);
+  });
+
+  it("falls back rather than trusting a shape it half understands", () => {
+    // A list that arrived but holds entries this client cannot read is a shape
+    // change, not an empty result. Reading the lines instead is never worse.
+    expect(
+      readSchemaViolations({
+        schemaViolations: [
+          { instanceLocation: "/name", keyword: "minLength", message: "x" },
+          { pointer: "/size" },
+        ],
+      }),
+    ).toBeNull();
+
+    expect(readSchemaViolations({ schemaViolations: "not a list" })).toBeNull();
+  });
+
+  it("accepts a list it fully understands", () => {
+    const entries = [{ instanceLocation: "", keyword: "required", message: "x" }];
+
+    expect(readSchemaViolations({ schemaViolations: entries })).toEqual(entries);
   });
 });
