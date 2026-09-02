@@ -76,6 +76,32 @@ function mount(admin: AdminApiStub, session = ADMINISTRATOR, userId = "u") {
   };
 }
 
+/**
+ * The same page, mounted *without* the directory above it.
+ *
+ * Only the two refusals use this, and they have to. Mounted in the real tree
+ * the directory's own guard answers first, so an assertion that this module
+ * refuses somebody would pass whether or not this module refuses anything —
+ * which is exactly the shape of test that lets a guard be deleted quietly.
+ * Here the route sits alone, so what refuses is the page.
+ */
+function mountAlone(admin: AdminApiStub, session = ADMINISTRATOR, userId = "u") {
+  const auth = new AuthApiContract({ session });
+  vi.stubGlobal("fetch", serveAdministration(auth, admin));
+  return renderWithSession(
+    [
+      {
+        path: "/account",
+        Component: Account,
+        children: [{ path: "people/manage", Component: AccountPeopleManage }],
+      },
+      { path: "/sign-in", Component: () => <p>sign-in page</p> },
+      { path: "/", Component: () => <p>home</p> },
+    ],
+    [`/account/people/manage?user=${userId}`],
+  );
+}
+
 /** One account, managed, with the page settled. */
 async function open(admin: AdminApiStub, session = ADMINISTRATOR, userId = "u") {
   const mounted = mount(admin, session, userId);
@@ -101,7 +127,7 @@ describe("who may manage an account", () => {
       users: [adminUser({ id: "u", email: "zeb@example.test" })],
     });
 
-    mount(admin, user({ roles: ["Community"] }));
+    mountAlone(admin, user({ roles: ["Community"] }));
 
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent(
@@ -118,7 +144,7 @@ describe("who may manage an account", () => {
       users: [adminUser({ id: "u", email: "zeb@example.test" })],
     });
 
-    mount(admin, user({ roles: ["Community", "Contributor"] }));
+    mountAlone(admin, user({ roles: ["Community", "Contributor"] }));
 
     await waitFor(() =>
       expect(screen.getByRole("alert")).toHaveTextContent(
@@ -159,8 +185,8 @@ describe("who is being managed", () => {
     const page = heading.closest("section");
     expect(page).not.toBeNull();
 
-    // The address, the roles they hold and where they currently stand — the
-    // four things an administrator needs before deciding anything, on the same
+    // The address, the roles they hold and where they currently stand —
+    // everything an administrator needs before deciding anything, on the same
     // screen as the controls that decide it.
     expect(within(page!).getByText("zeb@example.test")).toBeInTheDocument();
     // The badge, not the checkbox in the role editor further down — the point
