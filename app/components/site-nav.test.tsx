@@ -87,8 +87,15 @@ describe("the header's top level", () => {
 
     expect(topLevelItems().map((item) => item.textContent?.trim())).toEqual([
       "Characters",
+      // The options a character takes on top of its class. Seven separate
+      // menus' worth of types — feats, fighting styles, masteries, lightsaber
+      // forms and the two weapon tiers — which the Player's Handbook
+      // introduces together under one chapter, and which are now one menu.
+      "Customization",
       "Combat",
-      "Gear",
+      // Named after the chapter rather than after a word for the category, for
+      // the same reason.
+      "Equipment",
       "Starships",
       "Bestiary",
       "Reference",
@@ -222,8 +229,11 @@ describe("a group menu", () => {
     const user = userEvent.setup();
     renderNav();
 
-    const characters = menuFor("Characters");
-    await user.click(within(characters).getByText("Characters"));
+    // Class improvements moved with the rest of the customization options:
+    // they are one of the things a character takes on top of its class, and
+    // they are still reached from the class rather than browsed.
+    const characters = menuFor("Customization");
+    await user.click(within(characters).getByText("Customization"));
 
     const supporting = characters.querySelector(".nav-group-supporting");
     expect(
@@ -240,9 +250,9 @@ describe("a group menu", () => {
     // Still a primary destination in the same menu.
     expect(
       within(characters.querySelector(".nav-group-types")!).getByRole("link", {
-        name: /Species/,
+        name: /Feats/,
       }),
-    ).toHaveAttribute("href", "/species");
+    ).toHaveAttribute("href", "/feats");
   });
 });
 
@@ -260,11 +270,30 @@ describe("the group rail", () => {
     const rail = screen.getByRole("navigation", { name: "Combat sections" });
 
     expect(
-      within(rail).getByRole("link", { name: /Fighting Styles/ }),
-    ).toHaveAttribute("href", "/fighting-styles");
-    expect(
       within(rail).getByRole("link", { name: /Powers/ }),
     ).toHaveAttribute("href", "/powers");
+
+    // And the styles are no longer siblings of a maneuver: they moved to
+    // Customization with the rest of the options a character chooses.
+    expect(
+      within(rail).queryByRole("link", { name: /Fighting Styles/ }),
+    ).toBeNull();
+  });
+
+  it("lists the customization options as siblings of each other", () => {
+    renderRail("/fighting-styles");
+
+    const rail = screen.getByRole("navigation", {
+      name: "Customization sections",
+    });
+
+    expect(
+      within(rail).getByRole("link", { name: /Lightsaber Forms/ }),
+    ).toHaveAttribute("href", "/lightsaber-forms");
+    expect(within(rail).getByRole("link", { name: /Feats/ })).toHaveAttribute(
+      "href",
+      "/feats",
+    );
   });
 
   it("follows an item page as well as an index", () => {

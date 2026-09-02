@@ -29,8 +29,14 @@ function trigger(page: Page, group: string) {
 
 const GROUPS = [
   "Characters",
+  // The options a character takes on top of its class. Feats, fighting styles,
+  // masteries, lightsaber forms and the two weapon tiers were five separate
+  // menus' worth of types; the Player's Handbook introduces them together under
+  // one chapter and so does the header.
+  "Customization",
   "Combat",
-  "Gear",
+  // Named after the chapter, not after a word for the category.
+  "Equipment",
   "Starships",
   "Bestiary",
   "Reference",
@@ -179,11 +185,11 @@ test.describe("grouped navigation", () => {
     await expect(rail).toBeVisible();
 
     // The point of the rail: moving between siblings costs no trip through a
-    // menu.
-    await rail.getByRole("link", { name: /Lightsaber Forms/ }).click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "Lightsaber Forms",
-    );
+    // menu. Powers rather than the fighting styles this used to click — the
+    // styles are a customization option now, and Combat is what a character
+    // casts and the maneuvers it knows.
+    await rail.getByRole("link", { name: /Powers/ }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Powers");
     await expect(
       page.getByRole("navigation", { name: "Combat sections" }),
     ).toBeVisible();
