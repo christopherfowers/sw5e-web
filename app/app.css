@@ -186,7 +186,13 @@
     --text-muted: #9aa8bb;
     --text-faint: #7d8ca3;
 
-    --brand: #ef2b39;
+    /* Darkened from #ef2b39, which carried white text at 4.14:1 and so put
+       every primary button on the site — "Browse species", "Continue with a
+       passkey", "Add a passkey" — below AA in the dark theme. This is the
+       nearest red to the old one that clears 4.5, and it is safe to change
+       globally because `--brand` is never a text colour: it is a background,
+       a border and a gradient stop, and none of those got worse. */
+    --brand: #e02a3a;
     --brand-text: #ff6b76;
     --brand-contrast: #ffffff;
 
@@ -1322,13 +1328,6 @@ kbd {
   padding: var(--space-7) var(--space-4) var(--space-6);
 }
 
-.home-hero-logo {
-  width: clamp(7rem, 20vw, 9.5rem);
-  height: auto;
-  margin-bottom: var(--space-4);
-  filter: drop-shadow(0 2px 10px rgb(0 0 0 / 0.3));
-}
-
 .home-hero h1 {
   font-size: clamp(2.25rem, 1.4rem + 3.6vw, 3.75rem);
   letter-spacing: -0.035em;
@@ -1743,7 +1742,13 @@ kbd {
 }
 
 .sort-indicator {
-  color: var(--border-strong);
+  /*
+    Muted text rather than the border colour, which put this at 2.1:1 in dark
+    and 2.4:1 in light. It is the only thing on screen saying a column can be
+    sorted at all — the rest of that message is in text only a screen reader
+    hears — so it was the affordance that was hardest to see.
+  */
+  color: var(--text-muted);
   font-size: 0.875em;
 }
 
@@ -1993,16 +1998,35 @@ th[aria-sort="descending"] .sort-indicator {
  * two area maps, no duplicated markup and no reordered tab sequence. */
 .item-layout {
   display: grid;
+  /* Row gap only between bands; the glance block and the prose beneath it are
+     one reading column and a full gap between them reads as a section break. */
   gap: var(--space-5);
   align-items: start;
   grid-template-areas:
     "head"
+    "glance"
     "body";
 }
 
+/*
+ * Narrow screens put the reference text above the picture, and that ordering
+ * is the point rather than a detail.
+ *
+ * This is a book people read at the table, on a phone, mid-sentence, looking
+ * for one number. The picture used to come second, on the reasoning that
+ * somebody who had just tapped a search result needed to see they had landed
+ * in the right place — but the heading and the breadcrumb already say that,
+ * and the picture is 550px tall on a 375px screen. Measured on a species page,
+ * the statistics began 898px down: a full screen and a bit of scrolling past
+ * decorative art before a single number.
+ *
+ * So the art goes last here, and only here. The wide layout below is
+ * unchanged: there the picture has its own column and costs the text nothing.
+ */
 .item-layout.has-figure {
   grid-template-areas:
     "head"
+    "glance"
     "figure"
     "body";
 }
@@ -2013,6 +2037,12 @@ th[aria-sort="descending"] .sort-indicator {
 
 .item-figure {
   grid-area: figure;
+}
+
+.item-glance {
+  grid-area: glance;
+  max-width: var(--measure);
+  min-width: 0;
 }
 
 .item-body {
@@ -2029,6 +2059,7 @@ th[aria-sort="descending"] .sort-indicator {
     grid-template-columns: minmax(0, var(--measure)) 16rem;
     grid-template-areas:
       "head figure"
+      "glance figure"
       "body figure";
     justify-content: start;
     column-gap: var(--space-6);
@@ -2560,4 +2591,92 @@ th[aria-sort="descending"] .sort-indicator {
   .account-chip-name {
     display: none;
   }
+}
+
+/*
+ * The link on a heading.
+ *
+ * A rules chapter carries forty-odd headings and, until now, no way to address
+ * any of them: the only link anybody could send was the whole chapter with
+ * "scroll down" after it. This is what turns a heading into something you can
+ * paste into a conversation.
+ *
+ * Quiet until wanted, and never hidden from a keyboard. `opacity` rather than
+ * `display: none` so the anchor keeps its place in the layout and the heading
+ * does not shift when it appears.
+ *
+ * `:focus` rather than `:focus-visible`, deliberately. `:focus-visible` is the
+ * usual advice and it is wrong here: it is up to the browser whether focus
+ * counts as visible, and anything it decides against leaves a keyboard user
+ * on a link with `opacity: 0`. There is no cost to showing it for a click,
+ * because a click has already hovered it.
+ */
+.heading-anchor {
+  margin-left: 0.4em;
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 120ms ease-in-out;
+
+  /* Comfortably tappable without changing where the heading sits. */
+  padding-inline: 0.15em;
+}
+
+h1:hover > .heading-anchor,
+h2:hover > .heading-anchor,
+h3:hover > .heading-anchor,
+h4:hover > .heading-anchor,
+h5:hover > .heading-anchor,
+h6:hover > .heading-anchor,
+.heading-anchor:focus {
+  opacity: 1;
+}
+
+.heading-anchor:hover,
+.heading-anchor:focus {
+  color: var(--accent);
+}
+
+/*
+ * On a touch screen there is no hover, so an anchor that only appears on one
+ * is an anchor a phone reader never sees. It stays faintly visible there
+ * instead, which is also where sharing a section is most likely to happen.
+ */
+@media (hover: none) {
+  .heading-anchor {
+    opacity: 0.45;
+  }
+}
+
+/*
+ * A heading landed on from a fragment link sits under the sticky header
+ * otherwise. This is the whole reason the anchors are worth having, so the
+ * scroll offset is not optional.
+ *
+ * On the element rather than on `:target`, which is where this started and did
+ * not work. A fragment typed into the address bar was fine; clicking a search
+ * result inside the site left the heading at the very top, under the header.
+ * The router scrolls the element into view itself on a client-side navigation,
+ * and `scroll-margin-top` is read from the element at the moment it scrolls —
+ * before `:target` has anything to say. Putting it on every heading that has
+ * an id removes the timing from the question entirely.
+ */
+main :where(h1, h2, h3, h4, h5, h6)[id],
+:target {
+  scroll-margin-top: 7rem;
+}
+
+/*
+ * An abbreviated column header.
+ *
+ * Browsers underline `<abbr title>` with a dotted line by default, which is a
+ * useful signal that there is something to hover — but inside a sort button
+ * that already underlines on hover it reads as two states of the same
+ * control. The dots stay, quieter, and the cursor says the rest.
+ */
+.column-abbr {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--border);
+  text-underline-offset: 0.25em;
+  cursor: help;
 }

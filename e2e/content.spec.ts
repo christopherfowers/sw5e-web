@@ -200,3 +200,86 @@ test.describe("browsing", () => {
     expect(after).toBeGreaterThan(1);
   });
 });
+
+test.describe("searching", () => {
+  /**
+   * The results page carries two fields for one job — its own, and the one in
+   * the header that is on every page of the site. They used to disagree: the
+   * page's showed what you searched for and the header's showed a placeholder,
+   * so refining from the header meant starting again from nothing.
+   */
+  test("both search fields hold the query the results are for", async ({ page }) => {
+    await page.goto("/search?q=speeder");
+
+    const fields = page.locator('input[name="q"]');
+
+    await expect(fields).toHaveCount(2);
+    await expect(fields.nth(0)).toHaveValue("speeder");
+    await expect(fields.nth(1)).toHaveValue("speeder");
+  });
+
+  test("typing a new query is not yanked back to the old one", async ({ page }) => {
+    // The reason this is seeded rather than bound to the address. The two are
+    // the same field for one keystroke and then diverge: somebody typing has
+    // not navigated yet, and a field that reverts on every render is a field
+    // nobody can type in.
+    await page.goto("/search?q=speeder");
+
+    const header = page.locator("header").locator('input[name="q"]');
+    await header.fill("blaster");
+
+    await expect(header).toHaveValue("blaster");
+    await expect(page).toHaveURL(/q=speeder/);
+  });
+
+  test("a fresh search re-seeds the field", async ({ page }) => {
+    await page.goto("/search?q=speeder");
+    await page.goto("/search?q=blaster");
+
+    await expect(page.locator("header").locator('input[name="q"]')).toHaveValue(
+      "blaster",
+    );
+  });
+});
+
+test.describe("finding a rule", () => {
+  /**
+   * The journey this exists for, end to end.
+   *
+   * "Difficult terrain" is a heading in the Adventuring chapter, and searching
+   * for it used to return nothing: the index took the chapter's outer sections
+   * and not the forty-odd headings inside them. The site held the rule and
+   * could not find it.
+   */
+  test("a rule inside a chapter is findable, and the result lands on it", async ({
+    page,
+  }) => {
+    await page.goto("/search?q=difficult+terrain");
+
+    const result = page.locator(".result-link").first();
+
+    await expect(result).toBeVisible();
+    await expect(result).toHaveAttribute("href", /#difficult-terrain$/);
+
+    await result.click();
+
+    // Landed on the section, not at the top of a chapter that runs to tens of
+    // thousands of words, and clear of the sticky header.
+    const heading = page.locator("#difficult-terrain");
+    const box = (await heading.boundingBox())!;
+    const header = (await page.locator("header").first().boundingBox())!;
+
+    await expect(heading).toBeVisible();
+    expect(box.y).toBeGreaterThanOrEqual(header.y + header.height);
+  });
+
+  test("the result says which section matched", async ({ page }) => {
+    // A result that asserts a match without showing it makes a reader open the
+    // page to find out whether it was worth opening.
+    await page.goto("/search?q=difficult+terrain");
+
+    await expect(page.locator(".result-evidence").first()).toContainText(
+      /difficult/i,
+    );
+  });
+});

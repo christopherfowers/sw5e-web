@@ -35,6 +35,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 
 import { ApiError, register } from "~/auth/api";
+import { describeFailure } from "~/auth/failures";
 import { useSession } from "~/auth/session";
 import { AuthCard, Banner, SubmitButton, TextField } from "~/components/auth-ui";
 import { isAccountEmailDelivering } from "~/site/environment";
@@ -219,18 +220,21 @@ export default function Register() {
       setPhase((await isAccountEmailDelivering()) ? "sent" : "undeliverable");
     } catch (error) {
       setPhase("form");
-      if (error instanceof ApiError) {
-        setFieldErrors(error.fieldErrors);
-        setFailure({
-          title:
-            error.kind === "rate-limited"
-              ? "Too many attempts from here."
-              : "That could not be sent.",
-          body: error.message,
-        });
-        return;
-      }
-      setFailure({ title: "That could not be sent.", body: "Try again shortly." });
+
+      // Field errors are lifted out separately: they are attached to the
+      // controls rather than shown in the banner, so they are not part of what
+      // the shared wording describes.
+      if (error instanceof ApiError) setFieldErrors(error.fieldErrors);
+
+      const described = describeFailure(error, {
+        refusal: "That could not be sent.",
+        byKind: {
+          "rate-limited": { title: "Too many attempts from here." },
+        },
+        unknown: { title: "That could not be sent.", body: "Try again shortly." },
+      });
+
+      if (described) setFailure(described);
     }
   }
 

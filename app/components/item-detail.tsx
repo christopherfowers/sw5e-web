@@ -16,6 +16,7 @@
  * because an `<img>` is only ever emitted for a file this build contains.
  */
 
+import { useMemo } from "react";
 import { Link } from "react-router";
 
 import { Badge, SourceBadge } from "./badges";
@@ -23,6 +24,8 @@ import { AssetImage, ImageCredit, MonogramPlate } from "./media";
 import { EditControl } from "./edit-control";
 import { ReportControl } from "./report-control";
 import { classArt, speciesPortrait } from "~/content/imagery";
+import { nameItemHeadings } from "~/content/headings";
+import { slugify } from "~/content/slug";
 import { TYPE_META } from "~/content/type-meta";
 import type { AssetCredit, ContentItem, Entry } from "~/content/types";
 import { LostValue, SourceText } from "./source-text";
@@ -156,7 +159,22 @@ export function ItemDetail({
    */
   artCredit?: AssetCredit | null;
 }) {
+  /*
+    Every heading's address, worked out from the item before anything draws.
+
+    It used to be a slugger handed down to each block, which read well and made
+    rendering a mutation — and React renders a component more than once for the
+    same state whenever it likes. When it did, every id on the page came out as
+    `time-2`, `difficult-terrain-2`, and every link the search index pointed at
+    was dead. See `app/content/headings.ts`.
+  */
+  const headingIds = useMemo(() => nameItemHeadings(item), [item]);
   const groups = groupEntries(item.entries);
+
+  // Entries are numbered across the whole page in draw order, which is what
+  // `nameItemHeadings` walks. Counted here for the same reason Prose counts
+  // its headings: only the blocks that consume an id advance the count.
+  let entriesDrawn = 0;
   const figure = itemFigure(item);
   const accent = TYPE_META[item.type].accent;
   const tagline = subtitleFor(item);
@@ -188,6 +206,73 @@ export function ItemDetail({
           {item.source ? <SourceBadge code={item.source} linked /> : null}
         </p>
       </header>
+
+
+      {/*
+        The numbers, in a band of their own between the heading and the prose.
+        They used to sit at the top of `item-body`, which made them one block
+        with it — and a picture can only go before or after one block, so on a
+        phone the picture came first and the numbers began a full screen down.
+        Measured on a species page, the statistics started 898px into a 812px
+        viewport: a screen of decorative art before a single number, on the
+        device this reference is most read from.
+
+        Splitting them out lets the narrow layout read heading, numbers,
+        picture, prose. The wide layout is unchanged — there the picture has a
+        column of its own and costs the text nothing.
+
+        Done by moving the markup rather than by reordering with CSS, because
+        the document order is what a screen reader announces and what the tab
+        sequence follows. A page that reads one way on screen and another to
+        everybody else is two layouts to keep right instead of one.
+      */}
+      <div className="item-glance">
+        {item.stats.length > 0 ? (
+          <div className="stat-block">
+            <h2 className="sr-only">At a glance</h2>
+            <dl>
+              {item.stats.map((stat) => (
+                <div className="stat-row" key={stat.label}>
+                  <dt>{stat.label}</dt>
+                  <dd>
+                    {stat.lost || stat.value == null ? (
+                      <LostValue />
+                    ) : stat.href ? (
+                      <Link to={stat.href}>
+                        <SourceText value={stat.value} />
+                      </Link>
+                    ) : (
+                      <SourceText value={stat.value} />
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        ) : null}
+
+        {item.abilityScores && item.abilityScores.length > 0 ? (
+          <section aria-labelledby="ability-scores" className="ability-scores">
+            <h2 id="ability-scores">Ability scores</h2>
+            <ul>
+              {item.abilityScores.map((ability) => (
+                <li key={ability.ability}>
+                  <span className="ability-name">{ability.ability.slice(0, 3)}</span>
+                  <span className="ability-score">{ability.score}</span>
+                  <span className="ability-modifier">
+                    {ability.modifier >= 0 ? `+${ability.modifier}` : ability.modifier}
+                  </span>
+                  <span className="sr-only">
+                    {ability.ability} {ability.score}, modifier{" "}
+                    {ability.modifier >= 0 ? "plus" : "minus"}{" "}
+                    {Math.abs(ability.modifier)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </div>
 
       {figure ? (
         <figure className="item-figure">
@@ -249,61 +334,22 @@ export function ItemDetail({
       ) : null}
 
       <div className="item-body">
-        {item.stats.length > 0 ? (
-          <div className="stat-block">
-            <h2 className="sr-only">At a glance</h2>
-            <dl>
-              {item.stats.map((stat) => (
-                <div className="stat-row" key={stat.label}>
-                  <dt>{stat.label}</dt>
-                  <dd>
-                    {stat.lost || stat.value == null ? (
-                      <LostValue />
-                    ) : stat.href ? (
-                      <Link to={stat.href}>
-                        <SourceText value={stat.value} />
-                      </Link>
-                    ) : (
-                      <SourceText value={stat.value} />
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        ) : null}
-
-        {item.abilityScores && item.abilityScores.length > 0 ? (
-          <section aria-labelledby="ability-scores" className="ability-scores">
-            <h2 id="ability-scores">Ability scores</h2>
-            <ul>
-              {item.abilityScores.map((ability) => (
-                <li key={ability.ability}>
-                  <span className="ability-name">{ability.ability.slice(0, 3)}</span>
-                  <span className="ability-score">{ability.score}</span>
-                  <span className="ability-modifier">
-                    {ability.modifier >= 0 ? `+${ability.modifier}` : ability.modifier}
-                  </span>
-                  <span className="sr-only">
-                    {ability.ability} {ability.score}, modifier{" "}
-                    {ability.modifier >= 0 ? "plus" : "minus"}{" "}
-                    {Math.abs(ability.modifier)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
-
         {item.sections.map((section, index) =>
           section.heading ? (
-            <section key={index} className="item-section">
-              <h2>{section.heading}</h2>
-              <Prose markdown={section.body} startLevel={3} />
-            </section>
+            <SectionWithHeading
+              key={index}
+              heading={section.heading}
+              body={section.body}
+              id={headingIds.sections[index]!.heading!}
+              proseIds={headingIds.sections[index]!.prose}
+            />
           ) : (
             <section key={index} className="item-section">
-              <Prose markdown={section.body} startLevel={2} />
+              <Prose
+                markdown={section.body}
+                startLevel={2}
+                headingIds={headingIds.sections[index]!.prose}
+              />
             </section>
           ),
         )}
@@ -312,9 +358,9 @@ export function ItemDetail({
           <section
             key={group.name}
             className="item-section"
-            aria-labelledby={`group-${slugifyLabel(group.name)}`}
+            aria-labelledby={`group-${slugify(group.name)}`}
           >
-            <h2 id={`group-${slugifyLabel(group.name)}`}>{group.name}</h2>
+            <h2 id={`group-${slugify(group.name)}`}>{group.name}</h2>
             <dl className="entry-list">
               {group.entries.map((entry, index) => (
                 <div className="entry" key={`${entry.name ?? "entry"}-${index}`}>
@@ -325,7 +371,11 @@ export function ItemDetail({
                   ) : null}
                   <dd>
                     {entry.body ? (
-                      <Prose markdown={entry.body} startLevel={3} />
+                      <Prose
+                        markdown={entry.body}
+                        startLevel={3}
+                        headingIds={headingIds.entries[entriesDrawn++]}
+                      />
                     ) : (
                       <LostValue />
                     )}
@@ -394,8 +444,39 @@ export function ItemDetail({
   );
 }
 
-function slugifyLabel(label: string): string {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+/**
+ * A titled section of an item's prose.
+ *
+ * Its own component because the heading needs an address, and naming it has to
+ * happen in the same order the page renders — a slug taken inside a `.map`
+ * callback and one taken outside it are the same call, but keeping the
+ * ordering visible here is what makes the ids stable across builds.
+ */
+function SectionWithHeading({
+  heading,
+  body,
+  id,
+  proseIds,
+}: {
+  heading: string;
+  body: string;
+  /** This heading's address, from the plan built before rendering started. */
+  id: string;
+  /** The addresses for the headings inside `body`, in order. */
+  proseIds: readonly string[];
+}) {
+  return (
+    <section className="item-section" aria-labelledby={id}>
+      {/* See prose.tsx: a link inside a heading joins the heading's name. */}
+      <h2 id={id} aria-label={heading}>
+        {heading}
+        <a className="heading-anchor" href={`#${id}`} aria-label={`Link to ${heading}`}>
+          <span aria-hidden="true">#</span>
+        </a>
+      </h2>
+      <Prose markdown={body} startLevel={3} headingIds={proseIds} />
+    </section>
+  );
 }
 
 /** Keeps entry groups in first-seen order: traits, then actions, then the rest. */

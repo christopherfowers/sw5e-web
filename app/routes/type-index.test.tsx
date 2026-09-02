@@ -144,7 +144,12 @@ describe("Type index", () => {
     ).toBeInTheDocument();
 
     expect(screen.queryByText(EMPTY_STATE)).toBeNull();
-    expect(screen.getByText("3 entries")).toBeInTheDocument();
+    // The eyebrow names the navigation group this type sits in; the count
+    // lives in the list's own status line, which is the one that has to change
+    // when a filter narrows it. Having both said "3" was the duplication this
+    // replaced.
+    expect(screen.getByText("Combat")).toBeInTheDocument();
+    expect(screen.getByText("3 maneuvers")).toBeInTheDocument();
   });
 
   it("shows what a maneuver costs and what it upgrades", () => {
@@ -208,6 +213,10 @@ describe("Type index", () => {
       screen.getByRole("heading", { level: 1, name: "Maneuvers" }),
     ).toBeInTheDocument();
     expect(screen.getByText(EMPTY_STATE)).toBeInTheDocument();
-    expect(screen.getByText("0 entries")).toBeInTheDocument();
+
+    // The page still says where it sits, so an empty type is a page that
+    // explains itself rather than a heading floating on its own.
+    expect(screen.getByText("Combat")).toBeInTheDocument();
+    expect(screen.getByText("0 maneuvers")).toBeInTheDocument();
   });
 });

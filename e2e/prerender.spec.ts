@@ -107,7 +107,11 @@ test.describe("the site's self-description", () => {
     const response = await request.get("/");
     const html = await response.text();
 
-    expect(html).toContain("the whole conversion and every book");
+    // The two claims the lede has to keep making, whatever the wording: the
+    // whole conversion is here, and it can be searched. Asserted separately so
+    // that a rephrasing passes and dropping either one does not.
+    expect(html).toMatch(/every book/i);
+    expect(html).toMatch(/searchable/i);
     expect(
       html,
       "the hero described the site as succeeding something it is part of",
@@ -169,7 +173,8 @@ test.describe("the site's self-description", () => {
       "the description must exist and be the prerendered one, not a shell " +
         "placeholder",
     ).not.toBe("");
-    expect(description).toContain("Star Wars 5e, the whole reference");
+    expect(description).toContain("Star Wars 5e");
+    expect(description).toMatch(/every book/i);
     expect(
       html,
       "the site positioned itself as one fan project among several for as " +

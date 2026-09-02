@@ -25,7 +25,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { loadSearchIndex } from "~/content/search-index.client";
 import { search, type SearchMatch } from "~/content/search";
@@ -36,6 +36,7 @@ const SUGGESTION_LIMIT = 8;
 
 export function SiteSearch() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const listboxId = useId();
   const statusId = useId();
 
@@ -44,8 +45,34 @@ export function SiteSearch() {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const [index, setIndex] = useState<SearchRecord[] | null>(null);
-  const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+
+  /*
+    On the results page, this field holds what the results are for.
+
+    Without it the search page carried two fields for one job and they
+    disagreed: the page's own field showed "speeder" and the header's showed a
+    placeholder, so refining from the header meant starting again from nothing.
+
+    Seeded rather than controlled by the URL, because the two are the same
+    field for one keystroke and then diverge — somebody typing a new query has
+    not navigated yet, and yanking their text back to the old one on every
+    render would make the field unusable. It re-seeds when the address changes,
+    which is what a fresh search or the Back button does.
+
+    Adjusted during render rather than in an effect. An effect would paint the
+    stale value first and then correct it, which is a flash of the wrong query
+    on every navigation to the results page; setting state during render is
+    React's own recipe for this and it re-renders before anything is shown.
+  */
+  const submitted = searchParams.get("q") ?? "";
+  const [query, setQuery] = useState(submitted);
+  const [seededFrom, setSeededFrom] = useState(submitted);
+
+  if (seededFrom !== submitted) {
+    setSeededFrom(submitted);
+    setQuery(submitted);
+  }
 
   // The index is only worth fetching once someone shows an intent to search.
   const ensureIndex = useCallback(() => {

@@ -50,11 +50,11 @@ import {
   completePasskeyRegistration,
   verifyEmail,
 } from "~/auth/api";
+import { describeFailure } from "~/auth/failures";
 import {
   createPasskey,
   hasPlatformAuthenticator,
   supportsWebAuthn,
-  WebAuthnError,
 } from "~/auth/webauthn";
 import {
   AuthCard,
@@ -223,28 +223,21 @@ export default function VerifyEmail() {
       setPhase("enrolled");
     } catch (error) {
       setPhase("verified");
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      if (error instanceof WebAuthnError) {
-        setFailure({ title: error.message, body: error.hint ?? undefined });
-        return;
-      }
-      if (error instanceof ApiError) {
-        setFailure({
-          title:
-            error.kind === "unauthenticated"
-              ? "That setup window has closed."
-              : "The passkey could not be saved.",
-          body:
-            error.kind === "unauthenticated"
-              ? "Request a new verification link and you can try again straight away."
-              : error.message,
-        });
-        return;
-      }
-      setFailure({
-        title: "The passkey could not be created.",
-        body: "Try again in a moment.",
+      const described = describeFailure(error, {
+        refusal: "The passkey could not be saved.",
+        byKind: {
+          unauthenticated: {
+            title: "That setup window has closed.",
+            body: "Request a new verification link and you can try again straight away.",
+          },
+        },
+        unknown: {
+          title: "The passkey could not be created.",
+          body: "Try again in a moment.",
+        },
       });
+
+      if (described) setFailure(described);
     } finally {
       if (ceremony.current === controller) ceremony.current = null;
     }

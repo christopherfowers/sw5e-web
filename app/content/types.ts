@@ -382,6 +382,15 @@ export type AnySummary = SummaryByType[ContentTypeId];
 export interface SearchField {
   label: string;
   text: string;
+  /**
+   * Where on the page this field is, when it is somewhere in particular.
+   *
+   * Set for a heading, and it is the id the page renders for that heading, so
+   * a result can link past the top of a half-megabyte rules chapter to the
+   * section that actually matched. Absent for a field that is not a place —
+   * a summary, a statistic, the description excerpt.
+   */
+  fragment?: string;
 }
 
 export interface SearchRecord {

@@ -59,6 +59,21 @@ import type {
 export interface Column<Row> {
   key: string;
   header: string;
+  /**
+   * What the header stands for, when it is an abbreviation.
+   *
+   * "AC", "CR", "HP" and "Conc." are the language of the books and the right
+   * words for the column — a header reading "Challenge rating" in full would
+   * push a numeric column three times wider than the numbers in it. But they
+   * are also jargon nobody is born knowing, and until now the site expanded
+   * them nowhere: a reader who did not already know what CR meant had no way
+   * to find out from the page they were looking at.
+   *
+   * Set this and the header becomes an `<abbr>`: the words appear on hover,
+   * and they are read out with the column when a screen reader announces it.
+   * Leave it unset for a header that is already a word.
+   */
+  expands?: string;
   render: (row: Row) => ReactNode;
   /** Value used when sorting by this column. Omit to make it unsortable. */
   sortValue?: (row: Row) => string | number | null;
@@ -566,6 +581,7 @@ const powers: ListConfig<PowerSummary> = {
     {
       key: "concentration",
       header: "Conc.",
+      expands: "Concentration",
       className: FROM_LARGE,
       render: (row) =>
         row.concentration ? "Yes" : <span aria-hidden="true">—</span>,
@@ -1079,6 +1095,7 @@ const monsters: ListConfig<MonsterSummary> = {
     {
       key: "challengeRating",
       header: "CR",
+      expands: "Challenge rating",
       numeric: true,
       sortValue: (row) => row.challengeRatingValue,
       render: (row) =>
@@ -1110,6 +1127,7 @@ const monsters: ListConfig<MonsterSummary> = {
     {
       key: "armorClass",
       header: "AC",
+      expands: "Armor class",
       numeric: true,
       className: FROM_MEDIUM,
       sortValue: (row) => row.armorClass,
@@ -1118,6 +1136,7 @@ const monsters: ListConfig<MonsterSummary> = {
     {
       key: "hitPoints",
       header: "HP",
+      expands: "Hit points",
       numeric: true,
       className: FROM_LARGE,
       sortValue: (row) => row.hitPoints,
@@ -1160,6 +1179,7 @@ const starshipBaseSizes: ListConfig<StarshipBaseSizeSummary> = {
     {
       key: "modificationSlots",
       header: "Mod slots",
+      expands: "Modification slots",
       numeric: true,
       sortValue: (row) => row.modificationSlots,
       render: (row) =>

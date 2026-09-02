@@ -17,7 +17,14 @@ export interface SearchMatch {
   record: SearchRecord;
   score: number;
   /** The field the match was found in, and where, so the UI can show why. */
-  evidence: { label: string; text: string; start: number; end: number } | null;
+  evidence: {
+    label: string;
+    text: string;
+    start: number;
+    end: number;
+    /** The heading's id, when the match was found in one. */
+    fragment?: string;
+  } | null;
 }
 
 export interface SearchGroup {
@@ -96,6 +103,7 @@ function findEvidence(
           text: field.text,
           start,
           end: start + term.length,
+          fragment: field.fragment,
         };
       }
     }

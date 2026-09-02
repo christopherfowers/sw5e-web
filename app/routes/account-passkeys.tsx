@@ -26,16 +26,15 @@ import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router";
 
 import {
-  ApiError,
   beginPasskeyRegistration,
   completePasskeyRegistration,
   removePasskey,
 } from "~/auth/api";
+import { describeFailure } from "~/auth/failures";
 import {
   createPasskey,
   hasPlatformAuthenticator,
   supportsWebAuthn,
-  WebAuthnError,
 } from "~/auth/webauthn";
 import { Banner, SubmitButton, TextField } from "~/components/auth-ui";
 import { accountMeta, type AccountContext } from "./account";
@@ -91,32 +90,27 @@ export default function AccountPasskeys() {
   useEffect(() => () => ceremony.current?.abort(), []);
 
   function report(error: unknown) {
-    if (error instanceof DOMException && error.name === "AbortError") return;
-    if (error instanceof WebAuthnError) {
-      setFailure({ title: error.message, body: error.hint ?? undefined });
-      return;
-    }
-    if (error instanceof ApiError) {
-      // The server refuses to remove an account's last credential, because
-      // doing so would strand it. That is a deliberate answer rather than a
-      // failure, and it deserves the sentence that says what to do about it —
-      // the warning shown before confirming says removal *will* happen, so
-      // reporting this as "that could not be completed" would leave the reader
-      // unsure whether it did.
-      if (error.kind === "conflict" && error.code === "last-credential") {
-        setFailure({
+    const described = describeFailure(error, {
+      refusal: "That could not be completed.",
+      byCode: {
+        // The server refuses to remove an account's last credential, because
+        // doing so would strand it. That is a deliberate answer rather than a
+        // failure, and it deserves the sentence that says what to do about it
+        // — the warning shown before confirming says removal *will* happen, so
+        // reporting this as "that could not be completed" would leave the
+        // reader unsure whether it did.
+        "last-credential": {
           title: "That is your only passkey, so it was kept.",
           body: "Removing it would leave you no way to sign in. Add another passkey first, then remove this one.",
-        });
-        return;
-      }
-      setFailure({ title: "That could not be completed.", body: error.message });
-      return;
-    }
-    setFailure({
-      title: "That could not be completed.",
-      body: "Try again in a moment.",
+        },
+      },
+      unknown: {
+        title: "That could not be completed.",
+        body: "Try again in a moment.",
+      },
     });
+
+    if (described) setFailure(described);
   }
 
   async function addPasskey() {

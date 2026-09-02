@@ -87,7 +87,9 @@ import {
   isEmpty,
   noViolations,
   parseSchemaErrors,
+  placeSchemaViolations,
   readSchemaErrors,
+  readSchemaViolations,
   type SchemaViolations,
 } from "~/authoring/violations";
 import { authoringMeta, type AuthoringContext } from "./authoring";
@@ -293,6 +295,24 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
 
   function absorb(error: unknown): void {
     if (error instanceof ApiError) {
+      /*
+        The structured violations first, and the lines only when they are not
+        there. The service sends both; the older one sent only the lines, and
+        this deployment can be either side of that for as long as the two
+        images are deployed separately.
+
+        `readSchemaViolations` answers null for "not sent" and an empty array
+        for "sent and empty", which is why this checks for null rather than for
+        length — an empty structured list means there was nothing to place, not
+        that the parser should have a go.
+      */
+      const structured = readSchemaViolations(error.extensions);
+      if (structured && structured.length > 0) {
+        setViolations(placeSchemaViolations(structured));
+        setFailure(null);
+        return;
+      }
+
       const errors = readSchemaErrors(error.extensions);
       if (errors.length > 0) {
         setViolations(parseSchemaErrors(errors));

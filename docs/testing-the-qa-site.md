@@ -33,9 +33,29 @@ for people who never make an account.
    the other Characters destinations.
 6. Click any species. You get its page: name, badges, a table of statistics,
    prose below, and a picture on the right for types that have one.
-7. Scroll to the bottom. There is one quiet line — **Something wrong with this
+
+   On a phone the picture moves **below** the statistics. That is deliberate —
+   the numbers are what somebody at a table is looking for, and the
+   illustration used to push them a full screen down.
+
+7. Hover a heading in the prose. A small **#** appears; it is a link to that
+   section, and the address in it is stable, so it can be pasted into a
+   conversation. On a phone it is faintly visible without hovering.
+
+8. On an index with numeric columns — try **Bestiary** — hover **CR**, **AC**
+   or **HP**. They say what they stand for.
+9. Scroll to the bottom. There is one quiet line — **Something wrong with this
    page?** Click it; a short form opens in place. Do not send one yet.
-8. Type a word into the search field at the top and press `Enter`.
+10. Type a word into the search field at the top and press `Enter`. On the
+    results page both search fields — the header's and the page's — hold what
+    you searched for.
+
+Two things worth trying because they are easy to get wrong and hard to notice:
+
+- **Mistype an address**, for example `/speces`. You should get "Page not
+  found" *and* a browser tab that says Star Wars 5e rather than the raw URL.
+- **Switch your system to light mode** and reload. Every page has a light
+  theme, and text contrast is checked in both on every build.
 
 Known limits, so they are not reported as faults:
 

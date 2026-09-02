@@ -63,7 +63,12 @@ describe("Home route", () => {
     // honest assertion and the one that does not train anyone to wave the rule
     // through.
     expect(lede).not.toContain("sw5e.com");
-    expect(lede).toMatch(/the whole conversion and every book/i);
+    // What the lede has to keep saying, whatever the wording: the whole
+    // conversion is here, and it can be searched. Asserted as two claims
+    // rather than as one sentence, so rephrasing does not fail the test while
+    // dropping either claim still does.
+    expect(lede).toMatch(/every book/i);
+    expect(lede).toMatch(/search/i);
   });
 
   /**
@@ -170,7 +175,8 @@ describe("Home route metadata", () => {
     // the paragraph that phrase could never hold.
     const description = descriptionFrom(tagsFor());
 
-    expect(description).toContain("Star Wars 5e, the whole reference");
+    expect(description).toMatch(/Star Wars 5e/);
+    expect(description).toMatch(/every book/i);
     expect(description).not.toMatch(/continuation|picks up where|successor/i);
   });
 
@@ -204,7 +210,7 @@ describe("Home route metadata", () => {
       >,
     );
 
-    expect(description).toContain("Star Wars 5e, the whole reference");
+    expect(description).toMatch(/Star Wars 5e/);
     expect(description).not.toMatch(/undefined|NaN/);
   });
 });

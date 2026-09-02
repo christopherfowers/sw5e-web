@@ -43,13 +43,17 @@ export function meta({ loaderData }: Route.MetaArgs) {
     : "The whole library";
 
   return [
-    { title: "Star Wars 5e — The Maintained Reference" },
+    // The site's name, and nothing appended to it. Every other page is
+    // "Something — Star Wars 5e", so the home page is the bare name, which is
+    // both the convention and the only honest answer: a strapline after the
+    // dash has been tried twice here and read as filler both times.
+    { title: "Star Wars 5e" },
     {
       name: "description",
       content:
-        `Star Wars 5e, the whole reference. ${corpus} — classes, ` +
-        "archetypes, features, powers, starships, enhanced items and creature " +
-        "stat blocks — searchable in one place.",
+        `Every book of the Star Wars 5e conversion, searchable in one place. ` +
+        `${corpus}, including classes, archetypes, features, powers, ` +
+        "starships, enhanced items and creature stat blocks.",
     },
   ];
 }
@@ -71,7 +75,6 @@ export async function loader() {
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { counts, total, curated, sourceTotals } = loaderData;
 
-  const logo = brandImage("logo");
   const heroLight = brandImage("hero-light");
   const heroDark = brandImage("hero-dark");
 
@@ -81,9 +84,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         The hero photograph is a ground, not a subject — a table with dice on
         it, behind a scrim heavy enough that the type above it keeps its
         contrast in either theme. It carries no information a reader needs, so
-        it is marked decorative rather than described. The logo above the
-        heading is decorative for the same reason: the heading says the same
-        four characters in text.
+        it is marked decorative rather than described.
+
+        There was a wordmark above the heading as well, and it has gone. It
+        drew the same four characters the heading draws, directly under a
+        header that already carries the mark on every page of the site — three
+        statements of the name before a single sentence about what the site is.
       */}
       <section className="home-hero">
         {heroLight && heroDark ? (
@@ -109,20 +115,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         ) : null}
 
         <div className="home-hero-inner">
-          {logo ? (
-            <AssetImage
-              className="home-hero-logo"
-              image={logo}
-              alt=""
-              sizes="(min-width: 40rem) 152px, 20vw"
-              loading="eager"
-            />
-          ) : null}
           <h1>Star Wars 5e</h1>
           <p className="lede">
-            The maintained home for the Star Wars 5e tabletop roleplaying game
-            — the whole conversion and every book, every entry searchable and
-            built to be read at the table.
+            Every book of the Star Wars 5e conversion, searchable in one place.
           </p>
           <p className="home-hero-meta">
             {total.toLocaleString("en-US")} entries across {TYPE_ORDER.length}{" "}

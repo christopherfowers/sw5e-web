@@ -137,6 +137,105 @@ export function readSchemaErrors(extensions: Readonly<Record<string, unknown>>):
   return value.filter((entry): entry is string => typeof entry === "string");
 }
 
+/**
+ * One violation as the service now sends it, with its parts intact.
+ *
+ * The shape published as `schemaViolations` alongside the older
+ * `schemaErrors`. Typed here as the wire shape rather than as
+ * {@link SchemaViolation}, because it is somebody else's document and the two
+ * are not the same thing: this has no `detail` and its `message` is the
+ * validator's wording rather than a contributor's.
+ */
+interface WireViolation {
+  instanceLocation: string;
+  keyword: string;
+  message: string;
+}
+
+/**
+ * Reads the structured violations, when the service is new enough to send them.
+ *
+ * Returns null rather than an empty array for "not there", because the two
+ * mean different things: a service that sends nothing wants the line parser,
+ * and a service that sends an empty list is saying there were no violations.
+ *
+ * Every field is checked. This is an extension member of a problem document,
+ * typed by nobody, and a page that threw while rendering an error would replace
+ * a bad save with a blank screen.
+ */
+export function readSchemaViolations(
+  extensions: Readonly<Record<string, unknown>>,
+): WireViolation[] | null {
+  const value = extensions.schemaViolations;
+  if (!Array.isArray(value)) return null;
+
+  const wire = value.filter((entry): entry is WireViolation => {
+    if (typeof entry !== "object" || entry === null) return false;
+    const candidate = entry as Record<string, unknown>;
+    return (
+      typeof candidate.instanceLocation === "string" &&
+      typeof candidate.keyword === "string" &&
+      typeof candidate.message === "string"
+    );
+  });
+
+  // A list that arrived but held nothing this client understands is a shape
+  // change, not an empty result. Falling back reads the lines instead, which
+  // is what the older service sends and is never worse.
+  return wire.length === value.length ? wire : null;
+}
+
+/**
+ * Places the structured violations, with no parsing at all.
+ *
+ * The same output as {@link parseSchemaErrors} and none of its guesswork: the
+ * pointer arrives as a pointer, the keyword as a keyword, and the only thing
+ * still read out of a message is the list of property names in a `required`
+ * failure — which is a fact about the JSON Schema vocabulary rather than about
+ * this validator's prose.
+ */
+export function placeSchemaViolations(
+  wire: readonly WireViolation[],
+): SchemaViolations {
+  const byPointer = new Map<string, SchemaViolation[]>();
+  const unplaced: string[] = [];
+
+  for (const entry of wire) {
+    const detail = `${entry.instanceLocation}: ${entry.keyword} — ${entry.message}`;
+    const pointer = entry.instanceLocation;
+
+    if (pointer !== "" && !pointer.startsWith("/")) {
+      unplaced.push(detail);
+      continue;
+    }
+
+    if (entry.keyword === "required") {
+      const names = [...entry.message.matchAll(QUOTED)].map((found) => found[1]!);
+
+      if (names.length > 0) {
+        for (const name of names) {
+          add(byPointer, {
+            pointer: `${pointer}/${escapeToken(name)}`,
+            keyword: entry.keyword,
+            message: PLAIN_ENGLISH.required!,
+            detail,
+          });
+        }
+        continue;
+      }
+    }
+
+    add(byPointer, {
+      pointer,
+      keyword: entry.keyword,
+      message: PLAIN_ENGLISH[entry.keyword] ?? entry.message,
+      detail,
+    });
+  }
+
+  return { byPointer, unplaced };
+}
+
 /** Parses the lines into something a form can place. */
 export function parseSchemaErrors(lines: readonly string[]): SchemaViolations {
   const byPointer = new Map<string, SchemaViolation[]>();

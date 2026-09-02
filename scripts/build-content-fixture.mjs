@@ -139,6 +139,55 @@ function excerpt(value, limit) {
   return `${(lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
+
+/**
+ * The heading text inside a markdown body, in document order.
+ *
+ * The top-level `section.heading` is one heading per section, and a rules
+ * chapter is one section with forty-odd headings inside it. Indexing only the
+ * outer one meant the site held the rule for difficult terrain and could not
+ * find it: "difficult terrain" is a heading in the Adventuring chapter and
+ * returned nothing.
+ */
+function markdownHeadings(markdown) {
+  const found = [];
+  for (const line of markdown.split(/\r?\n/)) {
+    const match = /^\s{0,3}#{1,6}\s+(.*)$/.exec(line);
+    if (!match) continue;
+    const text = toPlainText(match[1]).trim();
+    if (text) found.push(text);
+  }
+  return found;
+}
+
+/**
+ * A heading's address on the page, matching the ids the site renders.
+ *
+ * This is a second implementation of `app/content/slug.ts`, which is a thing
+ * worth being uneasy about — so it is not left to trust. The site renders
+ * these ids and this writes the fragments that point at them, and
+ * `app/content/search-fragments.test.ts` reads the built index and asserts
+ * every fragment against the application's own slugger. Drift is a red test
+ * rather than a link that quietly goes nowhere.
+ *
+ * They are two implementations because they are two runtimes: this script is
+ * plain ESM run by node before the bundler exists, and the module it mirrors
+ * is TypeScript compiled into the app.
+ */
+function makeSlugger() {
+  const used = new Map();
+  return (label) => {
+    const base =
+      label
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "section";
+    const seen = used.get(base) ?? 0;
+    used.set(base, seen + 1);
+    return seen === 0 ? base : `${base}-${seen + 1}`;
+  };
+}
+
 /**
  * One search record per item. `fields` is what makes a result explainable:
  * each entry is a labelled fragment, so a hit can say which part of the item
@@ -168,8 +217,26 @@ function toSearchRecord(item) {
     chapter and names the section it matched in, and reading the section is
     then one page-find away.
   */
+  /*
+    Every heading, not just the outer one.
+
+    The slugger runs over the whole document in render order — the section's
+    own heading first, then the headings inside its body — because that is the
+    order the page assigns ids in, and a fragment computed in any other order
+    points at the wrong section or at nothing.
+  */
+  const slug = makeSlugger();
   for (const section of item.sections) {
-    if (section.heading) fields.push({ label: "Section", text: section.heading });
+    if (section.heading) {
+      fields.push({
+        label: "Section",
+        text: section.heading,
+        fragment: slug(section.heading),
+      });
+    }
+    for (const heading of markdownHeadings(section.body)) {
+      fields.push({ label: "Section", text: heading, fragment: slug(heading) });
+    }
   }
 
   const prose = item.sections.map((each) => toPlainText(each.body)).join(" ");

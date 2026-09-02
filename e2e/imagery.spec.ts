@@ -68,10 +68,15 @@ test.describe("pictures in the pre-rendered HTML", () => {
   }) => {
     const html = await (await request.get("/")).text();
 
-    // Two <picture> sources, one per theme, plus the logo.
+    // Two <picture> sources, one per theme.
     expect(html).toMatch(/<source[^>]+prefers-color-scheme: dark/);
-    expect(html).toMatch(/class="home-hero-logo"/);
     expect(html).toMatch(/class="home-hero-media"/);
+
+    // The mark is in the header, and only there. It used to be in the hero as
+    // well, directly above a heading that says the same four characters,
+    // making three statements of the name before one sentence about the site.
+    expect(html).toMatch(/class="site-wordmark-logo"/);
+    expect(html).not.toMatch(/home-hero-logo/);
   });
 
   test("a source page ships its cover art", async ({ request }) => {

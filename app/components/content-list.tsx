@@ -60,6 +60,7 @@ import { Link } from "react-router";
 
 import type { Column, ListConfig } from "~/content/list-config";
 import type { AnySummary, ContentTypeId } from "~/content/types";
+import { slugify } from "~/content/slug";
 import { TYPE_META } from "~/content/type-meta";
 import { AssetImage, MonogramPlate } from "./media";
 import { SourceText } from "./source-text";
@@ -120,6 +121,13 @@ function compareValues(
 export const WINDOW = 100;
 
 export function ContentList({ type, typeLabel, rows, config }: ContentListProps) {
+  /*
+    The noun to put a number in front of, which is not always the noun in the
+    heading. "Equipment" is the right word above the page and the wrong one
+    after a numeral — the count line read "4 equipment" — so the two types
+    whose plural is a mass noun carry a separate one. See TypeMeta.counted.
+  */
+  const countedNoun = TYPE_META[type].counted ?? typeLabel.toLowerCase();
   const filterId = useId();
   const [nameFilter, setNameFilter] = useState("");
   const [facetValues, setFacetValues] = useState<Record<string, string>>({});
@@ -305,7 +313,7 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
       </div>
 
       <p className="result-count" role="status">
-        {describeCount(visible.length, windowed.length, rows.length, typeLabel)}
+        {describeCount(visible.length, windowed.length, rows.length, countedNoun)}
       </p>
 
       <div ref={resultsRef}>
@@ -363,7 +371,7 @@ export function ContentList({ type, typeLabel, rows, config }: ContentListProps)
         </div>
       ) : null}
 
-      <FullIndex type={type} typeLabel={typeLabel} rows={rows} />
+      <FullIndex type={type} countedNoun={countedNoun} rows={rows} />
     </>
   );
 }
@@ -377,9 +385,8 @@ function describeCount(
   matching: number,
   drawn: number,
   total: number,
-  typeLabel: string,
+  noun: string,
 ): string {
-  const noun = typeLabel.toLowerCase();
   const shown = drawn.toLocaleString("en-US");
 
   if (drawn < matching) {
@@ -427,11 +434,11 @@ function escapeHtml(value: string): string {
  */
 function FullIndex({
   type,
-  typeLabel,
+  countedNoun,
   rows,
 }: {
   type: ContentTypeId;
-  typeLabel: string;
+  countedNoun: string;
   rows: AnySummary[];
 }) {
   // Nothing to add when the list already fits inside one window: the table
@@ -452,7 +459,7 @@ function FullIndex({
   return (
     <details className="full-index">
       <summary>
-        All {rows.length.toLocaleString("en-US")} {typeLabel.toLowerCase()}, A–Z
+        All {rows.length.toLocaleString("en-US")} {countedNoun}, A–Z
       </summary>
       <ul
         className="full-index-list"
@@ -568,7 +575,7 @@ function Chapters({
   return (
     <div className="chapter-list" data-accent={accent}>
       {ordered.map(([name, entries]) => (
-        <section key={name} aria-labelledby={`book-${headingId(name)}`}>
+        <section key={name} aria-labelledby={`book-${slugify(name)}`}>
           {/*
             The label points at the title span rather than at the whole
             heading, so the landmark is named "Wretched Hives" and not
@@ -576,7 +583,7 @@ function Chapters({
             still read when the heading is.
           */}
           <h2 className="chapter-book">
-            <span id={`book-${headingId(name)}`}>{name}</span>
+            <span id={`book-${slugify(name)}`}>{name}</span>
             <span className="chapter-book-count">
               {entries.length} {entries.length === 1 ? "entry" : "entries"}
             </span>
@@ -602,8 +609,33 @@ function Chapters({
   );
 }
 
-function headingId(label: string): string {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+/**
+ * A column's header, expanded when it is an abbreviation.
+ *
+ * Two audiences, and it took two mechanisms because the obvious one only
+ * serves one of them.
+ *
+ * `title` on an `<abbr>` is the hover affordance, and that is all it is: it
+ * does not reach a touch screen, it does not reach a keyboard, and — the part
+ * that is easy to get wrong — it does not reach the accessible name either.
+ * The name of an element with text content is its text content; `title` is
+ * only consulted when there is nothing else, so `<abbr title="Challenge
+ * rating">CR</abbr>` is still announced "C R".
+ *
+ * So the words are also present as text, hidden visually. A screen reader
+ * announces "CR Challenge rating" and a sighted reader sees the two
+ * characters the column has room for — "Challenge rating" set in full would
+ * make a column three times wider than the numbers in it.
+ */
+function ColumnHeader<Row>({ column }: { column: Column<Row> }) {
+  if (!column.expands) return <>{column.header}</>;
+
+  return (
+    <abbr className="column-abbr" title={column.expands}>
+      {column.header}
+      <span className="sr-only"> {column.expands}</span>
+    </abbr>
+  );
 }
 
 function ContentTable({
@@ -654,7 +686,7 @@ function ContentTable({
                       className="sort-button"
                       onClick={() => onSort(column)}
                     >
-                      {column.header}
+                      <ColumnHeader column={column} />
                       <span aria-hidden="true" className="sort-indicator">
                         {isSorted ? (direction === "ascending" ? "↑" : "↓") : "↕"}
                       </span>
@@ -665,7 +697,7 @@ function ContentTable({
                       </span>
                     </button>
                   ) : (
-                    column.header
+                    <ColumnHeader column={column} />
                   )}
                 </th>
               );

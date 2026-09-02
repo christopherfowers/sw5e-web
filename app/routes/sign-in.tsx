@@ -85,20 +85,19 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
 import {
-  ApiError,
   beginPasskeyLogin,
   completePasskeyLogin,
   requestSignInCode,
   verifySignInCode,
   verifyTotp,
 } from "~/auth/api";
+import { describeFailure } from "~/auth/failures";
 import { safeNextPath } from "~/auth/redirect";
 import { useSession } from "~/auth/session";
 import {
   getPasskeyAssertion,
   hasPlatformAuthenticator,
   supportsWebAuthn,
-  WebAuthnError,
 } from "~/auth/webauthn";
 import { AuthCard, Banner, SubmitButton, TextField } from "~/components/auth-ui";
 import { isAccountEmailDelivering } from "~/site/environment";
@@ -313,28 +312,20 @@ export default function SignIn() {
    * those messages for another sends the reader off to fix the wrong thing.
    */
   function reportFailure(error: unknown, refusalTitle: string) {
-    if (error instanceof DOMException && error.name === "AbortError") return;
-
-    if (error instanceof WebAuthnError) {
-      setFailure({ title: error.message, body: error.hint ?? undefined });
-      return;
-    }
-    if (error instanceof ApiError) {
-      setFailure({
-        title:
-          error.kind === "unavailable"
-            ? "The account service could not be reached."
-            : error.kind === "rate-limited"
-              ? "Too many attempts from here."
-              : refusalTitle,
-        body: error.message,
-      });
-      return;
-    }
-    setFailure({
-      title: "Sign-in could not be completed.",
-      body: "Try again in a moment.",
+    const described = describeFailure(error, {
+      refusal: refusalTitle,
+      byKind: {
+        unavailable: { title: "The account service could not be reached." },
+        "rate-limited": { title: "Too many attempts from here." },
+      },
+      unknown: {
+        title: "Sign-in could not be completed.",
+        body: "Try again in a moment.",
+      },
     });
+
+    // Null is an abandoned ceremony, which says nothing on purpose.
+    if (described) setFailure(described);
   }
 
   async function signInWithPasskey() {
