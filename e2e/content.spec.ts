@@ -233,7 +233,22 @@ test.describe("searching", () => {
     await page.goto("/search?q=speeder");
 
     const header = page.locator("header").locator('input[name="q"]');
-    await header.fill("blaster");
+
+    /*
+      Cleared and then typed, rather than filled.
+
+      `fill` selects the existing text and replaces it, and this field is
+      controlled by React inside a tree that is re-rendering for its own
+      reasons — the results arriving, the index loading. A re-render between
+      the selection and the insertion collapses the selection, and the new text
+      lands after the old one instead of over it: CI saw "speederblaster".
+
+      That is an artefact of how `fill` works, not something a person typing
+      can produce, so the test types.
+    */
+    await header.fill("");
+    await expect(header).toHaveValue("");
+    await header.pressSequentially("blaster");
 
     await expect(header).toHaveValue("blaster");
     await expect(page).toHaveURL(/q=speeder/);
