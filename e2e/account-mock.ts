@@ -32,27 +32,44 @@ export {
   VALID_VERIFICATION_TOKEN,
 } from "../tests/auth-api-contract";
 
-export const ORIGIN = "http://localhost:4173";
-
 /**
  * Intercepts `/api/auth/*` and answers from the contract.
  *
  * Anything else is left alone, so the prerendered pages, the assets and the
- * fonts are all served by the real preview server.
+ * fonts are all served by the real server.
  */
 export async function serveAccountApi(
   page: Page,
   context: BrowserContext,
   options: ContractOptions = {},
 ): Promise<AuthApiContract> {
-  // The preview server's address, not jsdom's: this is the origin the browser
-  // will really stamp on every unsafe method, and the contract refuses
-  // anything else.
-  const contract = new AuthApiContract({ origin: ORIGIN, ...options });
+  /*
+    The origin is filled in from the first request rather than written here.
+
+    It used to be `http://localhost:4173` — the production preview's port —
+    which is the right answer exactly once. Run these same specs against the
+    development server on 5173 and every request carries an origin the contract
+    refuses, so eleven account tests failed for a reason that had nothing to do
+    with accounts.
+
+    It cannot be read from the page either: this runs before the page has
+    navigated anywhere, so `page.url()` is still `about:blank`. The first
+    intercepted request knows, and knowing it from the request is the honest
+    version anyway — that is the server the browser is really talking to.
+  */
+  const contract = new AuthApiContract({ origin: "", ...options });
+  let originKnown = false;
 
   await page.route("**/api/auth/**", async (route) => {
     const request = route.request();
-    const path = new URL(request.url()).pathname.slice("/api/auth".length);
+    const url = new URL(request.url());
+
+    if (!originKnown) {
+      contract.origin = url.origin;
+      originKnown = true;
+    }
+
+    const path = url.pathname.slice("/api/auth".length);
     const raw = request.postData();
 
     let reply;

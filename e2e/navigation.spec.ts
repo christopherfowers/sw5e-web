@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { hydrated } from "./hydration";
 
 /**
  * The header's grouped navigation, in a real browser.
@@ -128,6 +129,11 @@ test.describe("grouped navigation", () => {
 
   test("only one menu is open at a time", async ({ page }) => {
     await page.goto("/powers");
+
+    // One-at-a-time is React's doing: without it the browser's own disclosure
+    // opens both, quite correctly. So this has to wait, unlike the tests above
+    // it that are about the menus working before React arrives at all.
+    await hydrated(page);
 
     const combat = trigger(page, "combat");
     const characters = trigger(page, "characters");

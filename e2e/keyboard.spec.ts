@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { hydrated } from "./hydration";
 
 const SEARCH_FIELD = /search all star wars 5e content/i;
 
@@ -94,6 +95,11 @@ test.describe("keyboard-only operation", () => {
   }) => {
     await page.goto("/monsters");
 
+    // Sorting needs React attached — there is no plain-HTML fallback for it,
+    // unlike the navigation menus. Without this the Enter below lands on a
+    // button with no handler and nothing happens.
+    await hydrated(page);
+
     const header = page.getByRole("columnheader", { name: /^CR/ });
     await expect(header).toHaveAttribute("aria-sort", "none");
 
@@ -108,6 +114,7 @@ test.describe("keyboard-only operation", () => {
 
   test("filters are reachable and operable by keyboard", async ({ page }) => {
     await page.goto("/powers");
+    await hydrated(page);
 
     await page.getByLabel("Filter by name").focus();
     await page.keyboard.type("absorb");

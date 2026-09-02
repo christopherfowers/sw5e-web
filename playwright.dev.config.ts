@@ -26,20 +26,27 @@ export default defineConfig({
   testDir: "./e2e",
 
   /*
-   * One spec, for now, and the narrowness is deliberate rather than settled.
+   * Everything about behaviour a person drives, which is now the whole of it.
    *
-   * Most of the suite either asserts something about the files the build
-   * writes — `prerender`, `account-prerender`, `authoring-prerender`,
-   * `self-hosted-fonts` — which the development server does not produce, or
-   * does not currently pass here for reasons that look like the tests racing a
-   * slower server rather than the product being wrong. Adding those before
-   * they are understood would buy a gate that goes red for reasons nobody
-   * trusts, which is worse than no gate.
+   * This ran one spec when it was introduced, because the other three did not
+   * pass here and the reasons were not understood. They are now, and none of
+   * them was the product: fifteen specs were interacting with the page before
+   * React had attached to it, and one file had the preview server's port
+   * written into it so every request from the development server carried an
+   * origin the account fixture refused.
    *
-   * So: the one spec that caught a real fault, kept green, with the rest to
-   * follow as each is worked out.
+   * Still excluded: `prerender`, `account-prerender`, `authoring-prerender`,
+   * `self-hosted-fonts`, `imagery`, `credits`, `page-structure`, `contrast`
+   * and `starships`, which assert properties of the files the build writes.
+   * The development server does not produce those files, so running them here
+   * would assert nothing.
    */
-  testMatch: ["navigation.spec.ts"],
+  testMatch: [
+    "navigation.spec.ts",
+    "keyboard.spec.ts",
+    "content.spec.ts",
+    "account.spec.ts",
+  ],
 
   use: { baseURL: "http://localhost:5173" },
 
