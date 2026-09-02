@@ -34,10 +34,10 @@ import {
   completeReauthentication,
   reauthenticateWithTotp,
 } from "./api";
-import { ApiError } from "./api";
+import { describeFailure } from "./failures";
 import { useSession } from "./session";
 import type { CurrentUser } from "./types";
-import { getPasskeyAssertion, supportsWebAuthn, WebAuthnError } from "./webauthn";
+import { getPasskeyAssertion, supportsWebAuthn } from "./webauthn";
 import { Banner, SubmitButton, TextField } from "~/components/auth-ui";
 
 import "~/styles/account.css";
@@ -76,30 +76,19 @@ export function ReauthenticatePrompt({ user, purpose }: ReauthenticatePromptProp
   const canPrompt = hasPasskey && supportsWebAuthn();
 
   function report(error: unknown, refusalTitle: string) {
-    if (error instanceof DOMException && error.name === "AbortError") return;
-
-    if (error instanceof WebAuthnError) {
-      setFailure({ title: error.message, body: error.hint ?? undefined });
-      return;
-    }
-
-    if (error instanceof ApiError) {
-      setFailure({
-        title:
-          error.kind === "unavailable"
-            ? "The account service could not be reached."
-            : error.kind === "rate-limited"
-              ? "Too many attempts from here."
-              : refusalTitle,
-        body: error.message,
-      });
-      return;
-    }
-
-    setFailure({
-      title: "That could not be completed.",
-      body: "Try again in a moment.",
+    const described = describeFailure(error, {
+      refusal: refusalTitle,
+      byKind: {
+        unavailable: { title: "The account service could not be reached." },
+        "rate-limited": { title: "Too many attempts from here." },
+      },
+      unknown: {
+        title: "That could not be completed.",
+        body: "Try again in a moment.",
+      },
     });
+
+    if (described) setFailure(described);
   }
 
   /**
