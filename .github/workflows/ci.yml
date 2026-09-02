@@ -277,15 +277,25 @@ jobs:
 
       - name: Every canonical item is prerendered as its own route
         run: |
-          # One page per document, plus 60 pages that do not come from content:
+          # One page per document, plus 62 pages that do not come from content:
           # the home page, the about page, the search page, the sources index,
           # five source pages, the credits page, the customization options hub,
-          # twenty-seven type indexes, the eight subcategory views listed in
+          # twenty-six type indexes, the eleven subcategory views listed in
           # app/content/subcategory-views.ts, the eleven account routes listed
           # in ACCOUNT_PATHS in react-router.config.ts, and the three authoring
           # routes listed in AUTHORING_PATHS beside them. `source` is the only
           # directory that is not a browsable type, so the other twenty-seven
           # contribute item pages.
+          #
+          # It went from 60 to 62 when the class improvements were split into
+          # the three things they actually are — what advancing in a class
+          # grants, what multiclassing into it grants, what one splashed level
+          # is worth — which the site this one replaces published as three
+          # pages. Three new views less one type index: `/class-improvements`
+          # is the class-only cut now rather than an index over all thirty, so
+          # there are twenty-six type indexes rather than twenty-seven. None of
+          # the three adds a document; an improvement is still one page, at
+          # /class-improvements/<slug>.
           #
           # It went from 57 to 60 when the header was rebuilt to the structure
           # the site's owner specified. Two of the three are `/variant-rules`
@@ -361,7 +371,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 60))
+          expected=$((items + 62))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)

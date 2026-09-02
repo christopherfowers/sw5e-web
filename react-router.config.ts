@@ -217,6 +217,11 @@ export default {
       // pages that do not come from content to the document count, and that
       // number went from 51 to 57 with this block and from 58 to 60 with the
       // two rule views.
+      //
+      // It went from 60 to 62 with the three class-improvement views, which is
+      // three new files less the one they take away: `/class-improvements` is
+      // one of the three now rather than an index over all thirty, so the loop
+      // below no longer writes a type index for that type. Net two.
       ...SUBCATEGORY_VIEWS.map((view) => `/${view.slug}`),
     ];
 
@@ -227,8 +232,21 @@ export default {
       paths.push(`/sources/${slug}`);
     }
 
+    /*
+      One type index each, except where a subcategory view has taken the type's
+      own segment. `/class-improvements` is a view now — the class-only cut of
+      a type that holds three unrelated kinds, matching the three pages the
+      previous site published — and a static route outranks `:type`, so the
+      thirty-row index has no address to be prerendered at. Pushing it anyway
+      would render the same view twice under the same filename, which is a
+      wasted minute of a serial prerender and a listing that lies about what
+      the build produces. Asked of the registry rather than named, so the day
+      somebody does this to a second type there is nothing to remember.
+    */
+    const claimedByView = new Set(SUBCATEGORY_VIEWS.map((view) => view.slug));
+
     for (const type of CONTENT_TYPES) {
-      paths.push(`/${type}`);
+      if (!claimedByView.has(type)) paths.push(`/${type}`);
       for (const slug of slugsFor(directory, type)) {
         paths.push(`/${type}/${slug}`);
       }

@@ -122,11 +122,20 @@ function withoutPlacementFor(type: string): string {
 }
 
 describe("a content type that declares no group fails the build", () => {
-  it("type-checks clean as written", () => {
-    // The control. An always-red harness would satisfy the test below without
-    // proving anything about the source.
-    expect(typeCheck()).toEqual([]);
-  });
+  it(
+    "type-checks clean as written",
+    () => {
+      // The control. An always-red harness would satisfy the test below without
+      // proving anything about the source.
+      expect(typeCheck()).toEqual([]);
+    },
+    // The same budget as the cases below, and for the same reason spelled out
+    // there: this runs the TypeScript compiler over the real source. The
+    // default 5s covered it while this file was shorter and while it ran on
+    // its own; under the whole suite it did not, and the failure read as a
+    // typing error in whatever change happened to be in flight.
+    120_000,
+  );
 
   // One small type and one large one, so the assertion is not accidentally
   // about the shape of a single arm.
@@ -271,6 +280,43 @@ describe("every content type is reachable from the navigation", () => {
         (slug) => !offered.has(slug),
       ),
     ).toEqual([]);
+  });
+
+  /*
+    The class improvements, named rather than left to the loop above.
+
+    The loop would pass on either arrangement, because there are two ways for a
+    type to be reachable and it takes the first one it finds. This asserts
+    which one is load-bearing here: the customization hub must not claim to
+    cover this type, and the three views must. That is not a preference. The
+    archive keeps three dumps behind this one type and stamps each record with
+    the kind it came from; a fourth dump, or a record the reader failed to
+    stamp, produces rows that match none of the three views. Under the views
+    branch the check reads the rows and says so. Under a hub's `covers` it
+    stops at the declaration and never looks, and those rows are published and
+    unreachable with nothing anywhere going red.
+
+    It is the same arrangement as equipment — `/equipment` is in no menu and
+    Armor plus Weapons plus Other equipment stand in for it — with one
+    difference worth stating: `/class-improvements` is not the index above the
+    three, it is the first of them. There is no thirty-row page any more,
+    deliberately, because the three answer three different questions and the
+    site this one replaces published them separately.
+  */
+  it("covers the class improvements with three views rather than a claim", () => {
+    expect(
+      named.has("class-improvements"),
+      "the hub claims to cover this type outright, so the reachability check " +
+        "now stops at the claim and never reads a row. A fourth kind of " +
+        "improvement would be published and unreachable, silently.",
+    ).toBe(false);
+    expect(indexed.has("class-improvements")).toBe(false);
+
+    expect(viewsFor("class-improvements").map((view) => view.slug)).toEqual([
+      "class-improvements",
+      "multiclass-improvements",
+      "splashclass-improvements",
+    ]);
   });
 });
 

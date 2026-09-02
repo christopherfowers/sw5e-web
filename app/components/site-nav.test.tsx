@@ -204,7 +204,20 @@ describe("the menu behind each group", () => {
         ["/tech-powers", "Tech powers"],
         ["/maneuvers", "Maneuvers"],
       ],
-      [["/features", "Features"]],
+      /*
+        The quiet half of Characters. The three class-improvement cuts are here
+        rather than beside Feats because nobody browses an improvement — they
+        arrive from the class table that grants one — and they are here at all
+        rather than only on the customization hub because a reader standing on
+        one of the three needs the other two without a trip through a third
+        page.
+      */
+      [
+        ["/features", "Features"],
+        ["/class-improvements", "Class improvements"],
+        ["/multiclass-improvements", "Multiclass improvements"],
+        ["/splashclass-improvements", "Splashclass improvements"],
+      ],
     ],
     [
       "Equipment",

@@ -100,7 +100,7 @@ const FIRST_CHAPTER = 0;
  * holds four different kinds of thing: a type index is still a manifest lookup,
  * a slice of a type has to be counted by running the slice's own predicate over
  * the rows, a book already has `totalForSource`, and a hub is the sum of what it
- * stands for.
+ * stands for — which is itself both kinds, so it is both sums.
  *
  * Null rather than zero where there is no honest number. `/sources` is a page
  * about five books and not a page of anything, and a card reading "0 entries"
@@ -120,12 +120,28 @@ function countBehind(
       ).length;
     case "book":
       return totalForSource(destination.code);
-    case "page":
-      if (destination.covers.length === 0) return null;
-      return destination.covers.reduce(
+    case "page": {
+      if (destination.covers.length + destination.offers.length === 0) {
+        return null;
+      }
+      /*
+        Both halves of what the hub holds, because it holds both: six type
+        indexes and the three cuts of the class improvements. Summing `covers`
+        alone would put 190 on the card in front of a page whose own lede says
+        219 — two numbers for one chapter, on two pages a click apart.
+      */
+      const indexes = destination.covers.reduce(
         (sum, type) => sum + (counts[type] ?? 0),
         0,
       );
+      return destination.offers.reduce(
+        (sum, view) =>
+          sum +
+          selectSubcategoryRows(view, getSummaries(view.type) as AnySummary[])
+            .length,
+        indexes,
+      );
+    }
   }
 }
 

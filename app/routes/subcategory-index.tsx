@@ -6,6 +6,7 @@ import { getListConfig } from "~/content/list-config";
 import { groupOfType, NAV_GROUP_META } from "~/content/nav-groups";
 import {
   getSubcategoryView,
+  parentCrumbOf,
   requireSubcategoryView,
   selectSubcategoryRows,
 } from "~/content/subcategory-views";
@@ -95,17 +96,16 @@ export default function SubcategoryIndex({ loaderData }: Route.ComponentProps) {
   return (
     <div className="page" data-accent={typeMeta.accent}>
       {/*
-        The parent type is a crumb rather than a decoration. This page is a
+        The page above is a crumb rather than a decoration. This page is a
         shelf inside a type, and `/equipment` is where a reader goes when the
         shelf was the wrong one — without that link the only route back to the
         other 290 items is the header menu.
+
+        Which page that is comes from the registry rather than from
+        `/${view.type}`, because for the class improvements the type's segment
+        is one of the shelves. See `parentCrumbOf`.
       */}
-      <Breadcrumbs
-        trail={[
-          { label: typeMeta.plural, to: `/${view.type}` },
-          { label: view.label },
-        ]}
-      />
+      <Breadcrumbs trail={[parentCrumbOf(view), { label: view.label }]} />
       <div className="page-head">
         {/*
           The navigation group, exactly as a type index says it — see the note

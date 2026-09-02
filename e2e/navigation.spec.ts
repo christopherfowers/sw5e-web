@@ -31,10 +31,12 @@ const GROUPS = [
   // The books first: a reader who does not yet know the game needs the rules
   // before a list of things to choose from.
   "Rules",
-  // Fifteen types behind nine entries, because the customization options are
+  // Fifteen types behind twelve entries, because the customization options are
   // one of them. Feats, fighting styles, masteries, lightsaber forms and the
   // two weapon tiers were five separate menus' worth of types; the Player's
   // Handbook introduces them together under one chapter and so does the header.
+  // The three quiet entries at the end are the three kinds of class
+  // improvement, which are one content type and three questions.
   "Characters",
   // Named after the chapter, not after a word for the category.
   "Equipment",
@@ -251,6 +253,10 @@ test.describe("grouped navigation", () => {
         "/other-equipment",
         "/starship-ventures",
         "/features",
+        // One of the three cuts of the class improvements. It is in the quiet
+        // half of Characters, which is exactly the half a reader with no
+        // JavaScript has to be handed in the markup or not at all.
+        "/multiclass-improvements",
         "/starship-base-sizes",
         "/sources",
       ]) {
