@@ -1,5 +1,5 @@
 /**
- * The page the six subcategory addresses render, and the one thing about it
+ * The page the eleven subcategory addresses render, and the one thing about it
  * that is not obvious from looking at it: where its rows link to.
  *
  * A weapon is an equipment document. It has one page, at `/equipment/<slug>`,
@@ -21,7 +21,11 @@ import { render, screen } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
-import type { EquipmentSummary, PowerSummary } from "~/content/types";
+import type {
+  ClassImprovementSummary,
+  EquipmentSummary,
+  PowerSummary,
+} from "~/content/types";
 
 const equipmentRows: EquipmentSummary[] = [
   {
@@ -107,7 +111,40 @@ const { getSummaries } = await import("~/content/dataset.server");
 const SubcategoryIndex = (await import("./subcategory-index")).default;
 const { loader } = await import("./subcategory-index");
 
-type Summaries = EquipmentSummary[] | PowerSummary[];
+const improvementRows: ClassImprovementSummary[] = [
+  {
+    slug: "berserker-class-improvement",
+    name: "Berserker Class Improvement",
+    source: "EC",
+    tagline: "Taken while advancing in the class",
+    className: "Berserker",
+    improvementType: "Class",
+    prerequisite: "At least 3 levels in berserker",
+  },
+  {
+    slug: "berserker-multiclass-improvement",
+    name: "Berserker Multiclass Improvement",
+    source: "EC",
+    tagline: "Taken when multiclassing into the class",
+    className: "Berserker",
+    improvementType: "Multiclass",
+    prerequisite: "Strength 13",
+  },
+  {
+    slug: "berserker-splashclass-improvement",
+    name: "Berserker Splashclass Improvement",
+    source: "EC",
+    tagline: "Taken for a single splashed level",
+    className: "Berserker",
+    improvementType: "Splashclass",
+    prerequisite: null,
+  },
+];
+
+type Summaries =
+  | EquipmentSummary[]
+  | PowerSummary[]
+  | ClassImprovementSummary[];
 
 /** Runs the real loader for an address, then renders what it returned. */
 async function renderView(path: string, rows: Summaries) {
@@ -203,6 +240,68 @@ describe("/force-powers", () => {
       "/powers/force-push",
     );
     expect(screen.queryByRole("link", { name: "Overload" })).toBeNull();
+  });
+});
+
+/**
+ * The three cuts of the class improvements, and the two things about them that
+ * are not true of any other view here.
+ *
+ * The first is that `/class-improvements` is one of the three rather than the
+ * index above them, so the crumb cannot be the type's own segment: it would
+ * send a reader looking at a multiclass improvement to a list of ten rows that
+ * holds none of them.
+ *
+ * The second is the row links, which still go to `/class-improvements/<slug>`
+ * for all thirty. One document, one URL — a multiclass improvement does not
+ * acquire a second address by being listed on a page of its own.
+ */
+describe("/multiclass-improvements", () => {
+  it("shows the multiclass improvements and neither of the other kinds", async () => {
+    await renderView("/multiclass-improvements", improvementRows);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Multiclass improvements" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Berserker Multiclass Improvement" }),
+    ).toBeInTheDocument();
+
+    // Both exclusions, because "Multiclass" and "Splashclass" both end in the
+    // word the type is named after: a predicate that is not whole-string puts
+    // all three of these rows on all three pages.
+    expect(
+      screen.queryByRole("link", { name: "Berserker Class Improvement" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("link", { name: "Berserker Splashclass Improvement" }),
+    ).toBeNull();
+  });
+
+  it("links a row to the canonical item page, not into the cut", async () => {
+    await renderView("/multiclass-improvements", improvementRows);
+
+    // `/multiclass-improvements/berserker-multiclass-improvement` was never
+    // prerendered, so it would 404 to everything that reads a status line
+    // while rendering correctly for whoever clicked it in a browser.
+    expect(
+      screen.getByRole("link", { name: "Berserker Multiclass Improvement" }),
+    ).toHaveAttribute("href", "/class-improvements/berserker-multiclass-improvement");
+  });
+
+  it("offers the hub as the way back rather than a sibling cut", async () => {
+    await renderView("/multiclass-improvements", improvementRows);
+
+    /*
+      The crumb every other view here takes from its type. `/class-improvements`
+      is the class-only cut now, so crumbing to the type's segment would offer a
+      reader a page holding none of the rows they were just looking at — and
+      `/class-improvements` would crumb to itself.
+    */
+    expect(
+      screen.getByRole("link", { name: "Customization options" }),
+    ).toHaveAttribute("href", "/customization-options");
+    expect(screen.queryByRole("link", { name: "Class improvements" })).toBeNull();
   });
 });
 
