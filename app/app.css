@@ -2680,3 +2680,20 @@ main :where(h1, h2, h3, h4, h5, h6)[id],
   text-underline-offset: 0.25em;
   cursor: help;
 }
+
+/*
+ * The line that appears when search fell back to the downloaded index.
+ *
+ * Stated rather than hidden. Quietly returning fewer results is the version of
+ * this that wastes somebody's afternoon: they search for a rule they know is
+ * in the books, find nothing, and conclude the site does not have it.
+ */
+.search-degraded {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
