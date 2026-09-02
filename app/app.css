@@ -2652,7 +2652,16 @@ h6:hover > .heading-anchor,
  * A heading landed on from a fragment link sits under the sticky header
  * otherwise. This is the whole reason the anchors are worth having, so the
  * scroll offset is not optional.
+ *
+ * On the element rather than on `:target`, which is where this started and did
+ * not work. A fragment typed into the address bar was fine; clicking a search
+ * result inside the site left the heading at the very top, under the header.
+ * The router scrolls the element into view itself on a client-side navigation,
+ * and `scroll-margin-top` is read from the element at the moment it scrolls —
+ * before `:target` has anything to say. Putting it on every heading that has
+ * an id removes the timing from the question entirely.
  */
+main :where(h1, h2, h3, h4, h5, h6)[id],
 :target {
   scroll-margin-top: 7rem;
 }

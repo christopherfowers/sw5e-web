@@ -16,6 +16,7 @@
  * because an `<img>` is only ever emitted for a file this build contains.
  */
 
+import { useMemo } from "react";
 import { Link } from "react-router";
 
 import { Badge, SourceBadge } from "./badges";
@@ -23,7 +24,8 @@ import { AssetImage, ImageCredit, MonogramPlate } from "./media";
 import { EditControl } from "./edit-control";
 import { ReportControl } from "./report-control";
 import { classArt, speciesPortrait } from "~/content/imagery";
-import { slugify, uniqueSlugger } from "~/content/slug";
+import { nameItemHeadings } from "~/content/headings";
+import { slugify } from "~/content/slug";
 import { TYPE_META } from "~/content/type-meta";
 import type { AssetCredit, ContentItem, Entry } from "~/content/types";
 import { LostValue, SourceText } from "./source-text";
@@ -158,13 +160,21 @@ export function ItemDetail({
   artCredit?: AssetCredit | null;
 }) {
   /*
-    One slugger for the whole page, so the headings inside every section and
-    every entry share a namespace and cannot claim the same address. A creature
-    page has an "Actions" entry group and a rules chapter has an "Actions"
-    heading; without this they would both be `#actions`.
+    Every heading's address, worked out from the item before anything draws.
+
+    It used to be a slugger handed down to each block, which read well and made
+    rendering a mutation — and React renders a component more than once for the
+    same state whenever it likes. When it did, every id on the page came out as
+    `time-2`, `difficult-terrain-2`, and every link the search index pointed at
+    was dead. See `app/content/headings.ts`.
   */
-  const slugger = uniqueSlugger();
+  const headingIds = useMemo(() => nameItemHeadings(item), [item]);
   const groups = groupEntries(item.entries);
+
+  // Entries are numbered across the whole page in draw order, which is what
+  // `nameItemHeadings` walks. Counted here for the same reason Prose counts
+  // its headings: only the blocks that consume an id advance the count.
+  let entriesDrawn = 0;
   const figure = itemFigure(item);
   const accent = TYPE_META[item.type].accent;
   const tagline = subtitleFor(item);
@@ -330,11 +340,16 @@ export function ItemDetail({
               key={index}
               heading={section.heading}
               body={section.body}
-              slugger={slugger}
+              id={headingIds.sections[index]!.heading!}
+              proseIds={headingIds.sections[index]!.prose}
             />
           ) : (
             <section key={index} className="item-section">
-              <Prose markdown={section.body} startLevel={2} slugger={slugger} />
+              <Prose
+                markdown={section.body}
+                startLevel={2}
+                headingIds={headingIds.sections[index]!.prose}
+              />
             </section>
           ),
         )}
@@ -356,7 +371,11 @@ export function ItemDetail({
                   ) : null}
                   <dd>
                     {entry.body ? (
-                      <Prose markdown={entry.body} startLevel={3} slugger={slugger} />
+                      <Prose
+                        markdown={entry.body}
+                        startLevel={3}
+                        headingIds={headingIds.entries[entriesDrawn++]}
+                      />
                     ) : (
                       <LostValue />
                     )}
@@ -436,14 +455,16 @@ export function ItemDetail({
 function SectionWithHeading({
   heading,
   body,
-  slugger,
+  id,
+  proseIds,
 }: {
   heading: string;
   body: string;
-  slugger: (label: string) => string;
+  /** This heading's address, from the plan built before rendering started. */
+  id: string;
+  /** The addresses for the headings inside `body`, in order. */
+  proseIds: readonly string[];
 }) {
-  const id = slugger(heading);
-
   return (
     <section className="item-section" aria-labelledby={id}>
       {/* See prose.tsx: a link inside a heading joins the heading's name. */}
@@ -453,7 +474,7 @@ function SectionWithHeading({
           <span aria-hidden="true">#</span>
         </a>
       </h2>
-      <Prose markdown={body} startLevel={3} slugger={slugger} />
+      <Prose markdown={body} startLevel={3} headingIds={proseIds} />
     </section>
   );
 }

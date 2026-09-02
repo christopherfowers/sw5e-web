@@ -80,8 +80,16 @@ export function SearchResults({
             <ul className="search-group-list">
               {group.matches.map((match) => (
                 <li key={`${match.record.type}/${match.record.slug}`}>
+                  {/*
+                    Straight to the section that matched, when the match was
+                    found in a heading. The alternative is landing somebody at
+                    the top of a chapter that runs to half a megabyte and
+                    telling them the words are in there somewhere.
+                  */}
                   <Link
-                    to={`/${match.record.type}/${match.record.slug}`}
+                    to={`/${match.record.type}/${match.record.slug}${
+                      match.evidence?.fragment ? `#${match.evidence.fragment}` : ""
+                    }`}
                     className="result-link"
                     onClick={onNavigate}
                   >

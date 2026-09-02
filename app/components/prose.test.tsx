@@ -20,9 +20,20 @@ import { describe, expect, it } from "vitest";
 import { uniqueSlugger } from "~/content/slug";
 import { Prose } from "./prose";
 
+/**
+ * Names this markdown's headings the way `nameItemHeadings` would, then draws
+ * it. A slugger is passed in when a test needs two blocks to share a namespace,
+ * which is what an item page does across its sections and entries.
+ */
 function renderProse(markdown: string, slugger = uniqueSlugger()) {
+  const headingIds = markdown
+    .split(/\r?\n/)
+    .map((line) => /^\s{0,3}#{1,6}\s+(.*)$/.exec(line.trim())?.[1]?.trim())
+    .filter((heading): heading is string => Boolean(heading))
+    .map(slugger);
+
   const Stub = createRoutesStub([
-    { path: "/", Component: () => <Prose markdown={markdown} slugger={slugger} /> },
+    { path: "/", Component: () => <Prose markdown={markdown} headingIds={headingIds} /> },
   ]);
   return render(<Stub initialEntries={["/"]} />);
 }

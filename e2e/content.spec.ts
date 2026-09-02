@@ -241,3 +241,45 @@ test.describe("searching", () => {
     );
   });
 });
+
+test.describe("finding a rule", () => {
+  /**
+   * The journey this exists for, end to end.
+   *
+   * "Difficult terrain" is a heading in the Adventuring chapter, and searching
+   * for it used to return nothing: the index took the chapter's outer sections
+   * and not the forty-odd headings inside them. The site held the rule and
+   * could not find it.
+   */
+  test("a rule inside a chapter is findable, and the result lands on it", async ({
+    page,
+  }) => {
+    await page.goto("/search?q=difficult+terrain");
+
+    const result = page.locator(".result-link").first();
+
+    await expect(result).toBeVisible();
+    await expect(result).toHaveAttribute("href", /#difficult-terrain$/);
+
+    await result.click();
+
+    // Landed on the section, not at the top of a chapter that runs to tens of
+    // thousands of words, and clear of the sticky header.
+    const heading = page.locator("#difficult-terrain");
+    const box = (await heading.boundingBox())!;
+    const header = (await page.locator("header").first().boundingBox())!;
+
+    await expect(heading).toBeVisible();
+    expect(box.y).toBeGreaterThanOrEqual(header.y + header.height);
+  });
+
+  test("the result says which section matched", async ({ page }) => {
+    // A result that asserts a match without showing it makes a reader open the
+    // page to find out whether it was worth opening.
+    await page.goto("/search?q=difficult+terrain");
+
+    await expect(page.locator(".result-evidence").first()).toContainText(
+      /difficult/i,
+    );
+  });
+});
