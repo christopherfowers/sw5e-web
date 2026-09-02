@@ -63,9 +63,11 @@ export interface ServerSearch {
 
 /** The wire shapes, named so the checking below reads as checking. */
 interface WireItem {
-  slug?: unknown;
+  /** The document's slug. Called `key` on the wire, `slug` in here. */
+  key?: unknown;
   name?: unknown;
-  source?: unknown;
+  /** Abbreviation of the book it came from. `sourceKey` on the wire. */
+  sourceKey?: unknown;
 }
 
 interface WireResult {
@@ -76,7 +78,16 @@ interface WireResult {
 }
 
 interface WireGroup {
+  /**
+   * The service's name for the type, which is singular — `rule`, `archetype`.
+   * Not what this application calls it, and not read here; `routeSegment` is.
+   */
   type?: unknown;
+  /**
+   * The plural segment the type is addressed by, which is exactly this
+   * application's own identifier for it: `rules`, `archetypes`.
+   */
+  routeSegment?: unknown;
   totalMatches?: unknown;
   results?: unknown;
 }
@@ -100,7 +111,12 @@ function text(value: unknown): string {
  * it is better than showing it, and better than throwing: the rest of the
  * results are still answers.
  */
-function read(body: unknown): ServerSearch {
+/**
+ * Exported so it can be tested against a response the service actually
+ * sent. This is the whole of the module's contract with the API, and it
+ * shipped once with two field names wrong and no test to say so.
+ */
+export function readSearchResponse(body: unknown): ServerSearch {
   const wire = (body ?? {}) as WireResponse;
   const groups = Array.isArray(wire.groups) ? (wire.groups as WireGroup[]) : [];
 
@@ -108,7 +124,13 @@ function read(body: unknown): ServerSearch {
     query: text(wire.query),
     totalMatches: typeof wire.totalMatches === "number" ? wire.totalMatches : 0,
     groups: groups.flatMap((group) => {
-      const type = text(group.type);
+      // `routeSegment`, not `type`. The service names a type in the singular
+      // and this application names it in the plural, so reading `type` here
+      // asked whether "rule" was a known identifier, and it never is — every
+      // group was dropped and the page rendered a total with nothing under it.
+      // The service publishes `routeSegment` precisely so the two vocabularies
+      // do not have to agree.
+      const type = text(group.routeSegment);
       if (!isContentTypeId(type) || !TYPE_META[type]) return [];
 
       const results = Array.isArray(group.results) ? (group.results as WireResult[]) : [];
@@ -119,7 +141,11 @@ function read(body: unknown): ServerSearch {
           totalMatches:
             typeof group.totalMatches === "number" ? group.totalMatches : results.length,
           results: results.flatMap((result) => {
-            const slug = text(result.item?.slug);
+            // `key` on the wire. Reading `slug` here — the name this
+            // application uses internally — silently discarded every result the
+            // service returned, while the total, whose field name happened to
+            // match, kept rendering. The page read "240 results (showing 0)".
+            const slug = text(result.item?.key);
             if (!slug) return [];
 
             return [
@@ -127,7 +153,8 @@ function read(body: unknown): ServerSearch {
                 type,
                 slug,
                 name: text(result.item?.name),
-                source: typeof result.item?.source === "string" ? result.item.source : null,
+                source:
+                  typeof result.item?.sourceKey === "string" ? result.item.sourceKey : null,
                 matchedIn: text(result.matchedIn) || "text",
                 matchedField:
                   typeof result.matchedField === "string" ? result.matchedField : null,
@@ -169,7 +196,7 @@ export async function searchContent(
     signal: options.signal,
   });
 
-  return read(body);
+  return readSearchResponse(body);
 }
 
 /**

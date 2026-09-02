@@ -94,6 +94,8 @@ jobs:
       # API's allow-list, or every state-changing request is refused by the
       # cross-site filter — which is itself one of the things under test.
       SW5E_CONTRACT_ORIGIN: http://localhost:4173
+      SW5E_CONTENT_IMAGE: ghcr.io/christopherfowers/sw5e-database
+      SW5E_CONTENT_TAG: latest
 
     steps:
       - uses: actions/checkout@v7
@@ -131,7 +133,23 @@ jobs:
           # the real cross-site filter, the real cookie policy, the real problem
           # documents. Only the mail provider is stood down, because nothing
           # here follows an emailed link.
+          # The search half of the contract suite needs a catalogue to
+          # search. The API image ships none — in every deployment the corpus
+          # is a mounted volume — so it is taken from the content image here,
+          # the same way the image job takes it. It has to be in place before
+          # the API starts: the file-backed store builds its index once at
+          # start-up and never reloads.
+          docker create --name sw5e-contract-content \
+            "$SW5E_CONTENT_IMAGE:$SW5E_CONTENT_TAG" > /dev/null
+          docker cp sw5e-contract-content:/opt/sw5e/content ./contract-content
+          docker rm sw5e-contract-content > /dev/null
+
+          # Read by the container as uid 65532, which is not the runner.
+          chmod -R a+rX ./contract-content
+          echo "content documents: $(find contract-content -name '*.json' | wc -l)"
+
           docker run --detach --name sw5e-contract-api --network sw5e-contract \
+            --volume "$PWD/contract-content:/srv/content:ro" \
             --publish 127.0.0.1:8080:8080 \
             --env 'ConnectionStrings__Sw5eIdentity=Host=sw5e-contract-db;Port=5432;Database=sw5e_identity;Username=sw5e;Password=ci-only-not-a-secret' \
             --env Identity__InitializeDatabaseAtStartup=true \
@@ -165,6 +183,7 @@ jobs:
         if: always()
         run: |
           docker rm --force sw5e-contract-api sw5e-contract-db >/dev/null 2>&1 || true
+          docker rm --force sw5e-contract-content >/dev/null 2>&1 || true
           docker network rm sw5e-contract >/dev/null 2>&1 || true
 
   image:
