@@ -79,10 +79,6 @@
   background: var(--surface-raised);
 }
 
-.people-row.is-open {
-  border-color: var(--border-strong);
-}
-
 .people-identity {
   min-width: 0;
   flex: 1 1 20rem;
@@ -151,11 +147,32 @@
   border-color: currentColor;
 }
 
+/*
+ * The way back to the directory, above the account rather than below it.
+ *
+ * Plain and quiet on purpose. It is the first thing on a page whose last
+ * control deletes an account, and a "never mind" that looked like a button
+ * would be competing with the two things here that are meant to look decisive.
+ */
+.people-back {
+  margin: 0 0 var(--space-4);
+  font-size: 0.875rem;
+}
+
 .people-panel {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: var(--space-4) var(--space-5);
   background: var(--surface-raised);
+}
+
+/*
+ * The name of the account being managed. Larger than a section heading because
+ * it is not one — it is the subject of the page, and the reader arriving from a
+ * list of twenty rows needs to see at a glance which of them they opened.
+ */
+.people-panel > h2 {
+  font-size: 1.25rem;
 }
 
 .people-action {
@@ -164,7 +181,7 @@
   border-top: 1px solid var(--border);
 }
 
-.people-action h4 {
+.people-action h3 {
   margin: 0 0 var(--space-2);
   font-size: 1rem;
 }
