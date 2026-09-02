@@ -2580,3 +2580,67 @@ th[aria-sort="descending"] .sort-indicator {
     display: none;
   }
 }
+
+/*
+ * The link on a heading.
+ *
+ * A rules chapter carries forty-odd headings and, until now, no way to address
+ * any of them: the only link anybody could send was the whole chapter with
+ * "scroll down" after it. This is what turns a heading into something you can
+ * paste into a conversation.
+ *
+ * Quiet until wanted, and never hidden from a keyboard. `opacity` rather than
+ * `display: none` so the anchor keeps its place in the layout and the heading
+ * does not shift when it appears.
+ *
+ * `:focus` rather than `:focus-visible`, deliberately. `:focus-visible` is the
+ * usual advice and it is wrong here: it is up to the browser whether focus
+ * counts as visible, and anything it decides against leaves a keyboard user
+ * on a link with `opacity: 0`. There is no cost to showing it for a click,
+ * because a click has already hovered it.
+ */
+.heading-anchor {
+  margin-left: 0.4em;
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 120ms ease-in-out;
+
+  /* Comfortably tappable without changing where the heading sits. */
+  padding-inline: 0.15em;
+}
+
+h1:hover > .heading-anchor,
+h2:hover > .heading-anchor,
+h3:hover > .heading-anchor,
+h4:hover > .heading-anchor,
+h5:hover > .heading-anchor,
+h6:hover > .heading-anchor,
+.heading-anchor:focus {
+  opacity: 1;
+}
+
+.heading-anchor:hover,
+.heading-anchor:focus {
+  color: var(--accent);
+}
+
+/*
+ * On a touch screen there is no hover, so an anchor that only appears on one
+ * is an anchor a phone reader never sees. It stays faintly visible there
+ * instead, which is also where sharing a section is most likely to happen.
+ */
+@media (hover: none) {
+  .heading-anchor {
+    opacity: 0.45;
+  }
+}
+
+/*
+ * A heading landed on from a fragment link sits under the sticky header
+ * otherwise. This is the whole reason the anchors are worth having, so the
+ * scroll offset is not optional.
+ */
+:target {
+  scroll-margin-top: 7rem;
+}

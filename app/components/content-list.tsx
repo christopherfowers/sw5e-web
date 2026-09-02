@@ -60,6 +60,7 @@ import { Link } from "react-router";
 
 import type { Column, ListConfig } from "~/content/list-config";
 import type { AnySummary, ContentTypeId } from "~/content/types";
+import { slugify } from "~/content/slug";
 import { TYPE_META } from "~/content/type-meta";
 import { AssetImage, MonogramPlate } from "./media";
 import { SourceText } from "./source-text";
@@ -574,7 +575,7 @@ function Chapters({
   return (
     <div className="chapter-list" data-accent={accent}>
       {ordered.map(([name, entries]) => (
-        <section key={name} aria-labelledby={`book-${headingId(name)}`}>
+        <section key={name} aria-labelledby={`book-${slugify(name)}`}>
           {/*
             The label points at the title span rather than at the whole
             heading, so the landmark is named "Wretched Hives" and not
@@ -582,7 +583,7 @@ function Chapters({
             still read when the heading is.
           */}
           <h2 className="chapter-book">
-            <span id={`book-${headingId(name)}`}>{name}</span>
+            <span id={`book-${slugify(name)}`}>{name}</span>
             <span className="chapter-book-count">
               {entries.length} {entries.length === 1 ? "entry" : "entries"}
             </span>
@@ -606,10 +607,6 @@ function Chapters({
       ))}
     </div>
   );
-}
-
-function headingId(label: string): string {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function ContentTable({

@@ -84,7 +84,13 @@ export default function About({ loaderData }: Route.ComponentProps) {
     <div className="page">
       <Breadcrumbs trail={[{ label: "About" }]} />
       <div className="page-head">
-        <p className="page-eyebrow">About</p>
+        {/*
+          No eyebrow. It said "About", directly above a heading that says
+          "About", under a breadcrumb that says "About". Everywhere else on the
+          site the eyebrow carries something the heading does not — the source
+          book, the navigation group, the role on the account — and there is
+          nothing of that kind to say here.
+        */}
         <h1>About</h1>
         <p className="lede">
           Star Wars 5e moved here. Same conversion, same books.

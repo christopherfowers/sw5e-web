@@ -22,9 +22,24 @@ interface ProseProps {
   /** Element level for the shallowest heading in the markdown. */
   startLevel?: 2 | 3 | 4;
   className?: string;
+  /**
+   * Names the headings so they can be linked to.
+   *
+   * Passed in rather than made here, because uniqueness has to hold across the
+   * whole page and a page can contain several of these — an item renders one
+   * per section and one per entry. A slugger of its own per instance would
+   * hand out `resting` three times over, every link to any of them would land
+   * on the first, and the duplicate `id`s would break `aria-labelledby` on the
+   * rest.
+   *
+   * Omitting it is the right thing for a preview or a diff, where the markdown
+   * is not part of a published page and an address for it would be a promise
+   * nothing keeps.
+   */
+  slugger?: (label: string) => string;
 }
 
-export function Prose({ markdown, startLevel = 2, className }: ProseProps) {
+export function Prose({ markdown, startLevel = 2, className, slugger }: ProseProps) {
   const blocks = parseMarkdown(markdown);
   const shallowest = blocks.reduce(
     (depth, block) => (block.kind === "heading" ? Math.min(depth, block.depth) : depth),
@@ -34,28 +49,86 @@ export function Prose({ markdown, startLevel = 2, className }: ProseProps) {
   return (
     <div className={className ? `prose-body ${className}` : "prose-body"}>
       {blocks.map((block, index) => (
-        <Block key={index} node={block} startLevel={startLevel} shallowest={shallowest} />
+        <Block
+          key={index}
+          node={block}
+          startLevel={startLevel}
+          shallowest={shallowest}
+          slugger={slugger}
+        />
       ))}
     </div>
   );
+}
+
+/** The plain text of an inline tree, for naming a heading. */
+function plainText(nodes: InlineNode[]): string {
+  return nodes
+    .map((node) => {
+      switch (node.kind) {
+        case "text":
+          return node.value;
+        case "strong":
+        case "emphasis":
+        case "link":
+          return plainText(node.children);
+      }
+    })
+    .join("");
 }
 
 function Block({
   node,
   startLevel,
   shallowest,
+  slugger,
 }: {
   node: BlockNode;
   startLevel: number;
   shallowest: number;
+  slugger?: (label: string) => string;
 }) {
   switch (node.kind) {
     case "heading": {
       const level = Math.min(6, startLevel + (node.depth - shallowest));
       const Tag = `h${level}` as "h2" | "h3" | "h4" | "h5" | "h6";
+      const text = plainText(node.children);
+      const id = slugger?.(text);
+
       return (
-        <Tag>
+        /*
+          The `aria-label` is not decoration. A link nested inside a heading
+          contributes its own name to the heading's, so without this every
+          heading on the page announced as "Benefits Link to Benefits" — the
+          anchor made the outline it was meant to serve worse to listen to.
+          Naming the heading explicitly pins it to the words a reader sees,
+          and the anchor keeps its own name for when it is tabbed to.
+        */
+        <Tag id={id} aria-label={id ? text : undefined}>
           <Inline nodes={node.children} />
+          {/*
+            The reason any of this exists. A rules chapter carries forty-four
+            headings and carried no way to address any of them: the only link
+            anybody could send was the whole chapter, with "scroll down" after
+            it. This is the affordance that turns a heading into something you
+            can paste into a conversation.
+
+            It is a real anchor rather than a copy-to-clipboard button, so it
+            works without JavaScript, opens in a new tab if that is what
+            somebody wants, and shows the address in the status bar on hover.
+            The label says which section, because "Link to this section"
+            repeated forty-four times is a screen reader reading out a list of
+            identical links.
+          */}
+          {id ? (
+            <a
+              className="heading-anchor"
+              href={`#${id}`}
+              aria-label={`Link to ${text}`}
+            >
+              <span aria-hidden="true">#</span>
+            </a>
+          ) : null}
         </Tag>
       );
     }
@@ -92,6 +165,7 @@ function Block({
               node={child}
               startLevel={startLevel}
               shallowest={shallowest}
+              slugger={slugger}
             />
           ))}
         </blockquote>

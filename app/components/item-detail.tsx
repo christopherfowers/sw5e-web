@@ -23,6 +23,7 @@ import { AssetImage, ImageCredit, MonogramPlate } from "./media";
 import { EditControl } from "./edit-control";
 import { ReportControl } from "./report-control";
 import { classArt, speciesPortrait } from "~/content/imagery";
+import { slugify, uniqueSlugger } from "~/content/slug";
 import { TYPE_META } from "~/content/type-meta";
 import type { AssetCredit, ContentItem, Entry } from "~/content/types";
 import { LostValue, SourceText } from "./source-text";
@@ -156,6 +157,13 @@ export function ItemDetail({
    */
   artCredit?: AssetCredit | null;
 }) {
+  /*
+    One slugger for the whole page, so the headings inside every section and
+    every entry share a namespace and cannot claim the same address. A creature
+    page has an "Actions" entry group and a rules chapter has an "Actions"
+    heading; without this they would both be `#actions`.
+  */
+  const slugger = uniqueSlugger();
   const groups = groupEntries(item.entries);
   const figure = itemFigure(item);
   const accent = TYPE_META[item.type].accent;
@@ -318,13 +326,15 @@ export function ItemDetail({
       <div className="item-body">
         {item.sections.map((section, index) =>
           section.heading ? (
-            <section key={index} className="item-section">
-              <h2>{section.heading}</h2>
-              <Prose markdown={section.body} startLevel={3} />
-            </section>
+            <SectionWithHeading
+              key={index}
+              heading={section.heading}
+              body={section.body}
+              slugger={slugger}
+            />
           ) : (
             <section key={index} className="item-section">
-              <Prose markdown={section.body} startLevel={2} />
+              <Prose markdown={section.body} startLevel={2} slugger={slugger} />
             </section>
           ),
         )}
@@ -333,9 +343,9 @@ export function ItemDetail({
           <section
             key={group.name}
             className="item-section"
-            aria-labelledby={`group-${slugifyLabel(group.name)}`}
+            aria-labelledby={`group-${slugify(group.name)}`}
           >
-            <h2 id={`group-${slugifyLabel(group.name)}`}>{group.name}</h2>
+            <h2 id={`group-${slugify(group.name)}`}>{group.name}</h2>
             <dl className="entry-list">
               {group.entries.map((entry, index) => (
                 <div className="entry" key={`${entry.name ?? "entry"}-${index}`}>
@@ -346,7 +356,7 @@ export function ItemDetail({
                   ) : null}
                   <dd>
                     {entry.body ? (
-                      <Prose markdown={entry.body} startLevel={3} />
+                      <Prose markdown={entry.body} startLevel={3} slugger={slugger} />
                     ) : (
                       <LostValue />
                     )}
@@ -415,8 +425,37 @@ export function ItemDetail({
   );
 }
 
-function slugifyLabel(label: string): string {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+/**
+ * A titled section of an item's prose.
+ *
+ * Its own component because the heading needs an address, and naming it has to
+ * happen in the same order the page renders — a slug taken inside a `.map`
+ * callback and one taken outside it are the same call, but keeping the
+ * ordering visible here is what makes the ids stable across builds.
+ */
+function SectionWithHeading({
+  heading,
+  body,
+  slugger,
+}: {
+  heading: string;
+  body: string;
+  slugger: (label: string) => string;
+}) {
+  const id = slugger(heading);
+
+  return (
+    <section className="item-section" aria-labelledby={id}>
+      {/* See prose.tsx: a link inside a heading joins the heading's name. */}
+      <h2 id={id} aria-label={heading}>
+        {heading}
+        <a className="heading-anchor" href={`#${id}`} aria-label={`Link to ${heading}`}>
+          <span aria-hidden="true">#</span>
+        </a>
+      </h2>
+      <Prose markdown={body} startLevel={3} slugger={slugger} />
+    </section>
+  );
 }
 
 /** Keeps entry groups in first-seen order: traits, then actions, then the rest. */
