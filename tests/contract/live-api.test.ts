@@ -39,8 +39,11 @@ import {
   verifyEmail,
 } from "../../app/auth/api";
 import { AuthApiContract } from "../auth-api-contract";
+import { writableContractTarget } from "./target";
 
-const API = process.env.SW5E_CONTRACT_API;
+// Guarded: this suite registers accounts, so it refuses any target that is
+// not disposable. See tests/contract/target.ts.
+const API = writableContractTarget();
 const ORIGIN = process.env.SW5E_CONTRACT_ORIGIN ?? "http://localhost:4173";
 
 /**
