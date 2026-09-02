@@ -300,7 +300,18 @@ describe("a publish refused because somebody else got there first", () => {
 
     const description = await screen.findByLabelText("Description");
     await userEvent.clear(description);
-    await userEvent.type(description, passage);
+    // `delay: null` dispatches every keystroke exactly as before and simply
+    // stops awaiting a macrotask between them. The distinction matters because
+    // the assertion below is about characters surviving the round trip, so the
+    // keystrokes have to stay individual — what does not have to stay is three
+    // seconds of yielding to the event loop.
+    //
+    // Typed with the default delay this passage takes 4.2s of a 5s budget on an
+    // idle machine, which is not a margin. It failed about two runs in three on
+    // a machine doing anything else, and a suite with a test that fails on load
+    // is a suite people learn to re-run rather than read. With the delay off it
+    // is 1.2s.
+    await userEvent.type(description, passage, { delay: null });
 
     await userEvent.click(screen.getByRole("button", { name: /save draft/i }));
     await screen.findByText(/draft saved/i);
