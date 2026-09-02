@@ -57,6 +57,19 @@ function contentPath(type: string, key: string): string {
   return `${API_ROOT}/content/${segment(type)}/${segment(key)}`;
 }
 
+/**
+ * The published document, on the read API rather than the authoring one.
+ *
+ * A different root on purpose: {@link contentPath} addresses a document's
+ * authoring history — its revisions and its revert — and lives under
+ * `/api/authoring`. What is currently published is ordinary public content and
+ * is served from `/api/content`, which is also the only place it can be got
+ * from when a document has no revisions at all.
+ */
+function publishedPath(type: string, key: string): string {
+  return `/api/content/${segment(type)}/${segment(key)}`;
+}
+
 /* ---------------------------------------------------------------- the types */
 
 /**
@@ -103,6 +116,42 @@ export async function getDraft(
 ): Promise<Draft | null> {
   try {
     return await apiRequest<Draft>(draftPath(type, key), { signal });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+/**
+ * The published document, or `null` when there is no such document.
+ *
+ * This exists because a revision is not the only way a document can be here,
+ * and for almost everything on this site it is not the way it got here at all.
+ * Revisions are written when somebody publishes through the authoring API; the
+ * corpus arrived through the importer, which writes none. On the deployed site
+ * that is 7,877 documents with no revision between them.
+ *
+ * The editor used to read the newest revision and, finding none, offer a blank
+ * form — so every existing document opened as though it did not exist, and the
+ * only thing an author could do was retype it. "No history" and "no document"
+ * are not the same state, and this is what tells them apart.
+ *
+ * A 404 is an ordinary answer and becomes `null`: the document really may not
+ * exist, which is what creating one looks like. Every other failure is
+ * re-thrown, for the reason {@link getDraft} gives — a refused session and an
+ * absent document must not both present as an empty editor.
+ */
+export async function getPublishedDocument(
+  type: string,
+  key: string,
+  signal?: AbortSignal,
+): Promise<unknown | null> {
+  try {
+    const response = await apiRequest<{ data: unknown }>(
+      publishedPath(type, key),
+      { signal },
+    );
+    return response.data;
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;

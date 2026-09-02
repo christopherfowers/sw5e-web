@@ -68,6 +68,7 @@ import {
   removeAtPointer,
   setAtPointer,
 } from "./pointer";
+import { MarkdownEditor } from "./prose-editor";
 import type { SchemaViolation, SchemaViolations } from "./violations";
 
 /**
@@ -218,6 +219,16 @@ function LineField(props: ControlFieldProps & { control: LineControl }) {
   );
 }
 
+/**
+ * A markdown field.
+ *
+ * The control is `app/authoring/prose-editor.tsx` — a toolbar over the text
+ * and a preview under it — and not a plain text area, because the schemas mark
+ * these fields as markdown and nothing else on this form tells the author what
+ * that dialect contains. The clearing rule is unchanged and still lives here:
+ * emptying the box removes the property rather than storing `""`, exactly as
+ * it did when this drew a bare `<textarea>`.
+ */
 function ProseField(props: ControlFieldProps & { control: ProseControl | LineControl }) {
   const { control, pointer, value, onEdit, disabled, scope } = props;
   const id = fieldId(scope, pointer);
@@ -232,15 +243,14 @@ function ProseField(props: ControlFieldProps & { control: ProseControl | LineCon
       errors={violationsAt(props.violations, pointer)}
     >
       {(aria) => (
-        <textarea
-          {...aria}
-          className="authoring-prose"
+        <MarkdownEditor
+          id={aria.id}
+          label={props.label}
           value={text}
           disabled={disabled}
-          rows={Math.min(24, Math.max(4, text.split("\n").length + 1))}
-          onChange={(event) =>
-            onEdit(pointer, event.target.value === "" ? undefined : event.target.value)
-          }
+          describedBy={aria["aria-describedby"]}
+          invalid={aria["aria-invalid"] === true}
+          onChange={(next) => onEdit(pointer, next === "" ? undefined : next)}
         />
       )}
     </Field>

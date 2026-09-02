@@ -527,3 +527,66 @@ it("uses a schema fixture whose root is an object with named properties", () => 
   expect(ARMOR_PROPERTY_SCHEMA.type).toBe("object");
   expect(Object.keys(ARMOR_PROPERTY_SCHEMA.properties)).toContain("description");
 });
+
+/* ------------------------------------------------- a document with no history */
+
+/**
+ * Opening a document that was imported rather than published.
+ *
+ * This is not an edge case; on the deployed site it is every document. A
+ * revision is written when somebody publishes through the authoring API, and
+ * the whole corpus arrived through the importer, which writes none — 7,877
+ * documents and not one revision between them.
+ *
+ * The editor read the newest revision to find what to open, and when there was
+ * not one it offered a blank form. So the edit button on every page in the
+ * library led to an empty document, and the only thing an author could do with
+ * it was retype what was already there. The report was exactly that: "found an
+ * edit page button but it instead seems to only give me adding content. Cannot
+ * change anything."
+ */
+describe("a document that was imported rather than published", () => {
+  function imported() {
+    return new AuthoringApiStub({
+      // No revisions and no draft: what the importer leaves behind.
+      published: {
+        "armor-property/bulky": {
+          key: "bulky",
+          name: "Bulky",
+          description: "The armor is unwieldy and slow to move in.",
+        },
+      },
+    });
+  }
+
+  it("opens the published document rather than a blank form", async () => {
+    mount(user({ roles: ["Contributor"] }), imported());
+
+    // The document's own values, in the form. Before this, every one of these
+    // fields was empty.
+    await waitFor(() =>
+      expect(screen.getByLabelText(/^name/i)).toHaveValue("Bulky"),
+    );
+
+    expect(screen.getByLabelText(/^key/i)).toHaveValue("bulky");
+    expect(screen.getByLabelText(/^description/i)).toHaveValue(
+      "The armor is unwieldy and slow to move in.",
+    );
+  });
+
+  it("still offers a blank form for a document that is genuinely not there", async () => {
+    // Nothing published at that address, no revisions, no draft. This is what
+    // creating a document looks like, and it must keep working.
+    mount(
+      user({ roles: ["Contributor"] }),
+      new AuthoringApiStub({}),
+      "?type=armor-property&key=brand-new",
+    );
+
+    await waitFor(() =>
+      expect(screen.getByLabelText(/^key/i)).toHaveValue("brand-new"),
+    );
+
+    expect(screen.getByLabelText(/^name/i)).toHaveValue("");
+  });
+});
