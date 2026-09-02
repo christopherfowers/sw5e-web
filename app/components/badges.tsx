@@ -53,7 +53,19 @@ export function SourceBadge({
 
   if (linked && meta) {
     return (
-      <Link className="badge badge-link" data-accent={meta.accent} to={`/sources/${meta.slug}`}>
+      <Link
+        className="badge badge-link"
+        data-accent={meta.accent}
+        to={`/sources/${meta.slug}`}
+        /*
+          The unlinked badge below has carried a `title` since it was written,
+          and this one did not — so on a detail page, where the badge is a
+          link, a reader who did not already know that EC means Expanded
+          Content had no way to find out short of following it. The screen
+          reader was told and the eye was not.
+        */
+        title={label}
+      >
         <span aria-hidden="true">{code}</span>
         <span className="sr-only">{label}</span>
       </Link>

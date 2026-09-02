@@ -224,6 +224,43 @@ export function removePasskey(id: string): Promise<PasskeyRemoveResponse> {
   );
 }
 
+/* ----------------------------------------------------------- re-authentication */
+
+/**
+ * Proving a second factor on a session that already exists.
+ *
+ * Separate endpoints from the sign-in pair above, and separate for a reason
+ * worth stating where the calls are: these require a session and cannot create
+ * one, so neither is a route into an account. What they change is the claim on
+ * the cookie the caller already holds — see the guard, which is the only place
+ * that offers them.
+ *
+ * The begin call names the signed-in account server-side, so the browser
+ * prompts for that account's credentials rather than for every passkey it
+ * holds for the site.
+ */
+export function beginReauthentication(): Promise<PasskeyLoginBeginResponse> {
+  return request<PasskeyLoginBeginResponse>("/reauthenticate/passkey/begin", {
+    method: "POST",
+  });
+}
+
+export function completeReauthentication(
+  credential: PasskeyAuthenticationCredential,
+): Promise<CurrentUser> {
+  return request<CurrentUser>("/reauthenticate/passkey/complete", {
+    method: "POST",
+    body: { credential },
+  });
+}
+
+export function reauthenticateWithTotp(code: string): Promise<CurrentUser> {
+  return request<CurrentUser>("/reauthenticate/totp", {
+    method: "POST",
+    body: { code },
+  });
+}
+
 /* --------------------------------------------------------------------- MFA */
 
 export function enrollTotp(): Promise<TotpEnrollResponse> {

@@ -307,3 +307,32 @@
   font-variant-numeric: tabular-nums;
   font-size: 0.75rem;
 }
+
+/*
+ * "Edit this page", for the few accounts that can.
+ *
+ * Deliberately in the same register as the report trigger directly above it,
+ * and deliberately not louder. A maintainer reading their own site should meet
+ * the same page everybody else does, with one extra line at the bottom of it.
+ * It carries no border of its own because the report control above already
+ * drew the rule that separates this pair from the content.
+ */
+
+.edit-control {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.edit-control-link {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 0.25em;
+}
+
+.edit-control-link:hover,
+.edit-control-link:focus-visible {
+  color: var(--text);
+  text-decoration-style: solid;
+}

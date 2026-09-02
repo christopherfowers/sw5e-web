@@ -98,6 +98,34 @@ test.describe("grouped navigation", () => {
     );
   });
 
+  test("a menu opened with the pointer is still open a moment later", async ({
+    page,
+  }) => {
+    // Written against the clock rather than against the click, because the bug
+    // it guards is a race and not a refusal. `toggle` on a `<details>` is
+    // dispatched asynchronously, so a handler that mirrors the element's state
+    // back into React can fire after the open has already been recorded, read
+    // the two as disagreeing, and put the menu straight back. Every assertion
+    // that checks immediately after the click passes against that; the panel is
+    // open at the instant it is asked and shut by the next frame.
+    //
+    // So this waits, and then asks. `toHaveAttribute` would retry until it
+    // succeeded and hide exactly the failure being looked for, which is why the
+    // state is read once, after settling, rather than polled.
+    await page.goto("/powers");
+
+    const characters = trigger(page, "characters");
+    await characters.click();
+
+    await page.waitForTimeout(250);
+
+    expect(await menu(page, "characters").evaluate((el: HTMLDetailsElement) => el.open)).toBe(true);
+    expect(await characters.getAttribute("aria-expanded")).toBe("true");
+    await expect(
+      menu(page, "characters").getByRole("link", { name: "Species" }),
+    ).toBeVisible();
+  });
+
   test("only one menu is open at a time", async ({ page }) => {
     await page.goto("/powers");
 

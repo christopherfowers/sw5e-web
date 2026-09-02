@@ -31,7 +31,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   ApiError,
   beginPasskeyLogin,
+  beginReauthentication,
   getCurrentUser,
+  reauthenticateWithTotp,
   register,
   removePasskey,
   verifyEmail,
@@ -179,6 +181,31 @@ describe.skipIf(!API)("the account client against the real API", () => {
       expect(failure).toBeInstanceOf(ApiError);
       expect((failure as ApiError).kind).toBe("unauthenticated");
       expect((failure as ApiError).status).toBe(401);
+    });
+  });
+
+  describe("re-authentication", () => {
+    /**
+     * These routes cannot be driven to completion from here — every one of them
+     * needs a session, and this file has none — so what is pinned is what can
+     * be: that they are mounted, at these paths, and that an anonymous caller
+     * is refused rather than admitted.
+     *
+     * That is worth its own case because the alternative failure is quiet. A
+     * route that is not mounted answers 404, which this client reports as an
+     * ordinary invalid request; the front end would draw "that could not be
+     * confirmed" and the reader would retry a button that can never work.
+     */
+    it("is mounted and refuses an anonymous caller", async () => {
+      for (const attempt of [
+        () => beginReauthentication(),
+        () => reauthenticateWithTotp("123456"),
+      ]) {
+        const failure = await attempt().then(() => null, (error: unknown) => error);
+
+        expect(failure).toBeInstanceOf(ApiError);
+        expect((failure as ApiError).status).toBe(401);
+      }
     });
   });
 

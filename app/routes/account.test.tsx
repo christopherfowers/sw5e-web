@@ -15,11 +15,13 @@
  */
 
 import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { useSearchParams } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AuthApiContract, user } from "../../tests/auth-api-contract";
+import { AuthApiContract, user, VALID_TOTP_CODE } from "../../tests/auth-api-contract";
 import { marker, renderWithSession, serveApiContract } from "../../tests/harness";
+import { installAuthenticator, removeWebAuthn } from "../../tests/webauthn-stub";
 import Account from "./account";
 import AccountContributions from "./account-contributions";
 import AccountPasskeys from "./account-passkeys";
@@ -63,6 +65,7 @@ function mount(contract: AuthApiContract, at = "/account") {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  removeWebAuthn();
 });
 
 describe("a signed-out reader", () => {
@@ -462,9 +465,39 @@ describe("a session that only proved an inbox", () => {
     });
   }
 
-  it("is refused the contributor area, and told what would fix it", async () => {
+  /** The same session, on an account with nothing enrolled at all. */
+  function strandedOnAnEmailedCode() {
+    return user({
+      roles: ["Contributor"],
+      passkeys: [],
+      twoFactorEnabled: false,
+      authenticationMethod: "email",
+      strongAuthentication: false,
+    });
+  }
+
+  it("asks the reader to prove the passkey they already have", async () => {
+    installAuthenticator();
+    // The bug this replaced: the account fixture has a passkey on it, and the
+    // refusal told its holder to go and add a passkey. Deciding what to offer
+    // from the session rather than from the account is what produced that, so
+    // the assertion is specifically that the offer names the credential the
+    // account holds.
     mount(
       new AuthApiContract({ session: contributorOnAnEmailedCode() }),
+      "/account/contributions",
+    );
+
+    expect(
+      await screen.findByRole("button", { name: /confirm with a passkey/i }),
+    ).toBeInTheDocument();
+
+    expect(screen.queryByRole("link", { name: /add a passkey/i })).toBeNull();
+  });
+
+  it("offers enrolment only when there is genuinely nothing to prove", async () => {
+    mount(
+      new AuthApiContract({ session: strandedOnAnEmailedCode() }),
       "/account/contributions",
     );
 
@@ -476,18 +509,67 @@ describe("a session that only proved an inbox", () => {
     expect(
       within(alert).getByRole("link", { name: /authenticator app/i }),
     ).toHaveAttribute("href", "/account/security");
+
+    // Nothing to confirm with, so nothing that offers to.
+    expect(screen.queryByRole("button", { name: /confirm/i })).toBeNull();
   });
 
-  it("is not told its account lacks access, which would be untrue", async () => {
-    // It holds the role. Reporting a dead end at somebody who is a minute from
-    // the answer is the specific failure this wording exists to avoid.
+  it("opens the area once the passkey is proved, without a fresh sign-in", async () => {
+    installAuthenticator();
+    // The whole point. The session is raised in place and the guarded page
+    // renders behind it — a redirect to /sign-in here would be the dead end
+    // wearing a different coat.
     mount(
       new AuthApiContract({ session: contributorOnAnEmailedCode() }),
       "/account/contributions",
     );
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).not.toHaveTextContent(/does not have access/i);
+    await userEvent.click(
+      await screen.findByRole("button", { name: /confirm with a passkey/i }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: /^contributions$/i }),
+    ).toBeInTheDocument();
+
+    expect(screen.queryByText(SIGN_IN_MARKER)).toBeNull();
+  });
+
+  it("offers the authenticator code to an account that has one instead", async () => {
+    mount(
+      new AuthApiContract({
+        session: user({
+          roles: ["Contributor"],
+          passkeys: [],
+          twoFactorEnabled: true,
+          authenticationMethod: "email",
+          strongAuthentication: false,
+        }),
+      }),
+      "/account/contributions",
+    );
+
+    const field = await screen.findByLabelText(/six-digit code/i);
+    await userEvent.type(field, VALID_TOTP_CODE);
+    await userEvent.click(screen.getByRole("button", { name: /^confirm$/i }));
+
+    expect(
+      await screen.findByRole("heading", { name: /^contributions$/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("is not told its account lacks access, which would be untrue", async () => {
+    // It holds the role. Reporting a dead end at somebody who is holding the
+    // credential that would clear it is the specific failure this screen
+    // exists to avoid, and "does not have access" is the wording that does it.
+    installAuthenticator();
+    mount(
+      new AuthApiContract({ session: contributorOnAnEmailedCode() }),
+      "/account/contributions",
+    );
+
+    await screen.findByRole("button", { name: /confirm with a passkey/i });
+    expect(document.body).not.toHaveTextContent(/does not have access/i);
     expect(screen.queryByRole("heading", { name: /^contributions$/i })).toBeNull();
   });
 

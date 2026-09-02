@@ -617,3 +617,30 @@
   padding: 0.375rem;
   user-select: all;
 }
+
+/*
+ * Proving a second factor without signing out.
+ *
+ * Two options stacked rather than tabbed. Whoever lands here has one of them
+ * and not the other in almost every case, so a tab strip would be a control
+ * that exists to hide something that is not there; when both are available,
+ * reading past the first one costs a line.
+ */
+
+.reauthenticate-option {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  max-width: var(--measure);
+}
+
+.reauthenticate-option h2 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.0625rem;
+}
+
+.reauthenticate-option p {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  margin: 0 0 var(--space-4);
+}

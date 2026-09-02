@@ -20,6 +20,7 @@ import { Link } from "react-router";
 
 import { Badge, SourceBadge } from "./badges";
 import { AssetImage, ImageCredit, MonogramPlate } from "./media";
+import { EditControl } from "./edit-control";
 import { ReportControl } from "./report-control";
 import { classArt, speciesPortrait } from "~/content/imagery";
 import { TYPE_META } from "~/content/type-meta";
@@ -98,6 +99,50 @@ function itemFigure(item: ContentItem): Figure | null {
   return null;
 }
 
+/**
+ * The line under the heading, or nothing when it would only repeat the table.
+ *
+ * Taglines are built for index rows, where they are the only summary a reader
+ * gets and they earn their place. On a detail page the stats table is four
+ * lines below, and for several types the tagline is assembled out of exactly
+ * the values it starts with — a species reads "Medium · Byss" directly above a
+ * table whose first two rows are Size: Medium and Homeworld: Byss. Read twice
+ * in a row like that, it stops looking like a summary and starts looking like
+ * a mistake.
+ *
+ * The test is per-segment and total: every part of the tagline has to appear
+ * as a stat value before it is dropped. A monster's "Large droid, unaligned"
+ * and a feat's "No prerequisite" say something the table does not, so they
+ * stay — which is the point of checking rather than special-casing species by
+ * name, since the next type to grow a redundant tagline would not be covered
+ * by a list of names.
+ */
+function subtitleFor(item: ContentItem): string | null {
+  if (!item.tagline) return null;
+
+  const shown = new Set(
+    item.stats
+      .map((stat) => stat.value?.trim().toLowerCase())
+      .filter((value): value is string => Boolean(value)),
+  );
+
+  if (shown.size === 0) return item.tagline;
+
+  const segments = item.tagline
+    .split("·")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  // A tagline with no separator is one segment, which is the case this has to
+  // get right as much as the multi-part one: "Medium" alone above a Size row
+  // is the same duplication.
+  const everySegmentIsAlreadyInTheTable =
+    segments.length > 0 &&
+    segments.every((segment) => shown.has(segment.toLowerCase()));
+
+  return everySegmentIsAlreadyInTheTable ? null : item.tagline;
+}
+
 export function ItemDetail({
   item,
   artCredit = null,
@@ -114,6 +159,7 @@ export function ItemDetail({
   const groups = groupEntries(item.entries);
   const figure = itemFigure(item);
   const accent = TYPE_META[item.type].accent;
+  const tagline = subtitleFor(item);
 
   /*
     Order matters more than columns here. On a phone the heading comes first,
@@ -132,9 +178,9 @@ export function ItemDetail({
         <h1>
           <SourceText value={item.name} />
         </h1>
-        {item.tagline ? (
+        {tagline ? (
           <p className="item-tagline">
-            <SourceText value={item.tagline} />
+            <SourceText value={tagline} />
           </p>
         ) : null}
         <p className="item-badges badge-row">
@@ -337,6 +383,12 @@ export function ItemDetail({
             name: item.name,
           }}
         />
+        {/*
+          Below the report control rather than above it, because reporting is
+          for everybody and editing is for the few. It draws nothing for a
+          reader who cannot edit, and nothing at all in the prerendered file.
+        */}
+        <EditControl type={item.type} slug={item.slug} />
       </div>
     </article>
   );

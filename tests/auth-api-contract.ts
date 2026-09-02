@@ -657,6 +657,76 @@ export class AuthApiContract {
         return { status: 200, body: { status: "authenticated", user: this.session } };
       }
 
+      /*
+       * Raising a session that already exists.
+       *
+       * Modelled as requiring a session and never creating one, because that
+       * is the property that makes these endpoints safe to expose at all — a
+       * fixture that answered them for an anonymous caller would let a client
+       * bug that treats them as a sign-in route go on passing.
+       */
+      case "POST /reauthenticate/passkey/begin":
+        if (!this.session) return UNAUTHENTICATED;
+        return {
+          status: 200,
+          body: {
+            challenge: this.issueChallenge(),
+            timeout: 120_000,
+            rpId: new URL(this.origin).hostname,
+            // Unlike the sign-in ceremony, this one names the account's own
+            // credentials: the server knows who is asking, so the browser is
+            // pointed at the right key rather than at every key it holds.
+            allowCredentials: this.session.passkeys.map((credential) => ({
+              type: "public-key",
+              id: credential.id,
+            })),
+            userVerification: "required",
+          },
+        };
+
+      case "POST /reauthenticate/passkey/complete": {
+        if (!this.session) return UNAUTHENTICATED;
+
+        const payload = body as {
+          credential?: { response?: { clientDataJSON?: string } };
+        };
+        const challenge = challengeFromClientData(
+          payload?.credential?.response?.clientDataJSON,
+        );
+        if (!challenge || !this.outstandingChallenges.delete(challenge)) {
+          return problem(400, "That attempt has expired.", "bad-challenge");
+        }
+
+        // The same account, with a stronger claim on it. Anything else would
+        // be a different bug entirely, and the client has a test that pins the
+        // address across this call for exactly that reason.
+        this.session = {
+          ...this.session,
+          authenticationMethod: "passkey",
+          strongAuthentication: true,
+        };
+        return { status: 200, body: this.session };
+      }
+
+      case "POST /reauthenticate/totp": {
+        if (!this.session) return UNAUTHENTICATED;
+        if (!this.session.twoFactorEnabled) {
+          return problem(
+            400,
+            "There is no authenticator app on this account yet. Set one up first.",
+          );
+        }
+        if ((body as { code?: string })?.code !== VALID_TOTP_CODE) {
+          return problem(400, "That code was not accepted. Check the app and try again.");
+        }
+        this.session = {
+          ...this.session,
+          authenticationMethod: "totp",
+          strongAuthentication: true,
+        };
+        return { status: 200, body: this.session };
+      }
+
       case "POST /mfa/totp/enroll":
         if (!this.session) return UNAUTHENTICATED;
         this.awaitingTotpEnrolment = true;

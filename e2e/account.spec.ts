@@ -530,14 +530,15 @@ test.describe("signing in with an emailed code", () => {
     await expect(page.locator("main").getByRole("alert")).toHaveCount(0);
   });
 
-  test("a contributor on an emailed code is told what to enrol, not that it lacks access", async ({
+  test("a contributor on an emailed code is asked to prove the passkey it has", async ({
     page,
     context,
   }) => {
     // The client-side mirror of the API's 403
-    // `strong-authentication-required`. The account holds the role, so the
-    // dead-end wording would be both wrong and discouraging: this is a minute
-    // of work away from being fixed, and the page has to say which minute.
+    // `strong-authentication-required`. The account holds the role and holds a
+    // passkey, so the dead-end wording would be wrong twice over: it is not a
+    // refusal, and the thing it used to tell the reader to go and enrol is
+    // already on the account. What belongs here is the prompt to use it.
     await serveAccountApi(page, context, {
       session: user({
         roles: ["Contributor"],
@@ -548,9 +549,10 @@ test.describe("signing in with an emailed code", () => {
 
     await page.goto("/account/contributions");
 
-    const alert = page.locator("main").getByRole("alert");
-    await expect(alert).toContainText(/needs a passkey or an authenticator app/i);
-    await expect(alert).not.toContainText(/does not have access/i);
+    await expect(
+      page.getByRole("button", { name: /confirm with a passkey/i }),
+    ).toBeVisible();
+    await expect(page.locator("main")).not.toContainText(/does not have access/i);
     await expect(
       page.getByRole("heading", { name: /^contributions$/i }),
     ).toHaveCount(0);

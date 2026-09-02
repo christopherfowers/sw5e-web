@@ -34,6 +34,7 @@ import {
   serveAdministration,
 } from "../../tests/admin-api-stub";
 import { renderWithSession } from "../../tests/harness";
+import { installAuthenticator, removeWebAuthn } from "../../tests/webauthn-stub";
 import Account from "./account";
 import AccountPeople from "./account-people";
 
@@ -63,6 +64,7 @@ function mount(
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  removeWebAuthn();
 });
 
 /* ------------------------------------------------------------- who may look */
@@ -102,10 +104,12 @@ describe("who may see the directory", () => {
     expect(admin.calls).toHaveLength(0);
   });
 
-  it("tells an administrator who signed in with a code how to fix it", async () => {
+  it("asks an administrator who signed in with a code to prove their passkey", async () => {
     // The account holds the role. This is not "you may not" — it is "not from
     // this sign-in", and the two must not be worded alike: one is the end of
-    // the conversation and the other is about a minute of work.
+    // the conversation and the other is one prompt away. The account has a
+    // passkey, so what it meets is the prompt rather than a description of it.
+    installAuthenticator();
     const admin = new AdminApiStub({ users: [adminUser()] });
 
     mount(
@@ -117,10 +121,13 @@ describe("who may see the directory", () => {
       }),
     );
 
-    const banner = await screen.findByRole("alert");
+    await screen.findByRole("button", { name: /confirm with a passkey/i });
 
-    expect(banner).toHaveTextContent(/passkey or an authenticator app/i);
-    expect(banner).not.toHaveTextContent(/does not have access/i);
+    expect(document.body).not.toHaveTextContent(/does not have access/i);
+
+    // And the directory was never asked for. Drawing the prompt while still
+    // fetching would put the names of every account on the platform one 403
+    // away from a session that must not have them.
     expect(admin.calls).toHaveLength(0);
   });
 
