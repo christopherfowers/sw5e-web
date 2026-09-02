@@ -37,9 +37,19 @@ export default [
     // account identifier is not something the build machine should be
     // enumerating — so it would fall through to nginx's SPA fallback, which is
     // wired to `error_page 404` and answers 404 to everything that reads the
-    // status line. The open account is a query parameter on a static path
-    // instead. See `app/routes/account-people.tsx`.
-    route("people", "routes/account-people.tsx"),
+    // status line. The account being managed is a query parameter on a static
+    // path instead, exactly as the authoring routes below carry the document
+    // being edited. See `app/routes/account-people.tsx`.
+    //
+    // `people/manage` is a child of `people` rather than a sibling, and that is
+    // load-bearing rather than tidy: React Router keeps a parent route's
+    // component mounted while a child renders, so the directory's search term
+    // and filters survive the trip into one account and back out. They have
+    // nowhere else to survive — the term is somebody's email address, so it may
+    // not go in the URL, in history state or in storage.
+    route("people", "routes/account-people.tsx", [
+      route("manage", "routes/account-people-manage.tsx"),
+    ]),
     route("audit", "routes/account-audit.tsx"),
   ]),
 

@@ -21,9 +21,28 @@
  * normally does. A shareable `?q=` is a nice affordance for a catalogue and a
  * bad one for a box people type email addresses into: the address would land in
  * browser history, in a bookmark, and in whatever the reader pastes into a chat
- * window when asking a colleague to look. The selected account *is* in the URL,
+ * window when asking a colleague to look. The managed account *is* in the URL,
  * because a version 7 GUID is opaque and being able to send somebody a link to
  * "this account" is worth having.
+ *
+ * ## This page is the list, and nothing else
+ *
+ * It used to be both. Managing an account opened a panel underneath the
+ * directory, on the same address, which meant that pressing Manage on a list
+ * long enough to scroll produced no visible change whatsoever — the thing the
+ * reader asked for was drawn below the fold, so the button read as broken.
+ * Managing one account is now its own address, `/account/people/manage?user=…`,
+ * and lives in `app/routes/account-people-manage.tsx`.
+ *
+ * That page is a **child route** of this one, and the nesting is the mechanism
+ * rather than a filing decision. React Router keeps a parent route's component
+ * mounted while a child renders, so `Directory` below survives the trip into an
+ * account and back — with its search term, its filters and its page number
+ * intact. Nothing else here could carry them: the term is somebody's email
+ * address, which rules out the query string, `history.state` and storage alike.
+ * So `Directory` renders the outlet *instead of* the list when the child is
+ * matched, rather than beside it, and the list it comes back to is the one the
+ * reader left.
  *
  * ## No loader, and it matters here as much as anywhere
  *
@@ -46,28 +65,19 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useOutlet, useSearchParams } from "react-router";
 
-import { ApiError } from "~/api/http";
-import {
-  assignRoles,
-  deleteUser,
-  getUser,
-  listAdministrativeActions,
-  listUsers,
-  setSuspension,
-} from "~/admin/api";
+import { listUsers } from "~/admin/api";
 import { describeFailure, When, type Load } from "~/admin/format";
 import {
   ACCOUNT_STATUS_FILTERS,
   type AccountStatusFilter,
   type AdministrativeAction,
   type AdminUser,
-  type AdminUserDetail,
 } from "~/admin/types";
 import { RequireSession } from "~/auth/guard";
 import { ROLE_META } from "~/auth/roles";
-import { ROLES, type AssignableRole, type CurrentUser, type Role } from "~/auth/types";
+import { ROLES, type Role } from "~/auth/types";
 import { Banner, SessionPending, SubmitButton } from "~/components/auth-ui";
 import { accountMeta } from "./account";
 
@@ -77,11 +87,19 @@ export function meta() {
   return accountMeta("People");
 }
 
-/** Which query parameter names the open account. */
-const SELECTED = "user";
+/**
+ * Which query parameter names the account being managed.
+ *
+ * A version 7 GUID and nothing else. Everything else this page holds — the
+ * search term above all — stays out of the address bar; see the note at the top
+ * of this file.
+ */
+export const SELECTED = "user";
 
-/** The roles an administrator may grant. `Community` is the floor, not a gift. */
-const ASSIGNABLE: AssignableRole[] = ["Contributor", "Administrator"];
+/** The address that manages one account. */
+export function managePath(userId: string): string {
+  return `/account/people/manage?${SELECTED}=${encodeURIComponent(userId)}`;
+}
 
 /* --------------------------------------------------------------- the list */
 
@@ -93,8 +111,12 @@ const ASSIGNABLE: AssignableRole[] = ["Contributor", "Administrator"];
  * A suspension is a decision somebody made and lasts until somebody undoes it;
  * a lockout is the framework counting failed attempts, expires by itself, and
  * can be caused against any account by any stranger who knows its address.
+ *
+ * Exported so that the page which manages one account draws the same markers
+ * the row did. Two renderings of "suspended" are two chances for one of them to
+ * go quietly out of date.
  */
-function AccountState({ account }: { account: AdminUser }) {
+export function AccountState({ account }: { account: AdminUser }) {
   return (
     <p className="people-state">
       {account.suspension ? (
@@ -121,7 +143,8 @@ function AccountState({ account }: { account: AdminUser }) {
   );
 }
 
-function Roles({ roles }: { roles: Role[] }) {
+/** The roles an account holds, as badges. Exported for the same reason. */
+export function Roles({ roles }: { roles: Role[] }) {
   // Rendered in the ladder's own order rather than the order the server
   // happened to send, so two rows never disagree about where Contributor sits.
   const held = ROLES.filter((role) => roles.includes(role));
@@ -137,443 +160,7 @@ function Roles({ roles }: { roles: Role[] }) {
   );
 }
 
-/* ------------------------------------------------------------ the actions */
-
-/**
- * The role editor.
- *
- * Checkboxes and one Save rather than a grant button per role, because the API
- * is declarative: the request names the complete set the account should end up
- * holding, and anything absent is revoked. A per-role button would have to read
- * the current set, add or remove one, and send the result — which is the same
- * request with a chance of sending a stale set alongside it.
- */
-function RoleEditor({
-  account,
-  disabled,
-  onChanged,
-}: {
-  account: AdminUser;
-  disabled: boolean;
-  onChanged: () => void;
-}) {
-  const [selected, setSelected] = useState<AssignableRole[]>(() =>
-    ASSIGNABLE.filter((role) => account.roles.includes(role)),
-  );
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [note, setNote] = useState<string | null>(null);
-
-  async function save() {
-    setSaving(true);
-    setError(null);
-    setNote(null);
-
-    try {
-      const result = await assignRoles(account.id, selected);
-
-      setNote(
-        result.awaitingSecondFactor
-          ? "Saved. This account holds neither a passkey nor an authenticator app, " +
-              "so it cannot use an elevated role until it enrols one — it has been " +
-              "emailed and told what to add."
-          : "Saved.",
-      );
-
-      onChanged();
-    } catch (failure) {
-      setError(describeFailure(failure));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <section className="people-action" aria-labelledby="people-roles-heading">
-      <h4 id="people-roles-heading">Roles</h4>
-
-      <fieldset className="people-role-choices" disabled={disabled || saving}>
-        <legend className="people-legend">
-          What this account may do. Anything unticked is revoked when you save.
-        </legend>
-        {ASSIGNABLE.map((role) => (
-          <label key={role} className="people-choice">
-            <input
-              type="checkbox"
-              checked={selected.includes(role)}
-              onChange={(event) =>
-                setSelected((current) =>
-                  event.target.checked
-                    ? [...current, role]
-                    : current.filter((held) => held !== role),
-                )
-              }
-            />
-            <span>
-              <strong>{ROLE_META[role].label}</strong>
-              <span className="people-choice-summary">{ROLE_META[role].summary}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-
-      {/*
-        The rule the service enforces, said here as well. An administrator who
-        unticks their own Administrator box meets a 400 otherwise, and a refusal
-        that arrives after the click reads as a bug rather than as a design.
-      */}
-      {disabled ? (
-        <p className="people-note">
-          You cannot change your own roles. The administrator role is the only
-          thing that can grant the administrator role, so the last one revoking
-          themselves would leave nobody able to appoint another. Ask another
-          administrator.
-        </p>
-      ) : null}
-
-      {error ? (
-        <Banner tone="error" title="Those roles were not saved.">
-          {error}
-        </Banner>
-      ) : null}
-      {note ? (
-        <Banner tone="info" title="Roles updated.">
-          {note}
-        </Banner>
-      ) : null}
-
-      <p className="people-actions">
-        <SubmitButton
-          type="button"
-          pending={saving}
-          pendingLabel="Saving…"
-          disabled={disabled}
-          onClick={() => void save()}
-        >
-          Save roles
-        </SubmitButton>
-      </p>
-    </section>
-  );
-}
-
-/**
- * Suspending, and lifting a suspension.
- *
- * The copy carries the two facts an administrator needs before pressing it and
- * would otherwise have to learn from the API documentation: that the account's
- * open sessions end immediately rather than at expiry, and that its passkeys
- * survive — so reinstating gives the account back rather than requiring it to
- * be credentialled again.
- */
-function SuspensionEditor({
-  account,
-  disabled,
-  onChanged,
-}: {
-  account: AdminUser;
-  disabled: boolean;
-  onChanged: () => void;
-}) {
-  const [reason, setReason] = useState("");
-  const [working, setWorking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const standing = account.suspension;
-
-  async function apply(next: boolean) {
-    setWorking(true);
-    setError(null);
-
-    try {
-      await setSuspension(account.id, next, next ? reason : null);
-      setReason("");
-      onChanged();
-    } catch (failure) {
-      setError(describeFailure(failure));
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  return (
-    <section className="people-action" aria-labelledby="people-suspension-heading">
-      <h4 id="people-suspension-heading">Suspension</h4>
-
-      {standing ? (
-        <>
-          <p className="people-note">
-            Suspended <When value={standing.at} />.
-          </p>
-          {/*
-            The reason, as a text node. It is written by an administrator, and
-            an administrator's account can be stolen; being trusted is not the
-            same as being safe to interpolate.
-          */}
-          {standing.reason ? (
-            <blockquote className="people-reason">{standing.reason}</blockquote>
-          ) : null}
-          <p className="people-note">
-            The account cannot sign in and cannot use a session it already had.
-            Its passkeys are untouched, so reinstating gives it straight back —
-            nobody has to enrol anything again.
-          </p>
-        </>
-      ) : (
-        <>
-          <label className="people-field">
-            <span>Why</span>
-            <textarea
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              maxLength={512}
-              rows={3}
-              disabled={disabled || working}
-            />
-          </label>
-          <p className="people-note">
-            Required, written for the other administrators, and never shown to
-            the account — where the reason is an investigation, quoting it back
-            would tell them what is being looked into. They are emailed that
-            they have been suspended and told who to write to.
-          </p>
-          <p className="people-note">
-            Suspending ends the sessions this account has open now, not when
-            their cookies expire. Nothing is deleted: the passkeys stay, the
-            reports and revisions stay, and lifting the suspension restores
-            everything.
-          </p>
-        </>
-      )}
-
-      {disabled ? (
-        <p className="people-note">
-          You cannot suspend your own account. Ask another administrator.
-        </p>
-      ) : null}
-
-      {error ? (
-        <Banner tone="error" title="That did not go through.">
-          {error}
-        </Banner>
-      ) : null}
-
-      <p className="people-actions">
-        <SubmitButton
-          type="button"
-          pending={working}
-          pendingLabel={standing ? "Reinstating…" : "Suspending…"}
-          variant={standing ? "secondary" : "danger"}
-          disabled={disabled || (!standing && reason.trim().length === 0)}
-          onClick={() => void apply(!standing)}
-        >
-          {standing ? "Lift the suspension" : "Suspend this account"}
-        </SubmitButton>
-      </p>
-    </section>
-  );
-}
-
-/**
- * Deletion, behind a step the reader has to take on purpose.
- *
- * Two presses rather than a confirm dialogue: a dialogue is dismissed by
- * reflex, and this is the one action on the site that cannot be undone. The
- * second step also carries the sentence that most changes what somebody expects
- * — that the account's revisions and reports stay behind, attributed to a
- * removed account — because an administrator who believed deletion erased
- * authorship would be using it for something it does not do.
- */
-function DeleteAccount({
-  detail,
-  disabled,
-  onDeleted,
-}: {
-  detail: AdminUserDetail;
-  disabled: boolean;
-  onDeleted: () => void;
-}) {
-  const [confirming, setConfirming] = useState(false);
-  const [reason, setReason] = useState("");
-  const [working, setWorking] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const outstanding = detail.outstandingDrafts ?? 0;
-  const blocked = outstanding > 0;
-
-  async function remove() {
-    setWorking(true);
-    setError(null);
-
-    try {
-      await deleteUser(detail.user.id, reason.trim() || null);
-      onDeleted();
-    } catch (failure) {
-      // A 409 with this code is not a generic conflict, and the difference is
-      // worth surfacing: it means the account owns unpublished work that would
-      // be left attributed to nobody and would keep everyone else out of those
-      // entries. The service's own sentence already names the count and says
-      // what to do, so it is shown rather than paraphrased; what is added is a
-      // reason to reload, since this panel may have been open since before
-      // somebody else saved a draft.
-      setError(
-        failure instanceof ApiError && failure.code === "drafts-outstanding"
-          ? `${failure.message} Reopen this account to see the current count.`
-          : describeFailure(failure),
-      );
-    } finally {
-      setWorking(false);
-    }
-  }
-
-  return (
-    <section className="people-action" aria-labelledby="people-delete-heading">
-      <h4 id="people-delete-heading">Delete</h4>
-
-      <p className="people-note">
-        Removes the account and everything that identifies it: the address, the
-        name, the roles, the passkeys and the authenticator. The address becomes
-        free to register again.
-      </p>
-      <p className="people-note">
-        It does <strong>not</strong> remove what they wrote. Their revisions and
-        their reports stay exactly where they are and are shown afterwards as
-        coming from a removed account. A history that can be edited by deleting
-        somebody is not a history.
-      </p>
-
-      {blocked ? (
-        <Banner tone="warning" title="This account has unpublished drafts.">
-          {outstanding === 1
-            ? "One draft is outstanding."
-            : `${outstanding} drafts are outstanding.`}{" "}
-          Publish or discard {outstanding === 1 ? "it" : "them"} first — deleting
-          now would leave the work attributed to nobody and would keep anyone
-          else from editing those entries.
-        </Banner>
-      ) : null}
-
-      {disabled ? (
-        <p className="people-note">
-          You cannot delete your own account. Ask another administrator.
-        </p>
-      ) : null}
-
-      {error ? (
-        <Banner tone="error" title="That account was not deleted.">
-          {error}
-        </Banner>
-      ) : null}
-
-      {confirming ? (
-        <>
-          <label className="people-field">
-            <span>Why, for the record</span>
-            <textarea
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              maxLength={512}
-              rows={2}
-              disabled={working}
-            />
-          </label>
-          <p className="people-note">
-            Optional, and kept in the administrative log — which survives the
-            deletion, along with the name of the account it was aimed at.
-          </p>
-          <p className="people-actions">
-            <SubmitButton
-              type="button"
-              pending={working}
-              pendingLabel="Deleting…"
-              variant="danger"
-              disabled={disabled || blocked}
-              onClick={() => void remove()}
-            >
-              Yes, delete this account
-            </SubmitButton>
-            <button
-              type="button"
-              className="button"
-              onClick={() => setConfirming(false)}
-              disabled={working}
-            >
-              Cancel
-            </button>
-          </p>
-        </>
-      ) : (
-        <p className="people-actions">
-          <button
-            type="button"
-            className="button button-danger"
-            disabled={disabled || blocked}
-            onClick={() => setConfirming(true)}
-          >
-            Delete this account
-          </button>
-        </p>
-      )}
-    </section>
-  );
-}
-
-/* -------------------------------------------------- what happened to them */
-
-/**
- * What has been done to this account, and by whom.
- *
- * On the account rather than only on the log page, because this is where the
- * question is actually asked. Somebody disputing a suspension, or wondering how
- * an account came to hold a role, is looking at that account — sending them to
- * a separate page and asking them to filter it is asking them to do the join by
- * hand.
- */
-function AccountHistory({ userId }: { userId: string }) {
-  const [load, setLoad] = useState<Load<AdministrativeAction[]>>({ state: "loading" });
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    listAdministrativeActions({ subjectId: userId }, controller.signal)
-      .then((page) => setLoad({ state: "ready", value: page.actions }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setLoad({ state: "failed", message: describeFailure(error) });
-      });
-
-    return () => controller.abort();
-  }, [userId]);
-
-  return (
-    <section className="people-action" aria-labelledby="people-history-heading">
-      <h4 id="people-history-heading">Administrative history</h4>
-
-      {load.state === "loading" ? (
-        <SessionPending label="Loading this account’s history…" />
-      ) : load.state === "failed" ? (
-        <Banner tone="error" title="That history could not be loaded.">
-          {load.message}
-        </Banner>
-      ) : load.value.length === 0 ? (
-        <p className="people-note">
-          Nothing has been done to this account through the administration
-          screens.
-        </p>
-      ) : (
-        <ul className="audit-list">
-          {load.value.map((entry) => (
-            <AuditEntry key={entry.id} entry={entry} showSubject={false} />
-          ))}
-        </ul>
-      )}
-
-      <p className="people-note">
-        <Link to="/account/audit">Everything administrators have done</Link>.
-      </p>
-    </section>
-  );
-}
+/* ------------------------------------------------- the administrative log */
 
 const ACTION_LABEL: Record<AdministrativeAction["action"], string> = {
   "roles-changed": "Roles changed",
@@ -644,8 +231,23 @@ const STATUS_LABEL: Record<AccountStatusFilter, string> = {
   unverified: "Never verified",
 };
 
-function Directory({ viewer }: { viewer: CurrentUser }) {
-  const [params, setParams] = useSearchParams();
+function Directory() {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+
+  // The child route — `/account/people/manage` — when one is matched. This
+  // component stays mounted while that page is drawn, which is the whole reason
+  // the two are nested: everything below is the reader's search, and it has to
+  // still be here when they come back. It is rendered *instead of* the list
+  // rather than beneath it, because a management panel below a directory is
+  // exactly what this page stopped doing.
+  const managing = useOutlet();
+
+  // Anybody holding a link to the address this page used to open an account at.
+  // Those links were meant to be sent between administrators, so they are
+  // honoured rather than ignored: the identifier is the same one the new page
+  // reads, and it is only ever an opaque GUID.
+  const legacySelection = params.get(SELECTED);
 
   // The search box, held here and never written into the URL. See the note at
   // the top of this file.
@@ -659,14 +261,15 @@ function Directory({ viewer }: { viewer: CurrentUser }) {
     Load<{ users: AdminUser[]; total: number; pages: number }>
   >({ state: "loading" });
 
-  const selectedId = params.get(SELECTED);
+  const showingList = !managing && !legacySelection;
 
   // No `setList({ state: "loading" })` here, deliberately. This runs from an
   // effect, and a synchronous state write inside one is a cascading render the
-  // lint rule refuses — but it is also the wrong behaviour: refetching after a
-  // suspension or a role change would blank the panel the administrator is
-  // looking at. The list keeps showing what it has until the new page arrives,
-  // which is what the flag queue already does.
+  // lint rule refuses — but it is also the wrong behaviour: the refetch that
+  // happens on returning from managing an account would blank the list for a
+  // round trip, so somebody who suspended one person would come back to a
+  // spinner where their search results were. The list keeps showing what it has
+  // until the new page arrives, which is what the flag queue already does.
   const reload = useCallback(
     (signal?: AbortSignal) => {
       listUsers(
@@ -697,20 +300,31 @@ function Directory({ viewer }: { viewer: CurrentUser }) {
     [submitted, role, status, page],
   );
 
+  // Fetched when the list is what the reader is looking at, and refetched when
+  // they come back to it. That second half is what carries a change made on the
+  // management page home: a role granted, a suspension lifted or an account
+  // deleted shows in the row on arrival, with no signal passed between the two
+  // pages and nothing for either of them to forget to send.
   useEffect(() => {
+    if (!showingList) return;
     const controller = new AbortController();
     reload(controller.signal);
     return () => controller.abort();
-  }, [reload]);
+  }, [reload, showingList]);
 
-  function select(id: string | null) {
-    const next = new URLSearchParams(params);
-    if (id) next.set(SELECTED, id);
-    else next.delete(SELECTED);
-    // `replace`, so opening and closing accounts does not fill the history with
-    // steps a Back press has to walk through one at a time.
-    setParams(next, { replace: true });
-  }
+  // The old address for an open account, `/account/people?user=…`, sent on to
+  // the page that now manages one. `replace`, so the link somebody followed
+  // does not become a history entry that bounces them forward again on Back.
+  useEffect(() => {
+    if (!legacySelection) return;
+    void navigate(managePath(legacySelection), { replace: true });
+  }, [legacySelection, navigate]);
+
+  if (managing) return managing;
+
+  // Mid-redirect, and for one frame only. Drawing the list underneath would
+  // fetch a directory the reader is already leaving.
+  if (legacySelection) return null;
 
   return (
     <>
@@ -803,26 +417,32 @@ function Directory({ viewer }: { viewer: CurrentUser }) {
             </p>
             <ul className="people-list">
               {list.value.users.map((account) => (
-                <li
-                  key={account.id}
-                  className={
-                    account.id === selectedId ? "people-row is-open" : "people-row"
-                  }
-                >
+                <li key={account.id} className="people-row">
                   <div className="people-identity">
                     <p className="people-name">{account.displayName}</p>
                     <p className="people-email">{account.email}</p>
                     <Roles roles={account.roles} />
                     <AccountState account={account} />
                   </div>
-                  <button
-                    type="button"
+                  {/*
+                    A link, not a disclosure toggle. It goes somewhere, so it
+                    behaves like everything else that does: middle-click opens it
+                    in a tab, the browser shows where it leads, and the reader
+                    who presses it lands on a page rather than on the same list
+                    with something appended below the fold.
+
+                    The accessible name carries the account's own name. A list of
+                    twenty rows whose every control is called "Manage" is a list
+                    that reads, to anybody moving through it by control, as
+                    twenty identical buttons.
+                  */}
+                  <Link
                     className="button"
-                    aria-expanded={account.id === selectedId}
-                    onClick={() => select(account.id === selectedId ? null : account.id)}
+                    to={managePath(account.id)}
+                    aria-label={`Manage ${account.displayName}`}
                   >
-                    {account.id === selectedId ? "Close" : "Manage"}
-                  </button>
+                    Manage
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -853,105 +473,14 @@ function Directory({ viewer }: { viewer: CurrentUser }) {
           </>
         )}
       </section>
-
-      {selectedId ? (
-        <AccountPanel
-          key={selectedId}
-          userId={selectedId}
-          viewer={viewer}
-          onChanged={() => reload()}
-          onDeleted={() => {
-            select(null);
-            reload();
-          }}
-        />
-      ) : null}
     </>
-  );
-}
-
-/**
- * One account, opened.
- *
- * Fetched by identifier rather than reused from the list row, so that a link
- * somebody was sent — `/account/people?user=…` — opens the same panel without
- * needing the search that found it. It also means the panel is never showing a
- * stale copy of a row the list fetched some time ago, which on a page whose
- * next action is "delete" is worth a round trip.
- */
-function AccountPanel({
-  userId,
-  viewer,
-  onChanged,
-  onDeleted,
-}: {
-  userId: string;
-  viewer: CurrentUser;
-  onChanged: () => void;
-  onDeleted: () => void;
-}) {
-  const [load, setLoad] = useState<Load<AdminUserDetail>>({ state: "loading" });
-  const [reloads, setReloads] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    getUser(userId, controller.signal)
-      .then((detail) => setLoad({ state: "ready", value: detail }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setLoad({ state: "failed", message: describeFailure(error) });
-      });
-
-    return () => controller.abort();
-  }, [userId, reloads]);
-
-  function refresh() {
-    setReloads((count) => count + 1);
-    onChanged();
-  }
-
-  if (load.state === "loading") {
-    return <SessionPending label="Loading that account…" />;
-  }
-
-  if (load.state === "failed") {
-    return (
-      <Banner tone="error" title="That account could not be loaded.">
-        {load.message}
-      </Banner>
-    );
-  }
-
-  const account = load.value.user;
-
-  // Every self-directed action the service refuses is refused here too, with
-  // the reason. The server is what actually enforces it — this page runs on
-  // hardware the reader controls — but a button that exists only to answer 400
-  // is a button that reads as broken.
-  const isSelf = account.id === viewer.id;
-
-  return (
-    <section className="account-section people-panel" aria-labelledby="people-panel-heading">
-      <h3 id="people-panel-heading">{account.displayName}</h3>
-      <p className="people-email">{account.email}</p>
-      <p className="people-note">
-        Joined <When value={account.createdAt} />.
-      </p>
-      <AccountState account={account} />
-
-      <RoleEditor account={account} disabled={isSelf} onChanged={refresh} />
-      <SuspensionEditor account={account} disabled={isSelf} onChanged={refresh} />
-      <DeleteAccount detail={load.value} disabled={isSelf} onDeleted={onDeleted} />
-      <AccountHistory userId={account.id} />
-    </section>
   );
 }
 
 export default function AccountPeople() {
   return (
     <RequireSession role="Administrator">
-      {(user) => <Directory viewer={user} />}
+      {() => <Directory />}
     </RequireSession>
   );
 }
