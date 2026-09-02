@@ -31,10 +31,7 @@ const COUNTS: Record<string, number> = {
 };
 
 const loaderData = {
-  options: CUSTOMIZATION_OPTION_TYPES.map((type) => ({
-    type,
-    count: COUNTS[type] ?? 0,
-  })),
+  counts: COUNTS,
   total: Object.values(COUNTS).reduce((sum, count) => sum + count, 0),
 };
 
@@ -99,7 +96,9 @@ describe("the customization options hub", () => {
   it("adds the seven lists up in its own lede", () => {
     renderPage();
 
-    expect(screen.getByText(/219 choices/)).toBeInTheDocument();
+    expect(
+      screen.getByText(new RegExp(`${loaderData.total} choices`)),
+    ).toBeInTheDocument();
   });
 
   it("is a hub rather than a merged list of the options themselves", () => {

@@ -38,6 +38,8 @@ import path from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+import prerenderConfig from "../../react-router.config";
+
 import {
   CUSTOMIZATION_OPTION_TYPES,
   NAVIGATION,
@@ -268,6 +270,37 @@ describe("every content type is reachable from the navigation", () => {
       SUBCATEGORY_VIEWS.map((view) => view.slug).filter(
         (slug) => !offered.has(slug),
       ),
+    ).toEqual([]);
+  });
+});
+
+/**
+ * The half of a menu that nothing else can observe.
+ *
+ * An entry pointing at an address with no prerendered file still works
+ * everywhere anybody looks: `npm run dev` serves it, the e2e suite clicks
+ * through it, every assertion above stays green. What happens instead is that
+ * nginx answers it from the SPA fallback, which is wired to `error_page 404` —
+ * so the page renders perfectly in a browser and is broken to a crawler, a
+ * monitor and a shared link. Three of this header's entries are addresses that
+ * exist for no other reason than to be linked from it, so the failure is one
+ * typo away rather than hypothetical.
+ *
+ * Asserted against the build's own configuration rather than against the app,
+ * for the same reason and at the same length as
+ * `app/content/subcategory-views.test.ts` and `app/auth/prerender-safety.test.ts`.
+ */
+describe("every menu entry has a file behind it", () => {
+  it("is prerendered rather than left to the SPA fallback", async () => {
+    const paths = new Set(await prerenderConfig.prerender!());
+
+    expect(
+      allDestinations()
+        .map((destination) => destination.to)
+        .filter((to) => !paths.has(to)),
+      "the header offers these addresses and the build writes no file for " +
+        "them, so nginx will answer every one of them with a 404 that happens " +
+        "to render",
     ).toEqual([]);
   });
 });

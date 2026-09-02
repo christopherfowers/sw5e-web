@@ -49,25 +49,36 @@ export function meta({ loaderData }: Route.MetaArgs) {
   ];
 }
 
+/**
+ * Counts only. Which types the page shows is not the loader's decision and is
+ * not carried in its payload: the component walks
+ * `CUSTOMIZATION_OPTION_TYPES` itself.
+ *
+ * That is deliberate, and it is what makes the menu's coverage claim testable.
+ * A loader that handed over a list of cards could hand over a short one, and
+ * the page would render four cards, look entirely reasonable, and leave three
+ * content types with nothing anywhere leading to them — while every test that
+ * fed the component its own fixture stayed green.
+ */
 export async function loader() {
-  const manifest = getManifest();
-  const byType = new Map(manifest.types.map((type) => [type.id, type.count]));
+  const byType = new Map(
+    getManifest().types.map((type) => [type.id, type.count]),
+  );
 
-  const options = CUSTOMIZATION_OPTION_TYPES.map((type) => ({
-    type,
-    count: byType.get(type) ?? 0,
-  }));
+  const counts = Object.fromEntries(
+    CUSTOMIZATION_OPTION_TYPES.map((type) => [type, byType.get(type) ?? 0]),
+  ) as Record<string, number>;
 
   return {
-    options,
-    total: options.reduce((sum, option) => sum + option.count, 0),
+    counts,
+    total: Object.values(counts).reduce((sum, count) => sum + count, 0),
   };
 }
 
 export default function CustomizationOptions({
   loaderData,
 }: Route.ComponentProps) {
-  const { options, total } = loaderData;
+  const { counts, total } = loaderData;
 
   return (
     <div className="page">
@@ -83,7 +94,7 @@ export default function CustomizationOptions({
       </div>
 
       <ul className="type-grid">
-        {options.map(({ type, count }) => (
+        {CUSTOMIZATION_OPTION_TYPES.map((type) => (
           <li key={type}>
             <Link
               to={`/${type}`}
@@ -93,7 +104,7 @@ export default function CustomizationOptions({
               <TypeIcon type={type} />
               <span className="type-card-name">{TYPE_META[type].plural}</span>
               <span className="type-card-count">
-                {count.toLocaleString("en-US")}
+                {(counts[type] ?? 0).toLocaleString("en-US")}
                 <span className="sr-only"> entries</span>
               </span>
               <span className="type-card-blurb">{TYPE_META[type].blurb}</span>
