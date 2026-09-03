@@ -342,6 +342,15 @@ describe("every menu entry has a file behind it", () => {
 
     expect(
       allDestinations()
+        /*
+          Off-site destinations are exempt, and narrowly: they are exempt
+          because this build cannot write a file for somebody else's domain,
+          not because links are hard to check. Filtering on the kind rather
+          than on the shape of the address is what keeps that narrow — a
+          relative path that had been typed wrongly would still be caught,
+          where `startsWith("https://")` would have quietly excused it.
+        */
+        .filter((destination) => destination.kind !== "external")
         .map((destination) => destination.to)
         .filter((to) => !paths.has(to)),
       "the header offers these addresses and the build writes no file for " +
@@ -352,13 +361,15 @@ describe("every menu entry has a file behind it", () => {
 });
 
 describe("the menus", () => {
-  it("are the five subjects, in the order they were asked for", () => {
+  it("are the six subjects, in the order they were asked for", () => {
     expect(NAVIGATION.map((group) => group.label)).toEqual([
       "Rules",
       "Characters",
       "Equipment",
       "Starships",
       "NPC statblocks",
+      // Last on purpose: the only menu that leads off the site.
+      "Resources",
     ]);
   });
 
@@ -559,5 +570,67 @@ describe("building the groups", () => {
     );
 
     expect(soleDestination(group!)).toBeNull();
+  });
+});
+
+/* ------------------------------------------------------------- the resources */
+
+/**
+ * The sheets, which are the only destinations that leave this site.
+ *
+ * Two things are worth holding still here. The first is the addresses: they
+ * were read off sw5e.com and confirmed to answer before they were written
+ * down, and a character sheet is the one link on this site a reader is most
+ * likely to follow from a table rather than a browser — a rotted one is
+ * noticed by somebody mid-session.
+ *
+ * The second is the kind. Everything about how these render depends on
+ * `kind === "external"`: the header draws an anchor instead of a NavLink
+ * because the client router would match a Drive URL against no route and put
+ * the not-found page over a working site; the prerender guarantee excuses them
+ * because this build cannot write a file for another domain; the reachability
+ * guarantee refuses to count them because they are not content we publish. A
+ * destination that lost that kind would break all three quietly.
+ */
+describe("the resources menu", () => {
+  const resources = () =>
+    NAVIGATION.find((group) => group.label === "Resources")!;
+
+  it("offers the four sheets that exist", () => {
+    expect(resources().primary.map((destination) => destination.label)).toEqual([
+      "Character sheet",
+      "Character sheet: form fillable",
+      "Deployment sheet: form fillable",
+      "Starship sheet: form fillable",
+    ]);
+  });
+
+  it("sends each of them to the address it was read from", () => {
+    expect(resources().primary.map((destination) => destination.to)).toEqual([
+      "https://drive.google.com/file/d/16b0luhTq6xBuQUUf8jm6vnLAImnmjuAF/view?usp=sharing",
+      "https://drive.google.com/file/d/17mCKw43pbeATDFWraKAOmSgyI8vcUCtK/view?usp=sharing",
+      // The file id ends in a hyphen. It is easy to lose in transcription and
+      // the link still looks plausible without it.
+      "https://drive.google.com/file/d/1Oh9v-kWR7Vd0YNFZE5ESKt1VutzQQSl-/view?usp=sharing",
+      "https://drive.google.com/file/d/1viykv2MazM26WRMJZ4fNAixhoeYWLR7N/view?usp=sharing",
+    ]);
+  });
+
+  it("marks every one of them as leaving the site", () => {
+    for (const destination of resources().primary) {
+      expect(destination.kind).toBe("external");
+    }
+  });
+
+  /**
+   * The reachability guarantee must not be satisfiable by a link off the site.
+   * If an off-site destination ever counted, a content type could lose its last
+   * real index and the check would keep passing because Resources happened to
+   * mention something.
+   */
+  it("leads to no content type on this site", () => {
+    for (const destination of resources().primary) {
+      expect(typesBehind(destination)).toEqual([]);
+    }
   });
 });
