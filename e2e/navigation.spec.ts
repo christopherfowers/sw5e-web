@@ -42,6 +42,11 @@ const GROUPS = [
   "Equipment",
   "Starships",
   "NPC statblocks",
+  // Last, and the only menu whose destinations are not this site: the four
+  // sheets, which live on Google Drive. It is listed here because the count
+  // below is the assertion — a menu appearing or vanishing should fail loudly
+  // rather than be absorbed by a length that follows whatever exists.
+  "Resources",
 ];
 
 test.describe("grouped navigation", () => {
