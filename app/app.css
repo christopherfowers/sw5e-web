@@ -2744,15 +2744,22 @@ main :where(h1, h2, h3, h4, h5, h6)[id],
 }
 
 /*
-  Fixed width so the names line up whether or not a chapter is numbered. The
-  front matter has no number and must not sit half an em to the left of
-  everything under it.
+  One step of the reading path: a heading and the passages read under it.
+
+  Tighter above than a section heading and looser below, because the heading
+  belongs to the list under it rather than dividing the page — the whole point
+  of grouping was to make four shapes a reader can take in, and four headings
+  spaced like sections would read as four sections.
 */
-.chapter-number {
-  flex: 0 0 1.5rem;
-  font-variant-numeric: tabular-nums;
+.path-step {
+  margin-top: var(--space-5);
+}
+
+.path-step-heading {
+  margin-bottom: var(--space-2);
+  font-size: 0.9375rem;
   font-weight: 700;
-  color: var(--text-faint);
+  color: var(--text-muted);
 }
 
 .chapter-name {

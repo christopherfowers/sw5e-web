@@ -129,6 +129,10 @@ function rule(name: string, source: string, ruleType: string): RuleSummary {
     name,
     source,
     tagline: null,
+    // These views cut rules by book and kind, never by reading position, so
+    // nothing here is on the path.
+    readingGroup: null,
+    order: null,
     ruleType,
     chapterNumber: ruleType === "Chapter" ? 1 : null,
     sectionCount: 3,

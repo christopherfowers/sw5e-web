@@ -1300,6 +1300,10 @@ function normalizeRule(record, sources) {
         ) || null,
     summary: {
       ruleType: isVariant ? "Variant" : "Chapter",
+      // The authored path. Both are absent on a variant rule, which is not on
+      // a path at all, and on any passage nobody has placed yet.
+      readingGroup: text(record.readingGroup),
+      order: numeric(record.order),
       chapterNumber: numeric(record.chapterNumber),
       sectionCount: sections.filter((each) => each.heading).length,
     },
