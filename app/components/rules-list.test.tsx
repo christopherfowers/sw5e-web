@@ -174,6 +174,8 @@ const rules: RuleSummary[] = [
     name: "Combat",
     source: "PHB",
     tagline: "Star Wars 5e Player's Handbook · Chapter 9",
+    readingGroup: "Playing the game",
+    order: 11,
     ruleType: "Chapter",
     chapterNumber: 9,
     sectionCount: 9,
@@ -183,6 +185,8 @@ const rules: RuleSummary[] = [
     name: "Species",
     source: "PHB",
     tagline: "Star Wars 5e Player's Handbook · Chapter 2",
+    readingGroup: "Creating a character",
+    order: 4,
     ruleType: "Chapter",
     chapterNumber: 2,
     sectionCount: 2,
@@ -192,6 +196,8 @@ const rules: RuleSummary[] = [
     name: "Changelog",
     source: "PHB",
     tagline: "Star Wars 5e Player's Handbook",
+    readingGroup: "Reference",
+    order: 15,
     ruleType: "Chapter",
     // The archive files a changelog at 99 so it sorts last, and a preface at a
     // negative number so it sorts first. Neither is a printable position.
@@ -203,6 +209,8 @@ const rules: RuleSummary[] = [
     name: "Equipment",
     source: "WH",
     tagline: "Wretched Hives · Chapter 5",
+    readingGroup: null,
+    order: null,
     ruleType: "Chapter",
     chapterNumber: 5,
     sectionCount: 7,
@@ -212,6 +220,8 @@ const rules: RuleSummary[] = [
     name: "Flanking",
     source: "EC",
     tagline: "Optional variant rule",
+    readingGroup: null,
+    order: null,
     ruleType: "Variant",
     chapterNumber: null,
     sectionCount: 1,
@@ -221,6 +231,8 @@ const rules: RuleSummary[] = [
     name: "Species",
     source: "EC",
     tagline: "Expanded Content",
+    readingGroup: null,
+    order: null,
     ruleType: "Chapter",
     chapterNumber: 0,
     sectionCount: 448,
@@ -288,7 +300,10 @@ describe("the rules index", () => {
   it("says how long a passage is, which is all a reader can judge before opening it", () => {
     renderList("rules", "Rules", rules);
 
-    expect(screen.getByText(/Chapter 9 · 9 sections/)).toBeInTheDocument();
+    // The heading it is read under, not the number it was printed at. A
+    // reader deciding whether to open this is choosing between parts of a
+    // path, and "Chapter 9" only means something to somebody holding the book.
+    expect(screen.getByText(/Playing the game · 9 sections/)).toBeInTheDocument();
     expect(screen.getByText(/Variant rule · 1 section$/)).toBeInTheDocument();
   });
 
