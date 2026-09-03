@@ -1850,13 +1850,28 @@ function normalizeStarshipRule(record, sources) {
   const base = common({ ...record, name: record.title }, sources);
   const { add, stats } = statCollector();
   const chapterNumber = numeric(record.chapterNumber);
+  const readingGroup = text(record.readingGroup);
 
-  add("Chapter", chapterNumber == null ? null : String(chapterNumber));
+  add("Book", base.sourceName);
+  add("Position", readingGroup);
 
   return {
     ...base,
-    tagline: chapterNumber == null ? null : `Chapter ${chapterNumber}`,
-    summary: { chapterNumber },
+    /*
+      The heading, not the chapter number. "Chapter 4" is the one fact about
+      this passage a reader on a website cannot act on -- there is no book in
+      their hands to turn to page 4 of -- and the group it is read under
+      answers the same question usefully. chapterNumber is still carried in the
+      summary, because it is true about the archive and the export needs it.
+    */
+    tagline: compact([base.sourceName, readingGroup]).join(" · ") || null,
+    summary: {
+      // The authored path, same two fields as a rule chapter and read the same
+      // way. Absent on any chapter nobody has placed.
+      readingGroup,
+      order: numeric(record.order),
+      chapterNumber,
+    },
     stats,
     // The body opens with its own "# Chapter 9: Combat" heading, and the page
     // already prints that as its h1. Left in, every chapter would carry two

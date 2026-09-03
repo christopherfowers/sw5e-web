@@ -1435,33 +1435,47 @@ const starshipVentures: ListConfig<StarshipVentureSummary> = {
 };
 
 /**
- * Thirteen chapters, which are read in order rather than looked up by name, so
- * this is the one list on the site that does not sort alphabetically.
+ * Thirteen chapters, read in order rather than looked up by name, so this and
+ * the rules list are the two on the site that do not sort alphabetically.
+ *
+ * Ordered and labelled the same way the rules list is, off the same two
+ * authored fields, because they are the same kind of thing: a book somebody
+ * reads front to back. It used to sort by chapterNumber and label each row
+ * "Chapter 4", which told a reader on a website the one fact about the passage
+ * they cannot act on — there is no book in their hands to turn to page 4 of.
+ * The heading it is read under is the useful answer to the same question.
  */
 const starshipRules: ListConfig<StarshipRuleSummary> = {
-  defaultSort: "chapterNumber",
-  compactLine: (row) =>
-    row.chapterNumber == null ? null : `Chapter ${row.chapterNumber}`,
+  defaultSort: "position",
+  compactLine: (row) => row.readingGroup,
   // The name has to come first: a list's opening cell is the row header and
   // carries the link, whatever the column declares.
   columns: [
     nameColumn(),
     {
-      key: "chapterNumber",
-      header: "Chapter",
-      numeric: true,
-      sortValue: (row) => row.chapterNumber,
-      render: (row) =>
-        row.chapterNumber == null ? (
-          em
-        ) : (
-          <Badge className="badge-numeric" accent="green">
-            {row.chapterNumber}
-          </Badge>
-        ),
+      key: "position",
+      header: "Position",
+      className: FROM_SMALL,
+      /*
+        Two bands rather than the rules list's three: this type has no variant
+        rules, so there is nothing optional to keep behind the placed chapters.
+        Unplaced ones still sort after, alphabetically — every chapter of this
+        book is placed today and a test in the content repository says so, but
+        a list that renders nothing for an unplaced row is better than one that
+        puts it at position zero.
+      */
+      sortValue: (row) =>
+        row.order != null ? `A${String(row.order).padStart(5, "0")}` : `B${row.name}`,
+      render: (row) => textOr(row.readingGroup),
     },
   ],
-  facets: [],
+  facets: [
+    {
+      key: "readingGroup",
+      label: "Part",
+      valueOf: (row) => row.readingGroup,
+    },
+  ],
 };
 
 function ratingValue(rating: string): number {

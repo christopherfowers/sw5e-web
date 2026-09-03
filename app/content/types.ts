@@ -336,8 +336,17 @@ export interface StarshipVentureSummary extends BaseSummary {
 }
 
 export interface StarshipRuleSummary extends BaseSummary {
-  /** Reading order, and how the chapters cross-reference each other. */
+  /**
+   * Where the chapter fell in the printed book, and how the chapters
+   * cross-reference each other. Not what the site reads to order them.
+   */
   chapterNumber: number | null;
+
+  /** The heading this chapter is read under, authored in the corpus. */
+  readingGroup: string | null;
+
+  /** Its position on the reading path. Null means nobody has placed it. */
+  order: number | null;
 }
 
 /**

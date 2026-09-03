@@ -1269,17 +1269,69 @@ describe("starship rules", () => {
       title: "Combat",
       sourceKey: "sotg",
       chapterNumber: 9,
+      readingGroup: "Flying it",
+      order: 10,
       body: "# Chapter 9: Combat\n\nAs the light freighter exits hyperspace.",
     });
 
     expect(item.name).toBe("Combat");
     expect(item.slug).toBe("combat");
-    expect(item.tagline).toBe("Chapter 9");
-    expect(item.summary).toEqual({ chapterNumber: 9 });
     // The page prints the title as its own h1, so the body's copy of it would
     // be a second top-level heading saying the same thing.
     expect(item.sections).toEqual([
       { heading: null, body: "As the light freighter exits hyperspace." },
     ]);
+  });
+
+  /**
+   * The authored path, carried through and shown instead of a page number.
+   *
+   * The fixture's two positions disagree on purpose — printed 9, tenth on the
+   * path — because a chapter where they agreed would pass whichever field the
+   * projection actually read.
+   */
+  it("carries the authored path and labels the chapter with its heading", () => {
+    const item = normalizeOne("starship-rules", {
+      key: "combat",
+      title: "Combat",
+      sourceKey: "sotg",
+      chapterNumber: 9,
+      readingGroup: "Flying it",
+      order: 10,
+      body: "# Combat\n\nAs the light freighter exits hyperspace.",
+    });
+
+    expect(item.summary).toEqual({
+      readingGroup: "Flying it",
+      order: 10,
+      // Still carried. It is true about the archive and the export needs it;
+      // it is simply not what the site navigates by.
+      chapterNumber: 9,
+    });
+
+    // Not "Chapter 9". There is no book in the reader's hands to turn to.
+    expect(item.tagline).toBe("Starships of the Galaxy · Flying it");
+  });
+
+  /**
+   * A chapter nobody has placed still renders.
+   *
+   * Every chapter of this book is placed today and a test in the content
+   * repository says so, but that is a fact about the corpus rather than a
+   * guarantee about this function, and the two can drift the moment somebody
+   * adds a fourteenth chapter.
+   */
+  it("survives a chapter with no place on the path", () => {
+    const item = normalizeOne("starship-rules", {
+      key: "errata",
+      title: "Errata",
+      sourceKey: "sotg",
+      chapterNumber: 14,
+      body: "# Errata\n\nCorrections.",
+    });
+
+    expect(item.summary.readingGroup).toBeNull();
+    expect(item.summary.order).toBeNull();
+    expect(item.tagline).toBe("Starships of the Galaxy");
   });
 });
