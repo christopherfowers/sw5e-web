@@ -60,10 +60,11 @@
  *
  * Not modelled here, on purpose:
  *
- *   Resources — two character sheets, two starship sheets and an archive on
- *   Google Drive. A sixth menu was asked for and is not built, because nobody
- *   has supplied the five addresses and a menu of dead links is worse than no
- *   menu. It is five entries in `GROUP_MENUS` the day the URLs exist.
+ *   A Google Sheets character sheet and an "Archived content" drive, both asked
+ *   for under Resources. Neither exists: sw5e.com carries no docs.google.com
+ *   link anywhere and nothing matching "archive", so these are two things to
+ *   be made rather than two links to be pointed at. The four sheets that do
+ *   exist are in the Resources menu below.
  *
  *   Vehicle and starship stat blocks. Asked for under NPC statblocks, and there
  *   is nothing to point at: all 271 creature documents carry `type: null` and
@@ -91,7 +92,8 @@ export type NavGroupId =
   | "characters"
   | "equipment"
   | "starships"
-  | "statblocks";
+  | "statblocks"
+  | "resources";
 
 /**
  * Which subject a type is part of.
@@ -129,6 +131,13 @@ export const NAV_GROUP_ORDER: NavGroupId[] = [
   "equipment",
   "starships",
   "statblocks",
+  /*
+    Last, and the only group that leads off the site. It is where somebody goes
+    once they have decided to play rather than while they are deciding what to
+    play, which is also why it does not appear among the front page's
+    categories: those are things this site holds.
+  */
+  "resources",
 ];
 
 export interface NavGroupMeta {
@@ -170,6 +179,10 @@ export const NAV_GROUP_META: Record<NavGroupId, NavGroupMeta> = {
     label: "NPC statblocks",
     blurb: "Stat blocks for everything you might meet.",
   },
+  resources: {
+    label: "Resources",
+    blurb: "Sheets to print or fill in. These open on Google Drive.",
+  },
 };
 
 /**
@@ -199,6 +212,23 @@ export type NavDestination = {
   | { kind: "type"; type: ContentTypeId }
   | { kind: "view"; view: SubcategoryView }
   | { kind: "book"; code: string }
+  /**
+   * A destination that is not part of this site.
+   *
+   * The only kind whose `to` is an absolute address, and the only kind the
+   * header must not render with the router: a `<Link>` to a Google Drive URL
+   * would be handed to the client router, matched against no route, and land
+   * on the not-found page. `site-nav.tsx` branches on this kind for that
+   * reason and renders an anchor.
+   *
+   * `host` is carried separately rather than parsed out of `to` at render
+   * time, because it is shown to the reader — a link on a site whose
+   * Content-Security-Policy names no external host at all should say where it
+   * is about to send them, and working that out from the URL in the component
+   * would put a parser in the render path to recover something already known
+   * here.
+   */
+  | { kind: "external"; blurb: string; host: string }
   | {
       kind: "page";
       /**
@@ -283,6 +313,24 @@ function book(code: string, prominence: Prominence = "primary"): NavDestination 
     label: source.name,
     prominence,
   };
+}
+
+/**
+ * A link off the site.
+ *
+ * These carry no accent and no mark. Every other destination is drawn in the
+ * hue of the subject it belongs to, and a character sheet hosted on somebody
+ * else's drive belongs to no subject here — giving it equipment's steel would
+ * be claiming it as ours.
+ */
+function external(
+  to: string,
+  label: string,
+  blurb: string,
+  host: string,
+  prominence: Prominence = "primary",
+): NavDestination {
+  return { kind: "external", to, label, blurb, host, prominence };
 }
 
 function page(
@@ -521,6 +569,51 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
     asked for beside it and are not here: there are none in the corpus.
   */
   statblocks: [typeIndex("monsters", "Creatures")],
+
+  /*
+    The only menu that leaves the site, and the addresses are not ours: these
+    are the sheets sw5e.com publishes, read off that site and confirmed to
+    answer 200 before they were written down here.
+
+    They stay on Drive rather than being copied onto this domain for a reason
+    that is not technical. They are somebody's artwork, this project's code is
+    MIT but its content is licensed separately, and re-hosting a community
+    member's PDF is a decision for the people who own the community rather than
+    a convenience for whoever is editing this file. Hosting them here would be
+    better — a Drive link can rot, and it is one more third party between a
+    reader and a character sheet — and that is worth doing on purpose, with
+    permission, rather than by default.
+
+    The two the owner also asked for are absent because they do not exist yet:
+    there is no Google Sheets character sheet anywhere on sw5e.com, and nothing
+    matching "archive". Those are things to be made.
+  */
+  resources: [
+    external(
+      "https://drive.google.com/file/d/16b0luhTq6xBuQUUf8jm6vnLAImnmjuAF/view?usp=sharing",
+      "Character sheet",
+      "The official sheet, to print and fill in by hand.",
+      "Google Drive",
+    ),
+    external(
+      "https://drive.google.com/file/d/17mCKw43pbeATDFWraKAOmSgyI8vcUCtK/view?usp=sharing",
+      "Character sheet: form fillable",
+      "The same sheet as a PDF you can type into.",
+      "Google Drive",
+    ),
+    external(
+      "https://drive.google.com/file/d/1Oh9v-kWR7Vd0YNFZE5ESKt1VutzQQSl-/view?usp=sharing",
+      "Deployment sheet: form fillable",
+      "For a character's role aboard a ship.",
+      "Google Drive",
+    ),
+    external(
+      "https://drive.google.com/file/d/1viykv2MazM26WRMJZ4fNAixhoeYWLR7N/view?usp=sharing",
+      "Starship sheet: form fillable",
+      "For the ship itself.",
+      "Google Drive",
+    ),
+  ],
 };
 
 /**
@@ -661,6 +754,14 @@ export function typesBehind(
   destination: NavDestination,
 ): readonly ContentTypeId[] {
   switch (destination.kind) {
+    /*
+      Nothing on this site. The reachability guarantee is about content we
+      publish, and a character sheet on somebody else's drive is not that — a
+      Resources menu must never be able to satisfy the claim that a content
+      type is reachable.
+    */
+    case "external":
+      return [];
     case "type":
       return [destination.type];
     case "view":
@@ -741,6 +842,13 @@ export function faceOf(destination: NavDestination): DestinationFace {
         blurb: destination.blurb,
         icon: null,
         accent: destination.accent,
+      };
+    case "external":
+      return {
+        ...base,
+        blurb: destination.blurb,
+        icon: null,
+        accent: null,
       };
   }
 }

@@ -105,6 +105,8 @@ describe("the header's top level", () => {
       "Equipment",
       "Starships",
       "NPC statblocks",
+      // The sheets, which are the one set of links that leave this site.
+      "Resources",
     ]);
   });
 
@@ -428,4 +430,51 @@ describe("the group rail", () => {
       "there are no siblings to orient against in a group of one",
     ).toBeNull();
   });
+});
+
+/* -------------------------------------------------------- links off the site */
+
+/**
+ * The Resources menu is the only one whose destinations are not this site.
+ *
+ * Rendered as an anchor rather than a NavLink, and that is a correctness
+ * matter rather than a preference: NavLink hands its address to the client
+ * router, which would match a Google Drive URL against no route and draw the
+ * not-found page over a working site. So the assertion is on the element and
+ * its attributes, not on the label.
+ */
+describe("a menu that leads off the site", () => {
+  it("uses a real anchor, opens away, and cannot leak the referrer", async () => {
+    const user = userEvent.setup();
+    renderNav();
+
+    const resources = menuFor("Resources");
+    await user.click(within(resources).getByText("Resources"));
+
+    const sheet = within(resources).getByRole("link", {
+      name: /character sheet: form fillable/i,
+    });
+
+    expect(sheet.tagName).toBe("A");
+    expect(sheet).toHaveAttribute(
+      "href",
+      "https://drive.google.com/file/d/17mCKw43pbeATDFWraKAOmSgyI8vcUCtK/view?usp=sharing",
+    );
+    expect(sheet).toHaveAttribute("target", "_blank");
+
+    // Both, not either: noopener denies the opened tab a handle on this one,
+    // noreferrer keeps the address a reader was on out of Drive's logs.
+    const rel = sheet.getAttribute("rel") ?? "";
+    expect(rel).toContain("noopener");
+    expect(rel).toContain("noreferrer");
+
+    // And the host is inside the link's own text, so it is read out together
+    // with the link rather than sitting in a title attribute a keyboard reader
+    // never reaches. Asserted on the element already in hand: looking it up by
+    // accessible name would be testing the name-normalisation rules as much as
+    // the markup.
+    expect(sheet.textContent).toContain("(Google Drive)");
+    expect(sheet.querySelector(".nav-external-host")).not.toBeNull();
+  });
+
 });

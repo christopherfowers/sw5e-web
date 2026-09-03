@@ -111,6 +111,13 @@ function countBehind(
   counts: Record<string, number>,
 ): number | null {
   switch (destination.kind) {
+    /*
+      No number, for the same reason `/sources` has none: we do not know how
+      many pages a PDF on somebody else's drive has, and inventing a zero
+      would read as "this is empty" rather than "this is not ours to count".
+    */
+    case "external":
+      return null;
     case "type":
       return counts[destination.type] ?? 0;
     case "view":
