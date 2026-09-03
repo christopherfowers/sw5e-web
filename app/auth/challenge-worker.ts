@@ -95,11 +95,72 @@ declare const self:
   | {
       postMessage(message: SolveResponse): void;
       onmessage: ((event: MessageEvent<SolveRequest>) => void) | null;
+      location: { origin: string };
     }
   | undefined;
 
+/**
+ * Whether a message arrived from the document that started this worker.
+ *
+ * For a dedicated worker this is very nearly a formality, and it is worth
+ * being honest about why it is here rather than implying it closes a hole. A
+ * dedicated worker has exactly one port and the document that constructed it
+ * holds the only reference; there is no `postMessage` any other page can reach,
+ * so there is no cross-origin sender to reject. Browsers signal that by leaving
+ * `origin` empty on these messages.
+ *
+ * It is written down because "unreachable" is a property of how this file is
+ * used today, and the cost of stating the assumption is three lines. If this
+ * ever becomes a shared worker — which any page on the origin can connect to —
+ * the check stops being a formality without anybody having to notice that it
+ * needed adding.
+ */
+function isFromThisOrigin(origin: string): boolean {
+  return origin === "" || origin === self?.location?.origin;
+}
+
+/**
+ * Whether a message is a challenge this worker can attempt.
+ *
+ * The real reason this exists. Whatever the origin rule is worth, the handler
+ * previously passed `event.data` into `solve` on the strength of its declared
+ * type, and a declared type is a claim about the compiler's view of the call
+ * site rather than about the bytes that arrive at runtime. A difficulty of 0
+ * makes `hasLeadingZeroBits` true on the first attempt, so a malformed message
+ * does not fail — it returns a counter of 0 as though it had solved something,
+ * and the service rejects the answer with no indication of why.
+ *
+ * The bounds are the ones the protocol can actually mean: a digest is 256 bits,
+ * so a difficulty outside 1..256 is unsatisfiable or vacuous rather than merely
+ * unusual.
+ */
+function isSolveRequest(data: unknown): data is SolveRequest {
+  if (typeof data !== "object" || data === null) return false;
+
+  const { salt, difficulty } = data as Partial<SolveRequest>;
+
+  return (
+    typeof salt === "string" &&
+    salt.length > 0 &&
+    typeof difficulty === "number" &&
+    Number.isInteger(difficulty) &&
+    difficulty > 0 &&
+    difficulty <= 256
+  );
+}
+
 if (typeof self !== "undefined" && typeof self.postMessage === "function") {
   self.onmessage = (event: MessageEvent<SolveRequest>) => {
+    if (!isFromThisOrigin(event.origin)) return;
+
+    if (!isSolveRequest(event.data)) {
+      self.postMessage({
+        kind: "failed",
+        reason: "The challenge could not be solved.",
+      } satisfies SolveResponse);
+      return;
+    }
+
     try {
       solve(event.data, (response) => self.postMessage(response));
     } catch (error) {
