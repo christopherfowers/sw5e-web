@@ -240,6 +240,19 @@ export interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE";
   body?: unknown;
   signal?: AbortSignal;
+  /**
+   * Extra request headers.
+   *
+   * Added for the proof-of-work challenge, whose solution is a statement about
+   * the request rather than about the account and so travels in headers rather
+   * than in the body — the published request schemas stay unchanged, and a
+   * custom header cannot ride along on a cross-origin form post.
+   *
+   * Deliberately merged *under* the two headers this function sets for itself,
+   * so a caller cannot talk the transport out of `Accept: application/json` or
+   * out of declaring a JSON body. Those are this module's business.
+   */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -255,7 +268,10 @@ export async function apiRequest<T>(
   options: RequestOptions = {},
 ): Promise<T> {
   const method = options.method ?? "GET";
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = {
+    ...options.headers,
+    Accept: "application/json",
+  };
 
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
 
