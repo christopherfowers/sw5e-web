@@ -582,17 +582,38 @@ function Chapters({
     else groups.set(name, [row]);
   }
 
-  const ordered = [...groups.entries()].sort(([left], [right]) => {
-    const leftRank = order.indexOf(left);
-    const rightRank = order.indexOf(right);
-    // Anything the config did not name sorts after everything it did, by name,
-    // so a book added to the data before it is added to the order still shows
-    // up rather than silently taking the first slot.
-    if (leftRank === -1 && rightRank === -1) return left.localeCompare(right, "en");
-    if (leftRank === -1) return 1;
-    if (rightRank === -1) return -1;
-    return leftRank - rightRank;
-  });
+  /*
+    Two ways to order the headings, and the difference is who owns them.
+
+    A book list's headings are books, which the site knows about and names in
+    `groupOrder`. A reading path's headings are whatever somebody wrote in the
+    corpus, and hard-coding those here would mean renaming "Flying it"
+    required a site change and a deploy -- for a heading whose entire purpose
+    is to be editable by the person who owns the content.
+
+    So `groupsFollowTheRows` takes the order from the rows instead. The Map
+    above is built by walking them in the order they are already sorted in, so
+    its insertion order is the order each heading first appears, which is the
+    authored order. That is exactly right while each heading owns one unbroken
+    run of the path, and a test in the content repository is what keeps that
+    true -- interleave two groups and this would draw the first heading and
+    silently file the second group's stragglers under it.
+  */
+  const ordered = config.groupsFollowTheRows
+    ? [...groups.entries()]
+    : [...groups.entries()].sort(([left], [right]) => {
+        const leftRank = order.indexOf(left);
+        const rightRank = order.indexOf(right);
+        // Anything the config did not name sorts after everything it did, by
+        // name, so a book added to the data before it is added to the order
+        // still shows up rather than silently taking the first slot.
+        if (leftRank === -1 && rightRank === -1) {
+          return left.localeCompare(right, "en");
+        }
+        if (leftRank === -1) return 1;
+        if (rightRank === -1) return -1;
+        return leftRank - rightRank;
+      });
 
   return (
     <div className="chapter-list" data-accent={accent}>

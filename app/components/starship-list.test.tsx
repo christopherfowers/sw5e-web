@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it } from "vitest";
 
@@ -150,5 +150,58 @@ describe("the starship chapter index", () => {
 
     expect(screen.queryByText("Chapter 9")).not.toBeInTheDocument();
     expect(screen.queryByText(/^Chapter \d+$/)).not.toBeInTheDocument();
+  });
+
+  /**
+   * The headings, in the order the path puts them.
+   *
+   * Not a list written into the site. These come from the rows: the groups are
+   * built by walking the already-sorted chapters, so the order each heading
+   * first appears in is the authored order. Renaming "Flying it" in the corpus
+   * renames it here, with no site change and no deploy — which is the whole
+   * point of the headings being content.
+   */
+  it("draws the headings in the order the path puts them", () => {
+    renderList(chapters);
+
+    expect(
+      screen.getAllByRole("heading", { level: 2 }).map((heading) =>
+        heading.textContent?.replace(/\d+ (entry|entries)$/, "").trim(),
+      ),
+    ).toEqual([
+      "Start here",
+      "Building a starship",
+      "Flying it",
+      // The unplaced chapter's heading, last because its row is last.
+      "Also in this book",
+    ]);
+  });
+
+  /**
+   * Alphabetically these would read "Also in this book", "Building a
+   * starship", "Flying it", "Start here" — which puts the introduction fourth
+   * and the leftovers first. Stated so the assertion above is pinning a
+   * decision rather than a coincidence.
+   */
+  it("does not draw them alphabetically", () => {
+    renderList(chapters);
+
+    const drawn = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((heading) => heading.textContent?.replace(/\d+ (entry|entries)$/, "").trim());
+
+    expect(drawn).not.toEqual([...drawn].sort());
+  });
+
+  it("counts what is under each heading", () => {
+    renderList(chapters);
+
+    const startHere = screen.getByRole("region", { name: "Start here" });
+
+    expect(
+      within(startHere)
+        .getAllByRole("link")
+        .map((link) => link.textContent?.trim()),
+    ).toEqual(["Introduction", "Step-by-Step Starships"]);
   });
 });
