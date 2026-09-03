@@ -1253,18 +1253,6 @@ function normalizeProperty(record) {
 
 /* ------------------------------------------------------------------ rules */
 
-/**
- * A chapter's position in its book, as a label, or null when printing it would
- * mislead. The archive numbers the Player's Handbook preface -2 and both
- * changelogs 99, and neither is a chapter number a reader would recognise.
- * Both still sort correctly in the table of contents, which is what the number
- * is actually for.
- */
-function chapterLabel(chapterNumber) {
-  const value = numeric(chapterNumber);
-  if (value == null || value < 1 || value > 90) return null;
-  return `Chapter ${value}`;
-}
 
 function normalizeRule(record, sources) {
   const base = common(record, sources);
@@ -1274,7 +1262,19 @@ function normalizeRule(record, sources) {
 
   add("Book", base.sourceName);
   add("Kind", isVariant ? "Variant rule" : "Chapter");
-  add("Position", chapterLabel(record.chapterNumber));
+  /*
+    The heading, not the chapter number. This used to read "Position: Chapter
+    3" and it was the last place on a rules page still telling a reader where
+    a passage fell in a PDF -- a fact they cannot act on, because there is no
+    book in their hands to turn to page 3 of.
+
+    It also had to special-case its own data to be printable at all: the
+    archive numbers the handbook preface -2 and both changelogs 99, so the
+    label suppressed anything outside 1..90 to avoid showing a reader "Chapter
+    99". The authored heading needs no such window, because it was written to
+    be read rather than derived from a page count.
+  */
+  add("Position", text(record.readingGroup));
 
   return {
     ...base,
@@ -1295,9 +1295,8 @@ function normalizeRule(record, sources) {
     slug: text(record.key) ?? base.slug,
     tagline: isVariant
       ? "Optional variant rule"
-      : compact([base.sourceName, chapterLabel(record.chapterNumber)]).join(
-          " · ",
-        ) || null,
+      : compact([base.sourceName, text(record.readingGroup)]).join(" · ") ||
+        null,
     summary: {
       ruleType: isVariant ? "Variant" : "Chapter",
       // The authored path. Both are absent on a variant rule, which is not on
