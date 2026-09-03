@@ -81,16 +81,20 @@ export function meta({ loaderData }: Route.MetaArgs) {
 const HOW_TO_PLAY = "PHB";
 
 /**
- * The chapter a reader is sent to first.
+ * A step of the reading path, and the heading it is read under.
  *
- * Chapter order is the book's own, and the book opens with two front-matter
- * chapters: "What's Different?" is numbered -1 and the Introduction 0, so
- * sorting by number puts the comparison with D&D 5e before the explanation of
- * what the game is. That is the right order for somebody who already plays 5e
- * and the wrong one for somebody who does not, and it is the second reader this
- * section exists for.
+ * The path is authored in the content repository — `readingGroup` and `order`
+ * on each passage — and this page renders it rather than deciding it. Nothing
+ * here consults `chapterNumber`: that records where a passage fell in a printed
+ * book, and ordering by it puts "What's Different?" ahead of the introduction
+ * it is different from, which is the right answer for a reader holding the book
+ * and the wrong one for the reader this section exists for.
  */
-const FIRST_CHAPTER = 0;
+interface PathStep {
+  slug: string;
+  name: string;
+  group: string;
+}
 
 /**
  * How many entries sit behind one destination in the header's menus.
@@ -163,13 +167,18 @@ export async function loader() {
   */
   const rules = getSummaries("rules");
 
-  const chapters = rules
-    .filter((rule) => rule.source === HOW_TO_PLAY && rule.ruleType === "Chapter")
-    .sort((a, b) => (a.chapterNumber ?? 0) - (b.chapterNumber ?? 0))
+  const chapters: PathStep[] = rules
+    .filter(
+      (rule) =>
+        rule.source === HOW_TO_PLAY &&
+        rule.order != null &&
+        rule.readingGroup != null,
+    )
+    .sort((a, b) => a.order! - b.order!)
     .map((rule) => ({
       slug: rule.slug,
       name: rule.name,
-      chapterNumber: rule.chapterNumber,
+      group: rule.readingGroup!,
     }));
 
   const counts = Object.fromEntries(
@@ -214,9 +223,21 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     variantRules,
   } = loaderData;
 
-  const start =
-    chapters.find((chapter) => chapter.chapterNumber === FIRST_CHAPTER) ??
-    chapters[0];
+  // Whatever the path opens with. Somebody reordering the content moves this
+  // button with it, which is the point of authoring the order at all.
+  const start = chapters[0];
+
+  /*
+    Collapsed into the headings they are read under. The path is already in
+    order, so a group ends where the next heading begins — the grouping and the
+    sequence cannot disagree, because there is only one sequence.
+  */
+  const steps: { group: string; chapters: PathStep[] }[] = [];
+  for (const chapter of chapters) {
+    const current = steps.at(-1);
+    if (current?.group === chapter.group) current.chapters.push(chapter);
+    else steps.push({ group: chapter.group, chapters: [chapter] });
+  }
 
   const heroLight = brandImage("hero-light");
   const heroDark = brandImage("hero-dark");
@@ -330,31 +351,40 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <p className="section-lede">
             The Player&rsquo;s Handbook is the whole game: how to make a
             character, how to fight, how to cast, and what the dice mean. Read
-            it in order, or jump to the chapter you need.
+            it in order, or jump to the part you need.
           </p>
 
-          {chapters.length > 0 ? (
-            <ol className="chapter-list">
-              {chapters.map((chapter) => (
-                <li key={chapter.slug}>
-                  <Link className="chapter-link" to={`/rules/${chapter.slug}`}>
-                    {/*
-                      The number is the book's, not the list's, so a chapter
-                      keeps the name a reader would cite it by. The front matter
-                      is numbered below one and shows no number at all rather
-                      than "Chapter -1".
-                    */}
-                    {chapter.chapterNumber != null && chapter.chapterNumber > 0 ? (
-                      <span className="chapter-number">
-                        {chapter.chapterNumber}
-                      </span>
-                    ) : null}
-                    <span className="chapter-name">{chapter.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ol>
-          ) : null}
+          {/*
+            Grouped, and unnumbered. Fifteen links in a row is a list somebody
+            scans and gives up on; four headings is a shape they can see before
+            they start. The numbers are gone with the same reasoning — "9" in
+            front of Combat is a page reference to a book nobody reading this is
+            holding, and it invites the question of why the list starts at a
+            chapter that is not one.
+          */}
+          {steps.map((step) => (
+            <section
+              key={step.group}
+              className="path-step"
+              aria-labelledby={`step-${step.group.replace(/\s+/g, "-").toLowerCase()}`}
+            >
+              <h3
+                className="path-step-heading"
+                id={`step-${step.group.replace(/\s+/g, "-").toLowerCase()}`}
+              >
+                {step.group}
+              </h3>
+              <ul className="chapter-list">
+                {step.chapters.map((chapter) => (
+                  <li key={chapter.slug}>
+                    <Link className="chapter-link" to={`/rules/${chapter.slug}`}>
+                      <span className="chapter-name">{chapter.name}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
         </section>
 
         {/*
@@ -416,6 +446,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           ) : null}
         </section>
 
+        {/*
+          A labelled region like the two sections above it, which it was not
+          before. The heading existed; nothing tied the content under it to the
+          heading, so assistive technology met a run of category groups with no
+          statement of what they were groups of — and the page's own tests could
+          not say "in the categories" either, which is how it was noticed.
+        */}
+        <section aria-labelledby="categories">
         <h2 className="section-heading" id="categories">
           Categories
         </h2>
@@ -495,6 +533,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </section>
         ))}
 
+        </section>
       </div>
     </div>
   );

@@ -30,10 +30,17 @@ const loaderData = {
     already in the book's order, and including the front matter numbered below
     one so the rendering of an unnumbered chapter is exercised.
   */
+  /*
+    The path as the loader hands it over: already filtered to the handbook,
+    already in the authored order, and carrying the heading each step is read
+    under. Two groups rather than one, because collapsing runs into headings is
+    the only logic the component does with this and a single group would not
+    exercise it.
+  */
   chapters: [
-    { slug: "phb-whats-different", name: "What's Different?", chapterNumber: -1 },
-    { slug: "phb-introduction", name: "Introduction", chapterNumber: 0 },
-    { slug: "phb-species", name: "Species", chapterNumber: 2 },
+    { slug: "phb-introduction", name: "Introduction", group: "Start here" },
+    { slug: "phb-whats-different", name: "What's Different?", group: "Start here" },
+    { slug: "phb-species", name: "Species", group: "Creating a character" },
   ],
   variantRules: 42,
 };
@@ -117,10 +124,15 @@ describe("Home route", () => {
   it("shows the real count of entries for each content type", () => {
     renderHome();
 
-    const speciesCard = screen.getByRole("link", { name: /^species/i });
+    // Scoped to the categories. "Species" is now the name of a card *and* of a
+    // step on the reading path, because the path steps stopped carrying chapter
+    // numbers — an unscoped lookup finds both and cannot say which it meant.
+    const categories = within(screen.getByRole("region", { name: /categories/i }));
+
+    const speciesCard = categories.getByRole("link", { name: /^species/i });
     expect(within(speciesCard).getByText("141")).toBeInTheDocument();
 
-    const creatureCard = screen.getByRole("link", { name: /^creatures/i });
+    const creatureCard = categories.getByRole("link", { name: /^creatures/i });
     expect(within(creatureCard).getByText("271")).toBeInTheDocument();
   });
 
@@ -287,20 +299,42 @@ describe("the order the page puts things in", () => {
     expect(actions).toHaveAttribute("href", "/rules/phb-introduction");
   });
 
-  it("lists the handbook's chapters in the book's own order", () => {
+  it("walks the authored path, in order and under its headings", () => {
     renderHome();
 
-    const chapters = within(
-      screen.getByRole("region", { name: /how to play/i }),
-    )
-      .getAllByRole("link")
-      .map((link) => link.textContent ?? "");
+    const howToPlay = within(screen.getByRole("region", { name: /how to play/i }));
 
-    expect(chapters).toEqual([
-      "What's Different?",
+    // The order is the authored one, and it is not the book's: the handbook
+    // numbers "What's Different?" ahead of the introduction it is different
+    // from. Nothing here carries a number, because a chapter number is a page
+    // reference to a book nobody reading this is holding.
+    expect(howToPlay.getAllByRole("link").map((link) => link.textContent)).toEqual([
       "Introduction",
-      "2Species",
+      "What's Different?",
+      "Species",
     ]);
+
+    // And the steps are grouped, with each heading owning a run.
+    expect(
+      howToPlay.getAllByRole("heading", { level: 3 }).map((h) => h.textContent),
+    ).toEqual(["Start here", "Creating a character"]);
+  });
+
+  /**
+   * A heading is drawn once, however many passages it holds.
+   *
+   * The component collapses the ordered path into runs, so a group appearing
+   * twice would mean the path had been re-sorted after it was grouped — the one
+   * way the rendering can contradict the content.
+   */
+  it("draws each heading once", () => {
+    renderHome();
+
+    const headings = within(screen.getByRole("region", { name: /how to play/i }))
+      .getAllByRole("heading", { level: 3 })
+      .map((heading) => heading.textContent);
+
+    expect(headings).toEqual([...new Set(headings)]);
   });
 
   /**
@@ -368,11 +402,12 @@ describe("the order the page puts things in", () => {
     delete withoutSpecies["/species"];
     renderHome({ ...loaderData, destinationCounts: withoutSpecies });
 
-    const species = screen.getByRole("link", { name: /^species/i });
+    const categories = within(screen.getByRole("region", { name: /categories/i }));
+    const species = categories.getByRole("link", { name: /^species/i });
 
     expect(species.querySelector(".type-card-count")).toBeNull();
     expect(
-      screen.getByRole("link", { name: /^creatures/i }).querySelector(
+      categories.getByRole("link", { name: /^creatures/i }).querySelector(
         ".type-card-count",
       ),
       "withholding one count must not blank the rest of the grid",

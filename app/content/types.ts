@@ -257,12 +257,21 @@ export interface PropertySummary extends BaseSummary {
 }
 
 /**
- * A passage of rules prose. `chapterNumber` is what orders a book's table of
- * contents, and it is not a positive index: prefaces are negative and
- * changelogs are 99 so they sort last.
+ * A passage of rules prose.
+ *
+ * `readingGroup` and `order` are the authored reading path and are what this
+ * site navigates by. `chapterNumber` is where the passage fell in a printed
+ * book: kept because it is true, and deliberately not used to order anything —
+ * it puts "What's Different?" ahead of the introduction it is different from,
+ * which is the right answer for a reader holding the book and the wrong one for
+ * a reader meeting the game.
  */
 export interface RuleSummary extends BaseSummary {
   ruleType: string | null;
+  /** The heading this passage is read under, or null if it is not on the path. */
+  readingGroup: string | null;
+  /** Position along the path, lowest first. Null for a passage not on it. */
+  order: number | null;
   chapterNumber: number | null;
   /** How many named sections the passage holds, as a sense of its length. */
   sectionCount: number;

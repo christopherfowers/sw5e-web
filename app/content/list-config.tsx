@@ -1002,7 +1002,7 @@ const rules: ListConfig<RuleSummary> = {
   groupOrder: SOURCE_ORDER.map((code) => SOURCE_META[code].name),
   compactLine: (row) =>
     joinParts([
-      row.ruleType === "Variant" ? "Variant rule" : chapterLabel(row),
+      row.ruleType === "Variant" ? "Variant rule" : row.readingGroup,
       row.sectionCount > 0
         ? `${row.sectionCount} section${row.sectionCount === 1 ? "" : "s"}`
         : null,
@@ -1014,21 +1014,32 @@ const rules: ListConfig<RuleSummary> = {
       header: "Position",
       className: FROM_SMALL,
       /*
-        A composite key, because a book's contents are not one sequence.
-        Chapters come first in printed order — including the negative numbers
-        the archive gives a preface and the 99 it gives a changelog, both of
-        which land in the right place — and the variant rules follow
-        alphabetically, because they have no position at all.
+        A composite key, because these are not one sequence. What is on the
+        reading path comes first, in the order somebody authored; everything
+        else follows alphabetically, because it has no position.
+
+        Deliberately not chapterNumber. That records where a passage fell in a
+        printed book, and sorting by it puts "What's Different?" ahead of the
+        introduction it is different from — right for a reader holding the
+        book, wrong for one meeting the game on a website. The path is authored
+        for exactly that reason, and this is the list that has to honour it.
       */
-      sortValue: (row) =>
-        row.ruleType === "Variant"
-          ? `B${row.name}`
-          : `A${String((row.chapterNumber ?? 0) + 1000).padStart(5, "0")}`,
+      sortValue: (row) => {
+        // Three bands, not two. Something on the reading path comes first, in
+        // the order somebody authored. Then chapters nobody has placed, which
+        // is every book but the handbook today. Then the variant rules, which
+        // are optional and belong after the material they are variants of —
+        // collapsing those last two would interleave an unplaced chapter with
+        // the options for it, which is what the old chapter sort quietly
+        // prevented.
+        if (row.order != null) return `A${String(row.order).padStart(5, "0")}`;
+        return row.ruleType === "Variant" ? `C${row.name}` : `B${row.name}`;
+      },
       render: (row) =>
         row.ruleType === "Variant" ? (
           <Badge accent="clay">Variant</Badge>
         ) : (
-          textOr(chapterLabel(row))
+          textOr(row.readingGroup)
         ),
     },
     {
@@ -1046,17 +1057,6 @@ const rules: ListConfig<RuleSummary> = {
     { key: "ruleType", label: "Kind", valueOf: (row) => row.ruleType },
   ],
 };
-
-/**
- * The archive numbers a preface -2 and a changelog 99. Both sort correctly and
- * neither is a chapter number a reader would recognise, so only the ones that
- * are get printed.
- */
-function chapterLabel(row: RuleSummary): string | null {
-  const number = row.chapterNumber;
-  if (number == null || number < 1 || number > 90) return null;
-  return `Chapter ${number}`;
-}
 
 /**
  * Thirty tables, grouped by what they are about. Subject is the only facet
