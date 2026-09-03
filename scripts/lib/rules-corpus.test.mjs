@@ -307,18 +307,44 @@ describe("rules", () => {
     expect(canonical("rules", chapter).summary.sectionCount).toBe(2);
   });
 
-  it("prints a chapter's position only when it is one a reader would recognise", () => {
-    // The archive numbers the Player's Handbook preface -2 and both changelogs
-    // 99. Both still sort correctly; neither is a chapter number.
-    expect(canonical("rules", chapter).tagline).toBe(
-      "Star Wars 5e Player's Handbook · Chapter 13",
+  it("places a chapter by the heading it is read under", () => {
+    const placed = { ...chapter, readingGroup: "Reference", order: 14 };
+
+    expect(canonical("rules", placed).tagline).toBe(
+      "Star Wars 5e Player's Handbook · Reference",
     );
-    expect(
-      canonical("rules", { ...chapter, chapterNumber: 99 }).tagline,
-    ).toBe("Star Wars 5e Player's Handbook");
-    expect(
-      canonical("rules", { ...chapter, chapterNumber: -2 }).tagline,
-    ).toBe("Star Wars 5e Player's Handbook");
+  });
+
+  /**
+   * The window that used to be necessary here, and no longer is.
+   *
+   * This test previously asserted that a chapter numbered 99 or -2 printed no
+   * position at all: the archive files both changelogs at 99 and the handbook
+   * preface at -2, so the label suppressed anything outside 1..90 rather than
+   * show a reader "Chapter 99". Those numbers are still in the corpus and
+   * still sort correctly, and they are no longer anybody's problem — an
+   * authored heading was written to be read rather than derived from a page
+   * count, so there is nothing to suppress.
+   */
+  it("labels the passages the printed numbering had to hide", () => {
+    for (const chapterNumber of [99, -2]) {
+      expect(
+        canonical("rules", {
+          ...chapter,
+          chapterNumber,
+          readingGroup: "Reference",
+          order: 15,
+        }).tagline,
+      ).toBe("Star Wars 5e Player's Handbook · Reference");
+    }
+  });
+
+  it("gives an unplaced chapter no position rather than a wrong one", () => {
+    // Nothing in the corpus outside the two books is placed yet, and a
+    // fabricated position would be worse than none.
+    expect(canonical("rules", chapter).tagline).toBe(
+      "Star Wars 5e Player's Handbook",
+    );
   });
 
   it("marks a variant rule as optional and gives it no position", () => {

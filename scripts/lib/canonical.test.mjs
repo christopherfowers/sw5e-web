@@ -1262,6 +1262,128 @@ describe("starship modifications and ventures", () => {
   });
 });
 
+describe("rules", () => {
+  /**
+   * What a rules page says about a passage above the prose.
+   *
+   * The stat line used to read "Position: Chapter 3" and the tagline
+   * "Player's Handbook · Chapter 3". Both were the last places on a rules page
+   * still telling a reader where a passage fell in a PDF — a fact they cannot
+   * act on, since there is no book in their hands to turn to page 3 of.
+   */
+  it("places a chapter by the heading it is read under, not by its page", () => {
+    const item = normalizeOne("rules", {
+      key: "phb-classes",
+      name: "Classes",
+      sourceKey: "phb",
+      ruleType: "chapter",
+      chapterNumber: 3,
+      readingGroup: "Creating a character",
+      order: 5,
+      body: "# Classes\n\nA class is the primary definition of what a character can do.",
+    });
+
+    expect(item.stats).toContainEqual({
+      label: "Position",
+      value: "Creating a character",
+    });
+    expect(item.tagline).toBe(
+      "Star Wars 5e Player's Handbook · Creating a character",
+    );
+
+    // Still carried in the summary. It is true about the archive and the
+    // export needs it; it is simply not what a reader is shown.
+    expect(item.summary.chapterNumber).toBe(3);
+    expect(item.summary.order).toBe(5);
+  });
+
+  /**
+   * The window the old label needed, and no longer does.
+   *
+   * `chapterLabel` suppressed anything outside 1..90 because the archive
+   * numbers the handbook preface -2 and both changelogs 99, and "Chapter 99"
+   * is not a chapter number a reader would recognise. An authored heading
+   * needs no such window — it was written to be read rather than derived from
+   * a page count — so the changelog now says where it sits instead of being
+   * blank.
+   */
+  it("labels a passage the printed numbering could not", () => {
+    const item = normalizeOne("rules", {
+      key: "phb-changelog",
+      name: "Changelog",
+      sourceKey: "phb",
+      ruleType: "chapter",
+      chapterNumber: 99,
+      readingGroup: "Reference",
+      order: 15,
+      body: "# Changelog\n\nCorrections since the last printing.",
+    });
+
+    expect(item.tagline).toBe("Star Wars 5e Player's Handbook · Reference");
+    expect(item.stats).toContainEqual({ label: "Position", value: "Reference" });
+  });
+
+  /**
+   * A variant rule is on no path at all, and says so instead.
+   */
+  it("says a variant rule is optional rather than placing it", () => {
+    const item = normalizeOne("rules", {
+      key: "flanking",
+      name: "Flanking",
+      sourceKey: "phb",
+      ruleType: "variant",
+      chapterNumber: null,
+      body: "# Flanking\n\nA creature has advantage when it flanks.",
+    });
+
+    expect(item.tagline).toBe("Optional variant rule");
+    expect(item.summary.ruleType).toBe("Variant");
+    expect(item.summary.readingGroup).toBeNull();
+    expect(item.summary.order).toBeNull();
+  });
+
+  /**
+   * A chapter nobody has placed still renders, with no position rather than a
+   * wrong one.
+   */
+  it("survives a chapter with no place on the path", () => {
+    const item = normalizeOne("rules", {
+      key: "wh-equipment",
+      name: "Equipment",
+      sourceKey: "wh",
+      ruleType: "chapter",
+      chapterNumber: 5,
+      body: "# Equipment\n\nWhat you can buy in the lower levels.",
+    });
+
+    expect(item.tagline).toBe("Wretched Hives");
+    expect(item.stats).not.toContainEqual(
+      expect.objectContaining({ label: "Position" }),
+    );
+  });
+
+  /**
+   * The slug comes from the key, not the name.
+   *
+   * All three books have a chapter called "Equipment". Deriving from the name
+   * would hand them the same slug and leave a collision handler to number
+   * them, so which book `/rules/equipment` showed would depend on directory
+   * order.
+   */
+  it("takes a chapter's slug from its key so three books can share a title", () => {
+    const item = normalizeOne("rules", {
+      key: "wh-equipment",
+      name: "Equipment",
+      sourceKey: "wh",
+      ruleType: "chapter",
+      chapterNumber: 5,
+      body: "# Equipment\n\nWhat you can buy.",
+    });
+
+    expect(item.slug).toBe("wh-equipment");
+  });
+});
+
 describe("starship rules", () => {
   it("takes a chapter's identity from its title and drops its duplicated heading", () => {
     const item = normalizeOne("starship-rules", {
@@ -1269,17 +1391,69 @@ describe("starship rules", () => {
       title: "Combat",
       sourceKey: "sotg",
       chapterNumber: 9,
+      readingGroup: "Flying it",
+      order: 10,
       body: "# Chapter 9: Combat\n\nAs the light freighter exits hyperspace.",
     });
 
     expect(item.name).toBe("Combat");
     expect(item.slug).toBe("combat");
-    expect(item.tagline).toBe("Chapter 9");
-    expect(item.summary).toEqual({ chapterNumber: 9 });
     // The page prints the title as its own h1, so the body's copy of it would
     // be a second top-level heading saying the same thing.
     expect(item.sections).toEqual([
       { heading: null, body: "As the light freighter exits hyperspace." },
     ]);
+  });
+
+  /**
+   * The authored path, carried through and shown instead of a page number.
+   *
+   * The fixture's two positions disagree on purpose — printed 9, tenth on the
+   * path — because a chapter where they agreed would pass whichever field the
+   * projection actually read.
+   */
+  it("carries the authored path and labels the chapter with its heading", () => {
+    const item = normalizeOne("starship-rules", {
+      key: "combat",
+      title: "Combat",
+      sourceKey: "sotg",
+      chapterNumber: 9,
+      readingGroup: "Flying it",
+      order: 10,
+      body: "# Combat\n\nAs the light freighter exits hyperspace.",
+    });
+
+    expect(item.summary).toEqual({
+      readingGroup: "Flying it",
+      order: 10,
+      // Still carried. It is true about the archive and the export needs it;
+      // it is simply not what the site navigates by.
+      chapterNumber: 9,
+    });
+
+    // Not "Chapter 9". There is no book in the reader's hands to turn to.
+    expect(item.tagline).toBe("Starships of the Galaxy · Flying it");
+  });
+
+  /**
+   * A chapter nobody has placed still renders.
+   *
+   * Every chapter of this book is placed today and a test in the content
+   * repository says so, but that is a fact about the corpus rather than a
+   * guarantee about this function, and the two can drift the moment somebody
+   * adds a fourteenth chapter.
+   */
+  it("survives a chapter with no place on the path", () => {
+    const item = normalizeOne("starship-rules", {
+      key: "errata",
+      title: "Errata",
+      sourceKey: "sotg",
+      chapterNumber: 14,
+      body: "# Errata\n\nCorrections.",
+    });
+
+    expect(item.summary.readingGroup).toBeNull();
+    expect(item.summary.order).toBeNull();
+    expect(item.tagline).toBe("Starships of the Galaxy");
   });
 });
