@@ -2789,3 +2789,18 @@ main :where(h1, h2, h3, h4, h5, h6)[id],
   font-size: 0.875rem;
   color: var(--text-muted);
 }
+
+/*
+  The host on an off-site link in the header.
+  
+  Quieter than the label, because the label is the thing being offered and the
+  host is a warning about where it lives. It is real text rather than a title
+  attribute or an icon: this site's Content-Security-Policy names no external
+  host anywhere, so a link that leaves is unusual enough to say out loud, and a
+  reader deciding whether to follow one mid-session should not have to hover to
+  find out it opens Google Drive.
+*/
+.nav-external-host {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+}

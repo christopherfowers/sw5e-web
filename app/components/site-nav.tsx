@@ -138,6 +138,34 @@ function groupOfPath(pathname: string): NavGroupId | null {
  */
 function destinationLink(destination: NavDestination, onNavigate?: () => void) {
   const face = faceOf(destination);
+
+  /*
+    An anchor rather than a NavLink, and not a stylistic choice: NavLink hands
+    the address to the client router, which would match a Google Drive URL
+    against no route and render the not-found page over the top of a working
+    site. It also can never be the current page, so the active styling has
+    nothing to say about it.
+
+    The host is named in the link's accessible description rather than left for
+    the reader to discover after the tab opens. This site's
+    Content-Security-Policy names no external host anywhere, so a link that
+    leaves is genuinely unusual here and worth announcing.
+  */
+  if (destination.kind === "external") {
+    return (
+      <a
+        className="nav-type-link"
+        href={destination.to}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onNavigate}
+      >
+        {face.label}
+        <span className="nav-external-host"> ({destination.host})</span>
+      </a>
+    );
+  }
+
   return (
     <NavLink
       to={face.to}
