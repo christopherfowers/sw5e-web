@@ -67,6 +67,10 @@ import type {
 } from "./types";
 
 import { apiRequest, ApiError, type RequestOptions } from "~/api/http";
+import {
+  withChallenge,
+  type ChallengedRequestOptions,
+} from "./challenge-solver";
 
 export {
   ApiError,
@@ -115,8 +119,28 @@ export async function logout(): Promise<void> {
 
 /* ------------------------------------------------------------- registration */
 
-export function register(body: RegisterRequest): Promise<RegisterResponse> {
-  return request<RegisterResponse>("/register", { method: "POST", body });
+/**
+ * Registration, which the service may charge a proof of work for.
+ *
+ * The two guarded endpoints are the two an anonymous stranger can use to make
+ * this service do expensive things: create rows, and send mail. `withChallenge`
+ * attempts the request plainly and only does the work if the service refuses
+ * and says that is why, so nothing is spent while the gate is switched off —
+ * see `app/auth/challenge.ts` for why that trade is the right way round.
+ *
+ * `onProgress` is optional and exists so a form can say "working…" through a
+ * solve that takes a noticeable moment. A caller that does not pass it gets the
+ * same behaviour with a quieter button.
+ */
+export function register(
+  body: RegisterRequest,
+  options: ChallengedRequestOptions = {},
+): Promise<RegisterResponse> {
+  return withChallenge(
+    (headers) =>
+      request<RegisterResponse>("/register", { method: "POST", body, headers }),
+    options,
+  );
 }
 
 /**
@@ -145,11 +169,19 @@ export function verifyEmail(email: string, token: string): Promise<VerifyEmailRe
  * budget is spent, and those two really are different from each other and from
  * the 202. Both arrive as an `ApiError` like every other refusal here.
  */
-export function requestSignInCode(email: string): Promise<EmailCodeResponse> {
-  return request<EmailCodeResponse>("/email/code", {
-    method: "POST",
-    body: { email },
-  });
+export function requestSignInCode(
+  email: string,
+  options: ChallengedRequestOptions = {},
+): Promise<EmailCodeResponse> {
+  return withChallenge(
+    (headers) =>
+      request<EmailCodeResponse>("/email/code", {
+        method: "POST",
+        body: { email },
+        headers,
+      }),
+    options,
+  );
 }
 
 /**
