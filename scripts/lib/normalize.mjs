@@ -148,25 +148,54 @@ function listOrLost(values) {
 }
 
 /**
- * Rewrites the archive's in-page anchors into real routes. Monster stat blocks
- * reference powers as `[force push](#force%20push)`, which pointed at an anchor
- * on the old single-page site. Anything that resolves to a known power becomes
- * a link to that power's page; anything else loses its link and keeps its text,
- * so a dead reference degrades to plain prose instead of a broken link.
+ * Rewrites the corpus's in-page anchors into real routes.
+ *
+ * Both corpora carry these. A monster's stat block names the powers it casts
+ * as `[force push](#force%20push)`, and a starship rule cites the table it
+ * depends on as `[Slowed Level](#Slowed%20Level)` — anchors into the old
+ * single-page site, where all of it shared one document. Here it does not, so
+ * the anchor points at nothing on the page that holds it, and the renderer
+ * refuses to follow a link that is not site-relative. The name reaches the
+ * reader as plain grey text.
+ *
+ * `resolve` takes the slugified target and returns the route it belongs at, or
+ * null. A function rather than the set of power slugs this used to take,
+ * because there are now two kinds of target and the caller is the only thing
+ * that knows which of its catalogues to look in.
+ *
+ * Anything that resolves becomes a link; anything else loses its link and
+ * keeps its words. That degradation is the important half: the corpus cites
+ * powers and tables nobody ever wrote, and for a reader plain prose beats a
+ * link to a 404.
  */
-function rewriteReferences(markdown, powerSlugs) {
+export function rewriteReferences(markdown, resolve) {
   if (!markdown) return markdown;
+
+  const route =
+    typeof resolve === "function"
+      ? resolve
+      : // The previous contract, kept working rather than left to resolve
+        // nothing silently: a caller handing over a set of power slugs meant
+        // "link these to /powers".
+        (slug) => (resolve?.has?.(slug) ? `/powers/${slug}` : null);
+
   return markdown
+    // An empty link is a scrape artefact with no text to degrade to. Left in,
+    // it reaches the page as the five literal characters `[](#)` — the inline
+    // parser requires at least one character of link text, so this matches no
+    // rule at all and survives into the middle of a stat block.
     .replace(/\[\s*\]\(#[^)]*\)/g, "")
     .replace(/\[([^\]]+)\]\(#([^)]*)\)/g, (whole, label, target) => {
       let decoded;
       try {
         decoded = decodeURIComponent(target);
       } catch {
+        // A malformed escape is the archive's doing and not a reason to lose
+        // the words as well as the link.
         decoded = target;
       }
-      const slug = slugify(decoded);
-      return powerSlugs.has(slug) ? `[${label}](/powers/${slug})` : label;
+      const href = route(slugify(decoded), decoded);
+      return href ? `[${label}](${href})` : label;
     })
     .replace(/[ \t]{2,}/g, " ");
 }
