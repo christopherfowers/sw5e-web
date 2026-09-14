@@ -66,6 +66,41 @@ export interface RevisionSummary {
   createdAt: string;
 }
 
+/**
+ * Something publishing noticed and did not refuse over.
+ *
+ * Not a validation failure. The document is live; there is something about it
+ * the author would want to know — today, that it names content the catalogue
+ * does not hold. The service resolves such a reference on its own if the target
+ * is published later, which is why this is a sentence rather than a veto:
+ * naming the weapon before its property is a normal way to author, and refusing
+ * would make the corpus buildable in only one order.
+ */
+export interface PublishNotice {
+  /**
+   * Branch on this, never on {@link message}. One of
+   * {@link PUBLISH_NOTICE_CODES}, but treated as an open string so a code a
+   * newer service adds is still shown rather than dropped.
+   */
+  code: string;
+  /** One sentence, naming what is wrong. Free text; never rendered as markup. */
+  message: string;
+  /** Where in the document, when known, so it can sit beside the control. */
+  jsonPath: string | null;
+}
+
+/** The one code the service sends today. */
+export const PUBLISH_NOTICE_CODES = ["unresolved-reference"] as const;
+
+/**
+ * `POST /api/authoring/drafts/{type}/{key}/publish`
+ *
+ * The revision summary's nine fields, unchanged, plus what publishing noticed.
+ */
+export interface PublishResult extends RevisionSummary {
+  notices: PublishNotice[];
+}
+
 /** `GET /api/authoring/content/{type}/{key}/revisions` */
 export interface RevisionList {
   revisions: RevisionSummary[];

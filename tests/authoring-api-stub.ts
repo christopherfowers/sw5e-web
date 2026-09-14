@@ -36,6 +36,7 @@ import type {
   ContentTypeDescriptor,
   Draft,
   DraftSummary,
+  PublishNotice,
   Revision,
   RevisionSummary,
 } from "../app/authoring/types";
@@ -193,6 +194,25 @@ export class AuthoringApiStub {
 
   private nextRevisionId = 1000;
   private readonly options: AuthoringStubOptions;
+
+  /**
+   * What the next publish of each `"type/key"` should report.
+   *
+   * Set by a test that is about the reporting. The service derives these from
+   * the document's own references; deriving them here would mean reimplementing
+   * the reference map in a fixture, which would then agree with itself rather
+   * than with the service.
+   */
+  private readonly notices = new Map<string, PublishNotice[]>();
+
+  /** What publishing this address will report. */
+  noticeOn(type: string, key: string, notices: PublishNotice[]): void {
+    this.notices.set(`${type}/${key}`, notices);
+  }
+
+  private noticesFor(address: string): PublishNotice[] {
+    return this.notices.get(address) ?? [];
+  }
 
   constructor(options: AuthoringStubOptions = {}) {
     this.options = options;
@@ -497,7 +517,17 @@ export class AuthoringApiStub {
       );
       this.drafts.delete(address);
 
-      return { status: 200, body: this.summary(revision) };
+      /*
+        Notices ride along with the revision summary, exactly as the service
+        sends them: the same nine fields, flat, plus `notices`. Always present
+        and usually empty — a stub that omitted the key when there was nothing
+        to say would let a client that reads `.notices.length` pass here and
+        throw against the real service on its very first clean publish.
+      */
+      return {
+        status: 200,
+        body: { ...this.summary(revision), notices: this.noticesFor(address) },
+      };
     }
 
     /* ----------------------------------------------------------- revisions */
