@@ -128,8 +128,43 @@ nothing to say — because the handler answers 415 to a request with no
 ```jsonc
 { "id": 42, "type": "armor-property", "key": "bulky", "number": 3,
   "action": "updated", "actorUserId": "…", "reason": null,
-  "revertedFromId": null, "createdAt": "…" }
+  "revertedFromId": null, "createdAt": "…",
+  "notices": [] }
 ```
+
+### `notices`
+
+Things publishing noticed and did not refuse over. **Always present, usually
+empty.** The nine fields above keep their shape, so a client written before this
+existed is unaffected.
+
+```jsonc
+{ "code": "unresolved-reference",
+  "message": "This names weapon-property 'reckless', which is not in the catalogue or is not uniquely named. It will link up on its own if that content is published later.",
+  "jsonPath": "$.properties[0]" }
+```
+
+**Branch on `code`, never on `message`.** Today the only code is
+`unresolved-reference`: the document names content the catalogue does not hold,
+or names it ambiguously — both resolve to nothing by the same route, which is
+why the wording says "or is not uniquely named" rather than "does not exist".
+`jsonPath` locates it in the document, or is null when the notice is about the
+document as a whole.
+
+A notice is **not** a refusal. The document is live. Naming content that does
+not exist yet is a normal way to author — the weapon before its property, the
+creature before its power — and the service resolves such an edge on its own
+when the target is published later. Refusing would make the corpus buildable in
+exactly one order.
+
+Reverting reports them too, and that is the case most worth showing: going back
+to an older version can reintroduce a reference to something since renamed or
+deleted, which is exactly when nobody thinks to look.
+
+Only the published document's **own** edges are reported. Publishing can leave
+other documents' edges unresolved — a rename orphans whatever pointed at the old
+name — but those belong to somebody else's document, and reporting them here
+would hand a stranger's problem to whoever happened to publish next.
 
 If the draft carried `resolvesFlagId` **and** that report is in `accepted`, the
 report becomes `resolved` and records the revision. It is best-effort and not

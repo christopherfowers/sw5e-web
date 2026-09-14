@@ -34,7 +34,12 @@
  * source it was read from, because how it divides is a property of the prose.
  */
 
-import { humanize, slugify, splitIntoSections } from "./normalize.mjs";
+import {
+  humanize,
+  rewriteReferences,
+  slugify,
+  splitIntoSections,
+} from "./normalize.mjs";
 
 /**
  * Which canonical directory feeds each of the site's content types.
@@ -242,7 +247,15 @@ function common(record, sources) {
  * because the edges are stated on the documents and normalizing throws away
  * the fields that state them.
  */
-export function buildClassGraph({ classes = [], classImprovements = [], archetypes = [], features = [], equipment = [] }) {
+export function buildClassGraph({
+  classes = [],
+  classImprovements = [],
+  archetypes = [],
+  features = [],
+  equipment = [],
+  powers = [],
+  referenceTables = [],
+}) {
   const grants = new Map();
   const branches = new Map();
 
@@ -330,8 +343,41 @@ export function buildClassGraph({ classes = [], classImprovements = [], archetyp
     classes.map((record) => [text(record.name), slugify(record.name)]),
   );
 
+  /*
+    Powers and reference tables, by slug, for the two edges that leave the
+    class graph by way of prose rather than a named field.
+
+    Sets rather than maps because the slug is the route: a power lives at
+    `/powers/<slug>` and a table at `/reference-tables/<slug>`, so knowing the
+    slug exists answers the whole question. Unlike equipment there is nothing
+    to arbitrate — two documents sharing a name would have collided on their
+    URL long before reaching here.
+  */
+  const powerSlugs = new Set(
+    powers.map((record) => slugify(text(record.name) ?? "")).filter(Boolean),
+  );
+
+  const referenceTableSlugs = new Set(
+    referenceTables.map((record) => slugify(text(record.name) ?? "")).filter(Boolean),
+  );
+
+  /**
+   * Where an in-page anchor from the corpus should point, or null.
+   *
+   * Powers first because they outnumber tables three to one; the sets are
+   * disjoint in practice, so the order is about the common case rather than
+   * about precedence.
+   */
+  const anchorRoute = (slug) => {
+    if (powerSlugs.has(slug)) return `/powers/${slug}`;
+    if (referenceTableSlugs.has(slug)) return `/reference-tables/${slug}`;
+    return null;
+  };
+
   return {
     classSlugs,
+    powerSlugs,
+    anchorRoute,
     grantedBy: (kind, name) => grants.get(grantKey(kind, name)) ?? [],
     branchesOf: (className) => branches.get(className) ?? { archetypes: [], improvements: [] },
     equipmentRoute: (name) =>
@@ -1449,6 +1495,16 @@ function normalizeMonster(record, sources) {
       .map((behavior) => ({
         group: BEHAVIOR_GROUPS[behavior?.behaviorType] ?? "Traits",
         name: text(behavior?.name),
+        /*
+          `descriptionWithLinks` is preferred rather than merely richer. Where
+          both exist the plain one is often in a different order: fourteen
+          creatures have a `description` that ends on the colon introducing a
+          list already printed above it, which reads as a sentence cut off
+          mid-thought.
+
+          Its anchors are turned into routes by `resolveAnchors`, which runs
+          over every finished item rather than being called from here.
+        */
         body: text(behavior?.descriptionWithLinks) ?? text(behavior?.description),
       }))
       .filter((entry) => entry.name || entry.body),
@@ -1926,9 +1982,53 @@ export function indexSources(records) {
     const key = text(record?.key);
     const abbreviation = text(record?.abbreviation);
     if (!key || !abbreviation) continue;
-    sources.set(key, { abbreviation, title: text(record.title) });
+    sources.set(key, {
+      abbreviation,
+      title: text(record.title),
+      /*
+        How the book presents itself, straight from the document.
+
+        All four may be absent, and the site is built to cope: an undescribed
+        source draws as a plain badge rather than as an empty book. That is
+        what lets a supplement be added to the corpus before anybody has
+        written a sentence about it.
+      */
+      // What it is called on the site, where that differs from its full title.
+      shelfName: text(record.shelfName),
+      blurb: text(record.blurb),
+      accent: text(record.accent),
+      order: numeric(record.order),
+      isCoreRulebook: record.isCoreRulebook === true,
+    });
   }
   return sources;
+}
+
+/**
+ * The books, in the order they are shelved.
+ *
+ * Placed books first, in their authored order; anything unplaced after them by
+ * name. The same two-band rule the chapter lists use, for the same reason: a
+ * book nobody has positioned should still appear rather than take the first
+ * slot by accident.
+ */
+export function shelveBooks(sources) {
+  return [...sources.entries()]
+    .map(([key, source]) => ({
+      key,
+      code: source.abbreviation,
+      name: source.shelfName ?? source.title ?? source.abbreviation,
+      blurb: source.blurb ?? null,
+      accent: source.accent ?? null,
+      order: source.order ?? null,
+      isCoreRulebook: source.isCoreRulebook === true,
+    }))
+    .sort((left, right) => {
+      if (left.order != null && right.order != null) return left.order - right.order;
+      if (left.order != null) return -1;
+      if (right.order != null) return 1;
+      return left.name.localeCompare(right.name, "en");
+    });
 }
 
 /**
@@ -1945,6 +2045,31 @@ export function indexSources(records) {
  * the caller is the only thing that knows what else is being published
  * alongside it.
  */
+/**
+ * Turns every in-page anchor in a finished item into a route.
+ *
+ * One pass over the whole item rather than a call in each mapping that
+ * happens to carry prose. The bug this is shaped around is not that the
+ * rewriting was wrong — it was correct, and had been for as long as the
+ * archive builder existed. It was that the canonical builder never called it,
+ * so the path that runs in production silently did nothing, and the only
+ * symptom was three hundred power and table names rendering as grey text that
+ * looked deliberate.
+ *
+ * Doing it once, here, means a mapping added later is covered without anybody
+ * remembering to wire it up. Anchors that resolve become links and the rest
+ * keep their words, so no document can be made worse by passing through.
+ */
+function resolveAnchors(item, route) {
+  const rewrite = (markdown) => rewriteReferences(markdown, route);
+
+  return {
+    ...item,
+    sections: item.sections?.map((s) => ({ ...s, body: rewrite(s.body) })),
+    entries: item.entries?.map((e) => ({ ...e, body: rewrite(e.body) })),
+  };
+}
+
 export function normalizeAllCanonical(typeId, records, sources, graph = EMPTY_GRAPH) {
   const normalize = NORMALIZERS[typeId];
   if (!normalize) {
@@ -1952,8 +2077,10 @@ export function normalizeAllCanonical(typeId, records, sources, graph = EMPTY_GR
   }
 
   const seen = new Map();
+  const route = graph.anchorRoute ?? (() => null);
+
   return records.map((record) => {
-    const item = normalize(record, sources, graph);
+    const item = resolveAnchors(normalize(record, sources, graph), route);
     const count = (seen.get(item.slug) ?? 0) + 1;
     seen.set(item.slug, count);
     return {

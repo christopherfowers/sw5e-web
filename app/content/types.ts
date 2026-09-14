@@ -433,15 +433,6 @@ export interface Manifest {
   types: ManifestEntry[];
 }
 
-/** Source book abbreviations, expanded for display. */
-export const SOURCE_NAMES: Record<string, string> = {
-  PHB: "Player's Handbook",
-  EC: "Expanded Content",
-  WH: "Wretched Hives",
-  SnV: "Scum and Villainy",
-  SotG: "Starships of the Galaxy",
-};
-
 /**
  * Who made one picture, and why the site may show it.
  *

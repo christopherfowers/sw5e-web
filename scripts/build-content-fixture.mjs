@@ -37,6 +37,7 @@ import process from "node:process";
 import {
   CANONICAL_DIRECTORIES,
   buildClassGraph,
+  shelveBooks,
   indexSources,
   normalizeAllCanonical,
 } from "./lib/canonical.mjs";
@@ -375,7 +376,7 @@ async function writeJson(directory, name, value) {
  * and the prerender list are concerned. A type with no items still gets its
  * files, so `getSummaries` finds an empty list rather than throwing.
  */
-async function writeDataset(outputDirectory, types, { curated }) {
+async function writeDataset(outputDirectory, types, { curated, books = [] }) {
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
 
@@ -393,6 +394,18 @@ async function writeDataset(outputDirectory, types, { curated }) {
 
   await writeJson(outputDirectory, "search-index.json", searchIndex);
   await writeJson(outputDirectory, "manifest.json", manifest);
+
+  /*
+    The books, as their own small file rather than inside the manifest.
+
+    The manifest is read through `dataset.server.ts`, which is server-only
+    because the dataset it sits beside is several megabytes. A book's name and
+    colour are needed while rendering a row on the client, and five books is
+    about a kilobyte — so this is the one part of the dataset that is safe to
+    import directly, and keeping it separate is what makes that obvious rather
+    than a thing somebody has to reason about.
+  */
+  await writeJson(outputDirectory, "books.json", books);
 }
 
 async function main() {
@@ -461,10 +474,18 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
     classImprovements: records.get("class-improvements") ?? [],
     archetypes: records.get("archetypes") ?? [],
     features: records.get("features") ?? [],
-    // The one edge that crosses out of the class graph: an enhanced item names
+    // The two edges that cross out of the class graph. An enhanced item names
     // the gear it is built on or installed in, and that name becomes a link
     // only when exactly one equipment document answers to it.
     equipment: records.get("equipment") ?? [],
+    // A creature's stat block names every power it can cast, written by the
+    // archive as an anchor into the old single-page site. Without this the
+    // anchors survive into the page, the renderer refuses to follow a link
+    // that is not site-relative, and the names print as plain text.
+    powers: records.get("powers") ?? [],
+    // And the starship rules and modifications cite the tables they depend on
+    // the same way, for the same reason.
+    referenceTables: records.get("reference-tables") ?? [],
   });
 
   const types = [];
@@ -495,7 +516,10 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
     );
   }
 
-  await writeDataset(outputDirectory, types, { curated: false });
+  await writeDataset(outputDirectory, types, {
+    curated: false,
+    books: shelveBooks(sources),
+  });
 
   process.stdout.write(
     `\n${total} items written to ${path.relative(process.cwd(), outputDirectory)}\n`,
@@ -601,7 +625,13 @@ async function buildFromArchive(options, outputDirectory) {
   await writeDataset(
     outputDirectory,
     options.curated ? pruneLinksOutside(types) : types,
-    { curated: options.curated },
+    /*
+      The archive has no source documents — it records the book on each row and
+      nothing about the books themselves — so an archive build ships no shelf
+      and the site falls back to plain badges. That is the same degradation an
+      undescribed source gets, reached by a different route.
+    */
+    { curated: options.curated, books: [] },
   );
 
   const total = types.reduce((sum, type) => sum + type.items.length, 0);

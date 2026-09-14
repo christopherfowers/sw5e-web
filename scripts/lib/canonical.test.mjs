@@ -22,8 +22,23 @@ const sources = indexSources([
   { key: "sotg", abbreviation: "SotG", title: "Starships of the Galaxy" },
 ]);
 
-function normalizeOne(type, record) {
-  return normalizeAllCanonical(type, [record], sources)[0];
+/**
+ * `powers` is optional because only the monster mapping consults it, and
+ * threading an empty array through every other call would suggest they all
+ * care.
+ */
+/**
+ * `powers` and `referenceTables` are optional because only a few mappings
+ * consult them, and threading empty arrays through every other call would
+ * suggest they all care.
+ */
+function normalizeOne(type, record, powers = [], referenceTables = []) {
+  return normalizeAllCanonical(
+    type,
+    [record],
+    sources,
+    buildClassGraph({ powers, referenceTables }),
+  )[0];
 }
 
 describe("what the canonical mapping guarantees for every type", () => {
@@ -1455,5 +1470,187 @@ describe("starship rules", () => {
     expect(item.summary.readingGroup).toBeNull();
     expect(item.summary.order).toBeNull();
     expect(item.tagline).toBe("Starships of the Galaxy");
+  });
+});
+
+describe("a monster's power references", () => {
+  /**
+   * Monster stat blocks list every power the creature can cast, and the
+   * archive wrote each one as an anchor into the old single-page site:
+   * `[force push](#force%20push)`. There is no such anchor on a page that
+   * holds one creature, so until these are rewritten the renderer drops the
+   * link and prints the text — 224 power names across 19 creatures that a
+   * reader can see and cannot click.
+   *
+   * The rewriting itself is `normalize.mjs`'s and predates this; what was
+   * missing is that the canonical builder never called it, so the path that
+   * actually runs in production did not do it.
+   */
+  const powers = [
+    { key: "force-push", name: "Force Push", sourceKey: "phb", description: "You push." },
+    { key: "mirror-image", name: "Mirror Image", sourceKey: "phb", description: "Copies." },
+  ];
+
+  function droid(descriptionWithLinks, description = null) {
+    return normalizeOne(
+      "monsters",
+      {
+        key: "tactical-droid",
+        name: "Tactical Droid",
+        sourceKey: "phb",
+        behaviors: [
+          {
+            name: "Techcasting",
+            behaviorType: "trait",
+            description,
+            descriptionWithLinks,
+          },
+        ],
+      },
+      powers,
+    );
+  }
+
+  it("turns an anchor into a link to the power's page", () => {
+    const item = droid("It knows [force push](#force%20push).");
+
+    expect(item.entries[0].body).toBe("It knows [force push](/powers/force-push).");
+  });
+
+  /**
+   * The percent-encoding is the archive's, not a choice. A target that is not
+   * decoded slugifies to "force-20push" and matches nothing, so this fails by
+   * silently dropping every link rather than by throwing.
+   */
+  it("decodes the archive's percent-encoded targets", () => {
+    const item = droid("[mirror image](#mirror%20image)");
+
+    expect(item.entries[0].body).toBe("[mirror image](/powers/mirror-image)");
+  });
+
+  /**
+   * A reference to a power nobody has written keeps its words and loses its
+   * link. That is deliberate: the alternative is a link to a 404, and the
+   * corpus does contain a few — "scorching ray" and "charge power cell" are
+   * named by creatures and exist nowhere.
+   */
+  it("keeps the text of a power that does not exist, without linking it", () => {
+    const item = droid("It casts [scorching ray](#scorching%20ray) twice.");
+
+    expect(item.entries[0].body).toBe("It casts scorching ray twice.");
+  });
+
+  /**
+   * An empty link is a scrape artefact and is currently visible on the live
+   * site: the inline parser requires at least one character of link text, so
+   * `[](#)` matches no rule and survives into the page as those five
+   * characters, sitting in the middle of a stat block.
+   */
+  it("removes the empty links the scrape left behind", () => {
+    const item = droid("knows the following: [](#)\n At-will: [force push](#force%20push)");
+
+    expect(item.entries[0].body).not.toContain("[](#)");
+    expect(item.entries[0].body).toContain("/powers/force-push");
+  });
+
+  /**
+   * `descriptionWithLinks` is preferred, and it is not merely the same text
+   * with links added. Where both exist the plain one is frequently in a
+   * different order — the corpus has fourteen creatures whose `description`
+   * ends on the colon that introduces a list printed above it.
+   */
+  it("prefers the linked description over the plain one", () => {
+    const item = droid(
+      "It knows the following: [force push](#force%20push)",
+      "force push It knows the following:",
+    );
+
+    expect(item.entries[0].body).toBe("It knows the following: [force push](/powers/force-push)");
+  });
+
+  it("falls back to the plain description when there is no linked one", () => {
+    const item = droid(null, "It makes three attacks.");
+
+    expect(item.entries[0].body).toBe("It makes three attacks.");
+  });
+});
+
+describe("references to a reference table", () => {
+  /**
+   * The starship rules and modifications cite the tables they depend on the
+   * same way monsters cite powers, and for the same reason: on the old site
+   * the table was a heading further down the one long page.
+   *
+   * Seventy-nine such citations resolve to a table the corpus holds. Left
+   * alone they render as grey text, so a rule that says "consult the Slowed
+   * Level table" gives a reader no way to reach it.
+   */
+  const tables = [
+    { key: "slowed-level", name: "Slowed Level", subject: "Conditions", columns: [], rows: [] },
+  ];
+
+  it("links a cited table to its page", () => {
+    const item = normalizeOne(
+      "starship-modifications",
+      {
+        key: "ion-shielding",
+        name: "Ion Shielding",
+        sourceKey: "sotg",
+        description: "The ship gains a [Slowed Level](#Slowed%20Level).",
+      },
+      [],
+      tables,
+    );
+
+    expect(item.sections[0].body).toBe(
+      "The ship gains a [Slowed Level](/reference-tables/slowed-level).",
+    );
+  });
+
+  /**
+   * Three table names are cited and do not exist — "Starship Size Cargo
+   * Capacity" among them. Those keep their words, exactly as a missing power
+   * does.
+   */
+  it("keeps the text of a table that does not exist", () => {
+    const item = normalizeOne(
+      "starship-modifications",
+      {
+        key: "cargo-hold",
+        name: "Cargo Hold",
+        sourceKey: "sotg",
+        description: "See [Starship Size Cargo Capacity](#Starship%20Size%20Cargo%20Capacity).",
+      },
+      [],
+      tables,
+    );
+
+    expect(item.sections[0].body).toBe("See Starship Size Cargo Capacity.");
+  });
+
+  /**
+   * Powers and tables are resolved by one pass over the finished item, so a
+   * type nobody thought to wire up is covered anyway. The failure this avoids
+   * is the one that just happened: the rewriting existed, was correct, and was
+   * simply never called on the path that runs in production.
+   */
+  it("resolves both kinds of target in the same passage", () => {
+    const item = normalizeOne(
+      "starship-rules",
+      {
+        key: "combat",
+        title: "Combat",
+        sourceKey: "sotg",
+        chapterNumber: 9,
+        body: "Cast [force push](#force%20push), then check [Slowed Level](#Slowed%20Level).",
+      },
+      [{ key: "force-push", name: "Force Push", sourceKey: "phb", description: "Push." }],
+      tables,
+    );
+
+    expect(item.sections[0].body).toBe(
+      "Cast [force push](/powers/force-push), then check " +
+        "[Slowed Level](/reference-tables/slowed-level).",
+    );
   });
 });

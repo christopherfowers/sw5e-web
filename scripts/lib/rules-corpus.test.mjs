@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   CANONICAL_DIRECTORIES,
@@ -33,11 +33,47 @@ import { REPLACEMENT } from "./repair-text.mjs";
  * a document's key, the other deriving it from the file the record came from.
  */
 
+/*
+  Five seconds is the default for a unit test, and nothing in this file is one.
+
+  Every assertion here reads the real corpus off disk and pushes 7,191 documents
+  through the full mapping, which takes seconds on an idle machine and longer on
+  a busy one. At the default these passed alone and failed intermittently in the
+  full suite — a flake that reads as "the corpus is broken" when it means "the
+  machine was busy", and the worst kind to leave in a suite because people learn
+  to re-run rather than read it.
+
+  Set at the file rather than per test so a slow assertion added later inherits
+  it rather than reintroducing the same flake.
+*/
+vi.setConfig({ testTimeout: 60_000 });
+
 const sources = indexSources([
   { key: "phb", abbreviation: "PHB", title: "Star Wars 5e Player's Handbook" },
   { key: "wh", abbreviation: "WH", title: "Wretched Hives" },
   { key: "ec", abbreviation: "EC", title: "Expanded Content" },
 ]);
+
+/**
+ * Both corpora are checked out beside this repository on a development machine
+ * and neither exists in CI. Which "beside" means depends on how the four
+ * repositories were cloned, so the same candidates the sibling repository's
+ * test helper tries are tried here.
+ *
+ * At module scope because two suites below need it.
+ */
+function locate(variable, candidates) {
+  const configured = process.env[variable];
+  if (configured) return path.resolve(configured);
+  return (
+    candidates.map((each) => path.resolve(each)).find((each) => existsSync(each)) ??
+    path.resolve(candidates[0])
+  );
+}
+
+async function readJson(file) {
+  return JSON.parse(await readFile(file, "utf8"));
+}
 
 function canonical(type, record) {
   return normalizeAllCanonical(type, [record], sources)[0];
@@ -437,21 +473,6 @@ describe("reference tables", () => {
 /* ------------------------------------------- the two source paths must agree */
 
 describe("the canonical set and the archive publish the same corpus", () => {
-  /**
-   * Both sources are checked out beside this repository on a development
-   * machine and neither exists in CI. Which "beside" means depends on how the
-   * four repositories were cloned, so the same candidates the sibling
-   * repository's test helper tries are tried here.
-   */
-  function locate(variable, candidates) {
-    const configured = process.env[variable];
-    if (configured) return path.resolve(configured);
-    return (
-      candidates.map((each) => path.resolve(each)).find((each) => existsSync(each)) ??
-      path.resolve(candidates[0])
-    );
-  }
-
   const archive = locate("SW5E_ARCHIVE", [
     "../../sw5e-legacy-archive/api",
     "../sw5e-legacy-archive/api",
@@ -460,10 +481,6 @@ describe("the canonical set and the archive publish the same corpus", () => {
     "../sw5e-database/content",
     "../../sw5e-database/content",
   ]);
-
-  async function readJson(file) {
-    return JSON.parse(await readFile(file, "utf8"));
-  }
 
   // Neither source is present in CI, so the two assertions that read them
   // announce themselves as skipped rather than passing vacuously.
@@ -677,5 +694,179 @@ describe("the canonical set and the archive publish the same corpus", () => {
       { file: "ExpandedContent", ruleBook: "ec" },
       { file: "VariantRule", ruleBook: "variant" },
     ]);
+  });
+});
+
+/**
+ * No anchor from the corpus reaches a page as an anchor.
+ *
+ * The bug this exists for was silent in an unusual way. `rewriteReferences`
+ * was correct and had been for as long as the archive builder existed; the
+ * canonical builder simply never called it. So the path that runs in
+ * production did nothing, the renderer declined to follow a link that was not
+ * site-relative, and three hundred power and table names printed as grey text
+ * that looked like a deliberate choice. No error, no warning, no 404 — the
+ * failure mode of a link that is never made is silence.
+ *
+ * Reads the real corpus, because that is the only place these anchors exist.
+ * A hand-written fixture proves the rewriting works, which was never in doubt.
+ */
+describe("the corpus's in-page anchors", () => {
+  const content = locate("SW5E_CONTENT", [
+    "../sw5e-database/content",
+    "../../sw5e-database/content",
+  ]);
+
+  const hasContent = existsSync(path.join(content, "monster"));
+
+  /*
+    Built once and shared.
+
+    Each assertion below needs the whole corpus normalized, and that is 7,191
+    documents through every mapping — comfortably over the five-second default
+    on its own. Four of them doing it separately did not merely take four times
+    as long; under the load of the full suite they began timing out, which
+    reads as a broken corpus rather than as a slow test. The one that made them
+    slow is the one that made them shared.
+  */
+  let built = null;
+
+  async function buildEverything() {
+    if (built) return built;
+    built = build();
+    return built;
+  }
+
+  async function build() {
+    const records = new Map();
+    for (const type of CONTENT_TYPES) {
+      const directory = CANONICAL_DIRECTORIES[type.id];
+      if (!directory) {
+        records.set(type.id, []);
+        continue;
+      }
+      const where = path.join(content, directory);
+      if (!existsSync(where)) {
+        records.set(type.id, []);
+        continue;
+      }
+      const names = (await readdir(where)).filter((each) => each.endsWith(".json"));
+      records.set(
+        type.id,
+        await Promise.all(names.map((name) => readJson(path.join(where, name)))),
+      );
+    }
+
+    const graph = buildClassGraph({
+      classes: records.get("classes") ?? [],
+      classImprovements: records.get("class-improvements") ?? [],
+      archetypes: records.get("archetypes") ?? [],
+      features: records.get("features") ?? [],
+      equipment: records.get("equipment") ?? [],
+      powers: records.get("powers") ?? [],
+      referenceTables: records.get("reference-tables") ?? [],
+    });
+
+    /*
+      The corpus's own source documents, not the three-book fixture above. The
+      mapping refuses a sourceKey no source declares and the corpus has five
+      books, so a fixture short of one fails on a species rather than on
+      anything this suite is about.
+
+      Read from content/source directly: "source" is not a published content
+      type, so CANONICAL_DIRECTORIES does not carry it.
+    */
+    const sourceDirectory = path.join(content, "source");
+    const corpusSources = indexSources(
+      await Promise.all(
+        (await readdir(sourceDirectory))
+          .filter((each) => each.endsWith(".json"))
+          .map((name) => readJson(path.join(sourceDirectory, name))),
+      ),
+    );
+
+    const items = [];
+    for (const type of CONTENT_TYPES) {
+      const set = records.get(type.id) ?? [];
+      if (set.length === 0) continue;
+      items.push(...normalizeAllCanonical(type.id, set, corpusSources, graph));
+    }
+    return items;
+  }
+
+  function prose(item) {
+    return [
+      ...(item.sections ?? []).map((each) => each.body),
+      ...(item.entries ?? []).map((each) => each.body),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  it.runIf(hasContent)("are all resolved or reduced to their words", async () => {
+    const items = await buildEverything();
+
+    const leftover = items.filter((item) => /\]\(#/.test(prose(item)));
+
+    expect(leftover.map((item) => `${item.type}/${item.slug}`)).toEqual([]);
+  });
+
+  /**
+   * The empty link is its own case because it survives by a different route.
+   * The inline parser needs at least one character of link text, so `[](#)`
+   * matches no rule and is carried through to the page as those five literal
+   * characters — which is what a reader could see on the live site, mid stat
+   * block, before this.
+   */
+  it.runIf(hasContent)("leave no empty links behind", async () => {
+    const items = await buildEverything();
+
+    expect(items.filter((item) => prose(item).includes("[](#)"))).toEqual([]);
+  });
+
+  /**
+   * A rewritten link points at a page that exists.
+   *
+   * The half that matters more than the rewriting. Turning an anchor into
+   * `/powers/<slug>` is worse than leaving it alone if that slug is not a
+   * page: a dead-looking word becomes a confident link to a 404. The slugs
+   * come from the same `slugify` that decides each item's URL, so this holds
+   * by construction — and that is exactly the kind of reasoning worth pinning,
+   * since it stops holding the moment either side changes.
+   */
+  it.runIf(hasContent)("point at pages that exist", async () => {
+    const items = await buildEverything();
+
+    const slugsByType = new Map();
+    for (const item of items) {
+      if (!slugsByType.has(item.type)) slugsByType.set(item.type, new Set());
+      slugsByType.get(item.type).add(item.slug);
+    }
+
+    const dangling = [];
+    for (const item of items) {
+      for (const [, type, slug] of prose(item).matchAll(
+        /\]\(\/(powers|reference-tables)\/([a-z0-9-]+)\)/g,
+      )) {
+        if (!slugsByType.get(type)?.has(slug)) dangling.push(`/${type}/${slug}`);
+      }
+    }
+
+    expect([...new Set(dangling)]).toEqual([]);
+  });
+
+  /**
+   * And that the rewriting actually happened at all.
+   *
+   * Every assertion above passes on an empty result: a builder that produced
+   * no prose would leave no anchors, no empty links and no dangling routes.
+   * This is the one that fails if the pass stops running.
+   */
+  it.runIf(hasContent)("produce the links the corpus asks for", async () => {
+    const items = await buildEverything();
+    const all = items.map(prose).join("\n");
+
+    expect(all.match(/\]\(\/powers\//g)?.length ?? 0).toBeGreaterThan(200);
+    expect(all.match(/\]\(\/reference-tables\//g)?.length ?? 0).toBeGreaterThan(70);
   });
 });
