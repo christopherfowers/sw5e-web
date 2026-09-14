@@ -1982,9 +1982,51 @@ export function indexSources(records) {
     const key = text(record?.key);
     const abbreviation = text(record?.abbreviation);
     if (!key || !abbreviation) continue;
-    sources.set(key, { abbreviation, title: text(record.title) });
+    sources.set(key, {
+      abbreviation,
+      title: text(record.title),
+      /*
+        How the book presents itself, straight from the document.
+
+        All four may be absent, and the site is built to cope: an undescribed
+        source draws as a plain badge rather than as an empty book. That is
+        what lets a supplement be added to the corpus before anybody has
+        written a sentence about it.
+      */
+      // What it is called on the site, where that differs from its full title.
+      shelfName: text(record.shelfName),
+      blurb: text(record.blurb),
+      accent: text(record.accent),
+      order: numeric(record.order),
+    });
   }
   return sources;
+}
+
+/**
+ * The books, in the order they are shelved.
+ *
+ * Placed books first, in their authored order; anything unplaced after them by
+ * name. The same two-band rule the chapter lists use, for the same reason: a
+ * book nobody has positioned should still appear rather than take the first
+ * slot by accident.
+ */
+export function shelveBooks(sources) {
+  return [...sources.entries()]
+    .map(([key, source]) => ({
+      key,
+      code: source.abbreviation,
+      name: source.shelfName ?? source.title ?? source.abbreviation,
+      blurb: source.blurb ?? null,
+      accent: source.accent ?? null,
+      order: source.order ?? null,
+    }))
+    .sort((left, right) => {
+      if (left.order != null && right.order != null) return left.order - right.order;
+      if (left.order != null) return -1;
+      if (right.order != null) return 1;
+      return left.name.localeCompare(right.name, "en");
+    });
 }
 
 /**
