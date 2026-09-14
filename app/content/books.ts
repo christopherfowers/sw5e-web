@@ -44,6 +44,14 @@ export interface Book {
   accent: Accent | null;
   /** Where it sits on the shelf. Absent means nobody has placed it. */
   order: number | null;
+  /**
+   * True for the one book that teaches the game.
+   *
+   * The front page opens with this book and walks a new reader down its
+   * chapters. Exactly one source sets it, and the content repository has a test
+   * saying so — neither failure is loud enough to notice otherwise.
+   */
+  isCoreRulebook: boolean;
 }
 
 /*
@@ -97,6 +105,18 @@ export function bookBySlug(slug: string): Book | null {
 export function bookName(code: string | null | undefined): string | null {
   if (!code) return null;
   return BY_CODE.get(code)?.name ?? code;
+}
+
+/**
+ * The book that teaches the game, or null.
+ *
+ * Null is a real state and callers must cope: an archive build ships no shelf
+ * at all, and a corpus nobody has marked has no teaching book either. The front
+ * page answers by not drawing the button that opens with it, which is better
+ * than opening with an arbitrary one.
+ */
+export function coreRulebook(): Book | null {
+  return BOOKS.find((book) => book.isCoreRulebook) ?? null;
 }
 
 /** The hue a book is drawn in, or null when it has none. */
