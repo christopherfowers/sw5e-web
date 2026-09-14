@@ -14,8 +14,8 @@ import {
   faceOf,
   type NavDestination,
 } from "~/content/nav-groups";
-import { coreRulebook } from "~/content/books";
-import { SOURCE_META, SOURCE_ORDER } from "~/content/source-meta";
+import { BOOKS, coreRulebook } from "~/content/books";
+import { SOURCE_ORDER } from "~/content/source-meta";
 import { selectSubcategoryRows } from "~/content/subcategory-views";
 import { TYPE_ORDER } from "~/content/type-meta";
 import type { AnySummary } from "~/content/types";
@@ -64,9 +64,14 @@ export function meta({ loaderData }: Route.MetaArgs) {
     {
       name: "description",
       content:
-        `Every book of the Star Wars 5e conversion, searchable in one place. ` +
-        `${corpus}, including classes, archetypes, features, powers, ` +
-        "starships, enhanced items and creature stat blocks.",
+        // Names the game, then says what it is. The hero can lead with the
+        // description because the heading above it carries the name; a search
+        // result has no heading, so this has to do both jobs itself.
+        "Star Wars 5e is a roleplaying game built on the mechanics of " +
+        "Dungeons & Dragons 5th edition, expanded for the galaxy. Every book " +
+        `of it, searchable in one place: ${corpus}, including classes, ` +
+        "archetypes, features, powers, starships, enhanced items and creature " +
+        "stat blocks.",
     },
   ];
 }
@@ -219,6 +224,20 @@ export async function loader() {
     sourceTotals: Object.fromEntries(
       SOURCE_ORDER.map((code) => [code, totalForSource(code)]),
     ) as Record<string, number>,
+    /*
+      The shelf, straight from the corpus: which books exist, what they are
+      called, the line under each and the hue it is drawn in, in the order
+      somebody authored. Nothing here is decided by this file, which is the
+      point — adding a book, renaming one or reordering the shelf is an edit to
+      content and needs no deploy.
+    */
+    books: BOOKS.map((book) => ({
+      key: book.key,
+      code: book.code,
+      name: book.name,
+      blurb: book.blurb,
+      accent: book.accent,
+    })),
   };
 }
 
@@ -230,6 +249,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     sourceTotals,
     chapters,
     variantRules,
+    books,
   } = loaderData;
 
   // Whatever the path opens with. Somebody reordering the content moves this
@@ -289,8 +309,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
         <div className="home-hero-inner">
           <h1>Star Wars 5e</h1>
+          {/*
+            What the game is, before what this site does.
+
+            This used to read "every book of the Star Wars 5e conversion,
+            searchable in one place", which is true and tells somebody who does
+            not already know absolutely nothing: it never says what the game is,
+            and "conversion" carries the whole explanation without unpacking it.
+            The site it replaces opened by saying plainly that this is an
+            overhaul of Dungeons & Dragons 5th edition for a Star Wars
+            campaign, built on the same mechanics and expanded — which is both
+            more welcoming and more honest about what the rules rest on.
+          */}
           <p className="lede">
-            Every book of the Star Wars 5e conversion, searchable in one place.
+            A Star Wars roleplaying game, built on the mechanics of Dungeons
+            &amp; Dragons 5th edition and expanded for the galaxy. Every book of
+            it, searchable in one place.
           </p>
           <p className="home-hero-meta">
             {total.toLocaleString("en-US")} entries across {TYPE_ORDER.length}{" "}
@@ -348,10 +382,73 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         ) : null}
 
         {/*
-          The order of this page is the order a reader needs it in: how to play,
-          then what else there is to play with, then the lists. It used to open
-          with twenty-seven category cards, which answers "what do you have"
-          before anybody has been told what the game is.
+          The books, first and whole.
+
+          The order of this page used to be how to play, then the other books,
+          then the lists. The books are now the first thing under the hero,
+          which is how the site this replaces opened and what its owner asked
+          for: somebody arriving wants to see what this is made of before they
+          are told where to start.
+
+          All of them, including the handbook. The old arrangement called this
+          "Supplemental rules" and left the handbook out, because the section
+          above it was the handbook — which made the row a list of leftovers
+          rather than a shelf. A reader looking for the Player's Handbook
+          should find it among the books.
+
+          The covers carry this rather than the text. Two of the five have no
+          artwork and fall back to a monogram plate, which is the same shape and
+          holds the row's rhythm.
+        */}
+        <section className="home-shelf" aria-labelledby="the-books">
+          <h2 className="section-heading" id="the-books">
+            The rulebooks
+          </h2>
+          <p className="section-lede">
+            {books.length === 1
+              ? "Everything in this reference comes from one book."
+              : `Everything in this reference comes from one of these ${books.length} books.`}
+          </p>
+
+          <ul className="shelf">
+            {books.map((book) => {
+              const cover = sourceCover(book.code);
+              const entries = sourceTotals[book.code] ?? 0;
+              return (
+                <li key={book.code}>
+                  <div className="shelf-book" data-accent={book.accent ?? undefined}>
+                    {cover ? (
+                      <AssetImage
+                        className="shelf-cover"
+                        image={cover}
+                        alt={`Cover of ${book.name}`}
+                        sizes="(max-width: 40rem) 40vw, 12rem"
+                      />
+                    ) : (
+                      <span className="shelf-cover shelf-plate">
+                        <MonogramPlate name={book.name} />
+                      </span>
+                    )}
+                    <p className="shelf-title">
+                      <Link to={`/sources/${book.key}`}>{book.name}</Link>
+                    </p>
+                    {book.blurb ? <p className="shelf-blurb">{book.blurb}</p> : null}
+                    <p className="shelf-count">
+                      {entries.toLocaleString("en-US")}{" "}
+                      {entries === 1 ? "entry" : "entries"}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+
+        {/*
+          Then how to play. The books above say what this is made of; this says
+          where to start, and it is still ahead of the lists — the page opened
+          with twenty-seven category cards once, which answers "what do you
+          have" before anybody has been told what the game is.
         */}
         <section className="home-start" aria-labelledby="how-to-play">
           <h2 className="section-heading" id="how-to-play">
@@ -394,56 +491,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               </ul>
             </section>
           ))}
-        </section>
 
-        {/*
-          Everything that is still rules, but is not the book you learn from:
-          the three supplements and the optional rules. Above the categories
-          because a rule outranks a list of items, below the handbook because
-          none of it makes sense before it.
-        */}
-        <section className="home-supplemental" aria-labelledby="supplemental">
-          <h2 className="section-heading" id="supplemental">
-            Supplemental rules
-          </h2>
-          <p className="section-lede">
-            The other books, and the optional rules a table can choose to use.
-          </p>
+          {/*
+            The optional rules, at the foot of the path rather than under the
+            books where they used to sit.
 
-          <ul className="book-grid">
-            {SOURCE_ORDER.filter((code) => code !== HOW_TO_PLAY).map((code) => {
-              const source = SOURCE_META[code];
-              const cover = sourceCover(code);
-              const entries = sourceTotals[code] ?? 0;
-              return (
-                <li key={code}>
-                  <div className="book-card" data-accent={source.accent}>
-                    {cover ? (
-                      <AssetImage
-                        className="book-cover"
-                        image={cover}
-                        alt={`Cover of ${source.name}`}
-                        sizes="68px"
-                      />
-                    ) : (
-                      <span className="book-plate">
-                        <MonogramPlate name={source.name} />
-                      </span>
-                    )}
-                    <div>
-                      <p className="book-card-title">
-                        <Link to={`/sources/${source.slug}`}>{source.name}</Link>
-                      </p>
-                      <p className="book-card-count">
-                        {entries.toLocaleString("en-US")} entries
-                      </p>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-
+            They are rules, so they belong with how to play — but they are
+            optional, and a reader being walked down a path should reach the end
+            of it before being offered things a table may or may not have turned
+            on.
+          */}
           {variantRules > 0 ? (
             <p className="home-variants">
               <Link to="/rules">

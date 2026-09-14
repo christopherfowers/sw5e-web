@@ -54,7 +54,7 @@ export function SiteHeader() {
               className="site-wordmark-logo"
               image={logo}
               alt="Star Wars 5e"
-              sizes="44px"
+              sizes="(max-width: 34rem) 72px, 88px"
               loading="eager"
             />
           ) : (
