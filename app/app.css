@@ -114,10 +114,19 @@
   --brand-text: #a30f1c;
   --brand-contrast: #ffffff;
 
-  /* Interactive */
-  --accent: #1148b8;
-  --accent-hover: #0c3486;
-  --focus: #1148b8;
+  /* Interactive.
+   *
+   * Bronze rather than blue, and the reason is the dark theme's: gold is the
+   * one colour this material's two ancestors both reach for when something
+   * matters — the crawl is gold on black, a rulebook's title is gold foil on
+   * leather, its page edges are gilt. A link should be that, not the blue of a
+   * documentation site.
+   *
+   * Darkened well past the dark theme's brass because it is read on parchment:
+   * 5.9:1 on --bg and 5.4:1 on --surface, against a 4.5 requirement. */
+  --accent: #7d5a0c;
+  --accent-hover: #5f4409;
+  --focus: #7d5a0c;
 
   --mark-bg: #ffe08a;
   --mark-text: #1a1814;
@@ -174,17 +183,29 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0a0e14;
-    --bg-deep: #05080c;
-    --surface: #111823;
-    --surface-raised: #17202d;
-    --surface-sunken: #0c1219;
-    --border: #222e3d;
-    --border-strong: #3d4d61;
+    /* Neutral near-black, with no hue in the ground at all.
+     *
+     * This was #0a0e14 — a blue-slate, and the house colour of every developer
+     * tool built since about 2020. It is legible and it belongs to a
+     * documentation site rather than to a space fantasy played with dice.
+     *
+     * Warming it instead was tried and was worse: a brown ground reads as a
+     * saloon, and it fought the category hues, which sit on it. Star Wars is
+     * gold on black, not gold in brown — the crawl scrolls through a void. So
+     * the ground is the void and the warmth is spent entirely on the accent. */
+    --bg: #08090a;
+    --bg-deep: #030405;
+    --surface: #131517;
+    --surface-raised: #1a1d20;
+    --surface-sunken: #0b0c0e;
+    --border: #262a2e;
+    --border-strong: #434a51;
 
-    --text: #e7edf5;
-    --text-muted: #9aa8bb;
-    --text-faint: #7d8ca3;
+    /* Warm off-white rather than blue-white, so the type sits on the ground
+     * rather than glowing slightly against it. 16.5:1 on --bg. */
+    --text: #ece9e3;
+    --text-muted: #a6a49e;
+    --text-faint: #86847f;
 
     /* Darkened from #ef2b39, which carried white text at 4.14:1 and so put
        every primary button on the site — "Browse species", "Continue with a
@@ -196,23 +217,31 @@
     --brand-text: #ff6b76;
     --brand-contrast: #ffffff;
 
-    --accent: #7cc0ff;
-    --accent-hover: #a9d6ff;
-    --focus: #7cc0ff;
+    /* Brass. The single highest-leverage value in this file: it takes the slot
+     * sky blue occupied, and it is the one colour both of this material's
+     * ancestors own. 8.4:1 on --bg. */
+    --accent: #d2a04a;
+    --accent-hover: #e8bd6f;
+    --focus: #e8bd6f;
 
-    --mark-bg: #4d3a00;
-    --mark-text: #ffdf8a;
+    --mark-bg: #4a3610;
+    --mark-text: #f0cf86;
 
-    --hue-amber: #f5b53d;
-    --hue-clay: #f0a980;
-    --hue-cyan: #56cfe1;
-    --hue-green: #6ede8a;
-    --hue-indigo: #9fb0ff;
-    --hue-red: #ff8288;
-    --hue-rose: #ff9dc4;
-    --hue-steel: #adbacc;
-    --hue-teal: #52d0b6;
-    --hue-violet: #c6a6ff;
+    /* Lit rather than pastel: the colours of a blade against darkness, not of
+     * a data-visualisation ramp. Mint, lavender and candy pink belonged to
+     * neither of this material's ancestors. Every one of these clears 4.5:1
+     * against --surface-raised, which is the tightest of the three grounds
+     * they are drawn on; red is the closest at 5.3:1. */
+    --hue-amber: #dca94a;
+    --hue-clay: #d18f62;
+    --hue-cyan: #4aa8bd;
+    --hue-green: #5fbe79;
+    --hue-indigo: #8492e8;
+    --hue-red: #e5686f;
+    --hue-rose: #d97099;
+    --hue-steel: #9ba7b4;
+    --hue-teal: #45b69e;
+    --hue-violet: #a181e8;
 
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
     --shadow-md: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.45);
