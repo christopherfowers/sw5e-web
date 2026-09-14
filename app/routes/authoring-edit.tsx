@@ -79,7 +79,12 @@ import {
   type RecoveredWork,
 } from "~/authoring/recovery";
 import { blankDocument, describeDocument, type ObjectControl } from "~/authoring/schema";
-import type { ContentTypeDescriptor, Draft, Revision, RevisionSummary } from "~/authoring/types";
+import type {
+  ContentTypeDescriptor,
+  Draft,
+  PublishResult,
+  Revision,
+} from "~/authoring/types";
 import { DRAFT_STALE } from "~/authoring/types";
 import { FailureBanner, When, messageFor, type Load } from "~/authoring/ui";
 import { useContentTypes } from "~/authoring/use-content-types";
@@ -238,7 +243,7 @@ interface EditorProps {
    * document, and re-reading remounts this component, so a banner held here
    * would be destroyed by the very thing it was announcing.
    */
-  onPublished: (revision: RevisionSummary) => void;
+  onPublished: (revision: PublishResult) => void;
   /** Re-reads everything from the service, after discarding a draft. */
   reload: () => void;
 }
@@ -777,7 +782,7 @@ function DocumentWorkspace({
   descriptor: ContentTypeDescriptor | null;
   flagId: string | null;
   canPublish: boolean;
-  onPublished: (revision: RevisionSummary) => void;
+  onPublished: (revision: PublishResult) => void;
   reload: () => void;
 }) {
   const [load, setLoad] = useState<Load<Subject>>({ state: "loading" });
@@ -851,7 +856,7 @@ export default function AuthoringEdit() {
    */
   const [published, setPublished] = useState<{
     address: string;
-    revision: RevisionSummary;
+    revision: PublishResult;
   } | null>(null);
 
   const requestedType = params.get("type") ?? "";
@@ -936,6 +941,37 @@ export default function AuthoringEdit() {
           ) : null}
           .
         </Banner>
+      ) : null}
+
+      {/*
+        What publishing noticed, beside the confirmation rather than inside it.
+
+        Its own region for two reasons. `Banner` wraps its children in a
+        paragraph, and a list inside a paragraph is invalid — the parser closes
+        the paragraph early and the markup a browser ends up with is not the
+        markup written here. And these are two different statements: the
+        document is live, which is a success, and there is something to go and
+        fix, which is not. Recolouring one banner would blur them.
+
+        Listed rather than counted. "2 things to check" alone makes somebody
+        open another screen to find out what; the name of the missing thing is
+        exactly what they need to read.
+      */}
+      {published?.address === address && published.revision.notices.length > 0 ? (
+        <section className="account-section" aria-labelledby="publish-notices">
+          <h2 id="publish-notices">
+            {published.revision.notices.length === 1
+              ? "One thing to check"
+              : `${published.revision.notices.length} things to check`}
+          </h2>
+          <ul>
+            {published.revision.notices.map((notice) => (
+              <li key={`${notice.code}:${notice.jsonPath ?? ""}:${notice.message}`}>
+                {notice.message}
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       <DocumentWorkspace

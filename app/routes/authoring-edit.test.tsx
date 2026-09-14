@@ -601,3 +601,107 @@ describe("a document that was imported rather than published", () => {
     expect(screen.getByLabelText(/^name/i)).toHaveValue("");
   });
 });
+
+describe("a publish the service had something to say about", () => {
+  /**
+   * Publishing a document that names content the catalogue does not hold.
+   *
+   * The service already worked this out on every publish and said nothing, so
+   * an author who typed "reckles" got the same green tick as one who spelled it
+   * correctly. Six unresolved references accumulated in the corpus that way,
+   * and the answer was being computed each time.
+   */
+  async function publishWith(notices: { code: string; message: string; jsonPath: string | null }[]) {
+    const stub = new AuthoringApiStub({
+      revisions: { "armor-property/bulky": [revision({ id: 41, number: 1 })] },
+      drafts: { "armor-property/bulky": { document: BULKY, baseRevisionId: 41 } },
+    });
+    stub.noticeOn("armor-property", "bulky", notices);
+
+    mount(administrator(), stub);
+
+    await screen.findByLabelText("Name");
+    await userEvent.click(
+      screen.getByRole("button", { name: /publish the saved draft/i }),
+    );
+
+    return stub;
+  }
+
+  const RECKLESS = {
+    code: "unresolved-reference",
+    message:
+      "This names weapon-property 'reckless', which is not in the catalogue or " +
+      "is not uniquely named. It will link up on its own if that content is " +
+      "published later.",
+    jsonPath: "$.properties[0]",
+  };
+
+  it("names what the document points at and cannot reach", async () => {
+    await publishWith([RECKLESS]);
+
+    // The confirmation still says the document is live, because it is.
+    expect(await screen.findByText(/published as revision/i)).toBeInTheDocument();
+
+    // And the name of the missing thing is on the screen, which is the whole
+    // point: a count would make somebody open another page to learn it.
+    expect(await screen.findByText(/reckless/)).toBeInTheDocument();
+  });
+
+  /**
+   * Every one of them, not just the first.
+   *
+   * The guard shoto was wrong in a way that produced two unresolved references
+   * at once, and an author told about one of two mistakes fixes one and
+   * believes they are finished.
+   */
+  it("names all of them", async () => {
+    await publishWith([
+      RECKLESS,
+      {
+        code: "unresolved-reference",
+        message: "This names weapon-property 'light luminous', which is not in the catalogue.",
+        jsonPath: "$.properties[3]",
+      },
+    ]);
+
+    expect(await screen.findByText(/reckless/)).toBeInTheDocument();
+    expect(screen.getByText(/light luminous/)).toBeInTheDocument();
+
+    // Counted out loud, so the list is known to be complete rather than
+    // truncated at whatever fits.
+    expect(
+      screen.getByRole("heading", { name: /2 things to check/i }),
+    ).toBeInTheDocument();
+  });
+
+  /**
+   * A clean publish says nothing at all.
+   *
+   * The assertion the rest depend on. A banner that always carries a warning is
+   * one an author stops reading, which is worse than silence because it looks
+   * like diligence.
+   */
+  it("says nothing when there is nothing to say", async () => {
+    await publishWith([]);
+
+    expect(await screen.findByText(/published as revision/i)).toBeInTheDocument();
+
+    expect(screen.queryByText(/things to check/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/one thing to check/i)).not.toBeInTheDocument();
+  });
+
+  /**
+   * The wording is the service's, shown as it was sent.
+   *
+   * Rather than a sentence this client assembles from `code` and a target it
+   * parses back out of the message. The service knows why a reference failed —
+   * absent, or ambiguously named — and a client that rewrote it would have to
+   * know that too, and would drift.
+   */
+  it("shows the service's own sentence rather than one of its own", async () => {
+    await publishWith([RECKLESS]);
+
+    expect(await screen.findByText(RECKLESS.message)).toBeInTheDocument();
+  });
+});

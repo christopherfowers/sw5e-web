@@ -36,6 +36,7 @@ import type {
   ContentTypeList,
   Draft,
   DraftList,
+  PublishResult,
   Revision,
   RevisionList,
   RevisionSummary,
@@ -196,15 +197,23 @@ export function discardDraft(type: string, key: string): Promise<void> {
  * to a request with no content type, and the transport only writes one when
  * there is a body to write.
  */
-export function publishDraft(
+export async function publishDraft(
   type: string,
   key: string,
   reason: string | null,
-): Promise<RevisionSummary> {
-  return apiRequest<RevisionSummary>(`${draftPath(type, key)}/publish`, {
+): Promise<PublishResult> {
+  const result = await apiRequest<PublishResult>(`${draftPath(type, key)}/publish`, {
     method: "POST",
     body: { reason },
   });
+
+  /*
+    Defended rather than trusted, because the absence is indistinguishable from
+    the empty case and only one of them is safe to read. A service older than
+    this field answers without it, and `.map` on undefined is a blank screen
+    where a confirmation should be — a worse outcome than the missing notice.
+  */
+  return { ...result, notices: result.notices ?? [] };
 }
 
 /* ----------------------------------------------------------------- revisions */
