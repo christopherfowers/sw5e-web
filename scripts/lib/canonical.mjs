@@ -1998,6 +1998,7 @@ export function indexSources(records) {
       blurb: text(record.blurb),
       accent: text(record.accent),
       order: numeric(record.order),
+      isCoreRulebook: record.isCoreRulebook === true,
     });
   }
   return sources;
@@ -2020,6 +2021,7 @@ export function shelveBooks(sources) {
       blurb: source.blurb ?? null,
       accent: source.accent ?? null,
       order: source.order ?? null,
+      isCoreRulebook: source.isCoreRulebook === true,
     }))
     .sort((left, right) => {
       if (left.order != null && right.order != null) return left.order - right.order;

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   CANONICAL_DIRECTORIES,
@@ -32,6 +32,21 @@ import { REPLACEMENT } from "./repair-text.mjs";
  * to arrive at the same book-qualified slug by different routes — one reading
  * a document's key, the other deriving it from the file the record came from.
  */
+
+/*
+  Five seconds is the default for a unit test, and nothing in this file is one.
+
+  Every assertion here reads the real corpus off disk and pushes 7,191 documents
+  through the full mapping, which takes seconds on an idle machine and longer on
+  a busy one. At the default these passed alone and failed intermittently in the
+  full suite — a flake that reads as "the corpus is broken" when it means "the
+  machine was busy", and the worst kind to leave in a suite because people learn
+  to re-run rather than read it.
+
+  Set at the file rather than per test so a slow assertion added later inherits
+  it rather than reintroducing the same flake.
+*/
+vi.setConfig({ testTimeout: 60_000 });
 
 const sources = indexSources([
   { key: "phb", abbreviation: "PHB", title: "Star Wars 5e Player's Handbook" },
@@ -704,7 +719,25 @@ describe("the corpus's in-page anchors", () => {
 
   const hasContent = existsSync(path.join(content, "monster"));
 
+  /*
+    Built once and shared.
+
+    Each assertion below needs the whole corpus normalized, and that is 7,191
+    documents through every mapping — comfortably over the five-second default
+    on its own. Four of them doing it separately did not merely take four times
+    as long; under the load of the full suite they began timing out, which
+    reads as a broken corpus rather than as a slow test. The one that made them
+    slow is the one that made them shared.
+  */
+  let built = null;
+
   async function buildEverything() {
+    if (built) return built;
+    built = build();
+    return built;
+  }
+
+  async function build() {
     const records = new Map();
     for (const type of CONTENT_TYPES) {
       const directory = CANONICAL_DIRECTORIES[type.id];

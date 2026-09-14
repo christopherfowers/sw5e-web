@@ -14,6 +14,7 @@ import {
   faceOf,
   type NavDestination,
 } from "~/content/nav-groups";
+import { coreRulebook } from "~/content/books";
 import { SOURCE_META, SOURCE_ORDER } from "~/content/source-meta";
 import { selectSubcategoryRows } from "~/content/subcategory-views";
 import { TYPE_ORDER } from "~/content/type-meta";
@@ -71,14 +72,22 @@ export function meta({ loaderData }: Route.MetaArgs) {
 }
 
 /**
- * The book that teaches the game, as opposed to the four that extend it.
+ * The book that teaches the game, as opposed to the ones that extend it.
  *
- * Named here rather than inferred, because nothing in the data marks it: to the
- * dataset the Player's Handbook is a source like any other. The distinction is
- * editorial and it is the whole point of the page — a reader arriving with no
- * idea what this is needs to be sent to one book, not offered five.
+ * This used to be the constant `"PHB"`, with a comment explaining that nothing
+ * in the data marked it. Something does now: a source sets `isCoreRulebook`,
+ * and the content repository holds the invariant that exactly one does.
+ *
+ * The distinction is editorial and it is the whole point of the page — a reader
+ * arriving with no idea what this is needs to be sent to one book, not offered
+ * five — which is precisely why it belongs to whoever owns the content rather
+ * than to this file.
+ *
+ * Null when no book is marked, which an archive build always is. The page
+ * copes: it draws no opening button and no reading path, which is a smaller
+ * page rather than a broken one.
  */
-const HOW_TO_PLAY = "PHB";
+const HOW_TO_PLAY = coreRulebook()?.code ?? null;
 
 /**
  * A step of the reading path, and the heading it is read under.
