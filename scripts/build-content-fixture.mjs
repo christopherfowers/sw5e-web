@@ -461,10 +461,18 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
     classImprovements: records.get("class-improvements") ?? [],
     archetypes: records.get("archetypes") ?? [],
     features: records.get("features") ?? [],
-    // The one edge that crosses out of the class graph: an enhanced item names
+    // The two edges that cross out of the class graph. An enhanced item names
     // the gear it is built on or installed in, and that name becomes a link
     // only when exactly one equipment document answers to it.
     equipment: records.get("equipment") ?? [],
+    // A creature's stat block names every power it can cast, written by the
+    // archive as an anchor into the old single-page site. Without this the
+    // anchors survive into the page, the renderer refuses to follow a link
+    // that is not site-relative, and the names print as plain text.
+    powers: records.get("powers") ?? [],
+    // And the starship rules and modifications cite the tables they depend on
+    // the same way, for the same reason.
+    referenceTables: records.get("reference-tables") ?? [],
   });
 
   const types = [];
