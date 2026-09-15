@@ -53,6 +53,72 @@ const loaderData = {
     },
     { key: "snv", code: "SnV", name: "Scum and Villainy", blurb: null, accent: null },
   ],
+  /*
+    The sheets as the loader hands them over. Three rather than four, and one
+    of them not rebuilt — the page has to draw a row where only some files
+    carry the disclosure, which is the state the corpus will be in the first
+    time somebody adds a sheet that needed no cleaning.
+  */
+  resources: [
+    {
+      key: "character-sheet",
+      name: "Character sheet",
+      blurb: "The official sheet, to print and fill in by hand.",
+      file: "character-sheet.pdf",
+      pages: 4,
+      fillable: false,
+      sanitized: true,
+      accent: "indigo" as const,
+    },
+    {
+      key: "character-sheet-fillable",
+      name: "Character sheet, form fillable",
+      blurb: "The same sheet as a PDF you can type into.",
+      file: "character-sheet-fillable.pdf",
+      pages: 4,
+      fillable: true,
+      sanitized: true,
+      accent: "teal" as const,
+    },
+    {
+      key: "deployment-sheet-fillable",
+      name: "Deployment sheet, form fillable",
+      blurb: null,
+      file: "deployment-sheet-fillable.pdf",
+      pages: 1,
+      fillable: true,
+      sanitized: false,
+      accent: null,
+    },
+  ],
+  /*
+    The channels as the loader hands them over: already grouped, already
+    labelled from the platform, and already filtered to the ones whose URL
+    matches the host their platform uses. Two groups rather than three, because
+    that is the state the corpus is really in — the old funding page belongs to
+    somebody else and no Support channel exists.
+  */
+  groups: [
+    {
+      heading: "Development",
+      blurb: "Discord is where the development happens.",
+      channels: [
+        { key: "discord", url: "https://discord.gg/zYcPYTu", label: "Discord" },
+      ],
+    },
+    {
+      heading: "Connect",
+      blurb: "For sharing content, questions, and more.",
+      channels: [
+        { key: "reddit", url: "https://www.reddit.com/r/sw5e", label: "Reddit" },
+        {
+          key: "facebook",
+          url: "https://www.facebook.com/groups/starwars5e",
+          label: "Facebook",
+        },
+      ],
+    },
+  ],
 };
 
 function renderHome(data: typeof loaderData = loaderData) {
@@ -169,6 +235,141 @@ describe("Home route", () => {
         `${path} belongs to the header now, not to a card on the front page`,
       ).toBeNull();
     }
+  });
+
+  /**
+   * The sheets sit under the books, in the books' form factor.
+   *
+   * They were four links to a Google Drive nobody here controlled, at the
+   * bottom of a menu. They are content now, and they come second because they
+   * are what a reader reaches for once they know what the books are.
+   */
+  it("offers the sheets under the books", () => {
+    renderHome();
+
+    const headings = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((heading) => heading.textContent ?? "");
+    const at = (text: string) =>
+      headings.findIndex((heading) => new RegExp(text, "i").test(heading));
+
+    expect(at("rulebooks")).toBeGreaterThanOrEqual(0);
+    expect(at("rulebooks")).toBeLessThan(at("sheets and downloads"));
+  });
+
+  /**
+   * A download is a plain anchor with `download`, not a router Link.
+   *
+   * Two things ride on this and neither is cosmetic. The file is not a route,
+   * so a Link would hand `/resources/x.pdf` to the client router and produce a
+   * "page not found" rather than a file. And `download` asks the browser to
+   * save rather than open its PDF viewer, which is the same decision the
+   * hosting design makes for every file this site serves.
+   */
+  it("links a sheet as a download rather than as a page", () => {
+    renderHome();
+
+    const link = screen.getByRole("link", { name: "Character sheet" });
+
+    expect(link).toHaveAttribute("href", "/resources/character-sheet.pdf");
+    expect(link).toHaveAttribute("download");
+    expect(
+      link.getAttribute("data-discover"),
+      "a router Link would resolve this against the route table and 404",
+    ).toBeNull();
+  });
+
+  it("says how many pages a sheet has, and which ones can be typed into", () => {
+    renderHome();
+
+    const sheets = within(
+      screen.getByRole("region", { name: /sheets and downloads/i }),
+    );
+
+    expect(sheets.getByText(/^4 pages$/)).toBeInTheDocument();
+    expect(sheets.getByText(/1 page · fillable/)).toBeInTheDocument();
+  });
+
+  /**
+   * And says the files were rebuilt, once, where a reader decides.
+   *
+   * A file that has been altered — however safely, and these were altered to
+   * remove an action that printed the document the moment it opened — must not
+   * be presented as the author's untouched work. Said under the row rather than
+   * on each tile, because four near-identical notices are noise.
+   */
+  it("discloses that the files are rebuilt rather than originals", () => {
+    renderHome();
+
+    const sheets = within(
+      screen.getByRole("region", { name: /sheets and downloads/i }),
+    );
+
+    expect(sheets.getByText(/rebuilt from the originals/i)).toBeInTheDocument();
+  });
+
+  /**
+   * A corpus with no sheets draws no section, rather than a heading with
+   * nothing under it — the same degradation the shelf makes for a build with
+   * no books, and what lets a sheet be added before the section is designed
+   * around it.
+   */
+  it("draws no sheets section when the corpus carries none", () => {
+    renderHome({ ...loaderData, resources: [] });
+
+    expect(
+      screen.queryByRole("region", { name: /sheets and downloads/i }),
+    ).toBeNull();
+  });
+
+  /**
+   * Getting in touch, as the site this replaces had it.
+   *
+   * Every link leaves the site, so every one carries `noopener noreferrer` —
+   * `noreferrer` as well, because where a reader came from is not this
+   * project's to hand to somebody else's analytics.
+   */
+  it("offers the community's channels, grouped", () => {
+    renderHome();
+
+    const touch = within(
+      screen.getByRole("region", { name: /getting in touch/i }),
+    );
+
+    const discord = touch.getByRole("link", { name: "Discord" });
+    expect(discord).toHaveAttribute("href", "https://discord.gg/zYcPYTu");
+    expect(discord).toHaveAttribute("rel", "noopener noreferrer");
+
+    expect(touch.getByRole("link", { name: "Reddit" })).toBeInTheDocument();
+    expect(touch.getByRole("link", { name: "Facebook" })).toBeInTheDocument();
+  });
+
+  /**
+   * And no Support column.
+   *
+   * The Patreon the old site carried belongs to the previous maintainer and is
+   * shared with another project. It is deliberately not carried over, and the
+   * absence needs no toggle: a group nothing is filed under does not render.
+   * Asserted because the reflex when a three-column layout shows two is to add
+   * the third one back.
+   */
+  it("draws no support column, having no support channel", () => {
+    renderHome();
+
+    const touch = within(
+      screen.getByRole("region", { name: /getting in touch/i }),
+    );
+
+    expect(touch.queryByText(/^support$/i)).toBeNull();
+    expect(touch.queryByRole("link", { name: /patreon/i })).toBeNull();
+  });
+
+  it("draws no contact section at all when the corpus names no channels", () => {
+    renderHome({ ...loaderData, groups: [] });
+
+    expect(
+      screen.queryByRole("region", { name: /getting in touch/i }),
+    ).toBeNull();
   });
 
   it("says so when the site is rendering the committed sample dataset", () => {

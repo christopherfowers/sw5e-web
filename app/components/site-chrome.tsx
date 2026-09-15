@@ -15,6 +15,7 @@ import { Link } from "react-router";
 
 import { brandImage } from "~/content/imagery";
 import { AccountControl } from "./account-control";
+import { ThemeControl } from "./theme-control";
 import { AssetImage } from "./media";
 import { GroupedNav } from "./site-nav";
 import { SiteSearch } from "./site-search";
@@ -62,6 +63,13 @@ export function SiteHeader() {
           )}
         </Link>
         <SiteSearch />
+        {/*
+          Beside the account control rather than in the footer, because a
+          reader who wants the site lighter wants it now and not after
+          scrolling to the bottom of a rules chapter. It is on every page for
+          the same reason.
+        */}
+        <ThemeControl />
         <AccountControl />
       </div>
       <GroupedNav />

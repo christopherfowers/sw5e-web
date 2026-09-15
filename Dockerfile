@@ -46,7 +46,27 @@ RUN npm ci
 # canonical documents themselves.
 COPY --from=content /opt/sw5e/content /content
 
+# The files the resource documents describe, which unlike the content *do* ship
+# to the runtime image: a reader downloads them. They go into `public/` so Vite
+# copies them verbatim — no hashing, because the resource document names the
+# file and a hashed name would not resolve.
+COPY --from=content /opt/sw5e/assets/resource /resource-files
+
 COPY . .
+
+# Placed after `COPY . .` so the working tree's own `public/` does not overwrite
+# them, and verified rather than assumed: a missing copy would publish a shelf
+# of download links that all 404, which looks exactly like a working page until
+# somebody clicks one.
+RUN set -eu; \
+    mkdir -p public/resources; \
+    cp /resource-files/*.pdf public/resources/; \
+    files=$(ls public/resources/*.pdf | wc -l); \
+    if [ "$files" -eq 0 ]; then \
+      echo "no resource files were copied from the content image" >&2; \
+      exit 1; \
+    fi; \
+    echo "resource files: $files"
 
 # Builds app/data/generated from the canonical content, which the app and the
 # prerender list both prefer over the committed fixture when it exists.

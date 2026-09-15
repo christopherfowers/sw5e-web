@@ -38,6 +38,8 @@ import {
   CANONICAL_DIRECTORIES,
   buildClassGraph,
   shelveBooks,
+  shelveResources,
+  shelveChannels,
   indexSources,
   normalizeAllCanonical,
 } from "./lib/canonical.mjs";
@@ -434,7 +436,11 @@ function tableOfContents(types) {
   return byBook;
 }
 
-async function writeDataset(outputDirectory, types, { curated, books = [] }) {
+async function writeDataset(
+  outputDirectory,
+  types,
+  { curated, books = [], resources = [], channels = [] },
+) {
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
 
@@ -472,6 +478,19 @@ async function writeDataset(outputDirectory, types, { curated, books = [] }) {
     server-only dataset. Forty-eight chapters is a few kilobytes.
   */
   await writeJson(outputDirectory, "book-contents.json", tableOfContents(types));
+
+  /*
+    And the downloadable resources, for the third time the same reason: the
+    front page draws them in the book form factor, so it needs a name, a line
+    and a hue per row on the client, and four sheets is well under a kilobyte.
+  */
+  await writeJson(outputDirectory, "resources.json", resources);
+
+  /*
+    And the channels, which the footer and the front page both read on the
+    client. Three links is a few hundred bytes.
+  */
+  await writeJson(outputDirectory, "channels.json", channels);
 }
 
 async function main() {
@@ -513,6 +532,22 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
   // later as a site that renders nothing. This is the failure the container
   // build exists to catch: a copy that silently produced no content.
   const sourceRecords = await readCanonicalType(contentDirectory, "source");
+
+  /*
+    The downloadable resources, read like the sources and for the same reason:
+    they describe themselves in the content repository rather than being a
+    table in this one, so adding a sheet is an edit to content and needs no
+    deploy of the site.
+
+    An empty directory is a supported state, not a failure. A checkout that has
+    not pulled the resources yet, or a corpus that carries none, draws no
+    resources section at all — the same degradation the shelf already makes
+    when a build ships no books.
+  */
+  const resourceRecords = await readCanonicalType(contentDirectory, "resource");
+
+  // The community channels, read the same way and just as optional.
+  const channelRecords = await readCanonicalType(contentDirectory, "channel");
   if (sourceRecords.length === 0) {
     throw new Error(
       `${contentDirectory} holds no content/source documents, so no item in ` +
@@ -585,6 +620,8 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
   await writeDataset(outputDirectory, types, {
     curated: false,
     books: shelveBooks(sources),
+    resources: shelveResources(resourceRecords),
+    channels: shelveChannels(channelRecords),
   });
 
   process.stdout.write(

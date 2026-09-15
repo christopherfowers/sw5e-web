@@ -47,6 +47,22 @@ const SOURCE_FILES = import.meta.glob("../assets/sources/*.webp", {
   import: "default",
 }) as Record<string, string>;
 
+/*
+ * Page one of each downloadable sheet, rendered by
+ * `scripts/build-resource-previews.mjs` and committed like every other image.
+ *
+ * A letter page is 612x792, and a book cover is drawn at 352x455 — the same
+ * ratio to within a pixel. So a sheet's first page needs no cropping or
+ * letterboxing to sit on the shelf beside the books, which is the whole reason
+ * the resources can share their form factor rather than needing one of their
+ * own.
+ */
+const RESOURCE_FILES = import.meta.glob("../assets/resources/*.webp", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
+
 const BRAND_FILES = import.meta.glob("../assets/brand/*.webp", {
   eager: true,
   query: "?url",
@@ -93,6 +109,7 @@ const SPECIES_THUMBS = indexVariants(SPECIES_THUMB_FILES);
 const CLASSES = indexVariants(CLASS_FILES);
 const SOURCES = indexVariants(SOURCE_FILES);
 const BRAND = indexVariants(BRAND_FILES);
+const RESOURCE_PREVIEWS = indexVariants(RESOURCE_FILES);
 
 /**
  * Turns a set of variants into an `<img>`'s attributes.
@@ -154,4 +171,17 @@ export function sourceCover(code: string | null): ImageSource | null {
 
 export function brandImage(key: string): ImageSource | null {
   return toImageSource(BRAND.get(key));
+}
+
+/**
+ * The first page of a downloadable sheet, keyed by the resource's own key.
+ *
+ * Null for a resource nobody has rendered a preview for, which the shelf draws
+ * as a monogram plate — the same fallback a book with no cover art gets, and
+ * the reason a new sheet can be added to the corpus and appear immediately
+ * rather than waiting for somebody to run the preview script.
+ */
+export function resourcePreview(key: string | null): ImageSource | null {
+  if (!key) return null;
+  return toImageSource(RESOURCE_PREVIEWS.get(key.toLowerCase()));
 }
