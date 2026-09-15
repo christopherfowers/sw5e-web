@@ -311,7 +311,7 @@ describe("the order the page puts things in", () => {
    * twenty-seven category cards once, which answers "what do you have" before
    * anybody has been told what the game is.
    */
-  it("leads with the books, then how to play, then categories", () => {
+  it("leads with the books, then the categories", () => {
     renderHome();
 
     const headings = screen
@@ -322,8 +322,27 @@ describe("the order the page puts things in", () => {
       headings.findIndex((heading) => new RegExp(text, "i").test(heading));
 
     expect(at("rulebooks")).toBeGreaterThanOrEqual(0);
-    expect(at("rulebooks")).toBeLessThan(at("how to play"));
-    expect(at("how to play")).toBeLessThan(at("categories"));
+    expect(at("rulebooks")).toBeLessThan(at("categories"));
+  });
+
+  /**
+   * And it does not reproduce the handbook's chapters.
+   *
+   * There was a "How to play" section here listing all fifteen of them under
+   * their headings. That was right while a book's own page was a grid of
+   * content-type counts and there was nowhere else to read a table of
+   * contents. The handbook's page is now its chapters, and the hero's first
+   * button goes straight there — so this was the same thing said twice, at
+   * length, above the books it described.
+   *
+   * Asserted rather than merely deleted, because the tempting fix to a thin
+   * front page is to put the list back.
+   */
+  it("does not repeat the handbook's chapters", () => {
+    renderHome();
+
+    expect(screen.queryByRole("region", { name: /how to play/i })).toBeNull();
+    expect(screen.queryByText("Creating a character")).toBeNull();
   });
 
   /**
@@ -381,50 +400,7 @@ describe("the order the page puts things in", () => {
     expect(actions).toHaveAttribute("href", "/rules/phb-introduction");
   });
 
-  it("walks the authored path, in order and under its headings", () => {
-    renderHome();
 
-    const howToPlay = within(screen.getByRole("region", { name: /how to play/i }));
-
-    // The order is the authored one, and it is not the book's: the handbook
-    // numbers "What's Different?" ahead of the introduction it is different
-    // from. Nothing here carries a number, because a chapter number is a page
-    // reference to a book nobody reading this is holding.
-    /*
-      Scoped to the chapter links. The optional and variant rules moved to the
-      foot of this section when the books left it, so "every link under how to
-      play" is no longer the same set as "the path" — and a reader is not
-      walked through the optional rules, they are offered them at the end.
-    */
-    expect(
-      howToPlay
-        .getAllByRole("link")
-        .filter((link) => link.className.includes("chapter-link"))
-        .map((link) => link.textContent),
-    ).toEqual(["Introduction", "What's Different?", "Species"]);
-
-    // And the steps are grouped, with each heading owning a run.
-    expect(
-      howToPlay.getAllByRole("heading", { level: 3 }).map((h) => h.textContent),
-    ).toEqual(["Start here", "Creating a character"]);
-  });
-
-  /**
-   * A heading is drawn once, however many passages it holds.
-   *
-   * The component collapses the ordered path into runs, so a group appearing
-   * twice would mean the path had been re-sorted after it was grouped — the one
-   * way the rendering can contradict the content.
-   */
-  it("draws each heading once", () => {
-    renderHome();
-
-    const headings = within(screen.getByRole("region", { name: /how to play/i }))
-      .getAllByRole("heading", { level: 3 })
-      .map((heading) => heading.textContent);
-
-    expect(headings).toEqual([...new Set(headings)]);
-  });
 
   /**
    * The optional rules sit at the foot of the path, not among the books.
@@ -434,14 +410,15 @@ describe("the order the page puts things in", () => {
    * and they come after the path rather than inside it, because a reader being
    * walked somewhere should arrive before being offered detours.
    */
-  it("offers the optional rules at the end of the path, not among the books", () => {
+  it("still offers the optional rules, which belong to no one book", () => {
     renderHome();
 
-    const howToPlay = within(screen.getByRole("region", { name: /how to play/i }));
     const shelf = within(screen.getByRole("region", { name: /rulebooks/i }));
 
+    // Present on the page, and deliberately not inside the shelf: they are
+    // options spread across the corpus rather than a book somebody opens.
     expect(
-      howToPlay.getByRole("link", { name: /optional and variant rules/i }),
+      screen.getByRole("link", { name: /optional and variant rules/i }),
     ).toBeInTheDocument();
     expect(shelf.queryByText(/optional and variant/i)).toBeNull();
   });

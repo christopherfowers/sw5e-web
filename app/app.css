@@ -1563,6 +1563,17 @@ kbd {
 
 /* --- the books strip --- */
 
+/* What a book contributes beyond its chapters, as a sentence. This replaced a
+   grid of thirteen cards: the counts are context for the chapters above rather
+   than the point of the page. */
+.source-contains {
+  margin-top: var(--space-5);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  max-width: 62ch;
+}
+
 /* ---------------------------------------------------------------- the shelf */
 
 /*
