@@ -376,6 +376,64 @@ async function writeJson(directory, name, value) {
  * and the prerender list are concerned. A type with no items still gets its
  * files, so `getSummaries` finds an empty list rather than throwing.
  */
+
+/**
+ * Each book's table of contents, keyed by the abbreviation a row carries.
+ *
+ * Chapters only. A book's contents page lists its chapters; the forty variant
+ * rules Expanded Content carries are options a table turns on, not places a
+ * reader goes next, and putting them in the same list would bury ten chapters
+ * under four times as many footnotes.
+ *
+ * Ordered by the authored reading path where there is one, and by the printed
+ * chapter number where there is not. Two of the four books are placed today —
+ * the handbook and the starship book — and the other two fall back rather than
+ * being left unordered, because an arbitrary order is worse than a stale one.
+ */
+function tableOfContents(types) {
+  const chapters = [];
+
+  for (const { id, items } of types) {
+    if (id !== "rules" && id !== "starship-rules") continue;
+
+    for (const item of items) {
+      // Starship rules are all chapters; a rule is only one if it says so.
+      if (id === "rules" && item.summary?.ruleType !== "Chapter") continue;
+      if (!item.source) continue;
+
+      chapters.push({
+        code: item.source,
+        type: id,
+        slug: item.slug,
+        name: item.name,
+        group: item.summary?.readingGroup ?? null,
+        order: item.summary?.order ?? null,
+        printed: item.summary?.chapterNumber ?? null,
+      });
+    }
+  }
+
+  const byBook = {};
+
+  for (const chapter of chapters) {
+    (byBook[chapter.code] ??= []).push(chapter);
+  }
+
+  for (const [code, list] of Object.entries(byBook)) {
+    list.sort((left, right) => {
+      if (left.order != null && right.order != null) return left.order - right.order;
+      if (left.order != null) return -1;
+      if (right.order != null) return 1;
+      if (left.printed != null && right.printed != null) return left.printed - right.printed;
+      return left.name.localeCompare(right.name, "en");
+    });
+
+    byBook[code] = list.map(({ type, slug, name, group }) => ({ type, slug, name, group }));
+  }
+
+  return byBook;
+}
+
 async function writeDataset(outputDirectory, types, { curated, books = [] }) {
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
@@ -406,6 +464,14 @@ async function writeDataset(outputDirectory, types, { curated, books = [] }) {
     than a thing somebody has to reason about.
   */
   await writeJson(outputDirectory, "books.json", books);
+
+  /*
+    And each book's contents, beside the shelf and for the same reason: a
+    reader on a book's page wants its chapters in the rail, and that rail is
+    drawn by the site's chrome rather than by a route, so it cannot reach the
+    server-only dataset. Forty-eight chapters is a few kilobytes.
+  */
+  await writeJson(outputDirectory, "book-contents.json", tableOfContents(types));
 }
 
 async function main() {

@@ -54,6 +54,8 @@ import {
   type NavGroup,
   type NavGroupId,
 } from "~/content/nav-groups";
+import { readingStepsOf } from "~/content/book-contents";
+import { bookBySlug } from "~/content/books";
 import { getSubcategoryView } from "~/content/subcategory-views";
 import { isContentTypeId } from "~/content/types";
 import { TypeIcon } from "./type-icon";
@@ -465,8 +467,83 @@ function GroupMenu({
  * navigation with its own shape would be a second thing to keep accessible for
  * no gain.
  */
+/**
+ * The rail on a book's own page: that book's chapters, in reading order.
+ *
+ * Standing inside the Player's Handbook and being shown a list of the other
+ * books is the wrong answer to "where am I" — the site this replaces put the
+ * book's contents here, and that is what a reader reaches for. The chapters
+ * are grouped by the heading they are read under where the book has an
+ * authored path, and listed plainly where it does not.
+ *
+ * Returns null for a book with no chapters at all, which lets the caller fall
+ * through to the section rail rather than drawing an empty panel.
+ */
+function BookContentsRail({ slug }: { slug: string }) {
+  const book = bookBySlug(slug);
+  const steps = readingStepsOf(book?.code);
+
+  if (!book || steps.length === 0) return null;
+
+  return (
+    <nav aria-label={`${book.name} contents`} className="group-rail">
+      <p className="group-rail-heading">{book.name}</p>
+
+      {steps.map((step, index) => (
+        <div key={step.group ?? `ungrouped-${index}`}>
+          {/*
+            A heading only where the corpus gives one. A book nobody has laid
+            out a path for gets a plain list rather than an invented grouping.
+          */}
+          {step.group ? (
+            <p className="group-rail-subhead">{step.group}</p>
+          ) : null}
+          <ul className="group-rail-supporting">
+            {step.chapters.map((chapter) => (
+              <li key={`${chapter.type}/${chapter.slug}`}>
+                <NavLink
+                  to={`/${chapter.type}/${chapter.slug}`}
+                  className={({ isActive }) =>
+                    isActive ? "is-current" : undefined
+                  }
+                >
+                  {chapter.name}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      <p className="group-rail-subhead">Also here</p>
+      <ul className="group-rail-supporting">
+        <li>
+          <NavLink
+            to="/sources"
+            className={({ isActive }) => (isActive ? "is-current" : undefined)}
+          >
+            All source books
+          </NavLink>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
 export function GroupRail() {
   const location = useLocation();
+
+  /*
+    A book's page gets its own contents rather than the section rail. Matched
+    on the path rather than threaded through from the route, because this is
+    chrome: it is drawn by the root layout, which has no loader data.
+  */
+  const book = /^\/sources\/([^/]+)\/?$/.exec(location.pathname);
+  if (book) {
+    const contents = <BookContentsRail slug={decodeURIComponent(book[1]!)} />;
+    if (contents) return contents;
+  }
+
   const groupId = groupOfPath(location.pathname);
   const group = groupId
     ? NAVIGATION.find((candidate) => candidate.id === groupId)
