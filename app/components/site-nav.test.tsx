@@ -430,6 +430,65 @@ describe("the group rail", () => {
       "there are no siblings to orient against in a group of one",
     ).toBeNull();
   });
+
+  /**
+   * Inside a book, the rail is the book.
+   *
+   * This was never covered, which is how it went unnoticed that the contents
+   * were being drawn on the one page that already showed them and not on the
+   * pages that needed them. A reader standing in a chapter was being handed the
+   * Rules menu — the same wrong answer as being handed the shelf while standing
+   * in a book.
+   */
+  it("shows the book's chapters while a chapter is being read", () => {
+    renderRail("/rules/phb-species");
+
+    const rail = screen.getByRole("navigation", {
+      name: /Player.s Handbook contents/i,
+    });
+
+    expect(
+      within(rail).getByRole("link", { name: "Introduction" }),
+    ).toHaveAttribute("href", "/rules/phb-introduction");
+    // The heading the corpus reads it under, not an invented grouping.
+    expect(within(rail).getByText("Start here")).toBeInTheDocument();
+  });
+
+  /**
+   * And on the book's own page it is not the chapters.
+   *
+   * The body of that page is the contents, grouped and laid out. Drawing the
+   * same list in the rail beside it says one thing twice at desktop width and
+   * helps nobody navigate — there is nothing to navigate away from yet. What a
+   * reader cannot otherwise do from here is get back to the shelf.
+   */
+  it("shows book context rather than contents on the book's own page", () => {
+    renderRail("/sources/phb");
+
+    const rail = screen.getByRole("navigation", { name: /Player.s Handbook/i });
+
+    expect(
+      within(rail).getByRole("link", { name: "All source books" }),
+    ).toHaveAttribute("href", "/sources");
+    expect(
+      within(rail).queryByRole("link", { name: "Introduction" }),
+      "the page's own body already lists the chapters",
+    ).toBeNull();
+  });
+
+  /**
+   * A page that merely lives under a chapter's content type is not a chapter.
+   * `/rules/some-variant` shares its prefix with the handbook's chapters and
+   * belongs to no book's reading path, so it must fall through rather than be
+   * handed a book it has nothing to do with.
+   */
+  it("does not claim a page that is not a chapter for a book", () => {
+    renderRail("/rules/not-a-chapter-of-anything");
+
+    expect(
+      screen.queryByRole("navigation", { name: /contents/i }),
+    ).toBeNull();
+  });
 });
 
 /* -------------------------------------------------------- links off the site */

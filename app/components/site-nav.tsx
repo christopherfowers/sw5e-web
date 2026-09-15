@@ -54,8 +54,8 @@ import {
   type NavGroup,
   type NavGroupId,
 } from "~/content/nav-groups";
-import { readingStepsOf } from "~/content/book-contents";
-import { bookBySlug } from "~/content/books";
+import { bookOfChapter, readingStepsOf } from "~/content/book-contents";
+import { bookBySlug, bookFor } from "~/content/books";
 import { getSubcategoryView } from "~/content/subcategory-views";
 import { isContentTypeId } from "~/content/types";
 import { TypeIcon } from "./type-icon";
@@ -468,20 +468,27 @@ function GroupMenu({
  * no gain.
  */
 /**
- * The rail on a book's own page: that book's chapters, in reading order.
+ * The rail inside a book: that book's chapters, in reading order.
  *
- * Standing inside the Player's Handbook and being shown a list of the other
- * books is the wrong answer to "where am I" — the site this replaces put the
- * book's contents here, and that is what a reader reaches for. The chapters
- * are grouped by the heading they are read under where the book has an
- * authored path, and listed plainly where it does not.
+ * Standing in "Ability Scores" and being handed the Rules menu is the wrong
+ * answer to "where am I" — the site this replaces put the book's contents
+ * here, and that is what a reader reaches for. The chapters are grouped by the
+ * heading they are read under where the book has an authored path, and listed
+ * plainly where it does not.
+ *
+ * **This is for chapter pages, not for the book's own page.** The book's page
+ * is its contents, laid out and grouped in the body, and repeating that list
+ * in the rail beside it says the same thing twice at desktop width without
+ * helping anybody navigate — there is nothing to navigate away from yet. A
+ * reader who is *inside* a chapter is the one who needs the other chapters
+ * within reach.
  *
  * Returns null for a book with no chapters at all, which lets the caller fall
  * through to the section rail rather than drawing an empty panel.
  */
-function BookContentsRail({ slug }: { slug: string }) {
-  const book = bookBySlug(slug);
-  const steps = readingStepsOf(book?.code);
+function BookContentsRail({ code }: { code: string }) {
+  const book = bookFor(code);
+  const steps = readingStepsOf(code);
 
   if (!book || steps.length === 0) return null;
 
@@ -530,17 +537,58 @@ function BookContentsRail({ slug }: { slug: string }) {
   );
 }
 
+/**
+ * The rail on a book's own landing page: where you are, and the way out.
+ *
+ * Deliberately not the contents — the page's body already is the contents, and
+ * drawing them twice side by side reads as duplication rather than
+ * reinforcement. What a reader standing here cannot otherwise do is get back
+ * to the shelf, so that is what the rail offers.
+ */
+function BookContextRail({ slug }: { slug: string }) {
+  const book = bookBySlug(slug);
+  if (!book) return null;
+
+  return (
+    <nav aria-label={`${book.name}`} className="group-rail">
+      <p className="group-rail-heading">{book.name}</p>
+      <ul className="group-rail-supporting">
+        <li>
+          <NavLink
+            to="/sources"
+            className={({ isActive }) => (isActive ? "is-current" : undefined)}
+          >
+            All source books
+          </NavLink>
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
 export function GroupRail() {
   const location = useLocation();
 
   /*
-    A book's page gets its own contents rather than the section rail. Matched
-    on the path rather than threaded through from the route, because this is
-    chrome: it is drawn by the root layout, which has no loader data.
+    Matched on the path rather than threaded through from the route, because
+    this is chrome: it is drawn by the root layout, which has no loader data.
   */
   const book = /^\/sources\/([^/]+)\/?$/.exec(location.pathname);
   if (book) {
-    const contents = <BookContentsRail slug={decodeURIComponent(book[1]!)} />;
+    const context = <BookContextRail slug={decodeURIComponent(book[1]!)} />;
+    if (context) return context;
+  }
+
+  /*
+    Inside a chapter, the rail is the book it belongs to. The address does not
+    say which book that is — `/rules/ability-scores` names a content type and a
+    passage — so it is looked up in the contents, which is the only thing that
+    knows.
+  */
+  const [, type, slug] = location.pathname.split("/");
+  const chapterBook = bookOfChapter(type, slug);
+  if (chapterBook) {
+    const contents = <BookContentsRail code={chapterBook} />;
     if (contents) return contents;
   }
 

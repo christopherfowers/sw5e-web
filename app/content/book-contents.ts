@@ -57,6 +57,39 @@ function read(): Record<string, BookChapter[]> {
 
 const CONTENTS = read();
 
+/*
+  Which book a chapter belongs to, built once by walking the contents backwards.
+
+  The rail needs this on a chapter's own page — standing in "Ability Scores"
+  and being offered the Rules menu is the same wrong answer that standing in a
+  book and being offered the shelf was. There is no loader to ask, because the
+  rail is chrome drawn by the root layout, and the address alone does not say
+  which book a chapter came from.
+
+  Forty-eight entries, so the map costs nothing and cannot fall out of step
+  with the contents it is derived from.
+*/
+const BOOK_OF_CHAPTER = new Map<string, string>(
+  Object.entries(CONTENTS).flatMap(([code, chapters]) =>
+    chapters.map((chapter) => [`${chapter.type}/${chapter.slug}`, code] as const),
+  ),
+);
+
+/**
+ * The book a chapter belongs to, or null for an address that is not a chapter.
+ *
+ * Null is the ordinary answer and the caller must cope: most pages on the site
+ * are not chapters, and a species page asking this question should fall through
+ * to the section rail rather than be handed a book it has nothing to do with.
+ */
+export function bookOfChapter(
+  type: string | null | undefined,
+  slug: string | null | undefined,
+): string | null {
+  if (!type || !slug) return null;
+  return BOOK_OF_CHAPTER.get(`${type}/${slug}`) ?? null;
+}
+
 /** A book's chapters in reading order, or an empty list for one with none. */
 export function chaptersOf(code: string | null | undefined): BookChapter[] {
   if (!code) return [];
