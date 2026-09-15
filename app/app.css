@@ -1687,6 +1687,21 @@ kbd {
   margin-top: auto;
 }
 
+/*
+  The line under the downloads that says the files were rebuilt.
+
+  Quiet, because it is a disclosure rather than a warning: a reader is entitled
+  to know the file differs from the author's original, and would be misled by
+  type that implied something was wrong with it. Set at the row's own width so
+  it reads as a footnote to the shelf above rather than as a new section.
+*/
+.shelf-note {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+  margin-top: var(--space-4);
+  max-width: 60ch;
+}
+
 .home-shelf .section-lede {
   margin-bottom: var(--space-4);
 }

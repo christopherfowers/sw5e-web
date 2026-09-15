@@ -2032,6 +2032,46 @@ export function shelveBooks(sources) {
 }
 
 /**
+ * The downloadable resources, ordered as the corpus orders them.
+ *
+ * Shaped like `shelveBooks` and for the same reasons: the site draws these in
+ * the book form factor, so what it needs per row is a name, a line under it, a
+ * hue and a position — about a kilobyte in total, wanted on the client, and
+ * therefore its own small file rather than part of the several-megabyte
+ * dataset.
+ *
+ * `order` is required here where a book's is optional. A book with no place on
+ * the shelf falls back to its name, which is a reasonable answer for a
+ * supplement nobody has placed. These are four files in a deliberate reading
+ * order — the sheet you print, then the one you type into, then the two for
+ * ships — and alphabetical would put the starship sheet before the character
+ * sheet, which is not a shelf anybody meant.
+ */
+export function shelveResources(resources) {
+  return [...resources]
+    .map((resource) => ({
+      key: resource.key,
+      name: resource.name,
+      blurb: resource.blurb ?? null,
+      file: resource.file,
+      pages: resource.pages ?? null,
+      fillable: resource.fillable === true,
+      /*
+        Carried through to the page rather than kept as a build-time note. A
+        file that has been altered, however safely, must not be presented as
+        the author's untouched work — so the site says so, and says what came
+        out, where the reader deciding whether to download it can see it.
+      */
+      sanitized: resource.sanitized === true,
+      removed: Array.isArray(resource.removed) ? resource.removed : [],
+      accent: resource.accent ?? null,
+      credit: resource.credit ?? null,
+      order: resource.order,
+    }))
+    .sort((left, right) => left.order - right.order);
+}
+
+/**
  * Normalizes one type's canonical documents.
  *
  * Slugs must be unique because they are the URL. The canonical set gives every

@@ -7,8 +7,9 @@ import {
   isCuratedDataset,
   totalForSource,
 } from "~/content/dataset.server";
-import { brandImage, sourceCover } from "~/content/imagery";
+import { brandImage, resourcePreview, sourceCover } from "~/content/imagery";
 import { BOOKS, coreRulebook } from "~/content/books";
+import { RESOURCES, resourceHref } from "~/content/resources";
 import { SOURCE_ORDER } from "~/content/source-meta";
 import { TYPE_ORDER } from "~/content/type-meta";
 import type { Route } from "./+types/home";
@@ -154,12 +155,35 @@ export async function loader() {
       blurb: book.blurb,
       accent: book.accent,
     })),
+    /*
+      The sheets, the same way and for the same reason. `credit` is not carried
+      here: it belongs on the credits page, which already draws attribution
+      properly, and repeating one name under four tiles would crowd the row
+      without telling a reader anything the sentence below it does not.
+    */
+    resources: RESOURCES.map((resource) => ({
+      key: resource.key,
+      name: resource.name,
+      blurb: resource.blurb,
+      file: resource.file,
+      pages: resource.pages,
+      fillable: resource.fillable,
+      sanitized: resource.sanitized,
+      accent: resource.accent,
+    })),
   };
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { total, curated, sourceTotals, chapters, variantRules, books } =
-    loaderData;
+  const {
+    total,
+    curated,
+    sourceTotals,
+    chapters,
+    variantRules,
+    books,
+    resources,
+  } = loaderData;
 
   // Whatever the path opens with. Somebody reordering the content moves this
   // button with it, which is the point of authoring the order at all.
@@ -383,6 +407,95 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </Link>{" "}
             a table can turn on.
           </p>
+        ) : null}
+
+        {/*
+          The sheets, in the books' form factor, under the books.
+
+          They were four links to a Google Drive nobody here controlled. The
+          site now holds them, which is what lets it say how many pages a file
+          has and draw its first page — and a first page is the right cover for
+          a character sheet in a way a generic icon never was. A letter page and
+          a book cover are the same shape, so these sit beside the shelf above
+          without a layout of their own.
+
+          Drawn only when the corpus carries some. A build with no resources
+          gets no heading rather than an empty one, exactly as the shelf does.
+        */}
+        {resources.length > 0 ? (
+          <section className="home-shelf" aria-labelledby="the-resources">
+            <h2 className="section-heading" id="the-resources">
+              Sheets and downloads
+            </h2>
+            <p className="section-lede">
+              Print them, or fill them in on screen. Hosted here rather than on
+              somebody&rsquo;s drive.
+            </p>
+
+            <ul className="shelf">
+              {resources.map((resource) => {
+                const preview = resourcePreview(resource.key);
+                return (
+                  <li key={resource.key}>
+                    <div
+                      className="shelf-book"
+                      data-accent={resource.accent ?? undefined}
+                    >
+                      {preview ? (
+                        <AssetImage
+                          className="shelf-cover"
+                          image={preview}
+                          alt={`First page of ${resource.name}`}
+                          sizes="(max-width: 40rem) 40vw, 12rem"
+                        />
+                      ) : (
+                        <span className="shelf-cover shelf-plate">
+                          <MonogramPlate name={resource.name} />
+                        </span>
+                      )}
+                      <p className="shelf-title">
+                        {/*
+                          A plain anchor, not a Link: this leaves the router
+                          entirely. `download` asks the browser to save rather
+                          than hand the file to its PDF viewer, which is the
+                          same decision the hosting design makes for uploads —
+                          a PDF the site serves is never opened in a tab on
+                          this origin.
+                        */}
+                        <a href={resourceHref(resource.file)} download>
+                          {resource.name}
+                        </a>
+                      </p>
+                      {resource.blurb ? (
+                        <p className="shelf-blurb">{resource.blurb}</p>
+                      ) : null}
+                      <p className="shelf-count">
+                        {resource.pages
+                          ? `${resource.pages} ${resource.pages === 1 ? "page" : "pages"}`
+                          : "PDF"}
+                        {resource.fillable ? " · fillable" : null}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/*
+              Said once, under the row, rather than on every sheet that carries
+              it. Four near-identical notices would be noise; one sentence is
+              the disclosure the design asks for — a reader is told the file
+              differs from the author's original before they download it.
+            */}
+            {resources.some((resource) => resource.sanitized) ? (
+              <p className="shelf-note">
+                These files are rebuilt from the originals before they are
+                published here, with anything that could run on your machine
+                removed. The pages and the form fields are unchanged.{" "}
+                <Link to="/credits">Who made them</Link>.
+              </p>
+            ) : null}
+          </section>
         ) : null}
 
       </div>
