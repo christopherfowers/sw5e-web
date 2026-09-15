@@ -30,12 +30,34 @@ export type ThemeChoice = "system" | "light" | "dark";
 /** Where the choice is remembered. Read by the inline script too — keep in step. */
 export const THEME_STORAGE_KEY = "sw5e-theme";
 
-const ORDER: ThemeChoice[] = ["system", "light", "dark"];
+/*
+  Light, system, dark — in that order, left to right.
 
+  The first arrangement put system first because it is the default, and that
+  made a three-stage control whose middle position was an end. Read as a
+  slider, which is what it looks like, this one runs from light through
+  neutral to dark: the position means something before the icons are read, and
+  the marker travelling right as the site darkens is the whole affordance.
+*/
+const ORDER: ThemeChoice[] = ["light", "system", "dark"];
+
+/**
+ * What each stage is called.
+ *
+ * The old site called dark mode the dark side and its button said "Join the
+ * dark side". That is the right joke and it is kept, but as the name a screen
+ * reader and a tooltip give — the visible control has to be legible at a
+ * glance to somebody who has never seen this site, and a joke nobody
+ * recognises is worse than none.
+ *
+ * Light is "the light side" for the same reason it is not "Light": a pair of
+ * settings called light and dark is a preference panel, and the same pair
+ * called the light side and the dark side is the game this reference is for.
+ */
 const LABELS: Record<ThemeChoice, string> = {
-  system: "Theme: following your system",
-  light: "Theme: light",
-  dark: "Theme: dark — join the dark side",
+  light: "The light side",
+  system: "Whatever your system uses",
+  dark: "The dark side",
 };
 
 /*
@@ -146,7 +168,31 @@ export function ThemeControl() {
               checked={choice === option}
               onChange={() => applyTheme(option)}
             />
-            <span aria-hidden="true" className={`theme-icon is-${option}`} />
+            {/*
+              A lightsaber blade, struck in the hue of the side it stands for.
+
+              Drawn rather than lettered, because three glyphs from a system
+              font is what the first attempt did and it read as a weather
+              widget. A blade is the one shape in this setting that already
+              means light against dark, and its colour carries the meaning
+              before the shape is even resolved: blue for the light side, red
+              for the dark, unlit steel for neither.
+
+              The hilt is the same on all three. Only the blade changes, which
+              is what makes the row read as one control with three states
+              rather than three unrelated buttons.
+            */}
+            <svg
+              className={`theme-blade is-${option}`}
+              viewBox="0 0 8 24"
+              width="8"
+              height="24"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <rect className="theme-hilt" x="2.5" y="15" width="3" height="7" />
+              <rect className="theme-beam" x="3" y="3" width="2" height="12" />
+            </svg>
             <span className="sr-only">{LABELS[option]}</span>
           </label>
         ))}

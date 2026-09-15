@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 
 import { AssetImage, MonogramPlate } from "~/components/media";
+import { PlatformIcon } from "~/components/platform-icon";
 import {
   getManifest,
   getSummaries,
@@ -175,6 +176,14 @@ export async function loader() {
         channels: group.channels.map((channel) => ({
           key: channel.key,
           url: channel.url,
+          /*
+            Carried through so the button can draw the service's own mark. It
+            comes from the platform rather than the document for the same
+            reason the label does: a mark is a claim about who is on the other
+            end of a link, and it has to come from the same closed set that
+            decides which hosts the link may use.
+          */
+          platform: channel.platform,
           label: channelLabel(channel.platform),
         })),
       })),
@@ -421,15 +430,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           describing.
 
           The variants stay because they belong to no single book's path: they
-          are options a table turns on, spread across the corpus, and the front
-          page is the only place that speaks for the whole of it.
+          are rules a group may choose to play with, spread across the corpus,
+          and the front page is the only place that speaks for the whole of it.
+
+          The sentence used to end "a table can turn on", which is how somebody
+          who writes software thinks about an optional rule and not how anybody
+          plays one. Nothing is switched on at a table: a group reads a rule and
+          decides to use it, or does not, and may change its mind next week.
         */}
         {variantRules > 0 ? (
           <p className="home-variants">
             <Link to="/rules">
               {variantRules.toLocaleString("en-US")} optional and variant rules
-            </Link>{" "}
-            a table can turn on.
+            </Link>
+            , if your group wants them.
           </p>
         ) : null}
 
@@ -565,8 +579,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                         <a
                           href={channel.url}
                           rel="noopener noreferrer"
-                          className="button"
+                          className="button button-channel"
                         >
+                          <PlatformIcon platform={channel.platform} />
                           {channel.label}
                         </a>
                       </li>
