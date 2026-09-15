@@ -447,8 +447,16 @@ main:focus {
   flex-shrink: 0;
 }
 
+/*
+  The mark carries the header on its own, so it is sized to be seen.
+
+  It was 2.25rem wide, and at the artwork's 2.5:1 that is about fourteen pixels
+  of actual mark — smaller than the text beside it and well under half the
+  height of the search field it sits next to. The only thing identifying the
+  site was the least visible thing in the row.
+*/
 .site-wordmark-logo {
-  width: 2.25rem;
+  width: 5.5rem;
   height: auto;
   flex-shrink: 0;
 }
@@ -477,8 +485,10 @@ main:focus {
     display: none;
   }
 
+  /* Still the largest thing in the row on a phone, where it is the only thing
+     naming the site — the text beside it is hidden at this width. */
   .site-wordmark-logo {
-    width: 2.75rem;
+    width: 4.5rem;
   }
 }
 
@@ -1535,6 +1545,123 @@ kbd {
 [data-accent="violet"] { --type-accent: var(--hue-violet); }
 
 /* --- the books strip --- */
+
+/* ---------------------------------------------------------------- the shelf */
+
+/*
+  The rulebooks, as books.
+
+  The row this replaces put a 4.25rem thumbnail beside two lines of text in a
+  card, which is a list that happens to have pictures in it. A cover is the most
+  recognisable thing a reader owns about a book — somebody who has the Player's
+  Handbook on a shelf behind them knows it by its spine long before its title —
+  and at that size it was doing none of that work.
+
+  So the cover leads and the text sits under it, and the covers are large enough
+  to read as objects.
+*/
+.shelf {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+
+.shelf-book {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+}
+
+.shelf-cover {
+  width: 100%;
+  aspect-ratio: 176 / 228;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--surface-sunken);
+  box-shadow: var(--shadow-md);
+  /* A hairline so a dark cover does not bleed into a dark page, and so the two
+     books with no artwork sit on the same edge as the three with it. */
+  border: 1px solid var(--border);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.shelf-plate {
+  display: block;
+  container-type: inline-size;
+}
+
+.shelf-book:hover .shelf-cover,
+.shelf-book:has(a:focus-visible) .shelf-cover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.shelf-book:has(a:focus-visible) .shelf-cover {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-cover {
+    transition: none;
+  }
+
+  .shelf-book:hover .shelf-cover,
+  .shelf-book:has(a:focus-visible) .shelf-cover {
+    transform: none;
+  }
+}
+
+.shelf-title {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.shelf-title a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* The whole cover is the target, but only the title is a link, so a keyboard
+   user does not tab past two copies of the same address per book. */
+.shelf-title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.shelf-book {
+  position: relative;
+}
+
+.shelf-title a:hover {
+  color: var(--accent);
+}
+
+.shelf-blurb {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  /* The blurbs are one sentence each and vary in length; clamping keeps the
+     row's baselines from drifting apart without cutting any of them short. */
+  margin: 0;
+}
+
+.shelf-count {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  margin-top: auto;
+}
+
+.home-shelf .section-lede {
+  margin-bottom: var(--space-4);
+}
 
 .page-head + .book-grid {
   margin-top: var(--space-5);

@@ -43,6 +43,36 @@ const loaderData = {
     { slug: "phb-species", name: "Species", group: "Creating a character" },
   ],
   variantRules: 42,
+  /*
+    The shelf as the loader hands it over. Four books rather than the corpus's
+    five, and one of them undescribed — the site has to draw a book nobody has
+    written a blurb for, because that is the state a newly added supplement is
+    in and the whole point of the books being content.
+  */
+  books: [
+    {
+      key: "phb",
+      code: "PHB",
+      name: "Player's Handbook",
+      blurb: "The core rulebook.",
+      accent: "indigo" as const,
+    },
+    {
+      key: "ec",
+      code: "EC",
+      name: "Expanded Content",
+      blurb: "Community-maintained material.",
+      accent: "green" as const,
+    },
+    {
+      key: "wh",
+      code: "WH",
+      name: "Wretched Hives",
+      blurb: "The galaxy's underworld.",
+      accent: "amber" as const,
+    },
+    { key: "snv", code: "SnV", name: "Scum and Villainy", blurb: null, accent: null },
+  ],
 };
 
 function renderHome(data: typeof loaderData = loaderData) {
@@ -271,7 +301,17 @@ describe("Home route metadata", () => {
  * then the lists.
  */
 describe("the order the page puts things in", () => {
-  it("leads with how to play, then supplements, then categories", () => {
+  /**
+   * The books, then how to play, then the lists.
+   *
+   * The books moved above how to play deliberately: the site this replaces
+   * opened with its rulebooks and the owner asked for that back, on the
+   * reasoning that somebody arriving wants to see what this is made of before
+   * being told where to start. The lists stay last — the page opened with
+   * twenty-seven category cards once, which answers "what do you have" before
+   * anybody has been told what the game is.
+   */
+  it("leads with the books, then how to play, then categories", () => {
     renderHome();
 
     const headings = screen
@@ -281,9 +321,51 @@ describe("the order the page puts things in", () => {
     const at = (text: string) =>
       headings.findIndex((heading) => new RegExp(text, "i").test(heading));
 
-    expect(at("how to play")).toBeGreaterThanOrEqual(0);
-    expect(at("how to play")).toBeLessThan(at("supplemental rules"));
-    expect(at("supplemental rules")).toBeLessThan(at("categories"));
+    expect(at("rulebooks")).toBeGreaterThanOrEqual(0);
+    expect(at("rulebooks")).toBeLessThan(at("how to play"));
+    expect(at("how to play")).toBeLessThan(at("categories"));
+  });
+
+  /**
+   * Every book, including the one that teaches the game.
+   *
+   * The row this replaces was headed "Supplemental rules" and left the handbook
+   * out, because the section under it was the handbook — which made the row a
+   * list of leftovers rather than a shelf. Somebody looking for the Player's
+   * Handbook should find it among the books.
+   */
+  it("puts every book on the shelf, the handbook first", () => {
+    renderHome();
+
+    const shelf = screen.getByRole("region", { name: /rulebooks/i });
+    const titles = within(shelf)
+      .getAllByRole("link")
+      .map((link) => link.textContent?.trim());
+
+    expect(titles).toEqual([
+      "Player's Handbook",
+      "Expanded Content",
+      "Wretched Hives",
+      "Scum and Villainy",
+    ]);
+  });
+
+  /**
+   * A book nobody has described still gets a card.
+   *
+   * Scum and Villainy carries no blurb in this fixture. It must still appear
+   * with its name and its cover — an undescribed book is the state every new
+   * supplement starts in, and dropping it would make the shelf silently
+   * incomplete.
+   */
+  it("draws a book that has no blurb yet", () => {
+    renderHome();
+
+    const shelf = screen.getByRole("region", { name: /rulebooks/i });
+
+    expect(
+      within(shelf).getByRole("link", { name: "Scum and Villainy" }),
+    ).toBeInTheDocument();
   });
 
   it("sends a newcomer to the handbook before anything else", () => {
@@ -308,11 +390,18 @@ describe("the order the page puts things in", () => {
     // numbers "What's Different?" ahead of the introduction it is different
     // from. Nothing here carries a number, because a chapter number is a page
     // reference to a book nobody reading this is holding.
-    expect(howToPlay.getAllByRole("link").map((link) => link.textContent)).toEqual([
-      "Introduction",
-      "What's Different?",
-      "Species",
-    ]);
+    /*
+      Scoped to the chapter links. The optional and variant rules moved to the
+      foot of this section when the books left it, so "every link under how to
+      play" is no longer the same set as "the path" — and a reader is not
+      walked through the optional rules, they are offered them at the end.
+    */
+    expect(
+      howToPlay
+        .getAllByRole("link")
+        .filter((link) => link.className.includes("chapter-link"))
+        .map((link) => link.textContent),
+    ).toEqual(["Introduction", "What's Different?", "Species"]);
 
     // And the steps are grouped, with each heading owning a run.
     expect(
@@ -338,19 +427,23 @@ describe("the order the page puts things in", () => {
   });
 
   /**
-   * The handbook is what "how to play" means; the other books are what you
-   * reach for afterwards. Listing it among the supplements would put the thing
-   * a newcomer needs into the row they are meant to skip.
+   * The optional rules sit at the foot of the path, not among the books.
+   *
+   * They used to live under the book row, which read as though the variants
+   * were another supplement. They are rules, so they belong with how to play —
+   * and they come after the path rather than inside it, because a reader being
+   * walked somewhere should arrive before being offered detours.
    */
-  it("keeps the handbook out of the supplemental books", () => {
+  it("offers the optional rules at the end of the path, not among the books", () => {
     renderHome();
 
-    const supplemental = within(
-      screen.getByRole("region", { name: /supplemental rules/i }),
-    );
+    const howToPlay = within(screen.getByRole("region", { name: /how to play/i }));
+    const shelf = within(screen.getByRole("region", { name: /rulebooks/i }));
 
-    expect(supplemental.queryByText(/player.s handbook/i)).toBeNull();
-    expect(supplemental.getByText(/wretched hives/i)).toBeInTheDocument();
+    expect(
+      howToPlay.getByRole("link", { name: /optional and variant rules/i }),
+    ).toBeInTheDocument();
+    expect(shelf.queryByText(/optional and variant/i)).toBeNull();
   });
 
   /**
