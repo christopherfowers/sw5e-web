@@ -3,8 +3,8 @@ import { Link } from "react-router";
 import { AssetImage, MonogramPlate } from "~/components/media";
 import { ReportControl } from "~/components/report-control";
 import { Breadcrumbs } from "~/components/site-chrome";
-import { TypeIcon } from "~/components/type-icon";
 import { countsBySource } from "~/content/dataset.server";
+import { readingStepsOf } from "~/content/book-contents";
 import { sourceCover } from "~/content/imagery";
 import { sourceBySlug } from "~/content/source-meta";
 import { TYPE_META, TYPE_ORDER } from "~/content/type-meta";
@@ -31,6 +31,9 @@ export async function loader({ params }: Route.LoaderArgs) {
     source,
     counts,
     total: Object.values(counts).reduce((sum, count) => sum + count, 0),
+    // The same table of contents the rail draws, from the same place, so the
+    // two cannot disagree about what is in the book or what order it is in.
+    steps: readingStepsOf(source.code),
   };
 }
 
@@ -49,7 +52,7 @@ export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
 }
 
 export default function SourceDetail({ loaderData }: Route.ComponentProps) {
-  const { source, counts, total } = loaderData;
+  const { source, counts, total, steps } = loaderData;
   const cover = sourceCover(source.code);
   const present = TYPE_ORDER.filter((type) => (counts[type] ?? 0) > 0);
 
@@ -110,20 +113,72 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
             wherever they appear.
           </p>
 
-          <h2 className="section-heading">What it contributes</h2>
-          <ul className="source-breakdown">
-            {present.map((type: ContentTypeId) => (
-              <li key={type}>
-                <Link to={`/${type}`} data-accent={TYPE_META[type].accent}>
-                  <TypeIcon type={type} />
-                  {TYPE_META[type].plural}
-                  <span className="source-breakdown-count">
-                    {counts[type].toLocaleString("en-US")}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          {/*
+            The book's chapters, which is what a book's page is.
+
+            This was a grid of thirteen cards headed "What it contributes",
+            one per content type, reading "Species 30, Classes 10, Features
+            825". That is a contents list organised by database table, which is
+            nobody's idea of a book, and each card linked to the whole-site
+            index for its type rather than to this book's share of it — so
+            "Species 30" opened a page of a hundred and forty-one.
+
+            What a reader wants from a book is its chapters, in the order they
+            are meant to be read. The rail already carries them for navigation;
+            here they are the page, with the headings they are read under.
+          */}
+          {steps.length > 0 ? (
+            <>
+              <h2 className="section-heading">Chapters</h2>
+              {steps.map((step, index) => (
+                <section
+                  key={step.group ?? `ungrouped-${index}`}
+                  className="path-step"
+                  aria-labelledby={`book-step-${index}`}
+                >
+                  {/*
+                    A heading only where the corpus gives one. Two of the books
+                    have an authored path; the rest get a plain list rather than
+                    a grouping nobody decided on.
+                  */}
+                  <h3 className="path-step-heading" id={`book-step-${index}`}>
+                    {step.group ?? "Chapters"}
+                  </h3>
+                  <ul className="chapter-list">
+                    {step.chapters.map((chapter) => (
+                      <li key={`${chapter.type}/${chapter.slug}`}>
+                        <Link
+                          className="chapter-link"
+                          to={`/${chapter.type}/${chapter.slug}`}
+                        >
+                          <span className="chapter-name">{chapter.name}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </>
+          ) : null}
+
+          {/*
+            What else is in the book, as a sentence rather than a wall of
+            cards. The counts are worth knowing — a book with 825 features is a
+            different proposition from one with none — but they are context for
+            the chapters above, not the point of the page.
+          */}
+          {present.length > 0 ? (
+            <p className="source-contains">
+              It also contributes{" "}
+              {present
+                .map(
+                  (type: ContentTypeId) =>
+                    `${counts[type].toLocaleString("en-US")} ${TYPE_META[type].plural.toLowerCase()}`,
+                )
+                .join(", ")}
+              .
+            </p>
+          ) : null}
         </div>
       </div>
     </div>
