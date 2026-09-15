@@ -170,7 +170,23 @@ export function ThemeControl() {
  * It touches only `localStorage` and one attribute, and swallows its own
  * errors: a reader with storage disabled gets the system theme rather than a
  * blank page.
+ *
+ * ## Why the key is spelled out rather than interpolated
+ *
+ * This was built by interpolating `THEME_STORAGE_KEY` through `JSON.stringify`,
+ * and CodeQL refused it: code construction from a value it cannot prove
+ * constant. It was right to, even though the value *is* constant and
+ * `JSON.stringify` escapes it correctly — what it flags is the shape, not this
+ * instance. The result is written into `<head>` unescaped, so anything that
+ * ever made the key dynamic would turn a storage rename into script injection,
+ * and whoever made that change would have no reason to look at this file.
+ *
+ * So there is no construction left to get wrong. The cost is that the key is
+ * written twice, which `theme-script.test.ts` holds. That drift fails quietly
+ * otherwise: the toggle still works and the choice still saves, and it simply
+ * stops surviving navigation, because the replay reads a name nothing writes.
  */
-export const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem(${JSON.stringify(
-  THEME_STORAGE_KEY,
-)});if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}})();`;
+export const THEME_SCRIPT =
+  '(function(){try{var t=localStorage.getItem("sw5e-theme");' +
+  'if(t==="light"||t==="dark"){' +
+  'document.documentElement.setAttribute("data-theme",t)}}catch(e){}})();';
