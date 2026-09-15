@@ -91,6 +91,34 @@ const loaderData = {
       accent: null,
     },
   ],
+  /*
+    The channels as the loader hands them over: already grouped, already
+    labelled from the platform, and already filtered to the ones whose URL
+    matches the host their platform uses. Two groups rather than three, because
+    that is the state the corpus is really in — the old funding page belongs to
+    somebody else and no Support channel exists.
+  */
+  groups: [
+    {
+      heading: "Development",
+      blurb: "Discord is where the development happens.",
+      channels: [
+        { key: "discord", url: "https://discord.gg/zYcPYTu", label: "Discord" },
+      ],
+    },
+    {
+      heading: "Connect",
+      blurb: "For sharing content, questions, and more.",
+      channels: [
+        { key: "reddit", url: "https://www.reddit.com/r/sw5e", label: "Reddit" },
+        {
+          key: "facebook",
+          url: "https://www.facebook.com/groups/starwars5e",
+          label: "Facebook",
+        },
+      ],
+    },
+  ],
 };
 
 function renderHome(data: typeof loaderData = loaderData) {
@@ -291,6 +319,56 @@ describe("Home route", () => {
 
     expect(
       screen.queryByRole("region", { name: /sheets and downloads/i }),
+    ).toBeNull();
+  });
+
+  /**
+   * Getting in touch, as the site this replaces had it.
+   *
+   * Every link leaves the site, so every one carries `noopener noreferrer` —
+   * `noreferrer` as well, because where a reader came from is not this
+   * project's to hand to somebody else's analytics.
+   */
+  it("offers the community's channels, grouped", () => {
+    renderHome();
+
+    const touch = within(
+      screen.getByRole("region", { name: /getting in touch/i }),
+    );
+
+    const discord = touch.getByRole("link", { name: "Discord" });
+    expect(discord).toHaveAttribute("href", "https://discord.gg/zYcPYTu");
+    expect(discord).toHaveAttribute("rel", "noopener noreferrer");
+
+    expect(touch.getByRole("link", { name: "Reddit" })).toBeInTheDocument();
+    expect(touch.getByRole("link", { name: "Facebook" })).toBeInTheDocument();
+  });
+
+  /**
+   * And no Support column.
+   *
+   * The Patreon the old site carried belongs to the previous maintainer and is
+   * shared with another project. It is deliberately not carried over, and the
+   * absence needs no toggle: a group nothing is filed under does not render.
+   * Asserted because the reflex when a three-column layout shows two is to add
+   * the third one back.
+   */
+  it("draws no support column, having no support channel", () => {
+    renderHome();
+
+    const touch = within(
+      screen.getByRole("region", { name: /getting in touch/i }),
+    );
+
+    expect(touch.queryByText(/^support$/i)).toBeNull();
+    expect(touch.queryByRole("link", { name: /patreon/i })).toBeNull();
+  });
+
+  it("draws no contact section at all when the corpus names no channels", () => {
+    renderHome({ ...loaderData, groups: [] });
+
+    expect(
+      screen.queryByRole("region", { name: /getting in touch/i }),
     ).toBeNull();
   });
 

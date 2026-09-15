@@ -2072,6 +2072,28 @@ export function shelveResources(resources) {
 }
 
 /**
+ * The community's channels, ordered within their groups.
+ *
+ * Carried through verbatim rather than filtered here. The site drops a channel
+ * whose URL does not match the host its platform allows, and that check belongs
+ * in the site, not in the build: the build runs when somebody deploys, and the
+ * point of the allowlist is to hold against an edit made long afterwards.
+ */
+export function shelveChannels(channels) {
+  return [...channels]
+    .map((channel) => ({
+      key: channel.key,
+      platform: channel.platform,
+      group: channel.group,
+      url: channel.url,
+      blurb: channel.blurb ?? null,
+      order: channel.order,
+      enabled: channel.enabled !== false,
+    }))
+    .sort((left, right) => left.order - right.order);
+}
+
+/**
  * Normalizes one type's canonical documents.
  *
  * Slugs must be unique because they are the URL. The canonical set gives every

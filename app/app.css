@@ -1702,6 +1702,53 @@ kbd {
   max-width: 60ch;
 }
 
+/*
+  Getting in touch: however many groups the corpus describes, side by side.
+
+  `auto-fit` rather than a fixed three columns, because the number of groups is
+  content and not layout — there are two today, because the old funding page
+  belongs to somebody else and no Support channel exists. A hard-coded third
+  column would have left a hole exactly where the thing we deliberately did not
+  carry over used to be.
+*/
+.touch-groups {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  margin-top: var(--space-4);
+}
+
+.touch-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.touch-heading {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.touch-blurb {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  margin: 0;
+  max-width: 44ch;
+}
+
+.touch-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
 .home-shelf .section-lede {
   margin-bottom: var(--space-4);
 }

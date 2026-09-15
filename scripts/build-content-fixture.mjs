@@ -39,6 +39,7 @@ import {
   buildClassGraph,
   shelveBooks,
   shelveResources,
+  shelveChannels,
   indexSources,
   normalizeAllCanonical,
 } from "./lib/canonical.mjs";
@@ -438,7 +439,7 @@ function tableOfContents(types) {
 async function writeDataset(
   outputDirectory,
   types,
-  { curated, books = [], resources = [] },
+  { curated, books = [], resources = [], channels = [] },
 ) {
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
@@ -484,6 +485,12 @@ async function writeDataset(
     and a hue per row on the client, and four sheets is well under a kilobyte.
   */
   await writeJson(outputDirectory, "resources.json", resources);
+
+  /*
+    And the channels, which the footer and the front page both read on the
+    client. Three links is a few hundred bytes.
+  */
+  await writeJson(outputDirectory, "channels.json", channels);
 }
 
 async function main() {
@@ -538,6 +545,9 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
     when a build ships no books.
   */
   const resourceRecords = await readCanonicalType(contentDirectory, "resource");
+
+  // The community channels, read the same way and just as optional.
+  const channelRecords = await readCanonicalType(contentDirectory, "channel");
   if (sourceRecords.length === 0) {
     throw new Error(
       `${contentDirectory} holds no content/source documents, so no item in ` +
@@ -611,6 +621,7 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
     curated: false,
     books: shelveBooks(sources),
     resources: shelveResources(resourceRecords),
+    channels: shelveChannels(channelRecords),
   });
 
   process.stdout.write(
