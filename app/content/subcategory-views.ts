@@ -281,7 +281,7 @@ export const SUBCATEGORY_VIEWS: readonly SubcategoryView[] = [
     label: "Variant rules",
     counted: "variant rules",
     blurb:
-      "The optional rules a table can turn on, from ability score changes to called shots and combination weapons.",
+      "Rules your group can choose to play with, from ability score changes to called shots and combination weapons.",
     type: "rules",
     includes: (row) => ruleTypeIs(row, "variant"),
   },

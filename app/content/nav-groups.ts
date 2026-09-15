@@ -150,7 +150,7 @@ export interface NavGroupMeta {
 export const NAV_GROUP_META: Record<NavGroupId, NavGroupMeta> = {
   rules: {
     label: "Rules",
-    blurb: "The books themselves, and the optional rules a table can turn on.",
+    blurb: "The books themselves, and the optional rules you can play with.",
   },
   characters: {
     label: "Characters",
