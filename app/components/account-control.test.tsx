@@ -58,11 +58,24 @@ describe("before the session is known", () => {
 });
 
 describe("once the session is known", () => {
-  it("offers a way in to a signed-out reader", async () => {
+  /**
+   * And the way in remembers where the reader was.
+   *
+   * The sign-in page has always honoured `?next=`, but only the route guard
+   * set it — somebody bounced off a page they could not see returned to it,
+   * while somebody who simply pressed Sign in from the header was put on the
+   * account page instead. That is the commoner path, and it was the one that
+   * moved a reader somewhere they had not asked to go.
+   *
+   * Asserted on the encoded query rather than on the bare path, because the
+   * encoding is the part that would break silently: a destination pasted in
+   * raw still looks right in a test that only checks the prefix.
+   */
+  it("offers a way in to a signed-out reader, back to where they are", async () => {
     mount(new AuthApiContract({ session: null }));
 
     const link = await screen.findByRole("link", { name: /sign in/i });
-    expect(link).toHaveAttribute("href", "/sign-in");
+    expect(link).toHaveAttribute("href", "/sign-in?next=%2F");
   });
 
   it("names the account and links to it for a signed-in reader", async () => {

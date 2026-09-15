@@ -78,6 +78,30 @@ test.describe("the header control", () => {
     await expect(page.getByRole("link", { name: /^sign in$/i })).toBeVisible();
   });
 
+  /**
+   * And signing in from the header comes back to the page it was pressed on.
+   *
+   * The guard already carried a destination for somebody bounced off a page
+   * they could not see. Pressing Sign in from the header carried nothing, so
+   * a reader browsing the rules was put on the account page — a screen they
+   * had not asked for, having done nothing but sign in.
+   *
+   * Asserted from a real content page rather than from the home page, because
+   * "/" is what a broken implementation would fall back to anyway and the test
+   * would not be able to tell the difference.
+   */
+  test("carries the reader back to the page they signed in from", async ({
+    page,
+    context,
+  }) => {
+    await serveAccountApi(page, context, { session: null });
+
+    await visit(page, "/species");
+    await page.getByRole("link", { name: /^sign in$/i }).click();
+
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fspecies$/);
+  });
+
   test("names the account of a signed-in reader", async ({ page, context }) => {
     await serveAccountApi(page, context, { session: user({ displayName: "Jen Ordo" }) });
 

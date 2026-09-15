@@ -24,13 +24,21 @@
  * header again, finds a link, and that is the whole story.
  */
 
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
+import { signInPathFor } from "~/auth/redirect";
 import { useSession } from "~/auth/session";
 import { MonogramPlate } from "./media";
 
 export function AccountControl() {
   const session = useSession();
+  /*
+    The router's location, not `window.location`. Called before the early
+    returns below because hooks must run unconditionally — and read from the
+    router because this component renders during the prerender, where the
+    global does not describe the page being built.
+  */
+  const location = useLocation();
 
   if (session.status === "loading") {
     return <span className="account-chip is-pending" aria-hidden="true" />;
@@ -53,7 +61,26 @@ export function AccountControl() {
   // sign in should reach a page that explains the outage, rather than find the
   // control has silently vanished from the header.
   return (
-    <Link className="account-chip account-chip-signin" to="/sign-in">
+    <Link
+      className="account-chip account-chip-signin"
+      /*
+        Carries where the reader is, so signing in puts them back there.
+
+        The sign-in page has always honoured `?next=`, but only the route guard
+        was setting it — somebody bounced off a page they were not allowed to
+        see went back to it afterwards, while somebody who simply pressed Sign
+        in from the header landed on the account page. That is the more common
+        path by far, and it is the one that dumped a reader somewhere they had
+        not asked to go.
+
+        The value is still validated on arrival by `safeNextPath`, which is an
+        allow-list: this makes the common case work without widening what the
+        sign-in page will accept. Building it here would be the wrong place for
+        that check anyway, since the query string is attacker-supplied whatever
+        writes it.
+      */
+      to={signInPathFor(`${location.pathname}${location.search}`)}
+    >
       Sign in
     </Link>
   );

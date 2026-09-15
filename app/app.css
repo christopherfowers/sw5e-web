@@ -1741,13 +1741,78 @@ kbd {
   color: var(--accent);
 }
 
+/*
+  The line under a book or a sheet, shown when the tile is pointed at.
+
+  Nine tiles each carrying a sentence is a wall of small text under a row of
+  artwork, and the artwork is what a reader is actually scanning. So the
+  sentence moves onto the cover and waits to be asked for.
+
+  It is laid over the cover rather than expanded below it, because expanding
+  one tile in a grid re-flows the whole row — the thing you were pointing at
+  moves out from under the cursor. Matching the cover's own aspect ratio makes
+  the panel land exactly on it without the markup knowing its height.
+
+  ## Not hidden from everybody
+
+  Only opacity, never `display: none` or `visibility: hidden`, so the sentence
+  stays in the accessibility tree and a screen reader reads it with the rest of
+  the tile. `pointer-events: none` keeps the invisible panel from swallowing
+  the click meant for the cover beneath it — the same fault the theme control's
+  icon had.
+
+  And it reveals on `focus-within` as well as hover, so arriving by keyboard
+  shows it too.
+*/
 .shelf-blurb {
-  color: var(--text-muted);
+  position: absolute;
+  inset: 0 0 auto 0;
+  aspect-ratio: 176 / 228;
+  margin: 0;
+  display: grid;
+  align-content: end;
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
   font-size: 0.875rem;
   line-height: 1.45;
-  /* The blurbs are one sentence each and vary in length; clamping keeps the
-     row's baselines from drifting apart without cutting any of them short. */
-  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.shelf-book:hover .shelf-blurb,
+.shelf-book:focus-within .shelf-blurb {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-blurb {
+    transition: none;
+  }
+}
+
+/*
+  Where there is no pointer to hover with, the sentence stays where it was.
+
+  A phone has no hover state, so a blurb that only appears on hover is a blurb
+  that never appears — which would quietly make the site tell mobile readers
+  less than desktop ones. On touch it sits under the tile in the ordinary way,
+  exactly as it did before.
+*/
+@media (hover: none) {
+  .shelf-blurb {
+    position: static;
+    aspect-ratio: auto;
+    display: block;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: var(--text-muted);
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 .shelf-count {
