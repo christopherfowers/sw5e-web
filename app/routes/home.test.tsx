@@ -7,29 +7,9 @@ import { TYPE_ORDER } from "~/content/type-meta";
 import type { Route } from "./+types/home";
 
 const loaderData = {
-  counts: { species: 141, monsters: 271, powers: 465 },
-  /*
-    Keyed by address rather than by type, as the loader hands it over. Most of
-    what the category grid draws is not a content type any more — three of the
-    cards are books, eight are slices of a type and one is the customization
-    hub — so a count per type could not label them.
-  */
-  destinationCounts: {
-    "/species": 141,
-    "/monsters": 271,
-    "/force-powers": 233,
-    "/tech-powers": 232,
-    "/customization-options": 219,
-    "/sources/phb": 900,
-  } as Record<string, number>,
   total: 1820,
   curated: false,
   sourceTotals: { PHB: 900, EC: 700, WH: 120, SnV: 271 },
-  /*
-    Chapters as the loader hands them over: already filtered to the handbook,
-    already in the book's order, and including the front matter numbered below
-    one so the rendering of an unnumbered chapter is exercised.
-  */
   /*
     The path as the loader hands it over: already filtered to the handbook,
     already in the authored order, and carrying the heading each step is read
@@ -151,52 +131,43 @@ describe("Home route", () => {
     ).not.toBeNull();
   });
 
-  it("shows the real count of entries for each content type", () => {
-    renderHome();
-
-    // Scoped to the categories. "Species" is now the name of a card *and* of a
-    // step on the reading path, because the path steps stopped carrying chapter
-    // numbers — an unscoped lookup finds both and cannot say which it meant.
-    const categories = within(screen.getByRole("region", { name: /categories/i }));
-
-    const speciesCard = categories.getByRole("link", { name: /^species/i });
-    expect(within(speciesCard).getByText("141")).toBeInTheDocument();
-
-    const creatureCard = categories.getByRole("link", { name: /^creatures/i });
-    expect(within(creatureCard).getByText("271")).toBeInTheDocument();
-  });
-
   /**
-   * The grid is the header's menus, drawn as cards. It is not a list of content
-   * types and has not been one since the header stopped being one: three of
-   * these are books, four are slices of a type and one is a hub over seven.
-   * Asserting the addresses rather than the types is the only way to notice the
-   * front page drifting away from the navigation.
+   * The page does not draw the navigation a second time.
+   *
+   * There were twenty-seven cards here, grouped into the same six subjects the
+   * header already offers from every page of the site. The books cover most of
+   * what they pointed at, and the header covers the rest — so the grid was the
+   * front page's longest section and its least load-bearing.
+   *
+   * Asserted rather than merely deleted, and asserted by *absence*, because the
+   * reflex cure for a front page that feels thin is to put a grid of links back
+   * on it. Reachability is not weakened by this: `nav-groups.test.ts` holds
+   * "every content type is reachable from the navigation", which is the claim
+   * that actually matters and is now made in the one place that can make it.
    */
-  it("offers the same destinations the header does", () => {
+  it("does not reproduce the navigation", () => {
     renderHome();
 
+    expect(screen.queryByRole("region", { name: /categories/i })).toBeNull();
+
+    /*
+      `/species` is deliberately absent from this list. The hero still offers
+      "Browse species" as its second action, which is a chosen way in for a
+      reader who already knows what they came for — not a card in a grid. The
+      distinction is the whole point of the change, so the test has to respect
+      it rather than assert the page holds no links at all.
+    */
     for (const path of [
-      "/sources/phb",
-      "/variant-rules",
-      "/species",
       "/customization-options",
       "/force-powers",
       "/armor",
-      "/weapons",
-      "/other-equipment",
-      "/starship-weapons",
       "/monsters",
-      // The quiet half, which is quiet rather than absent: these are the
-      // destinations the owner's menu does not name and the corpus does have.
-      "/features",
-      "/starship-base-sizes",
-      "/rules",
+      "/starship-weapons",
     ]) {
       expect(
         document.querySelector(`a[href="${path}"]`),
-        `the home page must offer a way into ${path}`,
-      ).not.toBeNull();
+        `${path} belongs to the header now, not to a card on the front page`,
+      ).toBeNull();
     }
   });
 
@@ -302,27 +273,27 @@ describe("Home route metadata", () => {
  */
 describe("the order the page puts things in", () => {
   /**
-   * The books, then how to play, then the lists.
+   * The books, and then nothing that competes with them.
    *
-   * The books moved above how to play deliberately: the site this replaces
-   * opened with its rulebooks and the owner asked for that back, on the
-   * reasoning that somebody arriving wants to see what this is made of before
-   * being told where to start. The lists stay last — the page opened with
-   * twenty-seven category cards once, which answers "what do you have" before
-   * anybody has been told what the game is.
+   * The site this replaces opened with its rulebooks and the owner asked for
+   * that back, on the reasoning that somebody arriving wants to see what this
+   * is made of before being told where to start. The category grid used to
+   * follow them and has gone; what remains below the shelf is one sentence
+   * about the optional rules, which belong to no single book and so have
+   * nowhere else to be said.
    */
-  it("leads with the books, then the categories", () => {
+  it("leads with the books, and puts nothing after them but the variants", () => {
     renderHome();
 
     const headings = screen
       .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent ?? "");
 
-    const at = (text: string) =>
-      headings.findIndex((heading) => new RegExp(text, "i").test(heading));
-
-    expect(at("rulebooks")).toBeGreaterThanOrEqual(0);
-    expect(at("rulebooks")).toBeLessThan(at("categories"));
+    expect(headings.some((heading) => /rulebooks/i.test(heading))).toBe(true);
+    expect(
+      headings.filter((heading) => /categories/i.test(heading)),
+      "the grid the header already draws does not belong here too",
+    ).toHaveLength(0);
   });
 
   /**
@@ -423,64 +394,4 @@ describe("the order the page puts things in", () => {
     expect(shelf.queryByText(/optional and variant/i)).toBeNull();
   });
 
-  /**
-   * Seven separate cards — feats, fighting styles, masteries, lightsaber forms
-   * and the two weapon tiers — are seven answers to one question. The
-   * Player's Handbook introduces them together under one chapter heading, so
-   * the front page offers one card and the seven live behind it.
-   */
-  it("gathers the customization options behind a single card", () => {
-    renderHome();
-
-    const characters = screen.getByRole("region", { name: /^characters$/i });
-
-    expect(
-      within(characters).getByRole("link", { name: /^customization options/i }),
-    ).toHaveAttribute("href", "/customization-options");
-
-    for (const name of [/^fighting styles/i, /^lightsaber forms/i]) {
-      expect(
-        within(characters).queryByRole("link", { name }),
-        "the seven options are one answer, not seven cards in a grid",
-      ).toBeNull();
-    }
-  });
-
-  /**
-   * A destination that is not a type still has to be countable, or the card is
-   * a bare label in a grid where every neighbour carries a number. Three of the
-   * counts on this page are now sums or filtered tallies rather than manifest
-   * lookups.
-   */
-  it("counts what is behind a destination that is not a content type", () => {
-    renderHome();
-
-    const hub = screen.getByRole("link", { name: /^customization options/i });
-
-    expect(within(hub).getByText("219")).toBeInTheDocument();
-  });
-
-  /**
-   * The loader omits an address it cannot honestly count — `/sources` is a page
-   * about five books rather than a page of anything — and the card has to read
-   * as a card with no number rather than as a card claiming zero. Exercised by
-   * withholding a count the page would otherwise have, because the destination
-   * that really has none is in the quiet half and never draws a card.
-   */
-  it("leaves the count off a destination it was given no number for", () => {
-    const withoutSpecies = { ...loaderData.destinationCounts };
-    delete withoutSpecies["/species"];
-    renderHome({ ...loaderData, destinationCounts: withoutSpecies });
-
-    const categories = within(screen.getByRole("region", { name: /categories/i }));
-    const species = categories.getByRole("link", { name: /^species/i });
-
-    expect(species.querySelector(".type-card-count")).toBeNull();
-    expect(
-      categories.getByRole("link", { name: /^creatures/i }).querySelector(
-        ".type-card-count",
-      ),
-      "withholding one count must not blank the rest of the grid",
-    ).not.toBeNull();
-  });
 });

@@ -1,7 +1,6 @@
 import { Link } from "react-router";
 
 import { AssetImage, MonogramPlate } from "~/components/media";
-import { TypeIcon } from "~/components/type-icon";
 import {
   getManifest,
   getSummaries,
@@ -9,16 +8,9 @@ import {
   totalForSource,
 } from "~/content/dataset.server";
 import { brandImage, sourceCover } from "~/content/imagery";
-import {
-  NAVIGATION,
-  faceOf,
-  type NavDestination,
-} from "~/content/nav-groups";
 import { BOOKS, coreRulebook } from "~/content/books";
 import { SOURCE_ORDER } from "~/content/source-meta";
-import { selectSubcategoryRows } from "~/content/subcategory-views";
 import { TYPE_ORDER } from "~/content/type-meta";
-import type { AnySummary } from "~/content/types";
 import type { Route } from "./+types/home";
 
 /**
@@ -110,74 +102,19 @@ interface PathStep {
   group: string;
 }
 
-/**
- * How many entries sit behind one destination in the header's menus.
- *
- * The category cards used to be one per content type, so the count was one
- * lookup in the manifest. It is four different questions now, because the menu
- * holds four different kinds of thing: a type index is still a manifest lookup,
- * a slice of a type has to be counted by running the slice's own predicate over
- * the rows, a book already has `totalForSource`, and a hub is the sum of what it
- * stands for — which is itself both kinds, so it is both sums.
- *
- * Null rather than zero where there is no honest number. `/sources` is a page
- * about five books and not a page of anything, and a card reading "0 entries"
- * under it would be a claim rather than an omission.
- */
-function countBehind(
-  destination: NavDestination,
-  counts: Record<string, number>,
-): number | null {
-  switch (destination.kind) {
-    /*
-      No number, for the same reason `/sources` has none: we do not know how
-      many pages a PDF on somebody else's drive has, and inventing a zero
-      would read as "this is empty" rather than "this is not ours to count".
-    */
-    case "external":
-      return null;
-    case "type":
-      return counts[destination.type] ?? 0;
-    case "view":
-      return selectSubcategoryRows(
-        destination.view,
-        getSummaries(destination.view.type) as AnySummary[],
-      ).length;
-    case "book":
-      return totalForSource(destination.code);
-    case "page": {
-      if (destination.covers.length + destination.offers.length === 0) {
-        return null;
-      }
-      /*
-        Both halves of what the hub holds, because it holds both: six type
-        indexes and the three cuts of the class improvements. Summing `covers`
-        alone would put 190 on the card in front of a page whose own lede says
-        219 — two numbers for one chapter, on two pages a click apart.
-      */
-      const indexes = destination.covers.reduce(
-        (sum, type) => sum + (counts[type] ?? 0),
-        0,
-      );
-      return destination.offers.reduce(
-        (sum, view) =>
-          sum +
-          selectSubcategoryRows(view, getSummaries(view.type) as AnySummary[])
-            .length,
-        indexes,
-      );
-    }
-  }
-}
-
 export async function loader() {
   const manifest = getManifest();
 
   /*
-    Chapters in the book's order, which is what makes this a table of contents
-    rather than another list of links. Variant rules are pulled out separately:
-    they are rules, so they belong above the category grid, but they are
-    optional and must not sit in the path a new reader is walked down.
+    The handbook's chapters in the order somebody authored, which is how the
+    page knows which one to open with. Only the first is rendered — the rest
+    are returned because the order itself is the invariant worth holding, and
+    `home-path.test.ts` asserts it here rather than somewhere it could drift
+    from what the page actually reads.
+
+    Variant rules are counted separately: they are rules, so they belong with
+    the books, but they are optional and must not sit in the path a new reader
+    is walked down.
   */
   const rules = getSummaries("rules");
 
@@ -195,30 +132,9 @@ export async function loader() {
       group: rule.readingGroup!,
     }));
 
-  const counts = Object.fromEntries(
-    manifest.types.map((type) => [type.id, type.count]),
-  ) as Record<string, number>;
-
   return {
     chapters,
     variantRules: rules.filter((rule) => rule.ruleType === "Variant").length,
-    counts,
-    /*
-      Keyed by address rather than by type, because two of the menu's
-      destinations are not types and one of them stands for seven. Computed
-      here, in a loader that only ever runs at build time, so that a page which
-      ships its own data does not also ship the predicate that produced it.
-    */
-    destinationCounts: Object.fromEntries(
-      NAVIGATION.flatMap((group) => [...group.primary, ...group.supporting])
-        .map(
-          (destination) =>
-            [destination.to, countBehind(destination, counts)] as const,
-        )
-        .filter(
-          (entry): entry is readonly [string, number] => entry[1] !== null,
-        ),
-    ) as Record<string, number>,
     total: manifest.types.reduce((sum, type) => sum + type.count, 0),
     curated: isCuratedDataset(),
     sourceTotals: Object.fromEntries(
@@ -242,31 +158,12 @@ export async function loader() {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const {
-    destinationCounts,
-    total,
-    curated,
-    sourceTotals,
-    chapters,
-    variantRules,
-    books,
-  } = loaderData;
+  const { total, curated, sourceTotals, chapters, variantRules, books } =
+    loaderData;
 
   // Whatever the path opens with. Somebody reordering the content moves this
   // button with it, which is the point of authoring the order at all.
   const start = chapters[0];
-
-  /*
-    Collapsed into the headings they are read under. The path is already in
-    order, so a group ends where the next heading begins — the grouping and the
-    sequence cannot disagree, because there is only one sequence.
-  */
-  const steps: { group: string; chapters: PathStep[] }[] = [];
-  for (const chapter of chapters) {
-    const current = steps.at(-1);
-    if (current?.group === chapter.group) current.chapters.push(chapter);
-    else steps.push({ group: chapter.group, chapters: [chapter] });
-  }
 
   const heroLight = brandImage("hero-light");
   const heroDark = brandImage("hero-dark");
@@ -372,12 +269,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       </section>
 
       <div className="home-section">
+        {/*
+          The command in this notice has to be one the reader can actually run.
+
+          It said "against the legacy archive", which is a private directory
+          almost nobody reading it has — so the honest next step looked
+          impossible and the sample looked broken instead of small. The content
+          repository is public and sits beside this one, and building from it
+          produces the whole library.
+
+          Worth knowing while looking at a sample build: the shipped
+          `book-contents.json` lists every chapter of every book, while the rest
+          of the sample is four items per type. So a book's rail offers chapters
+          whose pages are not in the sample and answers 404. That is the sample
+          being small rather than the site being wrong, and the command below is
+          the cure.
+        */}
         {curated ? (
           <p className="notice">
             This build is showing the small sample dataset that ships with the
-            repository. Run{" "}
-            <code>node scripts/build-content-fixture.mjs</code> against the
-            legacy archive to render the full library.
+            repository, so most links lead to pages it does not contain. Run{" "}
+            <code>
+              node scripts/build-content-fixture.mjs
+              --content=../sw5e-database/content --out=app/data/generated
+            </code>{" "}
+            to render the full library from the content repository.
           </p>
         ) : null}
 
@@ -469,94 +385,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </p>
         ) : null}
 
-        {/*
-          A labelled region like the two sections above it, which it was not
-          before. The heading existed; nothing tied the content under it to the
-          heading, so assistive technology met a run of category groups with no
-          statement of what they were groups of — and the page's own tests could
-          not say "in the categories" either, which is how it was noticed.
-        */}
-        <section aria-labelledby="categories">
-        <h2 className="section-heading" id="categories">
-          Categories
-        </h2>
-        <p className="section-lede">
-          Everything the books list rather than explain — what to choose from
-          when you already know the rule.
-        </p>
-        {/*
-          Grouped, not flat, and grouped by the header's own model rather than
-          by a second one kept alongside it. Twenty-seven cards in a single grid
-          is a wall — seven of them were the customization options, which the
-          Player's Handbook introduces together and which a reader has no way to
-          see as one answer when they are seven boxes in a run of twenty-seven.
-
-          Because it is the header's model, a card here is a destination rather
-          than a content type: three of them are books, eight are slices of a
-          type, one is the customization hub. That is the point of sharing the
-          model. The front page and the navigation cannot drift into two
-          different accounts of where a thing lives, and neither can they drift
-          into two different accounts of what a thing is.
-        */}
-        {NAVIGATION.map((group) => (
-          <section
-            key={group.id}
-            className="type-group"
-            aria-labelledby={`group-${group.id}`}
-          >
-            <h3 className="type-group-heading" id={`group-${group.id}`}>
-              {group.label}
-            </h3>
-            <p className="type-group-blurb">{group.blurb}</p>
-
-            <ul className="type-grid">
-              {group.primary.map((destination) => {
-                const face = faceOf(destination);
-                const count = destinationCounts[face.to];
-                return (
-                  <li key={face.to}>
-                    <Link
-                      to={face.to}
-                      className="type-card"
-                      data-accent={face.accent ?? undefined}
-                    >
-                      {face.icon ? <TypeIcon type={face.icon} /> : null}
-                      <span className="type-card-name">{face.label}</span>
-                      {count != null ? (
-                        <span className="type-card-count">
-                          {count.toLocaleString("en-US")}
-                          <span className="sr-only"> entries</span>
-                        </span>
-                      ) : null}
-                      <span className="type-card-blurb">{face.blurb}</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {/*
-              The quiet half of the menu, rendered quietly here too: one line of
-              links rather than a row of cards. A weapon property is read from
-              the weapon that cites it, and the hulls and the rules index are
-              destinations the owner's menu simply does not name — neither kind
-              should be competing with the cards above for a first-time
-              reader's attention, and neither should be unreachable.
-            */}
-            {group.supporting.length > 0 ? (
-              <p className="type-group-supporting">
-                {group.supporting.map((destination, index) => (
-                  <span key={destination.to}>
-                    {index > 0 ? ", " : null}
-                    <Link to={destination.to}>{destination.label}</Link>
-                  </span>
-                ))}
-              </p>
-            ) : null}
-          </section>
-        ))}
-
-        </section>
       </div>
     </div>
   );

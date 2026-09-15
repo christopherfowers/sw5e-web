@@ -155,6 +155,23 @@ Their indexes render as empty as `maneuvers` does.
 node scripts/build-content-fixture.mjs --archive ../sw5e-legacy-archive/api --curated
 ```
 
+**Do not browse the fixture and conclude the site is broken.** One file in it
+is not sampled: `book-contents.json` carries every chapter of every book,
+because it is a book's structure rather than a list of items and the rail that
+reads it has to be exercised. Everything else is four items per type. So in a
+fixture build a book's rail offers fifteen chapters and thirteen of them
+answer 404 — the sample is small, not wrong. Build a real dataset before
+judging anything visual:
+
+```bash
+node scripts/build-content-fixture.mjs --content=../sw5e-database/content --out=app/data/generated
+```
+
+`app/data/generated` is gitignored and wins over the fixture whenever it is
+present, which is the mechanism that lets one build serve both situations —
+and the reason to `rm -rf app/data/generated` before trusting a local test run
+that is meant to exercise the fixture.
+
 ### The legacy archive — local only, historical
 
 The archive is JSON dumps of the retired API, one file per type. It is not
