@@ -1,0 +1,114 @@
+/*
+  The theme control: three radios drawn as a small segmented switch.
+
+  Radios rather than a cycling button, and the reason is not purity. Three
+  states behind one button means a reader who wants light has to guess how many
+  presses it takes, watch the page flash through dark on the way, and has no way
+  to see which state they are in without leaving it.
+
+  The native inputs stay in the document and are merely made invisible, so the
+  group keeps its keyboard behaviour — arrow keys move within it, Tab leaves it
+  — which is exactly right for one setting with three values and is a
+  surprising amount of work to rebuild on top of buttons.
+*/
+.theme-control fieldset {
+  border: 0;
+  display: flex;
+  gap: 1px;
+  margin: 0;
+  padding: 2px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.theme-control label {
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  height: 1.75rem;
+  width: 1.75rem;
+  border-radius: calc(var(--radius-md) - 2px);
+  color: var(--text-faint);
+  /*
+    So the clipped input below is positioned against its own label rather than
+    against whatever happens to be the nearest positioned ancestor. Without it
+    the inputs are laid out relative to the page, which works by accident and
+    stops working the moment anything above them gains a position.
+  */
+  position: relative;
+}
+
+.theme-control input {
+  /*
+    Not `display: none`, which removes it from the accessibility tree and from
+    the tab order along with it. One pixel, clipped, still focusable.
+  */
+  position: absolute;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.theme-control label:hover {
+  color: var(--text-muted);
+}
+
+.theme-control input:checked + .theme-icon {
+  color: var(--accent);
+}
+
+.theme-control label:has(input:checked) {
+  background: var(--surface-raised);
+  color: var(--accent);
+}
+
+/* The focus ring has to be drawn by the label, since the input is clipped. */
+.theme-control label:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/*
+  Drawn as text rather than as SVG files.
+
+  Three glyphs at this size is not worth three more network-visible assets and
+  an icon pipeline, and these particular characters are in every system font
+  that ships a symbol range. `currentColor` carries the state.
+*/
+.theme-icon {
+  font-size: 0.9375rem;
+  line-height: 1;
+  /*
+    The glyph is `aria-hidden` decoration and must not be a click target.
+
+    It sat on top of the clipped input and swallowed pointer events aimed at
+    it. A person clicking never noticed, because the click landed on the
+    `<label>` and a label forwards to its input — but anything aiming at the
+    control itself, which is to say assistive tooling and every automated
+    check, hit the span instead and got nothing. Found by a test that could not
+    press the button it was looking straight at.
+  */
+  pointer-events: none;
+}
+
+.theme-icon.is-system::before {
+  content: "◐";
+}
+
+.theme-icon.is-light::before {
+  content: "☀";
+}
+
+.theme-icon.is-dark::before {
+  content: "☾";
+}
+
+@media (max-width: 34rem) {
+  /* The header is tight on a phone; the switch keeps its hit area. */
+  .theme-control label {
+    height: 2rem;
+    width: 2rem;
+  }
+}

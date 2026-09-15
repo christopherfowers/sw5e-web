@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 
 import { AssetImage, MonogramPlate } from "~/components/media";
+import { PlatformIcon } from "~/components/platform-icon";
 import {
   getManifest,
   getSummaries,
@@ -175,6 +176,14 @@ export async function loader() {
         channels: group.channels.map((channel) => ({
           key: channel.key,
           url: channel.url,
+          /*
+            Carried through so the button can draw the service's own mark. It
+            comes from the platform rather than the document for the same
+            reason the label does: a mark is a claim about who is on the other
+            end of a link, and it has to come from the same closed set that
+            decides which hosts the link may use.
+          */
+          platform: channel.platform,
           label: channelLabel(channel.platform),
         })),
       })),
@@ -570,8 +579,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                         <a
                           href={channel.url}
                           rel="noopener noreferrer"
-                          className="button"
+                          className="button button-channel"
                         >
+                          <PlatformIcon platform={channel.platform} />
                           {channel.label}
                         </a>
                       </li>

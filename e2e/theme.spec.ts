@@ -116,9 +116,33 @@ test.describe("the theme control", () => {
     await page.goto("/");
 
     await page.locator(`${CONTROL} input[value="system"]`).focus();
-    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowLeft");
 
     await expect(page.locator(`${CONTROL} input[value="light"]`)).toBeChecked();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  });
+
+  /**
+   * And the stages run light to dark, left to right.
+   *
+   * Asserted through the arrow keys because that is the only place the order
+   * is observable behaviour rather than a detail of the markup. The control
+   * reads as a slider, so pressing right has to make the site darker — an
+   * order that put "system" at one end would be three buttons wearing a
+   * slider's clothes.
+   */
+  test("runs from light to dark, left to right", async ({ page }) => {
+    await page.goto("/");
+
+    const stages = page.locator(`${CONTROL} input`);
+    await expect(stages).toHaveCount(3);
+    await expect(stages.nth(0)).toHaveValue("light");
+    await expect(stages.nth(1)).toHaveValue("system");
+    await expect(stages.nth(2)).toHaveValue("dark");
+
+    await page.locator(`${CONTROL} input[value="system"]`).focus();
+    await page.keyboard.press("ArrowRight");
+
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   });
 });

@@ -175,9 +175,24 @@
   --space-7: 3rem;
   --space-8: 4rem;
 
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.875rem;
+  /*
+    Square, everywhere.
+ *
+    The palette study this site's colours came from — brass on a near-black
+    ground — carries no border-radius at all: every panel, button and plate in
+    it is a hard rectangle, and that turned out to be as much of why it read
+    as Star Wars as the gold was. Rounded corners are the house style of
+    software, and a rounded button under a slab serif reads as an app that has
+    been given a costume.
+
+    Kept as tokens set to zero rather than deleted from the forty-one rules
+    that use them. Three numbers is where this decision should live, and
+    somebody who wants a millimetre of softness back should be able to try it
+    in one place rather than reinstating it forty-one times.
+  */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
 
   --measure: 68ch;
   --page: 78rem;
@@ -1152,7 +1167,7 @@ main:focus {
 mark {
   background: var(--mark-bg);
   color: var(--mark-text);
-  border-radius: 2px;
+  border-radius: 0;
   padding: 0 0.0625rem;
 }
 
@@ -1304,7 +1319,7 @@ kbd {
   letter-spacing: 0.03em;
   line-height: 1.55;
   padding: 0.0625rem 0.4375rem;
-  border-radius: 999px;
+  border-radius: 0;
   white-space: nowrap;
   color: var(--hue-steel);
   background: color-mix(in oklab, currentColor var(--hue-fill), transparent);
@@ -1481,7 +1496,7 @@ kbd {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5625rem 1.125rem;
-  border-radius: 999px;
+  border-radius: 0;
   border: 1px solid var(--border-strong);
   background: var(--surface-raised);
   color: var(--text);
@@ -1805,35 +1820,35 @@ kbd {
 }
 
 /*
-  The theme control: three radios drawn as a small segmented switch.
+  The theme control: three stages, drawn as three lightsaber blades.
 
-  Radios rather than a cycling button, and the reason is not purity. Three
-  states behind one button means a reader who wants light has to guess how many
-  presses it takes, watch the page flash through dark on the way, and has no way
-  to see which state they are in without leaving it.
+  The first version was a segmented switch with a sun, a half-circle and a
+  moon in a system font, and it read as a weather widget bolted to the header.
+  These are the same three states and the same radio group underneath — what
+  changed is that the affordance now belongs to this setting rather than to
+  software in general.
 
-  The native inputs stay in the document and are merely made invisible, so the
-  group keeps its keyboard behaviour — arrow keys move within it, Tab leaves it
-  — which is exactly right for one setting with three values and is a
-  surprising amount of work to rebuild on top of buttons.
+  Left to right: light side, neither, dark side. Read as a slider, the marker
+  travels right as the site darkens, so the position carries the meaning before
+  anybody looks at a colour.
+
+  Square, like everything else. See the radius tokens.
 */
 .theme-control fieldset {
-  border: 0;
+  border: 1px solid var(--border);
   display: flex;
-  gap: 1px;
+  gap: 0;
   margin: 0;
-  padding: 2px;
+  padding: 0;
   background: var(--surface-sunken);
-  border-radius: var(--radius-md);
 }
 
 .theme-control label {
   cursor: pointer;
   display: grid;
   place-items: center;
-  height: 1.75rem;
+  height: 1.875rem;
   width: 1.75rem;
-  border-radius: calc(var(--radius-md) - 2px);
   color: var(--text-faint);
   /*
     So the clipped input below is positioned against its own label rather than
@@ -1842,6 +1857,12 @@ kbd {
     stops working the moment anything above them gains a position.
   */
   position: relative;
+  /* A hairline between stages, and none before the first. */
+  border-left: 1px solid var(--border);
+}
+
+.theme-control label:first-of-type {
+  border-left: 0;
 }
 
 .theme-control input {
@@ -1858,66 +1879,112 @@ kbd {
 }
 
 .theme-control label:hover {
-  color: var(--text-muted);
-}
-
-.theme-control input:checked + .theme-icon {
-  color: var(--accent);
+  background: var(--surface);
 }
 
 .theme-control label:has(input:checked) {
   background: var(--surface-raised);
-  color: var(--accent);
 }
 
 /* The focus ring has to be drawn by the label, since the input is clipped. */
 .theme-control label:has(input:focus-visible) {
   outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 /*
-  Drawn as text rather than as SVG files.
+  The blade.
 
-  Three glyphs at this size is not worth three more network-visible assets and
-  an icon pipeline, and these particular characters are in every system font
-  that ships a symbol range. `currentColor` carries the state.
+  `aria-hidden` decoration, so it must never be a click target: it sat over the
+  clipped input and swallowed pointer events aimed at it. A person never
+  noticed, because the click landed on the label and a label forwards to its
+  input — but anything aiming at the control itself got nothing.
 */
-.theme-icon {
-  font-size: 0.9375rem;
-  line-height: 1;
-  /*
-    The glyph is `aria-hidden` decoration and must not be a click target.
-
-    It sat on top of the clipped input and swallowed pointer events aimed at
-    it. A person clicking never noticed, because the click landed on the
-    `<label>` and a label forwards to its input — but anything aiming at the
-    control itself, which is to say assistive tooling and every automated
-    check, hit the span instead and got nothing. Found by a test that could not
-    press the button it was looking straight at.
-  */
+.theme-blade {
   pointer-events: none;
+  display: block;
 }
 
-.theme-icon.is-system::before {
-  content: "◐";
+/* The hilt is the same on every stage; only the blade above it changes. */
+.theme-hilt {
+  fill: var(--text-faint);
 }
 
-.theme-icon.is-light::before {
-  content: "☀";
+/*
+  Unlit until chosen. A row of three burning blades would say nothing about
+  which one is in force, which is the only thing this control has to say.
+*/
+.theme-beam {
+  fill: var(--border-strong);
 }
 
-.theme-icon.is-dark::before {
-  content: "☾";
+.theme-control label:hover .theme-beam {
+  fill: var(--text-faint);
+}
+
+.theme-control label:has(input:checked) .theme-hilt {
+  fill: var(--text-muted);
+}
+
+/*
+  Lit, in the colour of the side.
+
+  Blue for the light side and red for the dark are the two colours this setting
+  has agreed on for ninety years, and they are doing the work here that a label
+  would otherwise have to. The middle stage lights in the site's own gold: it
+  is a real choice — follow the system — rather than an absence, so it is lit
+  rather than left dark, and gold is neither side.
+
+  The glow is a drop shadow in the blade's own colour, which is what makes it
+  read as lit rather than merely coloured.
+*/
+.theme-control label:has(input[value="light"]:checked) .theme-beam {
+  fill: #5aa9e6;
+  filter: drop-shadow(0 0 2px #5aa9e6);
+}
+
+.theme-control label:has(input[value="system"]:checked) .theme-beam {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 2px var(--accent));
+}
+
+.theme-control label:has(input[value="dark"]:checked) .theme-beam {
+  fill: #e5484d;
+  filter: drop-shadow(0 0 2px #e5484d);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No animation here, but the glow is the kind of thing a reader who asks
+     for less movement is usually also asking for less of. */
+  .theme-beam {
+    filter: none !important;
+  }
 }
 
 @media (max-width: 34rem) {
   /* The header is tight on a phone; the switch keeps its hit area. */
   .theme-control label {
-    height: 2rem;
+    height: 2.125rem;
     width: 2rem;
   }
 }
+
+/*
+  A channel button carries its service's mark before its name.
+
+  The gap is set here rather than inherited from `.button` because the mark is
+  optical rather than textual: it wants slightly less room than a word would.
+*/
+.button-channel {
+  gap: 0.4375rem;
+}
+
+.platform-icon {
+  flex: none;
+  /* Tracks the label's type rather than needing tuning per placement. */
+  font-size: 1.05em;
+}
+
 
 .home-shelf .section-lede {
   margin-bottom: var(--space-4);
@@ -2963,7 +3030,7 @@ th[aria-sort="descending"] .sort-indicator {
   height: 2.25rem;
   padding: 0 0.625rem;
   border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  border-radius: 0;
   background: var(--surface-raised);
   color: var(--text);
   font-size: 0.8125rem;
