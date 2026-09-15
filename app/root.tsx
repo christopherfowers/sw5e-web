@@ -16,6 +16,7 @@ import {
   SkipLink,
 } from "./components/site-chrome";
 import { GroupRail } from "./components/site-nav";
+import { THEME_SCRIPT } from "./components/theme-control";
 import type { Route } from "./+types/root";
 import "./app.css";
 
@@ -58,6 +59,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        {/*
+          Replays the reader's theme before the first paint.
+
+          Without this the page renders in the system's theme and corrects
+          itself once React has hydrated — a white flash on every navigation
+          for anybody who chose dark, which is the one bug a theme toggle
+          reliably ships with.
+
+          Inline and synchronous on purpose. An external file would be a round
+          trip before anything could paint, and `defer` or `async` would run it
+          after the paint it exists to precede. It is a fixed string built at
+          module scope from a constant, not from anything a request carries,
+          so there is no path by which a reader's input reaches it.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body>
         {/*

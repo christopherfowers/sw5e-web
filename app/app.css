@@ -184,7 +184,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     /* Neutral near-black, with no hue in the ground at all.
      *
      * This was #0a0e14 — a blue-slate, and the house colour of every developer
@@ -260,6 +260,61 @@
   html {
     color-scheme: dark;
   }
+}
+
+/*
+ * The same palette again, for a reader who chose it rather than inheriting it.
+ *
+ * These 36 lines are a copy of the block above and that is not an oversight.
+ * CSS has no way to share one declaration list between a media query and an
+ * attribute selector, so a site that honours both the operating system and an
+ * explicit choice has to state the palette twice. The alternative is
+ * light-dark(), which would say each value once — and would mean rewriting
+ * every token in the palette at the same time as shipping a toggle, which is
+ * two risks taken together to save a duplication a test can hold.
+ *
+ * That test is `app/theme.test.ts`: it parses this file and fails if the two
+ * blocks stop naming the same tokens with the same values. A palette that
+ * drifts between "dark because the system said so" and "dark because I asked"
+ * is exactly the kind of fault nobody notices, because nobody looks at both.
+ */
+:root[data-theme="dark"] {
+  --bg: #08090a;
+  --bg-deep: #030405;
+  --surface: #131517;
+  --surface-raised: #1a1d20;
+  --surface-sunken: #0b0c0e;
+  --border: #262a2e;
+  --border-strong: #434a51;
+  --text: #ece9e3;
+  --text-muted: #a6a49e;
+  --text-faint: #86847f;
+  --brand: #e02a3a;
+  --brand-text: #ff6b76;
+  --brand-contrast: #ffffff;
+  --accent: #d2a04a;
+  --accent-hover: #e8bd6f;
+  --focus: #e8bd6f;
+  --mark-bg: #4a3610;
+  --mark-text: #f0cf86;
+  --hue-amber: #dca94a;
+  --hue-clay: #d18f62;
+  --hue-cyan: #4aa8bd;
+  --hue-green: #5fbe79;
+  --hue-indigo: #8492e8;
+  --hue-red: #e5686f;
+  --hue-rose: #d97099;
+  --hue-steel: #9ba7b4;
+  --hue-teal: #45b69e;
+  --hue-violet: #a181e8;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.55), 0 24px 48px rgb(0 0 0 / 0.55);
+  --hue-fill: 16%;
+  --hue-edge: 42%;
+  --hero-veil-near: 93%;
+  --hero-veil-mid: 80%;
+  --hero-veil-far: 72%;
 }
 
 /* ===================================================================== base */
@@ -1747,6 +1802,121 @@ kbd {
   list-style: none;
   margin: var(--space-2) 0 0;
   padding: 0;
+}
+
+/*
+  The theme control: three radios drawn as a small segmented switch.
+
+  Radios rather than a cycling button, and the reason is not purity. Three
+  states behind one button means a reader who wants light has to guess how many
+  presses it takes, watch the page flash through dark on the way, and has no way
+  to see which state they are in without leaving it.
+
+  The native inputs stay in the document and are merely made invisible, so the
+  group keeps its keyboard behaviour — arrow keys move within it, Tab leaves it
+  — which is exactly right for one setting with three values and is a
+  surprising amount of work to rebuild on top of buttons.
+*/
+.theme-control fieldset {
+  border: 0;
+  display: flex;
+  gap: 1px;
+  margin: 0;
+  padding: 2px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.theme-control label {
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  height: 1.75rem;
+  width: 1.75rem;
+  border-radius: calc(var(--radius-md) - 2px);
+  color: var(--text-faint);
+  /*
+    So the clipped input below is positioned against its own label rather than
+    against whatever happens to be the nearest positioned ancestor. Without it
+    the inputs are laid out relative to the page, which works by accident and
+    stops working the moment anything above them gains a position.
+  */
+  position: relative;
+}
+
+.theme-control input {
+  /*
+    Not `display: none`, which removes it from the accessibility tree and from
+    the tab order along with it. One pixel, clipped, still focusable.
+  */
+  position: absolute;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.theme-control label:hover {
+  color: var(--text-muted);
+}
+
+.theme-control input:checked + .theme-icon {
+  color: var(--accent);
+}
+
+.theme-control label:has(input:checked) {
+  background: var(--surface-raised);
+  color: var(--accent);
+}
+
+/* The focus ring has to be drawn by the label, since the input is clipped. */
+.theme-control label:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/*
+  Drawn as text rather than as SVG files.
+
+  Three glyphs at this size is not worth three more network-visible assets and
+  an icon pipeline, and these particular characters are in every system font
+  that ships a symbol range. `currentColor` carries the state.
+*/
+.theme-icon {
+  font-size: 0.9375rem;
+  line-height: 1;
+  /*
+    The glyph is `aria-hidden` decoration and must not be a click target.
+
+    It sat on top of the clipped input and swallowed pointer events aimed at
+    it. A person clicking never noticed, because the click landed on the
+    `<label>` and a label forwards to its input — but anything aiming at the
+    control itself, which is to say assistive tooling and every automated
+    check, hit the span instead and got nothing. Found by a test that could not
+    press the button it was looking straight at.
+  */
+  pointer-events: none;
+}
+
+.theme-icon.is-system::before {
+  content: "◐";
+}
+
+.theme-icon.is-light::before {
+  content: "☀";
+}
+
+.theme-icon.is-dark::before {
+  content: "☾";
+}
+
+@media (max-width: 34rem) {
+  /* The header is tight on a phone; the switch keeps its hit area. */
+  .theme-control label {
+    height: 2rem;
+    width: 2rem;
+  }
 }
 
 .home-shelf .section-lede {
