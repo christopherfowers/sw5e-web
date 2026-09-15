@@ -150,10 +150,28 @@ test.describe("pre-rendered content routes", () => {
 });
 
 test.describe("browsing", () => {
-  test("the home page leads into every content type", async ({ page }) => {
+  /**
+   * A reader can still get from the front page into a content type — through
+   * the header, which is where that job lives now.
+   *
+   * This used to click a card in the front page's category grid. The grid drew
+   * the same six subjects the header offers from every page of the site, so it
+   * has gone; the journey it protected has not. Rewritten rather than deleted,
+   * because "somebody landing on the home page can reach the creatures" is the
+   * claim worth holding, and it would be quietly lost by deleting the test that
+   * happened to make it through a card.
+   *
+   * The statblocks group is a plain link rather than a disclosure, because it
+   * leads to exactly one place — see `soleDestination`. So there is no menu to
+   * open here, and a change that gave the group a second destination would fail
+   * this test loudly, which is the right way to find out.
+   */
+  test("the home page leads into a content type through the header", async ({
+    page,
+  }) => {
     await page.goto("/");
 
-    await page.getByRole("link", { name: /^Creatures/ }).first().click();
+    await page.getByRole("link", { name: "NPC statblocks" }).click();
 
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Creatures");
   });

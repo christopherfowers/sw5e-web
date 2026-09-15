@@ -269,12 +269,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       </section>
 
       <div className="home-section">
+        {/*
+          The command in this notice has to be one the reader can actually run.
+
+          It said "against the legacy archive", which is a private directory
+          almost nobody reading it has — so the honest next step looked
+          impossible and the sample looked broken instead of small. The content
+          repository is public and sits beside this one, and building from it
+          produces the whole library.
+
+          Worth knowing while looking at a sample build: the shipped
+          `book-contents.json` lists every chapter of every book, while the rest
+          of the sample is four items per type. So a book's rail offers chapters
+          whose pages are not in the sample and answers 404. That is the sample
+          being small rather than the site being wrong, and the command below is
+          the cure.
+        */}
         {curated ? (
           <p className="notice">
             This build is showing the small sample dataset that ships with the
-            repository. Run{" "}
-            <code>node scripts/build-content-fixture.mjs</code> against the
-            legacy archive to render the full library.
+            repository, so most links lead to pages it does not contain. Run{" "}
+            <code>
+              node scripts/build-content-fixture.mjs
+              --content=../sw5e-database/content --out=app/data/generated
+            </code>{" "}
+            to render the full library from the content repository.
           </p>
         ) : null}
 
