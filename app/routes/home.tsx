@@ -445,72 +445,29 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </section>
 
         {/*
-          Then how to play. The books above say what this is made of; this says
-          where to start, and it is still ahead of the lists — the page opened
-          with twenty-seven category cards once, which answers "what do you
-          have" before anybody has been told what the game is.
+          The optional rules, which are the only thing left of what used to be
+          a "How to play" section here.
+
+          That section reproduced all fifteen chapters of the Player's
+          Handbook, grouped by heading. It was the right answer while a book's
+          own page was a grid of content-type counts and there was nowhere else
+          to read a table of contents. Now the handbook's page is its chapters,
+          and the hero's first button goes straight there — so the front page
+          was saying the same thing twice, at length, above the books it was
+          describing.
+
+          The variants stay because they belong to no single book's path: they
+          are options a table turns on, spread across the corpus, and the front
+          page is the only place that speaks for the whole of it.
         */}
-        <section className="home-start" aria-labelledby="how-to-play">
-          <h2 className="section-heading" id="how-to-play">
-            How to play
-          </h2>
-          <p className="section-lede">
-            The Player&rsquo;s Handbook is the whole game: how to make a
-            character, how to fight, how to cast, and what the dice mean. Read
-            it in order, or jump to the part you need.
+        {variantRules > 0 ? (
+          <p className="home-variants">
+            <Link to="/rules">
+              {variantRules.toLocaleString("en-US")} optional and variant rules
+            </Link>{" "}
+            a table can turn on.
           </p>
-
-          {/*
-            Grouped, and unnumbered. Fifteen links in a row is a list somebody
-            scans and gives up on; four headings is a shape they can see before
-            they start. The numbers are gone with the same reasoning — "9" in
-            front of Combat is a page reference to a book nobody reading this is
-            holding, and it invites the question of why the list starts at a
-            chapter that is not one.
-          */}
-          {steps.map((step) => (
-            <section
-              key={step.group}
-              className="path-step"
-              aria-labelledby={`step-${step.group.replace(/\s+/g, "-").toLowerCase()}`}
-            >
-              <h3
-                className="path-step-heading"
-                id={`step-${step.group.replace(/\s+/g, "-").toLowerCase()}`}
-              >
-                {step.group}
-              </h3>
-              <ul className="chapter-list">
-                {step.chapters.map((chapter) => (
-                  <li key={chapter.slug}>
-                    <Link className="chapter-link" to={`/rules/${chapter.slug}`}>
-                      <span className="chapter-name">{chapter.name}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-
-          {/*
-            The optional rules, at the foot of the path rather than under the
-            books where they used to sit.
-
-            They are rules, so they belong with how to play — but they are
-            optional, and a reader being walked down a path should reach the end
-            of it before being offered things a table may or may not have turned
-            on.
-          */}
-          {variantRules > 0 ? (
-            <p className="home-variants">
-              <Link to="/rules">
-                {variantRules.toLocaleString("en-US")} optional and variant
-                rules
-              </Link>{" "}
-              a table can turn on.
-            </p>
-          ) : null}
-        </section>
+        ) : null}
 
         {/*
           A labelled region like the two sections above it, which it was not
