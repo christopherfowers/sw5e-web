@@ -159,9 +159,11 @@
    * Light and dark need different amounts: the photograph is a pale wooden
    * table, so it needs veiling to sit under dark text and almost none to sit
    * under light text. */
-  --hero-veil-near: 96%;
-  --hero-veil-mid: 76%;
-  --hero-veil-far: 26%;
+  /* Even enough that the photograph reads across the whole band rather than
+     fading out of one side of it. */
+  --hero-veil-near: 94%;
+  --hero-veil-mid: 84%;
+  --hero-veil-far: 78%;
 
   /* Rhythm. One scale, used everywhere, so a page has a beat. */
   --space-1: 0.25rem;
@@ -250,9 +252,9 @@
     --hue-fill: 16%;
     --hue-edge: 42%;
 
-    --hero-veil-near: 100%;
-    --hero-veil-mid: 93%;
-    --hero-veil-far: 62%;
+    --hero-veil-near: 93%;
+    --hero-veil-mid: 80%;
+    --hero-veil-far: 72%;
   }
 
   html {
@@ -1331,7 +1333,9 @@ kbd {
   isolation: isolate;
   overflow: hidden;
   background: var(--bg-deep);
-  border-bottom: 1px solid var(--border);
+  /* The edge the band needs to be a band. Stronger than a surface divider,
+     because this is where a photograph stops and a page starts. */
+  border-bottom: 1px solid var(--border-strong);
 }
 
 .home-hero-media {
@@ -1344,21 +1348,34 @@ kbd {
   z-index: -2;
 }
 
-/* The photograph is a ground, not a subject: it has to hand every bit of
- * contrast back to the text sitting on it, in both themes. */
+/*
+  The photograph is a ground, not a subject: it hands every bit of contrast
+  back to the text sitting on it, in both themes.
+
+  It is also a band, and it used not to be. There was a second gradient here
+  fading the whole thing into `--bg` from the bottom, which meant the hero
+  dissolved into the page rather than ending at it — no edge, no boundary, just
+  a picture that ran out. On the old blue-slate ground that read as a soft
+  transition. On a true black one it reads as a grey smudge in the corner of a
+  black page, because the photograph is a pale one and the ground stopped
+  meeting it halfway.
+
+  So the fade is gone, the veil is even enough across the width that the
+  photograph is present rather than trailing off, and the band ends at a line.
+  The picture is of dice and a character sheet on a table, which is what the
+  game looks like; it was worth showing.
+*/
 .home-hero::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background:
-    linear-gradient(
-      100deg,
-      color-mix(in oklab, var(--bg) var(--hero-veil-near), transparent) 0%,
-      color-mix(in oklab, var(--bg) var(--hero-veil-mid), transparent) 45%,
-      color-mix(in oklab, var(--bg) var(--hero-veil-far), transparent) 100%
-    ),
-    linear-gradient(to top, var(--bg) 0%, transparent 60%);
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--bg) var(--hero-veil-near), transparent) 0%,
+    color-mix(in oklab, var(--bg) var(--hero-veil-mid), transparent) 46%,
+    color-mix(in oklab, var(--bg) var(--hero-veil-far), transparent) 100%
+  );
 }
 
 .home-hero-inner {
