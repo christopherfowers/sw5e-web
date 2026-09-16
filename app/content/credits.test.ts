@@ -20,7 +20,7 @@ import {
  *
  * A stub would be worse than useless here. The failures worth catching are a
  * name lost from a roster, a specific contribution flattened into a bare
- * listing, and a picture rendered with no citation behind it — and every one
+ * listing, and a picture rendered with no citation behind it, and every one
  * of those is a fact about the real document. A test built on a fixture of
  * three invented people would pass through all three.
  */
@@ -106,8 +106,8 @@ describe("the credits document", () => {
   /**
    * Two patron names reached the archive with an accented letter destroyed by
    * the 2022 scrape. The assertion is on the repaired spelling rather than on
-   * the absence of U+FFFD, so an import that silently dropped the accent —
-   * which would pass a replacement-character check — still fails.
+   * the absence of U+FFFD, so an import that silently dropped the accent,
+   * which would pass a replacement-character check, still fails.
    */
   it.each(["César Díaz", "João Lira"])("renders %s with its accents", (name) => {
     expect(names("patron")).toContain(name);

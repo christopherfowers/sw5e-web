@@ -41,8 +41,8 @@ const CONTENT_TYPES = [
  * It would be tempting to leave these out and let the SPA fallback serve them,
  * since none of them has any content to prerender. That would be a bug: the
  * fallback is wired to nginx's `error_page 404`, so every one of these
- * addresses would answer with an HTTP 404 that happens to render correctly —
- * fine in a browser, wrong to anything reading the status line, and wrong in a
+ * addresses would answer with an HTTP 404 that happens to render correctly.
+ * Fine in a browser, wrong to anything reading the status line, and wrong in a
  * shared link.
  *
  * What gets written to disk for each is the signed-out skeleton: the account
@@ -61,8 +61,8 @@ const ACCOUNT_PATHS = [
   "/account/security",
   "/account/contributions",
 
-  // Reports. Prerendered like the rest of the area, and — like the rest of it
-  // — as a signed-out skeleton: the page has no loader, so nothing about a
+  // Reports. Prerendered like the rest of the area, and, like the rest of it,
+  // as a signed-out skeleton: the page has no loader, so nothing about a
   // moderation queue or anybody's reports is written into the static file.
   //
   // Adding this raised the prerendered route count by one. The container job in
@@ -76,7 +76,7 @@ const ACCOUNT_PATHS = [
   // correctly in a browser.
   //
   // What is written to disk for each is the signed-out skeleton and nothing
-  // else. None has a loader — see `app/routes/account-people.tsx` — so no
+  // else. None has a loader, see `app/routes/account-people.tsx`, so no
   // account directory and no audit trail can reach a static file. That is
   // load-bearing here in a way it is not on `/account/passkeys`: this is the
   // only part of the site that ever sees other people's email addresses.
@@ -84,7 +84,7 @@ const ACCOUNT_PATHS = [
   // `/account/people/manage` is one address rather than one per account, and it
   // has to be. There is no bounded list of accounts to enumerate at build time,
   // and an account directory is the last thing a build machine should be
-  // walking, so `/account/people/<id>` could not be prerendered at all — it
+  // walking, so `/account/people/<id>` could not be prerendered at all. It
   // would render correctly in a browser while answering 404 to everything that
   // reads a status line. The account travels in the query string instead, which
   // does not change which file nginx serves. Only ever an opaque GUID: the
@@ -107,7 +107,7 @@ const ACCOUNT_PATHS = [
  * gets written to disk is a heading and nothing else.
  *
  * Three routes rather than one per document. The document being edited travels
- * in the query string — `/authoring/edit?type=class&key=guardian` — which is
+ * in the query string, `/authoring/edit?type=class&key=guardian`, which is
  * what makes it possible to open the editor on something that does not exist
  * yet, and what keeps this list from growing with the corpus. A query string
  * does not change which file is served.
@@ -153,13 +153,13 @@ export default {
    * Every content page is prerendered: the home page, the twenty-two type
    * indexes, the search page, and one page per item. That is what makes the library
    * visible to crawlers that do not run JavaScript, and it is also what keeps
-   * the dataset out of the browser — each page ships only its own data,
+   * the dataset out of the browser. Each page ships only its own data,
    * serialized into its own static HTML.
    *
    * Prerendering is serial, and is left that way. It is now almost the whole
-   * build — the canonical set went from 132 documents to 1,377 when the class
+   * build (the canonical set went from 132 documents to 1,377 when the class
    * graph landed, and each one costs two requests against a preview server, an
-   * HTML render and a data payload — so raising React Router's `concurrency`
+   * HTML render and a data payload) so raising React Router's `concurrency`
    * off its default of 1 is the obvious lever. It was tried and put back: on
    * Windows the prerender client issues each request over its own socket with
    * `Connection: close`, and running four at once made the very first one fail
@@ -181,7 +181,7 @@ export default {
       "/sources",
       "/credits",
 
-      // The customization options hub — one address standing for the seven
+      // The customization options hub. One address standing for the seven
       // types the Player's Handbook introduces in that chapter. It is a menu
       // entry, so it needs a file: without one it would fall through to
       // nginx's SPA fallback, which is wired to `error_page 404`, and the
@@ -196,7 +196,7 @@ export default {
       ...ACCOUNT_PATHS,
       ...AUTHORING_PATHS,
 
-      // The subcategory views — `/weapons`, `/armor`, `/other-equipment`,
+      // The subcategory views. `/weapons`, `/armor`, `/other-equipment`,
       // `/force-powers`, `/tech-powers`, `/starship-weapons`, `/variant-rules`
       // and `/expanded-rules`. Read from the registry rather than listed, so
       // this list cannot fall out of step with
@@ -205,14 +205,14 @@ export default {
       // These are the reason the views are paths at all. A filtered list is
       // only a real address on this site if it has a file: `?category=weapon`
       // would be answered by the unfiltered `/equipment/index.html`, so
-      // everything that does not run the script — a crawler, a monitor, a
-      // shared link opened with JavaScript off — would be handed all 505 rows
+      // everything that does not run the script (a crawler, a monitor, a
+      // shared link opened with JavaScript off) would be handed all 505 rows
       // by an address claiming 215. Six more files buys six addresses that are
       // true before any script runs.
       //
       // Adding these raised the prerendered route count by six, and then by
       // two more when `/variant-rules` and `/expanded-rules` cut the rule text
-      // the same way — the header names both, and neither is a content type.
+      // the same way. The header names both, and neither is a content type.
       // The container job in .github/workflows/ci.yml adds a fixed number of
       // pages that do not come from content to the document count, and that
       // number went from 51 to 57 with this block and from 58 to 60 with the
@@ -234,9 +234,9 @@ export default {
 
     /*
       One type index each, except where a subcategory view has taken the type's
-      own segment. `/class-improvements` is a view now — the class-only cut of
+      own segment. `/class-improvements` is a view now (the class-only cut of
       a type that holds three unrelated kinds, matching the three pages the
-      previous site published — and a static route outranks `:type`, so the
+      previous site published) and a static route outranks `:type`, so the
       thirty-row index has no address to be prerendered at. Pushing it anyway
       would render the same view twice under the same filename, which is a
       wasted minute of a serial prerender and a listing that lies about what

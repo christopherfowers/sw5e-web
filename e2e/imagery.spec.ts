@@ -9,7 +9,7 @@ import { expect, test } from "@playwright/test";
  * before it loads, and that a gallery of 141 portraits does not quietly become
  * a multi-megabyte page.
  *
- * Every path used here exists in both datasets — the committed fixture CI
+ * Every path used here exists in both datasets. The committed fixture CI
  * builds from and the full archive-derived set a maintainer builds locally.
  */
 
@@ -22,7 +22,7 @@ const THUMBNAIL_BUDGET = 40 * 1024;
  *
  * The headroom is new, and it is worth saying why rather than letting the
  * number drift. Putting an account control in the header added about 900 bytes
- * of CSS to every page of the site — and the budget, written as a flat
+ * of CSS to every page of the site, and the budget, written as a flat
  * megabyte, happened to sit within a kilobyte of the measured total, so *any*
  * site-wide addition would have broken it. Raising it by an ounce rather than
  * shaving 900 bytes off a header keeps the test measuring what it was written
@@ -157,8 +157,8 @@ test.describe("what a species index actually costs", () => {
       try {
         body = await response.body();
       } catch {
-        // A response whose body the browser did not keep — a redirect, or one
-        // served from the memory cache — contributes nothing to measure.
+        // A response whose body the browser did not keep (a redirect, or one
+        // served from the memory cache) contributes nothing to measure.
         return;
       }
       total += body.length;

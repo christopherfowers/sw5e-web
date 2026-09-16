@@ -17,7 +17,7 @@
  * where it happened, in its own sentence.
  *
  * **Nothing is rendered as markup.** These documents are the site's rules text
- * and are markdown, and it is tempting to render it — but the whole point of
+ * and are markdown, and it is tempting to render it, but the whole point of
  * this view is to show the difference between two versions of the *source*, and
  * a rendered version hides exactly the characters an editor is most likely to
  * have got wrong. Everything below is a text node.
@@ -123,8 +123,8 @@ export interface DocumentDiffProps {
  * The changes between two documents.
  *
  * "No changes" is a real answer with a real sentence, not a blank area. A
- * revision that changed nothing happens — a revert that restored what was
- * already there, a save with a whitespace difference the diff normalised away —
+ * revision that changed nothing happens (a revert that restored what was
+ * already there, a save with a whitespace difference the diff normalised away)
  * and a panel that simply drew nothing would read as a page that failed.
  */
 export function DocumentDiff({

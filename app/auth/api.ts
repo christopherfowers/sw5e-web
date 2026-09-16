@@ -20,7 +20,7 @@
  *
  * **The session cookie is never read here.** It is HttpOnly, so JavaScript
  * cannot see it, and code that tries teaches the next reader that the cookie
- * is readable. `getCurrentUser()` — a round trip — is how this client learns
+ * is readable. `getCurrentUser()`, a round trip, is how this client learns
  * whether it has a session.
  *
  * ## Cross-site request protection, and why there is no token in this file
@@ -33,8 +33,8 @@
  * foreign `Origin` answers 403, and the site's own origin answers 200.
  *
  * The browser writes both of those headers itself on every state-changing
- * fetch, and script cannot forge or suppress either — they are forbidden header
- * names. So a same-origin client has nothing to do, which is the whole appeal
+ * fetch, and script cannot forge or suppress either. They are forbidden header
+ * names, so a same-origin client has nothing to do, which is the whole appeal
  * of the scheme. A readable CSRF cookie would only hand JavaScript a credential
  * to look after, and buy nothing in exchange: the case double-submit is usually
  * defended for, a hostile same-site subdomain, is covered here too, because a
@@ -97,10 +97,10 @@ function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
  * Who the browser is, according to the server.
  *
  * `null` means "definitely nobody": a 401, which is the API's documented
- * answer for an unauthenticated caller — bodiless, since the cookie scheme
+ * answer for an unauthenticated caller. Bodiless, since the cookie scheme
  * challenges before any handler runs. Every other failure is re-thrown,
  * because "the service is down" and "you are signed out" must not look the
- * same to the caller — treating an outage as a sign-out would throw a
+ * same to the caller. Treating an outage as a sign-out would throw a
  * signed-in reader back to the sign-in page for a network blip.
  */
 export async function getCurrentUser(signal?: AbortSignal): Promise<CurrentUser | null> {
@@ -125,8 +125,8 @@ export async function logout(): Promise<void> {
  * The two guarded endpoints are the two an anonymous stranger can use to make
  * this service do expensive things: create rows, and send mail. `withChallenge`
  * attempts the request plainly and only does the work if the service refuses
- * and says that is why, so nothing is spent while the gate is switched off —
- * see `app/auth/challenge.ts` for why that trade is the right way round.
+ * and says that is why, so nothing is spent while the gate is switched off.
+ * See `app/auth/challenge.ts` for why that trade is the right way round.
  *
  * `onProgress` is optional and exists so a form can say "working…" through a
  * solve that takes a noticeable moment. A caller that does not pass it gets the
@@ -160,7 +160,7 @@ export function verifyEmail(email: string, token: string): Promise<VerifyEmailRe
 /**
  * Asks for a one-time code to be emailed to `email`.
  *
- * The answer is a 202 for every address the service will parse — registered,
+ * The answer is a 202 for every address the service will parse. Registered,
  * unregistered, or already over its budget of codes for the last quarter hour.
  * A caller that tries to read anything else out of it has misunderstood the
  * endpoint; see `EmailCodeResponse`.
@@ -190,8 +190,8 @@ export function requestSignInCode(
  * Both halves are required and both are checked: a code is issued for one
  * address, and offering it with another fails the same way a wrong code does.
  *
- * A 401 is a real answer rather than a bug — the same 401 for every possible
- * reason, by design — so callers report it as "that code was not accepted" and
+ * A 401 is a real answer rather than a bug (the same 401 for every possible
+ * reason, by design) so callers report it as "that code was not accepted" and
  * must not try to say which of the reasons applied. `getCurrentUser` is the
  * only place in this module where a 401 is converted into a value instead of
  * being thrown.
@@ -264,7 +264,7 @@ export function removePasskey(id: string): Promise<PasskeyRemoveResponse> {
  * Separate endpoints from the sign-in pair above, and separate for a reason
  * worth stating where the calls are: these require a session and cannot create
  * one, so neither is a route into an account. What they change is the claim on
- * the cookie the caller already holds — see the guard, which is the only place
+ * the cookie the caller already holds. See the guard, which is the only place
  * that offers them.
  *
  * The begin call names the signed-in account server-side, so the browser

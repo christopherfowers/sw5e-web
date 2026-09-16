@@ -7,7 +7,7 @@
  * A character sheet's cover is its first page. Nothing else would do: a generic
  * document icon tells a reader nothing, and these sit on the front page beside
  * five book covers that are actual artwork. A letter page is 612x792 and a book
- * cover is drawn at 352x455 — the same ratio to within a pixel — so a rendered
+ * cover is drawn at 352x455, the same ratio to within a pixel, so a rendered
  * first page needs no cropping to share the shelf's form factor.
  *
  * ## Why this is a script and not part of the build
@@ -15,7 +15,7 @@
  * Same trade as `build-image-assets.mjs`, which this deliberately mirrors. It
  * runs when the sheets change, which is close to never, and the output is
  * committed so a clean clone builds without it. Rendering PDF needs poppler and
- * ImageMagick — system tools, not npm packages — and adding a native-binary
+ * ImageMagick (system tools, not npm packages) and adding a native-binary
  * dependency to every `npm ci` in CI to serve a script CI never runs is a bad
  * trade.
  *
@@ -28,8 +28,8 @@
  *
  * The same ladder the book covers use, so the two rows request comparable
  * bytes at comparable widths. Dimensions are in the file name because the
- * renderer parses them back out to reserve the image's space before it loads —
- * see `app/content/imagery.ts`.
+ * renderer parses them back out to reserve the image's space before it loads.
+ * See `app/content/imagery.ts`.
  */
 
 import { execFileSync } from "node:child_process";

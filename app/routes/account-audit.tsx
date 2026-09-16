@@ -6,8 +6,8 @@
  *
  * The per-account history on `/account/people` answers "how did *this* account
  * come to be like this", which is the question somebody disputing a decision
- * asks. This answers a different one — "what has been done lately", and "what
- * has this administrator done" — which is the question asked when an
+ * asks. This answers a different one ("what has been done lately", and "what
+ * has this administrator done") which is the question asked when an
  * administrator's account is believed to be compromised, and which cannot be
  * asked from a page you reach by first finding the person.
  *
@@ -54,8 +54,8 @@ export function meta() {
  * What the filter row offers.
  *
  * Built from the taxonomy rather than written out beside it, so an action added
- * to `ADMINISTRATIVE_ACTIONS` cannot end up being one nobody can filter for —
- * a failure that would look like an empty list rather than like a mistake.
+ * to `ADMINISTRATIVE_ACTIONS` cannot end up being one nobody can filter for.
+ * A failure that would look like an empty list rather than like a mistake.
  */
 const ACTION_LABEL: Record<AdministrativeActionKind, string> = {
   "roles-changed": "Role changes",
@@ -116,8 +116,8 @@ function Log() {
       <h2 id="audit-heading">Audit log</h2>
       <p className="account-section-lede">
         Everything administrators have done to accounts, newest first. Nothing
-        here can be edited or removed — the database refuses those statements
-        outright — which is what makes it worth reading.
+        here can be edited or removed. The database refuses those statements
+        outright. Which is what makes it worth reading.
       </p>
 
       <div className="audit-views" role="group" aria-label="Which actions to show">

@@ -5,7 +5,7 @@
  * The same rule `tests/auth-api-contract.ts` was rebuilt around: a fixture is
  * only worth having if it models the *server*. The moment it becomes a model of
  * the client it stops being able to fail, and both suites go green while
- * disagreeing about the wire. So this one enforces what the service enforces,
+ * disagreeing about the wire, so this one enforces what the service enforces,
  * even where enforcing it makes tests harder to write:
  *
  *   - an anonymous caller gets a bodiless 401, which is what the cookie scheme
@@ -19,14 +19,14 @@
  *     that let a contributor publish would let a client ship that offers a
  *     button answering 403
  *   - saving a draft silently recaptures its base revision, exactly as the
- *     service does — which is why publishing, not saving, is what refuses
+ *     service does. Which is why publishing, not saving, is what refuses
  *   - publishing a draft whose base is no longer the newest revision is refused
  *     with `409` and `code: "draft-stale"`, carrying **nothing else**: no
  *     current revision id and no current document, because the real one carries
  *     neither and a client that assumed otherwise would work only here
  *
  * It records every call, because most of what these tests assert is about the
- * request rather than the reply — above all that a client which must not reach
+ * request rather than the reply. Above all that a client which must not reach
  * this API did not reach it.
  */
 
@@ -95,8 +95,8 @@ export interface AuthoringStubOptions {
    * Refuses a document, as the schema validator would.
    *
    * Answering a non-empty array makes the write fail with 400,
-   * `code: "schema-violation"` and those strings as `schemaErrors` — in the
-   * validator's real format, `{pointer}: {keyword} — {message}`, so a test
+   * `code: "schema-violation"` and those strings as `schemaErrors` (in the
+   * validator's real format, `{pointer}: {keyword}) {message}`, so a test
    * proving errors land on the right control is proving it against the shape
    * the service actually sends.
    */
@@ -291,7 +291,7 @@ export class AuthoringApiStub {
    *
    * Rebuilt field by field rather than by deleting two keys off a copy, so that
    * a field added to the full revision does not silently start appearing in the
-   * summary — the two shapes differ on the wire and a fixture that let them
+   * summary. The two shapes differ on the wire and a fixture that let them
    * converge would stop being able to catch a client reading the wrong one.
    */
   private summary(revision: StoredRevision): RevisionSummary {
@@ -520,7 +520,7 @@ export class AuthoringApiStub {
       /*
         Notices ride along with the revision summary, exactly as the service
         sends them: the same nine fields, flat, plus `notices`. Always present
-        and usually empty — a stub that omitted the key when there was nothing
+        and usually empty. A stub that omitted the key when there was nothing
         to say would let a client that reads `.notices.length` pass here and
         throw against the real service on its very first clean publish.
       */
@@ -619,8 +619,8 @@ export function revision(overrides: Partial<StoredRevision> = {}): StoredRevisio
  * One `fetch` that serves all four surfaces this feature touches.
  *
  * The account half is the real contract fixture, so the session still resolves
- * the way it does everywhere else in this suite — through a genuine
- * `GET /api/auth/me` — rather than being injected. Anything outside the four
+ * the way it does everywhere else in this suite, through a genuine
+ * `GET /api/auth/me`, rather than being injected. Anything outside the four
  * prefixes throws, which is what keeps "a request nobody expected" a loud
  * failure rather than a silent one.
  */
@@ -641,7 +641,7 @@ export function serveAuthoring(
      * The authoring prefix is tested first, and that ordering is the point:
      * `/api/authoring` also begins with `/api/auth`. Dispatching on the shorter
      * prefix first sent every authoring request to the account fixture, which
-     * answered "no such endpoint" — a 404 that looked exactly like a document
+     * answered "no such endpoint". A 404 that looked exactly like a document
      * that did not exist. The account prefix is written with its trailing slash
      * for the same reason.
      */

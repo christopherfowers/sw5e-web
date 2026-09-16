@@ -83,7 +83,7 @@ test.describe("the header control", () => {
    *
    * The guard already carried a destination for somebody bounced off a page
    * they could not see. Pressing Sign in from the header carried nothing, so
-   * a reader browsing the rules was put on the account page — a screen they
+   * a reader browsing the rules was put on the account page. A screen they
    * had not asked for, having done nothing but sign in.
    *
    * Asserted from a real content page rather than from the home page, because
@@ -154,8 +154,8 @@ test.describe("passkeys, end to end", () => {
   });
 
   test("an enrolled passkey can be revoked", async ({ page, context }) => {
-    // Two credentials, because the server refuses to remove the last one —
-    // see the test below. A single-credential fixture here would be asserting
+    // Two credentials, because the server refuses to remove the last one.
+    // See the test below. A single-credential fixture here would be asserting
     // the wrong rule.
     const contract = await serveAccountApi(page, context, {
       session: user({
@@ -375,7 +375,7 @@ test.describe("registration", () => {
   }) => {
     // The whole point of the enrolment ticket, end to end. There is no session
     // at any point here: verifying does not create one, and the account area
-    // is guarded — so if this page did not run the ceremony itself, a new
+    // is guarded, so if this page did not run the ceremony itself, a new
     // account could never get its first credential.
     const contract = await serveAccountApi(page, context, { session: null });
     await attachVirtualAuthenticator(page);
@@ -426,7 +426,7 @@ test.describe("registration", () => {
 
 test.describe("signing in with an emailed code", () => {
   /**
-   * The path that exists for the machines a passkey cannot reach — a shared
+   * The path that exists for the machines a passkey cannot reach. A shared
    * library desktop, an older computer with no platform authenticator, a
    * managed laptop whose policy forbids enrolling one. Worth running in a real
    * browser rather than only in jsdom, because the whole flow is four screens
@@ -464,7 +464,7 @@ test.describe("signing in with an emailed code", () => {
 
     await expect(page.getByRole("alert")).toContainText(/not accepted/i);
     // Cleared, so the next attempt does not start with a selection and a
-    // delete — and still on the same step, not thrown back to the beginning.
+    // delete, and still on the same step, not thrown back to the beginning.
     await expect(page.getByLabel(/six-digit code/i)).toHaveValue("");
     await expect(page).toHaveURL(/\/sign-in/);
 
@@ -497,7 +497,7 @@ test.describe("signing in with an emailed code", () => {
       page.getByRole("heading", { level: 1, name: /one more step/i }),
     ).toBeVisible();
 
-    // Back into the emailed-code path, not into the passkey path — which is a
+    // Back into the emailed-code path, not into the passkey path. Which is a
     // dead end for exactly the readers who chose this door.
     await page.getByRole("button", { name: /start over/i }).click();
     await expect(

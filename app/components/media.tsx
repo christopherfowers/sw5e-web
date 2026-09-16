@@ -3,8 +3,8 @@
  *
  * Two rules hold everywhere in here.
  *
- * An `<img>` is only ever emitted for an asset this build actually contains —
- * `app/content/imagery.ts` returns `null` rather than a guessed path — so a
+ * An `<img>` is only ever emitted for an asset this build actually contains,
+ * `app/content/imagery.ts` returns `null` rather than a guessed path, so a
  * missing file cannot produce a broken-image icon. Every `<img>` also carries
  * its real `width` and `height`, so the box is reserved before the bytes
  * arrive and nothing below it jumps.
@@ -12,7 +12,7 @@
  * And an absence is drawn, not left blank. 133 of the 141 species have a
  * portrait in the archive; the other eight get a monogram plate of the same
  * proportions, so a gallery stays on its grid and a detail page keeps its
- * shape. The plate is decorative and hidden from assistive technology — the
+ * shape. The plate is decorative and hidden from assistive technology. The
  * species' name is already the page's heading, and a screen reader gaining
  * "W" from a picture of nothing is noise.
  */
@@ -24,7 +24,7 @@ import type { AssetCredit } from "~/content/types";
 
 interface AssetImageProps {
   image: ImageSource;
-  /** Describes the subject. Never "image" — see the callers. */
+  /** Describes the subject. Never "image", see the callers. */
   alt: string;
   /** Layout width hint for the browser's `srcset` choice. */
   sizes: string;
@@ -110,7 +110,7 @@ export function MonogramPlate({
  * The `link` on a credit is authored data: it comes from the content set, and
  * once there is an authoring UI it will come from whatever a contributor typed
  * into a form. The schema asks for a URI, and `javascript:alert(1)` is a
- * perfectly valid URI — so validating the shape of the string is not the same
+ * perfectly valid URI, so validating the shape of the string is not the same
  * as deciding it is safe to put in an `href`. Everything except http and https
  * is dropped, which turns a hostile link into a plain name rather than into
  * script running on this origin.
@@ -140,8 +140,8 @@ export function safeExternalHref(link: string | null): string | null {
  * attribution.
  *
  * The unattributed case is drawn, not hidden. Every picture inherited from the
- * original site is in it — that site credited its artists as one alphabetical
- * list and never recorded which of them made which image — and saying so
+ * original site is in it, that site credited its artists as one alphabetical
+ * list and never recorded which of them made which image, and saying so
  * plainly is the honest answer and the useful one: a reader who recognises
  * their own work can come forward, which is exactly how this gets fixed.
  * Guessing would foreclose that and misattribute somebody at the same time.
@@ -162,7 +162,7 @@ export function ImageCredit({ credit }: { credit: AssetCredit | null }) {
         ) : (
           attribution
         )}
-        {credit.workTitle ? <span className="image-credit-work"> — {credit.workTitle}</span> : null}
+        {credit.workTitle ? <span className="image-credit-work">, {credit.workTitle}</span> : null}
       </p>
     );
   }

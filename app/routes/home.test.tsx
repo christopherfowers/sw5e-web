@@ -25,7 +25,7 @@ const loaderData = {
   variantRules: 42,
   /*
     The shelf as the loader hands it over. Four books rather than the corpus's
-    five, and one of them undescribed — the site has to draw a book nobody has
+    five, and one of them undescribed. The site has to draw a book nobody has
     written a blurb for, because that is the state a newly added supplement is
     in and the whole point of the books being content.
   */
@@ -55,7 +55,7 @@ const loaderData = {
   ],
   /*
     The sheets as the loader hands them over. Three rather than four, and one
-    of them not rebuilt — the page has to draw a row where only some files
+    of them not rebuilt. The page has to draw a row where only some files
     carry the disclosure, which is the state the corpus will be in the first
     time somebody adds a sheet that needed no cleaning.
   */
@@ -95,7 +95,7 @@ const loaderData = {
     The channels as the loader hands them over: already grouped, already
     labelled from the platform, and already filtered to the ones whose URL
     matches the host their platform uses. Two groups rather than three, because
-    that is the state the corpus is really in — the old funding page belongs to
+    that is the state the corpus is really in. The old funding page belongs to
     somebody else and no Support channel exists.
   */
   groups: [
@@ -202,7 +202,7 @@ describe("Home route", () => {
    *
    * There were twenty-seven cards here, grouped into the same six subjects the
    * header already offers from every page of the site. The books cover most of
-   * what they pointed at, and the header covers the rest — so the grid was the
+   * what they pointed at, and the header covers the rest, so the grid was the
    * front page's longest section and its least load-bearing.
    *
    * Asserted rather than merely deleted, and asserted by *absence*, because the
@@ -219,7 +219,7 @@ describe("Home route", () => {
     /*
       `/species` is deliberately absent from this list. The hero still offers
       "Browse species" as its second action, which is a chosen way in for a
-      reader who already knows what they came for — not a card in a grid. The
+      reader who already knows what they came for. Not a card in a grid. The
       distinction is the whole point of the change, so the test has to respect
       it rather than assert the page holds no links at all.
     */
@@ -262,7 +262,7 @@ describe("Home route", () => {
    *
    * Two things ride on this and neither is cosmetic. The file is not a route,
    * so a Link would hand `/resources/x.pdf` to the client router and produce a
-   * "page not found" rather than a file. And `download` asks the browser to
+   * "page not found" rather than a file, and `download` asks the browser to
    * save rather than open its PDF viewer, which is the same decision the
    * hosting design makes for every file this site serves.
    */
@@ -293,8 +293,8 @@ describe("Home route", () => {
   /**
    * And says the files were rebuilt, once, where a reader decides.
    *
-   * A file that has been altered — however safely, and these were altered to
-   * remove an action that printed the document the moment it opened — must not
+   * A file that has been altered (however safely, and these were altered to
+   * remove an action that printed the document the moment it opened) must not
    * be presented as the author's untouched work. Said under the row rather than
    * on each tile, because four near-identical notices are noise.
    */
@@ -310,7 +310,7 @@ describe("Home route", () => {
 
   /**
    * A corpus with no sheets draws no section, rather than a heading with
-   * nothing under it — the same degradation the shelf makes for a build with
+   * nothing under it. The same degradation the shelf makes for a build with
    * no books, and what lets a sheet be added before the section is designed
    * around it.
    */
@@ -325,7 +325,7 @@ describe("Home route", () => {
   /**
    * Getting in touch, as the site this replaces had it.
    *
-   * Every link leaves the site, so every one carries `noopener noreferrer` —
+   * Every link leaves the site, so every one carries `noopener noreferrer`.
    * `noreferrer` as well, because where a reader came from is not this
    * project's to hand to somebody else's analytics.
    */
@@ -390,7 +390,7 @@ describe("Home route", () => {
  *
  * They are what a search result shows and what somebody sees when the page is
  * pasted into a chat window, which makes them the site's most-read sentence by
- * a wide margin — and the one nobody looks at while working. The description
+ * a wide margin, and the one nobody looks at while working. The description
  * used to name eight content types by hand and had been wrong for five
  * releases: classes, features, starships, enhanced items, the property
  * glossaries and the rules text all arrived after it was written.
@@ -416,7 +416,7 @@ describe("Home route metadata", () => {
 
   it("says what the site is, where a search result will show it", () => {
     // This asserted that the description named sw5e.com, because it read "The
-    // maintained continuation of sw5e.com" — a phrase that spent every search
+    // maintained continuation of sw5e.com". A phrase that spent every search
     // result describing the site as standing outside the project it is. The
     // description now states the site rather than its predecessor; `/about`
     // carries the address a returning reader searches for, and carries it with
@@ -467,7 +467,7 @@ describe("Home route metadata", () => {
  * The page's order, which is the whole reason it was rebuilt.
  *
  * The complaint was that a newcomer opens the site and meets twenty-seven
- * category cards — "all the various options in a blob" — with the books at the
+ * category cards, "all the various options in a blob", with the books at the
  * bottom and nothing saying how to play. Reading order is therefore the
  * assertion, not an implementation detail: how to play, then the supplements,
  * then the lists.
@@ -504,7 +504,7 @@ describe("the order the page puts things in", () => {
    * their headings. That was right while a book's own page was a grid of
    * content-type counts and there was nowhere else to read a table of
    * contents. The handbook's page is now its chapters, and the hero's first
-   * button goes straight there — so this was the same thing said twice, at
+   * button goes straight there, so this was the same thing said twice, at
    * length, above the books it described.
    *
    * Asserted rather than merely deleted, because the tempting fix to a thin
@@ -521,7 +521,7 @@ describe("the order the page puts things in", () => {
    * Every book, including the one that teaches the game.
    *
    * The row this replaces was headed "Supplemental rules" and left the handbook
-   * out, because the section under it was the handbook — which made the row a
+   * out, because the section under it was the handbook. Which made the row a
    * list of leftovers rather than a shelf. Somebody looking for the Player's
    * Handbook should find it among the books.
    */
@@ -545,7 +545,7 @@ describe("the order the page puts things in", () => {
    * A book nobody has described still gets a card.
    *
    * Scum and Villainy carries no blurb in this fixture. It must still appear
-   * with its name and its cover — an undescribed book is the state every new
+   * with its name and its cover. An undescribed book is the state every new
    * supplement starts in, and dropping it would make the shelf silently
    * incomplete.
    */
@@ -578,8 +578,8 @@ describe("the order the page puts things in", () => {
    * The optional rules sit at the foot of the path, not among the books.
    *
    * They used to live under the book row, which read as though the variants
-   * were another supplement. They are rules, so they belong with how to play —
-   * and they come after the path rather than inside it, because a reader being
+   * were another supplement. They are rules, so they belong with how to play.
+   * And they come after the path rather than inside it, because a reader being
    * walked somewhere should arrive before being offered detours.
    */
   it("still offers the optional rules, which belong to no one book", () => {

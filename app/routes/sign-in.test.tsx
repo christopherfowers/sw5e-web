@@ -2,9 +2,9 @@
  * Signing in: with a passkey, and with a code sent to an email address.
  *
  * The happy-path tests are the least interesting ones here. What this file is
- * really for is the ways each path fails in the wild — a dismissed prompt, an
+ * really for is the ways each path fails in the wild (a dismissed prompt, an
  * unsupported browser, no platform authenticator, a service that is down, a
- * code that is wrong or spent, a caller who has asked for too many — plus the
+ * code that is wrong or spent, a caller who has asked for too many) plus the
  * two-legged MFA path, which is now reachable through either door and has to
  * come back out of the one it was entered by. None of that is exercised by a
  * manual pass over the page.
@@ -248,7 +248,7 @@ describe("when the device has no built-in authenticator", () => {
 
 describe("two-factor authentication", () => {
   /**
-   * The literal the server sends is `mfaRequired` — camelCase, no hyphen — and
+   * The literal the server sends is `mfaRequired` (camelCase, no hyphen) and
    * the branch carries `user: null` and nothing else. A client comparing
    * against `mfa-required` falls through to the authenticated branch and reads
    * a user that is not there, so these tests are as much about the spelling as
@@ -344,7 +344,7 @@ describe("no email is asked for by the passkey path, and none is sent", () => {
    * This block used to assert something stronger and simpler: that there was
    * no email field anywhere on the sign-in page at all. That is no longer
    * true, because the page now offers an emailed one-time code for the
-   * machines a passkey cannot reach — so the property it was really guarding
+   * machines a passkey cannot reach, so the property it was really guarding
    * has to be restated in the narrower form that survives, rather than deleted
    * along with the assertion.
    *
@@ -360,7 +360,7 @@ describe("no email is asked for by the passkey path, and none is sent", () => {
    *
    * And the page must not be an account-existence oracle. That used to follow
    * from there being no input at all; it now has to be enforced where the
-   * input is. So the third test drives the emailed-code path with a registered
+   * input is, so the third test drives the emailed-code path with a registered
    * address and with one the fixture has never heard of, and requires the
    * rendered result to be the same characters. The guarantee moved from the
    * shape of the form to the behaviour of the server, and the test moved with
@@ -479,7 +479,7 @@ describe("signing in with an emailed code", () => {
     );
     // The code really was posted with the address it was issued for. The
     // server pairs the two, so a client that sent only the digits would be
-    // refused every time — and would look, from here, exactly like a client
+    // refused every time, and would look, from here, exactly like a client
     // that sent a wrong code.
     const verify = contract.calls.find((call) => call.path === "/email/code/verify");
     expect(verify?.body).toEqual({
@@ -604,7 +604,7 @@ describe("when the emailed code is not accepted", () => {
   it("refuses a code that has already been redeemed once", async () => {
     /*
      * Single use is the property that makes a code safe to put in an inbox at
-     * all, and it is invisible from the happy path — a client that never
+     * all, and it is invisible from the happy path. A client that never
      * redeemed one twice would pass either way. Driving it needs a flow that
      * survives the first redemption, which is what the second-factor branch
      * gives: the code is spent, the sign-in is not finished, and "start over"
@@ -664,7 +664,7 @@ describe("asking for a code too often", () => {
     const authenticator = installAuthenticator();
     restore = authenticator.uninstall;
     const contract = new AuthApiContract({ session: null });
-    // The caller's own per-IP budget, already spent — as it would be by the
+    // The caller's own per-IP budget, already spent. As it would be by the
     // time anybody actually meets this. Spent against the same contract the
     // page is about to talk to, through the entry point a browser uses.
     const headers = new Headers({ origin: contract.origin });
@@ -904,7 +904,7 @@ describe("a second factor after an emailed code", () => {
 /**
  * What the page says when nothing was actually emailed.
  *
- * "Check your inbox — if that address has an account, a six-digit code is on
+ * "Check your inbox. If that address has an account, a six-digit code is on
  * its way to it" is a claim about a message. The API answers 202 whether or not
  * the address has an account *and* whether or not the relay accepted the
  * message, so the page was making that claim on the strength of a status code
@@ -974,8 +974,8 @@ describe("when mail is not getting out", () => {
 
   /**
    * A screen reader has to be told too, and by the mechanism that actually
-   * reaches it. Focus moves to this heading on the step change, so it — not the
-   * amber banner — is what the reader hears first. Leaving it reading "Enter
+   * reaches it. Focus moves to this heading on the step change, so it, not the
+   * amber banner, is what the reader hears first. Leaving it reading "Enter
    * the code we emailed you" would mean the one person who cannot see the
    * banner is the one person still being told a message was sent.
    */
@@ -999,7 +999,7 @@ describe("when mail is not getting out", () => {
   /**
    * The door that does not go through email at all. It is the only thing a
    * reader can actually act on during a relay outage, so it has to still be
-   * there — and "use a different address" has to not be, because it is not a
+   * there, and "use a different address" has to not be, because it is not a
    * remedy for anything and sends somebody hunting for a fault of their own.
    */
   it("keeps the passkey door open and drops the advice that would not help", async () => {
@@ -1061,7 +1061,7 @@ describe("when mail is not getting out", () => {
    * The resend notice was the other sentence that claimed a message. It also
    * has to keep saying that the previous code is dead: the service issued a new
    * one and superseded it regardless of whether the message carrying it got
-   * out, and somebody holding an old code needs telling — especially when the
+   * out, and somebody holding an old code needs telling. Especially when the
    * new one never arrived.
    */
   it("does not claim a new code was sent on a resend during an outage", async () => {
@@ -1093,7 +1093,7 @@ describe("when mail is not getting out", () => {
    * The property this whole page is built around, re-checked in the state most
    * likely to break it. A registered address and one the fixture has never
    * heard of must produce the same card, character for character, while mail is
-   * failing — exactly as they already must while it is working.
+   * failing. Exactly as they already must while it is working.
    */
   it("is still identical for a registered address and an unknown one", async () => {
     const authenticator = installAuthenticator();

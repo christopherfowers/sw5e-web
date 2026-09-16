@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
  *
  * The existing smoke tests cannot protect it. They run with JavaScript
  * enabled, so hydration paints the heading whether or not the server sent any
- * markup — setting `prerender()` to `[]` leaves them green. These tests look
+ * markup. Setting `prerender()` to `[]` leaves them green. These tests look
  * at what the server actually sends.
  */
 test.describe("prerendered HTML", () => {
@@ -46,7 +46,7 @@ test.describe("prerendered HTML", () => {
    *
    * The banner is drawn only after hydration, from what the API says about the
    * deployment, and the e2e suite runs against a `vite preview` with no API
-   * behind it — so what is being asserted here is the half that must hold on
+   * behind it, so what is being asserted here is the half that must hold on
    * every deployment including the live one: the served HTML carries the empty
    * live region and none of the banner's words.
    *
@@ -160,7 +160,7 @@ test.describe("the site's self-description", () => {
 
     // This was scoped to the meta description while the footer still carried
     // the old "A community reference for the Star Wars 5e tabletop roleplaying
-    // game" sentence — that block was being rewritten separately and its
+    // game" sentence. That block was being rewritten separately and its
     // wording was under review, so a document-wide assertion would have failed
     // on in-flight work. The footer has since been replaced with the Fan
     // Content Policy attribution, so the assertion is now what it was always

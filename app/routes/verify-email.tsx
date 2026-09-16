@@ -4,7 +4,7 @@
  * ## What verifying actually does, and why enrolment happens here
  *
  * It does not sign anybody in. Registration issues no credential, so a new
- * account has nothing to authenticate with — and the natural conclusion, that
+ * account has nothing to authenticate with, and the natural conclusion, that
  * verification must therefore create the session, is wrong. What the server
  * does instead is set a short-lived HttpOnly enrolment ticket, good for about
  * ten minutes and good for exactly one thing: registering the account's first
@@ -12,7 +12,7 @@
  *
  * That is why the ceremony runs on this page rather than behind a link to
  * `/account/passkeys`. The account area is guarded on having a session, and
- * this reader has none — sending them there would bounce them to `/sign-in`,
+ * this reader has none. Sending them there would bounce them to `/sign-in`,
  * to sign in with the passkey they have not made yet, which is the dead end
  * the ticket exists to avoid. `passkey/register/begin` and
  * `passkey/register/complete` accept the ticket in a session's place, and they
@@ -31,7 +31,7 @@
  * no request to take one from. In the browser the very same component renders
  * against the real URL, which does have `?email=…&token=…`. If the first render
  * branched on those, the two renders would disagree, and React would be
- * hydrating a tree that does not match the markup it was handed — the class of
+ * hydrating a tree that does not match the markup it was handed. The class of
  * bug that shows up as a blank section or a duplicated one, only in
  * production, only on the first paint.
  *
@@ -68,7 +68,7 @@ import "~/styles/account.css";
 
 export function meta() {
   return [
-    { title: "Verify your email — Star Wars 5e" },
+    { title: "Verify your email | Star Wars 5e" },
     { name: "robots", content: "noindex" },
   ];
 }
@@ -78,8 +78,8 @@ type Phase = "checking" | "verified" | "enrolling" | "enrolled" | "incomplete-li
 /**
  * The address was missing `email`, `token`, or both.
  *
- * Both halves are required — the token is scoped to the address it was issued
- * for — so a link carrying only one of them is a truncated link rather than a
+ * Both halves are required, the token is scoped to the address it was issued
+ * for, so a link carrying only one of them is a truncated link rather than a
  * rejected token, and saying "expired" would send the reader off to request a
  * replacement that arrives in exactly the same shape.
  */
@@ -130,8 +130,8 @@ export default function VerifyEmail() {
 
   // Read outside the effect so the dependencies below are the values
   // themselves. The `URLSearchParams` object is a fresh instance on every
-  // navigation, and an effect that depended on it would re-run — and re-submit
-  // a single-use token — for reasons that have nothing to do with the link
+  // navigation, and an effect that depended on it would re-run, and re-submit
+  // a single-use token, for reasons that have nothing to do with the link
   // changing.
   const email = searchParams.get("email");
   const token = searchParams.get("token");
@@ -141,8 +141,8 @@ export default function VerifyEmail() {
 
     // An incomplete link is treated as a verification that failed for a
     // particular reason, rather than as a synchronous branch that sets state
-    // straight out of the effect body. Every outcome then lands the same way —
-    // in a promise callback, after the first paint — which is both simpler to
+    // straight out of the effect body. Every outcome then lands the same way
+    // (in a promise callback, after the first paint) which is both simpler to
     // read and the only shape that does not cascade an extra render before the
     // browser has drawn anything.
     const attempt =
@@ -258,7 +258,7 @@ export default function VerifyEmail() {
           Passkey created
         </h2>
         <Banner tone="success" title="That is your account set up.">
-          Signing in from now on is your device&apos;s own unlock — a
+          Signing in from now on is your device&apos;s own unlock. A
           fingerprint, your face, or the PIN you already use. There is no
           password to remember and nothing to lose.
         </Banner>
@@ -293,7 +293,7 @@ export default function VerifyEmail() {
               ? " in the next few minutes"
               : ` in the next ${expiresIn} minute${expiresIn === 1 ? "" : "s"}`}
           </strong>
-          . This link is what lets you create your first one — you are not
+          . This link is what lets you create your first one. You are not
           signed in yet, and creating it here is what makes signing in possible.
         </Banner>
 
@@ -306,7 +306,7 @@ export default function VerifyEmail() {
         {unsupported ? (
           <Banner tone="error" title="This browser cannot create passkeys.">
             Passkeys need a current version of Chrome, Edge, Safari or Firefox.
-            Open this same link on a device that has one — the address stays
+            Open this same link on a device that has one. The address stays
             verified either way.
           </Banner>
         ) : null}
@@ -329,7 +329,7 @@ export default function VerifyEmail() {
             onChange={setName}
             maxLength={60}
             disabled={pending || unsupported}
-            hint="For your own reference — “Work laptop”, “iPhone”. Optional."
+            hint="For your own reference, “Work laptop”, “iPhone”. Optional."
           />
           <div className="auth-actions">
             <SubmitButton
@@ -346,7 +346,7 @@ export default function VerifyEmail() {
 
         <p className="auth-note">
           If the window closes before you finish,{" "}
-          <Link to="/register">ask for a new link</Link> — nothing is lost, and
+          <Link to="/register">ask for a new link</Link>. Nothing is lost, and
           your address stays verified.
         </p>
       </AuthCard>
@@ -380,7 +380,7 @@ export default function VerifyEmail() {
       >
         {/* No promise about when it turns up, and that is deliberate. This page
             has not asked whether mail is going out, and the registration screen
-            it links to does — at the moment the request is actually made, which
+            it links to does. At the moment the request is actually made, which
             is the only moment an answer is worth anything. A timing claim made
             here would be a claim made without grounds, and it was one of the
             sentences that told a reader on QA to keep waiting for a message the

@@ -13,7 +13,7 @@
  * plain 403 means the account is not an administrator and that is the end of
  * the conversation. A 403 with `strong-authentication-required` means the
  * account *is* an administrator and this session was established with an
- * emailed code, which proves an inbox and nothing about a device — enrolling a
+ * emailed code, which proves an inbox and nothing about a device. Enrolling a
  * passkey or an authenticator and signing in again clears it in about a minute.
  * `ApiError.code` carries it, and `~/api/http` exports the literal.
  *
@@ -45,7 +45,7 @@ const API_ROOT = "/api/auth/admin";
  * Builds a query string, omitting anything empty.
  *
  * Omitted rather than sent blank, because the service refuses a filter value it
- * does not recognise rather than ignoring it — which is the behaviour this
+ * does not recognise rather than ignoring it. Which is the behaviour this
  * client wants, and the reason an empty string must never be sent as one. It is
  * also why `q` disappears entirely when the box is cleared instead of becoming
  * `q=`.
@@ -82,7 +82,7 @@ export interface UserDirectoryFilters {
  *
  * This is the response that made the role grant usable at all: before it, the
  * grant was addressed by an account identifier that nothing in the API would
- * disclose. It carries email addresses — see the note at the top of this file
+ * disclose. It carries email addresses. See the note at the top of this file
  * and `app/admin/types.ts`.
  */
 export function listUsers(
@@ -121,7 +121,7 @@ export interface SuspensionResult {
  * should end up in, so a replayed request cannot deepen a suspension and
  * "reinstate" is not a second route somebody has to remember exists.
  *
- * A reason is **required** to suspend and **refused** when reinstating — the
+ * A reason is **required** to suspend and **refused** when reinstating. The
  * service has nowhere to store the second, and accepting it silently would mean
  * an administrator writing an explanation that goes nowhere. Both refusals are
  * a 400.

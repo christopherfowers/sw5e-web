@@ -3,7 +3,7 @@
  *
  * Every hue on this site means something and means the same thing everywhere:
  * a Force power is violet on its index row, on its own page and in a search
- * result. Colour is never the only signal — each badge also carries its own
+ * result. Colour is never the only signal. Each badge also carries its own
  * words, so the meaning survives greyscale printing, a colour-vision
  * difference, and a screen reader.
  */
@@ -59,7 +59,7 @@ export function SourceBadge({
         to={`/sources/${meta.slug}`}
         /*
           The unlinked badge below has carried a `title` since it was written,
-          and this one did not — so on a detail page, where the badge is a
+          and this one did not, so on a detail page, where the badge is a
           link, a reader who did not already know that EC means Expanded
           Content had no way to find out short of following it. The screen
           reader was told and the eye was not.

@@ -48,7 +48,7 @@ function accountRoutes() {
         { index: true, Component: AccountProfile },
         { path: "contributions", Component: AccountContributions },
         // Mounted because one of the tests below is about this page staying
-        // reachable from a session that is refused everywhere else — it is
+        // reachable from a session that is refused everywhere else. It is
         // where the credential that unlocks the rest gets enrolled.
         { path: "passkeys", Component: AccountPasskeys },
       ],
@@ -108,11 +108,11 @@ describe("the account's own heading", () => {
    * `/account` is prerendered to static HTML and served, byte for byte, to
    * everybody; that file is frozen in `loading`, because identity is only
    * resolved after hydration. A heading that waited for the session would
-   * therefore be absent from the markup nginx serves — leaving a `<main>`
+   * therefore be absent from the markup nginx serves, leaving a `<main>`
    * landmark with no heading structure in it for every reader before hydration
-   * and every reader without JavaScript — and it would differ between the
+   * and every reader without JavaScript, and it would differ between the
    * prerendered markup and the first client render, which is a hydration
-   * mismatch. So it is asserted in each state the page can be in.
+   * mismatch, so it is asserted in each state the page can be in.
    */
   it("is there before the session has resolved", () => {
     // Synchronous: this is the first render, the state the static file holds.
@@ -164,8 +164,8 @@ describe("a signed-in reader", () => {
 
     // Sign-out belongs to the resolved frame and to nothing else, so it is
     // what separates "recognised" from any of the guard's states. The name is
-    // no longer the page's heading — that is "Your account", drawn before the
-    // session resolves — and it appears in the header chip as well as here.
+    // no longer the page's heading (that is "Your account", drawn before the
+    // session resolves) and it appears in the header chip as well as here.
     await waitFor(() =>
       expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument(),
     );
@@ -288,7 +288,7 @@ describe("role awareness", () => {
 describe("how this session was established", () => {
   /**
    * These three facts are new on `CurrentUser`, and none of them describes the
-   * account — they describe the browser holding the cookie. That distinction
+   * account. They describe the browser holding the cookie. That distinction
    * is the reason the page can say something useful at all: the same account
    * may be signed in with a passkey on a phone and with an emailed code on a
    * borrowed laptop, and only one of those two readers should be offered a
@@ -452,8 +452,8 @@ describe("a session that only proved an inbox", () => {
    * `strong-authentication-required`.
    *
    * Drawn here for the same reason the role refusal is drawn rather than
-   * redirected — so the reader meets an explanation instead of a page that
-   * silently does nothing — and worded differently from the role refusal
+   * redirected, so the reader meets an explanation instead of a page that
+   * silently does nothing, and worded differently from the role refusal
    * because it means something different. "Does not have access" is the end of
    * the conversation. This is two clicks from being fixed.
    */
@@ -517,7 +517,7 @@ describe("a session that only proved an inbox", () => {
   it("opens the area once the passkey is proved, without a fresh sign-in", async () => {
     installAuthenticator();
     // The whole point. The session is raised in place and the guarded page
-    // renders behind it — a redirect to /sign-in here would be the dead end
+    // renders behind it. A redirect to /sign-in here would be the dead end
     // wearing a different coat.
     mount(
       new AuthApiContract({ session: contributorOnAnEmailedCode() }),

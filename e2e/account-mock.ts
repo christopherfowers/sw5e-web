@@ -9,7 +9,7 @@
  *
  * Nothing has to be planted before a test runs. The API's cross-site
  * protection is an `Origin` allow-list, and Chrome writes `Origin` itself on
- * every state-changing fetch — so this suite exercises the real mechanism for
+ * every state-changing fetch, so this suite exercises the real mechanism for
  * free, and the contract refuses anything that arrives without it. That is
  * worth more than the cookie this used to plant: a header the browser controls
  * cannot be faked into passing by a client that has stopped doing its job.
@@ -46,7 +46,7 @@ export async function serveAccountApi(
   /*
     The origin is filled in from the first request rather than written here.
 
-    It used to be `http://localhost:4173` — the production preview's port —
+    It used to be `http://localhost:4173`, the production preview's port,
     which is the right answer exactly once. Run these same specs against the
     development server on 5173 and every request carries an origin the contract
     refuses, so eleven account tests failed for a reason that had nothing to do
@@ -55,7 +55,7 @@ export async function serveAccountApi(
     It cannot be read from the page either: this runs before the page has
     navigated anywhere, so `page.url()` is still `about:blank`. The first
     intercepted request knows, and knowing it from the request is the honest
-    version anyway — that is the server the browser is really talking to.
+    version anyway. That is the server the browser is really talking to.
   */
   const contract = new AuthApiContract({ origin: "", ...options });
   let originKnown = false;
@@ -86,7 +86,7 @@ export async function serveAccountApi(
       return;
     }
 
-    // A bodiless refusal is genuinely bodiless — no content type either, which
+    // A bodiless refusal is genuinely bodiless. No content type either, which
     // is the shape the client has to read from the status alone.
     if (reply.status === 204 || reply.body === undefined) {
       await route.fulfill({ status: reply.status, body: "" });
@@ -108,7 +108,7 @@ export async function serveAccountApi(
  *
  * This is a real WebAuthn implementation, not a stub of `navigator.credentials`:
  * the ceremony runs, the credential is signed, and the challenge really does
- * come back inside `clientDataJSON` — which is what the contract checks. A test
+ * come back inside `clientDataJSON`. Which is what the contract checks. A test
  * built on a stubbed `navigator` could not tell a working client from one that
  * fabricated an assertion.
  */

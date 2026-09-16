@@ -2,7 +2,7 @@
  * The header's tagline, which is the only self-description on every page.
  *
  * Most arrivals at this site do not come through the home page. They come from
- * a search result for one power, one species, one stat block — and the home
+ * a search result for one power, one species, one stat block, and the home
  * page's lede, however well written, is not on the page they land on. The
  * wordmark tag is. It read "Community reference", which said nothing a reader
  * did not already know and, with the indefinite framing on the home page,
@@ -53,7 +53,7 @@ describe("the site header", () => {
     // rather than set beside it. That makes this the assertion that matters:
     // the link has to keep an accessible name, and dropping the visible text
     // without moving the name onto the image would leave it an unlabelled
-    // picture — a change that looks tidier and is worse.
+    // picture. A change that looks tidier and is worse.
     const home = screen.getByRole("link", { name: /star wars 5e/i });
 
     expect(home).toHaveAttribute("href", "/");
@@ -74,7 +74,7 @@ describe("the site header", () => {
    * every page, in the one line a reader who deep-linked into a single power
    * ever sees. A site that has changed where it is served from does not
    * introduce itself by its old address, and no verb of succession belongs in
-   * the wordmark at all — "continuing", "successor" and "formerly" are three
+   * the wordmark at all. "continuing", "successor" and "formerly" are three
    * ways of saying the same untrue thing.
    */
   it("does not describe itself as succeeding something else", () => {

@@ -69,8 +69,8 @@ describe("the headers a solution becomes", () => {
   /**
    * The whole point of this test is that nothing is reformatted. `expiresAt`
    * and `signature` are covered by the server's signature, so a client that
-   * parsed the timestamp and printed it again — dropping a trailing zero, say,
-   * or normalising the offset to `Z` — would produce a different string and
+   * parsed the timestamp and printed it again (dropping a trailing zero, say,
+   * or normalising the offset to `Z`) would produce a different string and
    * every solution it sent would be refused, with a message that says nothing
    * about dates.
    */
@@ -104,7 +104,7 @@ describe("solving", () => {
   /**
    * A real solve, at a difficulty low enough to run in a unit test. The point
    * is that the counter it returns genuinely satisfies the rule the server will
-   * apply — recomputed here from the salt rather than taken on trust.
+   * apply. Recomputed here from the salt rather than taken on trust.
    */
   it("returns a counter whose hash actually has the zeros", async () => {
     const { hasLeadingZeroBits, sha256 } = await import("./sha256");
@@ -157,7 +157,7 @@ describe("solving", () => {
  *
  * The gate ships switched off, so the common case for the foreseeable future is
  * that no work is done and no challenge is fetched. Getting that wrong is not a
- * correctness bug — everything still works — which is exactly why it needs a
+ * correctness bug, everything still works, which is exactly why it needs a
  * test: a client that solved unconditionally would pass every other test in
  * this file while spending a second of every reader's CPU on nothing.
  */

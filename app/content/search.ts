@@ -2,8 +2,8 @@
  * Client-side search across every content type.
  *
  * The whole corpus is roughly 1,800 items, which is small enough that a linear
- * scan over a prepared index beats the complexity of a real inverted index —
- * and it keeps the "why did this match" evidence trivially available, which a
+ * scan over a prepared index beats the complexity of a real inverted index.
+ * And it keeps the "why did this match" evidence trivially available, which a
  * scored bag-of-words index would throw away.
  *
  * Ranking, in order: an exact name match, a name that starts with the query, a

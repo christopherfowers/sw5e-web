@@ -5,7 +5,7 @@
  * handler wrapped around it, which is the part that touches data it did not
  * produce. The handler's parameter is typed `MessageEvent<SolveRequest>`, and a
  * declared type describes what the compiler believes about the call site rather
- * than what arrives at runtime — so every assertion here passes a value the
+ * than what arrives at runtime, so every assertion here passes a value the
  * type says is impossible.
  *
  * The failure being guarded against is quiet rather than loud. A difficulty of
@@ -34,7 +34,7 @@ let scope: FakeScope;
  * Load the module against a fake worker global.
  *
  * The handler registers at import time, so the fake has to be in place before
- * the import and the module registry has to be reset between tests — otherwise
+ * the import and the module registry has to be reset between tests. Otherwise
  * the second test observes the first test's handler, still holding the first
  * test's `posted` array, and passes for the wrong reason.
  */
@@ -67,7 +67,7 @@ describe("the worker's message handler", () => {
   /**
    * The case that motivated the validation: zero bits is satisfied by the very
    * first digest, so without a check this reports a solve rather than a
-   * failure — the shape a caller is least likely to look at twice.
+   * failure. The shape a caller is least likely to look at twice.
    */
   it("refuses a difficulty of zero rather than reporting an instant solve", () => {
     send({ salt: "abc", difficulty: 0 });
@@ -97,9 +97,9 @@ describe("the worker's message handler", () => {
   });
 
   /**
-   * Origin. Very nearly a formality for a dedicated worker — the document that
+   * Origin. Very nearly a formality for a dedicated worker (the document that
    * constructed it holds the only port, and browsers leave `origin` empty on
-   * these messages — but asserted so the rule is a decision rather than an
+   * these messages) but asserted so the rule is a decision rather than an
    * accident of what nothing currently sends.
    */
   it("accepts a message from the document that started it", () => {

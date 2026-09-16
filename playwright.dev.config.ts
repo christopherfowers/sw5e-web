@@ -6,7 +6,7 @@ import { defineConfig } from "@playwright/test";
  * This exists because of a bug that got all the way to a deployed site while
  * every gate stayed green. The header's group menus would not open at all
  * under `react-router dev`, and the same code in a production build opened
- * them correctly — the fault was a race between an asynchronous `toggle`
+ * them correctly. The fault was a race between an asynchronous `toggle`
  * event and React's own write of the `open` attribute, and which side won
  * depended on timing that development and production do not share.
  *
@@ -17,7 +17,7 @@ import { defineConfig } from "@playwright/test";
  * clicking the menu, which is the one thing no gate did.
  *
  * So the gate is now the same specs against the other server. It costs no
- * build — the dev server compiles on demand — and it is deliberately narrow:
+ * build, the dev server compiles on demand, and it is deliberately narrow:
  * only the specs about behaviour a person drives with a pointer or a keyboard.
  * Prerendering, served markup and anything else that is a property of the
  * build belongs to the production run and would be meaningless here.

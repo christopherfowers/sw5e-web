@@ -4,8 +4,8 @@
  * Three layouts share one set of controls, because the content types are not
  * one kind of thing. A table is right for 507 pieces of equipment that a
  * reader compares by cost and damage. It is wrong for 141 species, which a
- * reader recognises by silhouette long before they read a name — those get a
- * gallery of portraits. And it is wrong again for the rules, which are prose:
+ * reader recognises by silhouette long before they read a name. Those get a
+ * gallery of portraits, and it is wrong again for the rules, which are prose:
  * there is nothing to compare between "Chapter 9: Combat" and the "Flanking"
  * variant, so a table of them would be a column of names beside four columns
  * of nothing. Those get a table of contents, grouped by book and in printed
@@ -18,7 +18,7 @@
  * reading a wall of unlabelled cells. Sorting is triggered by a `<button>`
  * inside the header cell, so it is reachable by keyboard without any custom
  * key handling. The gallery has no columns to click, so it gets an equivalent
- * pair of controls — a sort field and a direction button — in the toolbar.
+ * pair of controls, a sort field and a direction button, in the toolbar.
  *
  * On a phone most table columns are hidden and their values are folded into a
  * compact second line under each name, which keeps one DOM tree rather than
@@ -30,7 +30,7 @@
  * `/features` published 2,682 rows as 2.1 MB of HTML. The bytes were the small
  * half of that problem: each row is a `<tr>` with five cells, a link, a compact
  * line and a badge, so the page was 40,342 elements that the browser had to
- * parse, lay out, and then hand to React to hydrate — on the main thread, in one
+ * parse, lay out, and then hand to React to hydrate. On the main thread, in one
  * go, before anything on the page could respond. The page did not load slowly.
  * It arrived and then froze.
  *
@@ -40,7 +40,7 @@
  * So the rich list draws `WINDOW` rows and reveals more on request. That is
  * chosen over the two alternatives because of what this site is. Real
  * pagination needs either a server to read `?page=` or one prerendered route
- * per page; there is no server, and routes are the build's whole cost — 5,129
+ * per page; there is no server, and routes are the build's whole cost. 5,129
  * of them already. Virtualisation needs measured scroll geometry, which does
  * not exist during a prerender, so the static HTML would contain nothing at
  * all and the site's entire reason for being static would go with it.
@@ -49,8 +49,8 @@
  * static file, hydration matches because the server and the client both start
  * from the same constant, and every reveal is ordinary React state.
  *
- * The one thing it would cost is completeness — an index that shows 100 of
- * 2,682 has stopped being an index — so `FullIndex` below publishes every
+ * The one thing it would cost is completeness (an index that shows 100 of
+ * 2,682 has stopped being an index) so `FullIndex` below publishes every
  * entry as a plain link underneath. It is deliberately cheap, and deliberately
  * not hydrated; see the comment on it.
  */
@@ -75,8 +75,8 @@ interface ContentListProps {
   /**
    * The noun after the numeral, when the type's own is wrong for this list.
    *
-   * Only the subcategory views set it. They render a slice of a type — 215 of
-   * equipment's 505 rows — through this component, so `type` is still
+   * Only the subcategory views set it. They render a slice of a type, 215 of
+   * equipment's 505 rows, through this component, so `type` is still
    * `equipment` and everything that follows from it is still right: the row
    * links, the accent, the columns. The count line is the one thing that is
    * not, because `TypeMeta.counted` would announce "215 items" above a page
@@ -125,8 +125,8 @@ function compareValues(
  * One number for every type rather than a per-type budget. The cost being
  * managed is DOM elements on the main thread, and a row is roughly the same
  * size whichever type it belongs to, so a per-type figure would be a knob with
- * nothing behind it. A hundred is comfortably more than fits on a screen — a
- * reader who wants the next few scrolls rather than clicking — and small enough
+ * nothing behind it. A hundred is comfortably more than fits on a screen, a
+ * reader who wants the next few scrolls rather than clicking, and small enough
  * that the largest index in the corpus costs the same as the smallest.
  */
 export const WINDOW = 100;
@@ -141,7 +141,7 @@ export function ContentList({
   /*
     The noun to put a number in front of, which is not always the noun in the
     heading. "Equipment" is the right word above the page and the wrong one
-    after a numeral — the count line read "4 equipment" — so the two types
+    after a numeral, the count line read "4 equipment", so the two types
     whose plural is a mass noun carry a separate one. See TypeMeta.counted.
 
     A caller may override it outright, which is what a subcategory view does:
@@ -435,7 +435,7 @@ function escapeHtml(value: string): string {
  *
  * This is what makes windowing safe to do at all. A crawler that does not run
  * JavaScript, and a reader who has it switched off, both see the whole
- * catalogue here rather than the first hundred rows of it — which is the
+ * catalogue here rather than the first hundred rows of it. Which is the
  * property this site prerenders in order to have. It is also what the container
  * job in CI counts when it asserts that the image renders as many items as the
  * content it was built from.
@@ -555,8 +555,8 @@ function Gallery({
  * entirely rather than showing an empty heading, which is what makes "filter
  * to Wretched Hives" read as a book rather than as a mostly-empty index.
  *
- * Each entry is a link and a line of context — the chapter's position and how
- * many sections it holds — because the one thing a reader can judge a chapter
+ * Each entry is a link and a line of context, the chapter's position and how
+ * many sections it holds, because the one thing a reader can judge a chapter
  * by before opening it is how much of it there is.
  */
 function Chapters({
@@ -659,15 +659,15 @@ function Chapters({
  * serves one of them.
  *
  * `title` on an `<abbr>` is the hover affordance, and that is all it is: it
- * does not reach a touch screen, it does not reach a keyboard, and — the part
- * that is easy to get wrong — it does not reach the accessible name either.
+ * does not reach a touch screen, it does not reach a keyboard, and, the part
+ * that is easy to get wrong, it does not reach the accessible name either.
  * The name of an element with text content is its text content; `title` is
  * only consulted when there is nothing else, so `<abbr title="Challenge
  * rating">CR</abbr>` is still announced "C R".
  *
  * So the words are also present as text, hidden visually. A screen reader
  * announces "CR Challenge rating" and a sighted reader sees the two
- * characters the column has room for — "Challenge rating" set in full would
+ * characters the column has room for. "Challenge rating" set in full would
  * make a column three times wider than the numbers in it.
  */
 function ColumnHeader<Row>({ column }: { column: Column<Row> }) {

@@ -16,7 +16,7 @@
  * prevent.
  */
 
-/** `~` becomes `~0` and `/` becomes `~1`, in that order — the order matters. */
+/** `~` becomes `~0` and `/` becomes `~1`, in that order, the order matters. */
 export function escapeToken(token: string): string {
   return token.replace(/~/g, "~0").replace(/\//g, "~1");
 }
@@ -90,8 +90,8 @@ export function getAtPointer(document: unknown, pointer: string): unknown {
  * to prepare the ground.
  *
  * Only the containers on the path are copied. Everything else is shared with
- * the original, which is what keeps typing in a class document — a few hundred
- * kilobytes of features — from copying the whole thing on every keystroke.
+ * the original, which is what keeps typing in a class document, a few hundred
+ * kilobytes of features, from copying the whole thing on every keystroke.
  */
 export function setAtPointer(
   document: unknown,
@@ -130,7 +130,7 @@ export function setAtPointer(
  * A copy of `document` with whatever is at `pointer` taken out.
  *
  * Removing from an array closes the gap rather than leaving a hole, because a
- * hole would serialize as `null` and the schema would refuse it — which would
+ * hole would serialize as `null` and the schema would refuse it. Which would
  * report deleting the third feature of a class as a type error on the third
  * feature of a class.
  *
@@ -172,8 +172,8 @@ export function removeAtPointer(document: unknown, pointer: string): unknown {
 /**
  * Moves an array item, for the controls that reorder a list.
  *
- * Order is content in this corpus — a class's progression is read top to
- * bottom — so a list editor that could only add and remove would force somebody
+ * Order is content in this corpus, a class's progression is read top to
+ * bottom, so a list editor that could only add and remove would force somebody
  * to retype four rows to put one in the right place.
  */
 export function moveArrayItem(

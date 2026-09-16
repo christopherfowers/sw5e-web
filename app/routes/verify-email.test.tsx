@@ -10,8 +10,8 @@
  * was handed.
  *
  * Everything after it is about what verification actually does. It does *not*
- * sign anybody in — it opens a ten-minute window in which the account may
- * enrol its first passkey, and nothing else at all. So the assertions insist
+ * sign anybody in. It opens a ten-minute window in which the account may
+ * enrol its first passkey, and nothing else at all, so the assertions insist
  * that no session is claimed, that both halves of the link are sent, and that
  * the passkey ceremony really runs on this page rather than behind a link to
  * an account area the reader cannot yet reach.
@@ -70,8 +70,8 @@ describe("the first render", () => {
 describe("with a complete link", () => {
   it("sends both the address and the token", async () => {
     // The token is scoped to the address it was issued for, and the API
-    // refuses a request carrying only one of them. Sending the token alone —
-    // which this page used to do — fails every verification.
+    // refuses a request carrying only one of them. Sending the token alone,
+    // which this page used to do, fails every verification.
     const contract = new AuthApiContract({ session: null });
     mount(contract, GOOD_LINK);
 
@@ -127,7 +127,7 @@ describe("with a complete link", () => {
 describe("enrolling the first passkey", () => {
   it("runs the ceremony on this page, using the enrolment ticket", async () => {
     // Not behind a link to /account/passkeys: that area is guarded on having a
-    // session, and this reader has none — they would be bounced to /sign-in to
+    // session, and this reader has none. They would be bounced to /sign-in to
     // sign in with the passkey they have not made yet. These two endpoints
     // accept the ticket in a session's place, and they are the only ones that
     // do.
@@ -227,7 +227,7 @@ describe("with half a link", () => {
    * A truncated link and a rejected token need different advice: one is fixed
    * by pasting the whole address, the other by requesting a new email. Mail
    * clients wrap long URLs, so the truncated case is common enough to earn its
-   * own message — and reporting it as "expired" sends the reader off for a
+   * own message, and reporting it as "expired" sends the reader off for a
    * replacement that arrives in exactly the same shape.
    */
   it("explains a missing address rather than reporting a rejected token", async () => {

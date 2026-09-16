@@ -1,9 +1,9 @@
 /**
  * The content-type registry, fetched once per page load.
  *
- * Every authoring screen needs the same three facts about a content type — its
+ * Every authoring screen needs the same three facts about a content type (its
  * canonical key, its display name, and the segment this site publishes it
- * under — and all three come from one anonymous endpoint whose answer does not
+ * under) and all three come from one anonymous endpoint whose answer does not
  * change between deploys. Fetching it per screen would make three requests for
  * the same list on a walk from the worklist to the editor to the history, and
  * passing it down through an outlet would make every child wait for a parent's
@@ -52,7 +52,7 @@ export interface ContentTypesState {
    *
    * Not fatal anywhere. Every screen that uses this degrades to showing the raw
    * type key instead of a display name, and the editor sends the key it was
-   * given — which the service resolves itself. A registry this client could not
+   * given. Which the service resolves itself. A registry this client could not
    * read is a worse-looking interface, not a broken one.
    */
   failed: boolean;

@@ -5,16 +5,16 @@
  *
  * `crypto.subtle.digest` is the right answer nearly everywhere and is the wrong
  * answer here. It is asynchronous per call, and solving a proof-of-work
- * challenge means hashing until a counter produces enough leading zero bits —
- * up to 262,144 hashes at the difficulty the service currently issues. Awaiting
+ * challenge means hashing until a counter produces enough leading zero bits.
+ * Up to 262,144 hashes at the difficulty the service currently issues. Awaiting
  * a quarter of a million promises spends almost all of its time in the
  * scheduler rather than in the hash, and turns a job of well under a second
  * into one measured in minutes.
  *
  * So this is deliberately a hand-written hash, which is a thing to be nervous
- * about. Two things make it defensible. It is used for exactly one purpose —
- * counting leading zeros on a value the server recomputes and verifies — so a
- * wrong digest cannot forge anything; it can only fail to be accepted. And it
+ * about. Two things make it defensible. It is used for exactly one purpose,
+ * counting leading zeros on a value the server recomputes and verifies, so a
+ * wrong digest cannot forge anything; it can only fail to be accepted, and it
  * is checked against the published vectors, including the empty input, which is
  * the case a partly-correct padding implementation gets wrong.
  *
@@ -67,7 +67,7 @@ export function sha256(message: Uint8Array): Uint8Array {
     Padding: the 0x80 terminator, then zeros, then the length in bits as a
     64-bit big-endian integer, to the next multiple of 64 bytes. Written into
     one buffer rather than appended to the message so that an input of exactly
-    56 bytes — which needs a whole extra block for the length — is handled by
+    56 bytes, which needs a whole extra block for the length, is handled by
     the same arithmetic as every other size, rather than by a special case
     somebody has to remember.
   */
@@ -79,7 +79,7 @@ export function sha256(message: Uint8Array): Uint8Array {
 
   /*
     The high word of the length is written too. It is zero for anything this
-    will ever hash — it would take 512 MB of input to be otherwise — but
+    will ever hash, it would take 512 MB of input to be otherwise, but
     leaving it out is how an implementation ends up correct only for small
     inputs, and the vectors would not catch it.
 
@@ -183,7 +183,7 @@ export function hex(bytes: Uint8Array): string {
  * characters instead asks for sixteen times the work at difficulty 18, and
  * counting bytes asks for a fraction of it and produces solutions the server
  * refuses. Whole bytes are checked first and then the partial byte is masked,
- * which is the case a byte-boundary implementation gets wrong — difficulty 18
+ * which is the case a byte-boundary implementation gets wrong. Difficulty 18
  * is two whole bytes and two bits.
  */
 export function hasLeadingZeroBits(digest: Uint8Array, bits: number): boolean {

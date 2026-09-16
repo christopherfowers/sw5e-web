@@ -1,7 +1,7 @@
 /**
  * The books this reference draws from.
  *
- * The dataset only ever carries an abbreviation on each row — "PHB", "SnV" —
+ * The dataset only ever carries an abbreviation on each row ("PHB", "SnV")
  * which is enough for a badge and useless for a reader who has not memorised
  * them. This is where an abbreviation becomes a title, a colour and a page.
  *
@@ -13,8 +13,8 @@
  * publication, so they travel with the publication now, and this module reads
  * them.
  *
- * The shape it exports has not changed. Every caller — the badges, the rules
- * list's grouping, the navigation, the about page — reads exactly what it read
+ * The shape it exports has not changed. Every caller (the badges, the rules
+ * list's grouping, the navigation, the about page) reads exactly what it read
  * before, which is the point: moving where the values come from should not be
  * an opportunity to move anything else at the same time.
  *
@@ -23,7 +23,7 @@
  * The old comment here recorded a property worth keeping: "an abbreviation
  * appearing in a future dataset should show up as a plain badge rather than an
  * empty book". That still holds. A source that describes none of this is simply
- * absent from `SOURCE_META`, and every caller already copes — because the
+ * absent from `SOURCE_META`, and every caller already copes. Because the
  * hand-written table could be missing an abbreviation too.
  */
 

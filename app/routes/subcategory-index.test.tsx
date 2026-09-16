@@ -4,17 +4,17 @@
  *
  * A weapon is an equipment document. It has one page, at `/equipment/<slug>`,
  * and `/weapons` is a way of reaching that page rather than a second place for
- * it to live. Nothing on screen shows the difference — a row headed "Bo-rifle"
+ * it to live. Nothing on screen shows the difference, a row headed "Bo-rifle"
  * looks identical whether its href is `/equipment/bo-rifle` or
- * `/weapons/bo-rifle` — but the second one is a page that was never
+ * `/weapons/bo-rifle`, but the second one is a page that was never
  * prerendered, so it would answer 404 through nginx's SPA fallback while
  * rendering correctly for whoever clicked it in a browser. That is the
  * assertion this file exists for.
  *
  * The registry's predicates are tested directly in
  * `app/content/subcategory-views.test.ts`; what is checked here is that the
- * route actually goes through them, and that an empty view — which four of the
- * six are against the committed fixture — says so instead of crashing.
+ * route actually goes through them, and that an empty view, which four of the
+ * six are against the committed fixture, says so instead of crashing.
  */
 
 import { render, screen } from "@testing-library/react";
@@ -189,7 +189,7 @@ describe("/weapons", () => {
 
     // The whole point of the registry carrying a `type`. `/weapons/bo-rifle`
     // is not a prerendered file, so it would 404 to everything that reads a
-    // status line — and a document with two addresses is two search results
+    // status line, and a document with two addresses is two search results
     // competing with each other.
     expect(screen.getByRole("link", { name: "Bo-rifle" })).toHaveAttribute(
       "href",
@@ -253,7 +253,7 @@ describe("/force-powers", () => {
  * holds none of them.
  *
  * The second is the row links, which still go to `/class-improvements/<slug>`
- * for all thirty. One document, one URL — a multiclass improvement does not
+ * for all thirty. One document, one URL. A multiclass improvement does not
  * acquire a second address by being listed on a page of its own.
  */
 describe("/multiclass-improvements", () => {
@@ -295,7 +295,7 @@ describe("/multiclass-improvements", () => {
     /*
       The crumb every other view here takes from its type. `/class-improvements`
       is the class-only cut now, so crumbing to the type's segment would offer a
-      reader a page holding none of the rows they were just looking at — and
+      reader a page holding none of the rows they were just looking at. And
       `/class-improvements` would crumb to itself.
     */
     expect(

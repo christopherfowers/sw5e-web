@@ -4,7 +4,7 @@
  * The archive's prose is markdown written by hand for a rulebook: headings,
  * bold and italic runs, bullet lists, pipe tables, horizontal rules, and
  * cross-references that the dataset builder has already rewritten into site
- * links. Nothing here produces HTML strings — it produces a node tree that
+ * links. Nothing here produces HTML strings. It produces a node tree that
  * components render as React elements, so there is no `dangerouslySetInnerHTML`
  * anywhere in the app and no way for corpus text to inject markup.
  */
@@ -110,8 +110,8 @@ export function parseMarkdown(source: string): BlockNode[] {
     //
     // The first line is always consumed, whatever it looks like. Without that
     // the loop can stall: a line that opens a block but fails that block's
-    // full test — a pipe-table row with no divider under it, which the corpus
-    // does contain — would be rejected by the table branch and then rejected
+    // full test (a pipe-table row with no divider under it, which the corpus
+    // does contain) would be rejected by the table branch and then rejected
     // again by the paragraph guard, leaving `index` where it started and
     // pushing empty paragraphs until the process runs out of memory.
     const paragraph: string[] = [line.trim()];

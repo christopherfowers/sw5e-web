@@ -5,7 +5,7 @@
  * control is invisible until asked for, that an anonymous reader is offered a
  * way in rather than a broken form, that the menu of reasons matches what is
  * being reported, and that the request carries the document the reader was
- * actually looking at — because a report that names the wrong document is worse
+ * actually looking at. Because a report that names the wrong document is worse
  * than no report at all.
  */
 
@@ -72,7 +72,7 @@ describe("staying out of the way", () => {
   });
 
   it("names what it is attached to, so two on one page are told apart", async () => {
-    // A species page carries this control twice — once for the page, once for
+    // A species page carries this control twice. Once for the page, once for
     // its portrait. A screen-reader user listing the buttons would otherwise
     // hear "Report a problem" twice with nothing between them.
     mount(PICTURE);
@@ -181,7 +181,7 @@ describe("filing", () => {
 
     await waitFor(() => expect(flags.lastCall("POST", "/api/flags")).toBeDefined());
 
-    // `asset-credit` and `{group}-{key}` — the record a reviewer edits to write
+    // `asset-credit` and `{group}-{key}`. The record a reviewer edits to write
     // the credit. Anything else would file a report against the document that
     // cannot resolve it.
     expect(flags.lastCall("POST", "/api/flags")?.body).toMatchObject({

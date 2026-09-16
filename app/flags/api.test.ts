@@ -181,7 +181,7 @@ describe("the queue", () => {
     await listFlags({ status: undefined, reason: "", targetType: "species" });
 
     // The service refuses a value it does not recognise rather than ignoring
-    // it, which is the behaviour this client wants — and is exactly why an
+    // it, which is the behaviour this client wants, and is exactly why an
     // empty string must never be sent as one.
     expect(calls[0].url).toBe("/api/flags?targetType=species");
   });

@@ -28,8 +28,8 @@ import type { AccountContext } from "./account";
  * How the session reading this page was established, in plain words.
  *
  * Worth saying out loud, and not only for interest. The two things the page
- * goes on to offer — a warning about an unusable role, and an invitation to
- * enrol a passkey — both follow from this fact, and a page that acts on
+ * goes on to offer (a warning about an unusable role, and an invitation to
+ * enrol a passkey) both follow from this fact, and a page that acts on
  * something it never showed reads as arbitrary. Naming it first turns "why is
  * it asking me that?" into "because of how I got here".
  *
@@ -71,7 +71,7 @@ export default function AccountProfile() {
     user.secondFactorRequired && passkeys === 0 && !protectedByTotp;
 
   /**
-   * Signed in with an emailed code and holding no passkey — the situation the
+   * Signed in with an emailed code and holding no passkey. The situation the
    * emailed-code path exists to create, and the moment enrolling one is most
    * obviously worth doing.
    *
@@ -117,7 +117,7 @@ export default function AccountProfile() {
             title={`Your ${ROLE_META[role].label} role cannot be used yet.`}
           >
             Contributor and administrator work needs a session backed by a
-            passkey or an authenticator app, and this account has neither — so
+            passkey or an authenticator app, and this account has neither. So
             those tools stay closed even though the role is granted.{" "}
             <Link to="/account/passkeys">Add a passkey</Link> or{" "}
             <Link to="/account/security">set up an authenticator app</Link>,
@@ -129,7 +129,7 @@ export default function AccountProfile() {
           <Banner tone="info" title="Add a passkey while you are here?">
             An emailed code works, but it means checking your inbox every time
             and it can be read by anyone who reaches that inbox. A passkey is
-            your device&apos;s own unlock instead — one setup, and no code to
+            your device&apos;s own unlock instead. One setup, and no code to
             wait for. <Link to="/account/passkeys">Add a passkey</Link>.
           </Banner>
         ) : null}

@@ -12,7 +12,7 @@ import { defineConfig } from "vitest/config";
  *
  * Vite's preview server reaches for the SPA fallback as soon as a URL has no
  * trailing slash, so every content page would answer with the shell instead of
- * its own pre-rendered markup — invisible to a crawler and impossible to test
+ * its own pre-rendered markup. Invisible to a crawler and impossible to test
  * honestly. Netlify, Cloudflare Pages, GitHub Pages and S3 website hosting all
  * do this directory-index lookup before falling back; this makes preview agree
  * with them, and leaves the SPA fallback in place for paths that really were
@@ -46,11 +46,11 @@ function serveDirectoryIndexBeforeSpaFallback(): PluginOption {
 // `import.meta.hot` itself for its own watch mode).
 //
 // The fix below excludes the ENTIRE `reactRouter()` plugin under Vitest, not
-// just the Fast Refresh piece — there is no finer-grained way to disable only
+// just the Fast Refresh piece. There is no finer-grained way to disable only
 // the preamble check. That's safe today only because our tests render route
 // components directly (`render(<Home />)`), so plain esbuild JSX transforms
 // are all they need. It stops being safe the moment a test starts depending
-// on something the plugin itself provides — route-level code splitting,
+// on something the plugin itself provides. Route-level code splitting,
 // virtual route modules, `loader`/`action` wiring, or route-level CSS side
 // effects. Such a test would render fine under Vitest (no plugin) yet behave
 // differently under `dev`/`build` (plugin present), and nothing here would
@@ -73,8 +73,8 @@ export default defineConfig({
      *
      * Vite's default inlines any asset under 4 KB, and the species gallery's
      * thumbnails sit right around that line. Inlined, they would be base64'd
-     * into the JavaScript bundle every page loads — 133 pictures paid for on
-     * the home page, on a feat page, everywhere — and they could never be
+     * into the JavaScript bundle every page loads (133 pictures paid for on
+     * the home page, on a feat page, everywhere) and they could never be
      * lazy-loaded or cached separately. As files they are fetched only when a
      * tile scrolls near the viewport, and cached under a content hash.
      */

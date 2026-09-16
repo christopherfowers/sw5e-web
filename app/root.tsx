@@ -32,7 +32,7 @@ export const links: Route.LinksFunction = () => [];
  * The title of last resort.
  *
  * Every page defines its own, so this is only ever what a reader sees when
- * none of them ran — which is exactly the case that was broken. When a route
+ * none of them ran. Which is exactly the case that was broken. When a route
  * throws, React Router renders the boundary and does not call that route's
  * `meta`, so `/anything-mistyped` came back as a 404 page with an empty
  * `<title>`: the browser tab, the bookmark and the history entry all showed
@@ -40,7 +40,7 @@ export const links: Route.LinksFunction = () => [];
  * was written for this and never reached it.
  *
  * It has to live on the root because the root is the one route that cannot
- * have errored — if it had, there would be no document at all. A child that
+ * have errored. If it had, there would be no document at all. A child that
  * renders normally overrides this in the ordinary way.
  *
  * No description here on purpose. A title is a label and a wrong one is merely
@@ -63,7 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           Replays the reader's theme before the first paint.
 
           Without this the page renders in the system's theme and corrects
-          itself once React has hydrated — a white flash on every navigation
+          itself once React has hydrated. A white flash on every navigation
           for anybody who chose dark, which is the one bug a theme toggle
           reliably ships with.
 
@@ -81,8 +81,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           both counts.
 
           Above it, because this is a statement about the whole document and a
-          reader who lands on a QA page should meet it before anything else —
-          and because it puts nothing focusable in front of the skip link,
+          reader who lands on a QA page should meet it before anything else.
+          And because it puts nothing focusable in front of the skip link,
           which must stay the first thing a keyboard user reaches.
 
           Outside the provider, because it has nothing to do with who is signed
@@ -91,7 +91,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           the session round trip takes on every page load.
 
           On production this renders an empty, invisible live region and
-          nothing else — see app/components/environment-banner.tsx.
+          nothing else. See app/components/environment-banner.tsx.
         */}
         <EnvironmentBanner />
         {/*
@@ -104,7 +104,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           On this site that provider does nothing at all during the build: it
           starts in a `loading` state and only asks the server who the reader
           is after hydration. That is what keeps identity out of the ~130
-          static HTML files nginx serves to everybody — see
+          static HTML files nginx serves to everybody. See
           app/auth/session.tsx.
         */}
         <AuthProvider>

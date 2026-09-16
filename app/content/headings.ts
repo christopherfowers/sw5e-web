@@ -7,7 +7,7 @@
  * asked it for a name as it drew. That reads well and is wrong: asking is a
  * mutation, so rendering was not a pure function of the item, and React is
  * entitled to render a component more than once for the same state. In
- * development it does exactly that — every id on a page reached by a
+ * development it does exactly that. Every id on a page reached by a
  * client-side navigation came out as `time-2`, `difficult-terrain-2`, because
  * the children had run twice against one slugger. Every link the search index
  * pointed at was dead.
@@ -23,7 +23,7 @@
  *
  * The parser detects a heading with `/^(#{1,6})\s+(.*)$/` on a trimmed line and
  * there are no fenced code blocks in this dialect, so a line scan finds exactly
- * the headings the parser will render — no more, no fewer. Parsing to find them
+ * the headings the parser will render. No more, no fewer. Parsing to find them
  * and parsing again to draw them would double the work on a rules chapter that
  * runs to hundreds of kilobytes, for an answer the cheap pass already has.
  *
@@ -57,8 +57,8 @@ export interface ItemHeadingIds {
    */
   sections: { heading: string | null; prose: string[] }[];
   /**
-   * Per entry, in the order the page draws them — grouped, groups in
-   * first-seen order — an id for each heading inside the entry's body.
+   * Per entry, in the order the page draws them (grouped, groups in
+   * first-seen order) an id for each heading inside the entry's body.
    */
   entries: string[][];
 }
@@ -68,7 +68,7 @@ export interface ItemHeadingIds {
  *
  * The order is the whole contract. Two headings with the same words get `-2`
  * on the second, so a plan built in a different order than the page draws in
- * puts the suffix on the wrong one — and the links are then subtly wrong
+ * puts the suffix on the wrong one, and the links are then subtly wrong
  * rather than obviously broken, which is worse.
  */
 export function nameItemHeadings(item: ContentItem): ItemHeadingIds {
@@ -79,7 +79,7 @@ export function nameItemHeadings(item: ContentItem): ItemHeadingIds {
     prose: headingsIn(section.body).map(slug),
   }));
 
-  // Entries after sections, grouped, groups in first-seen order — which is
+  // Entries after sections, grouped, groups in first-seen order. Which is
   // what `groupEntries` in item-detail.tsx produces and what the page draws.
   const groups = new Map<string, (string | null)[]>();
   for (const entry of item.entries) {
@@ -89,7 +89,7 @@ export function nameItemHeadings(item: ContentItem): ItemHeadingIds {
   }
 
   // An entry with no body draws no prose at all, so it takes no slot here
-  // either — the page only counts the entries it actually draws one for, and a
+  // either. The page only counts the entries it actually draws one for, and a
   // slot for a skipped entry would shift every entry after it onto the wrong
   // list of ids.
   const entries = [...groups.values()]

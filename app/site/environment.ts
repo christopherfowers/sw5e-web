@@ -7,7 +7,7 @@
  *
  * QA has to say, visibly, that it is QA and that nothing typed into it is kept.
  * And when the mail relay is refusing everything, the account screens have to
- * stop telling people a link is on its way — see `isAccountEmailDelivering`
+ * stop telling people a link is on its way. See `isAccountEmailDelivering`
  * below for why that one is not merely a nicety.
  *
  * The site cannot work either out for itself. Every page here is prerendered to
@@ -21,7 +21,7 @@
  * image is that the bytes do not change on the way, and a build-time flag makes
  * "tested in QA" a statement about a different binary.
  *
- * A second alternative is a small runtime configuration file — `/config.json`,
+ * A second alternative is a small runtime configuration file. `/config.json`,
  * or an `envsubst` over a template as nginx starts. That keeps one image, but it
  * moves the answer into the web container's own configuration, which means the
  * two deployments differ in something the web tier has to be given and can be
@@ -34,7 +34,7 @@
  * database and its own mail provider in each, and it answers
  * `GET /api/site/environment` with `{ name, isProduction, accountEmailDelivering }`.
  * The site asks it and works from the answer. The image stays identical across
- * environments and carries no configuration at all — the only thing that
+ * environments and carries no configuration at all. The only thing that
  * differs between QA and production is a variable on the service that already
  * had to have one.
  *
@@ -42,8 +42,8 @@
  * deployment this is settles once, at hydration, because it cannot change under
  * the reader. Whether mail is getting out is asked at the instant the interface
  * is about to promise a message, because it can change between page load and
- * form submission, and because the API attempts its send before it answers —
- * so a read taken after a 202 reflects the failure that very submission caused.
+ * form submission, and because the API attempts its send before it answers.
+ * So a read taken after a 202 reflects the failure that very submission caused.
  *
  * The request is same-origin, which is what keeps the Content-Security-Policy
  * at `connect-src 'self'` with no host named in it: the deployment routes
@@ -64,7 +64,7 @@
  * expected to branch on, and it has no deadline. Both are right for a form that
  * has to tell somebody why their submission failed. Here there is exactly one
  * answer for every failure, and a request still in flight after a few seconds
- * has already missed its purpose — so the classification would only be thrown
+ * has already missed its purpose, so the classification would only be thrown
  * away and the deadline would still have to be added.
  *
  * If this file ever needs a second endpoint, that is the moment to revisit it.
@@ -73,9 +73,9 @@
  * ## Fail closed, always
  *
  * `isTestEnvironment` returns true only when the service explicitly says it is
- * not production. Every other outcome — no network, a timeout, a 404 because
+ * not production. Every other outcome (no network, a timeout, a 404 because
  * the API is not mounted yet during a partial deploy, an HTML error page from
- * the proxy, a body of the wrong shape — returns false and draws nothing.
+ * the proxy, a body of the wrong shape) returns false and draws nothing.
  *
  * That asymmetry is the point and is worth stating plainly, because "show a
  * banner when something goes wrong" is the more usual instinct and is wrong
@@ -110,8 +110,8 @@ const ENDPOINT = "/api/site/environment";
  * answer.
  *
  * Bounded rather than left to the browser's own timeout, which can be tens of
- * seconds. Nothing depends on this request — the page is already rendered and
- * fully usable without it — so a request still in flight after a few seconds
+ * seconds. Nothing depends on this request, the page is already rendered and
+ * fully usable without it, so a request still in flight after a few seconds
  * has already failed at its actual job, which is to warn somebody before they
  * type into a database that gets dropped.
  */
@@ -124,7 +124,7 @@ function isSiteEnvironment(value: unknown): value is SiteEnvironment {
 
   // `isProduction` is checked for being a boolean rather than merely being
   // falsy. A body with the field missing would otherwise read as "not
-  // production" and put the banner on the live site — which is exactly the
+  // production" and put the banner on the live site. Which is exactly the
   // shape of thing a proxy or a future API version could serve.
   //
   // `accountEmailDelivering` is deliberately *not* required here. Requiring it
@@ -139,7 +139,7 @@ function isSiteEnvironment(value: unknown): value is SiteEnvironment {
  *
  * Never throws and never rejects. Callers that had to handle a failure would
  * each have to decide what a failure means, and the two callers here want
- * opposite defaults from the same silence — so the failure is flattened to one
+ * opposite defaults from the same silence, so the failure is flattened to one
  * value and each of them states its own default against it, in one line, where
  * it can be read and tested.
  *
@@ -174,7 +174,7 @@ async function read(signal?: AbortSignal): Promise<SiteEnvironment | null> {
 
     // During a partial deploy the static host answers `/api/*` with this app's
     // own HTML shell and a 200. Parsing that as JSON throws, which the catch
-    // below turns into "no answer" anyway — but checking the content type first
+    // below turns into "no answer" anyway, but checking the content type first
     // keeps the common case out of the exception path and says what is being
     // guarded against.
     const contentType = response.headers.get("content-type") ?? "";
@@ -238,7 +238,7 @@ export async function isTestEnvironment(signal?: AbortSignal): Promise<boolean> 
  * The opposite default to `isTestEnvironment`, and for the same underlying
  * rule: the safe answer is the one that changes nothing. A reachable service
  * saying mail is broken is a reason to stop promising mail. Not reaching the
- * service is not — it would mean every reader on a flaky connection, and every
+ * service is not. It would mean every reader on a flaky connection, and every
  * reader during a partial deploy, is told the site's email is down on the
  * strength of a request that did not come back. That is the same failure as a
  * "test environment" banner on the live site: a warning shown without grounds

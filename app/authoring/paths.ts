@@ -3,7 +3,7 @@
  *
  * Built here rather than written out at each link, because every one of them
  * puts its subject in the query string and a hand-assembled query string is how
- * a key containing an ampersand — or a type containing a plus — silently
+ * a key containing an ampersand, or a type containing a plus, silently
  * addresses the wrong document. `URLSearchParams` escapes; string concatenation
  * does not.
  *

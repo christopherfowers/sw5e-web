@@ -35,7 +35,7 @@ describe("an abandoned ceremony", () => {
   });
 
   it("is not confused with any other DOMException", () => {
-    // A cancelled prompt — the reader pressing Escape on the dialogue — is a
+    // A cancelled prompt, the reader pressing Escape on the dialogue, is a
     // NotAllowedError, and that one does have something to say.
     const cancelled = new DOMException("Not allowed.", "NotAllowedError");
 

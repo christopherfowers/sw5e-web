@@ -4,7 +4,7 @@
  *
  * These became addresses the moment headings in the rules text got anchors, so
  * a slug that shifts between builds is a link somebody pasted into a
- * conversation that now lands somewhere else — or nowhere. Everything below is
+ * conversation that now lands somewhere else, or nowhere. Everything below is
  * about that, and about the two ways it can go wrong: a slug that varies with
  * something it should not, and two headings claiming the same one.
  */
@@ -28,7 +28,7 @@ describe("slugify", () => {
 
   it("leaves no dash at either end", () => {
     // The bug that made this one function instead of two. One of the copies it
-    // replaced did not trim, so "Actions!" became `actions-` — invisible while
+    // replaced did not trim, so "Actions!" became `actions-`. Invisible while
     // these were only used for aria-labelledby, and a link somebody retypes
     // without the trailing dash once they are addresses.
     expect(slugify("Actions!")).toBe("actions");

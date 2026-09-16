@@ -4,9 +4,9 @@
  *
  * ## Why there are two doors, and why they are not the same size
  *
- * A passkey is the better credential by every measure that matters here — it
+ * A passkey is the better credential by every measure that matters here. It
  * cannot be phished, cannot be replayed on another site, never travels, and
- * there is nothing to remember. So it is the first thing on the page, it is
+ * there is nothing to remember, so it is the first thing on the page, it is
  * the primary button, and it is what the copy recommends.
  *
  * It is also unavailable to a real proportion of people, and pretending
@@ -22,13 +22,13 @@
  * control of an inbox and nothing about the device typing it, which is exactly
  * why the API marks the session it creates as not strongly authenticated and
  * refuses contributor work to it. The account page then offers passkey
- * enrolment to whoever came through it — once, as an offer, not as a banner
+ * enrolment to whoever came through it. Once, as an offer, not as a banner
  * that follows them around.
  *
  * ## What can go wrong, and what this does about each
  *
  *   the browser has no WebAuthn      say so, and offer the way forward that
- *                                    still exists — the emailed code, or
+ *                                    still exists. The emailed code, or
  *                                    another device
  *   the device has no platform
  *   authenticator (no Touch ID,
@@ -68,8 +68,8 @@
  *
  * So the code request is followed by a read of `/api/site/environment`, which
  * publishes whether mail is getting out at all. That question carries no
- * address and its answer is the same for every caller — "email is not going
- * out" is true of the site, not of anybody's account — which is what makes it
+ * address and its answer is the same for every caller ("email is not going
+ * out" is true of the site, not of anybody's account) which is what makes it
  * safe to show on a page whose whole design is that it reveals nothing about
  * which addresses are registered. A per-address answer would be the oracle the
  * identical 202 exists to prevent.
@@ -106,7 +106,7 @@ import "~/styles/account.css";
 
 export function meta() {
   return [
-    { title: "Sign in — Star Wars 5e" },
+    { title: "Sign in | Star Wars 5e" },
     {
       name: "description",
       content:
@@ -126,7 +126,7 @@ interface Failure {
  *
  * `passkey` is the landing step and the recommended path; `email` and `code`
  * are the two halves of the alternative; `totp` is the second factor, and it
- * is reached from either path — which is why the step machine records where
+ * is reached from either path. Which is why the step machine records where
  * the reader came from rather than assuming.
  */
 type Step = "passkey" | "email" | "code" | "totp";
@@ -204,8 +204,8 @@ export default function SignIn() {
    * sentence about the site that happens to be equally true for every reader.
    *
    * Starts true and is re-read on every request, so a relay that comes back
-   * mid-session stops the warning without a reload. Unknown counts as true —
-   * see `app/site/environment.ts` for why silence must change nothing.
+   * mid-session stops the warning without a reload. Unknown counts as true.
+   * See `app/site/environment.ts` for why silence must change nothing.
    */
   const [mailDelivering, setMailDelivering] = useState(true);
 
@@ -221,8 +221,8 @@ export default function SignIn() {
    *
    * Both are the service's, not this file's. The resend cooldown and the code
    * lifetime are budgets the API enforces, and a client that hard-coded either
-   * would go out of step with the service the first time somebody tuned it —
-   * showing a button as ready a quarter of a minute before the server will
+   * would go out of step with the service the first time somebody tuned it.
+   * Showing a button as ready a quarter of a minute before the server will
    * accept it, or promising ten minutes on a code good for five.
    */
   const [resendIn, setResendIn] = useState(0);
@@ -259,7 +259,7 @@ export default function SignIn() {
     };
   }, []);
 
-  // Someone who is already signed in has no business on this page — most often
+  // Someone who is already signed in has no business on this page. Most often
   // they got here from a stale tab or the browser's back button.
   useEffect(() => {
     if (status === "authenticated") void navigate(destination, { replace: true });
@@ -273,7 +273,7 @@ export default function SignIn() {
    * Focus follows the step, but only once the reader has actually moved.
    * Comparing against the previous value rather than firing on mount is what
    * keeps the page from yanking focus out of the address bar the instant it
-   * loads — a heading that grabs focus on arrival is its own accessibility
+   * loads. A heading that grabs focus on arrival is its own accessibility
    * bug, and the landing step has a real `h1` for orientation anyway.
    */
   useEffect(() => {
@@ -303,7 +303,7 @@ export default function SignIn() {
    * Turns a thrown thing into the two sentences a reader needs.
    *
    * `refusalTitle` is what to say when the service refused the credential
-   * itself, and it differs per step — telling someone in the middle of the
+   * itself, and it differs per step. Telling someone in the middle of the
    * emailed-code flow that "that passkey was not accepted" is worse than
    * saying nothing. The two failures that are *not* about the credential are
    * handled here for every step, because getting them wrong is the expensive
@@ -365,7 +365,7 @@ export default function SignIn() {
    * either way, and so is the answer: a 202 whose body is identical whether
    * the address has an account, has never been seen, or has already had its
    * three codes for the quarter hour. Nothing below reads that body for a
-   * verdict, because there is none in it — see `EmailCodeResponse`.
+   * verdict, because there is none in it. See `EmailCodeResponse`.
    */
   async function sendCode({ resend = false } = {}) {
     const address = email.trim();
@@ -401,7 +401,7 @@ export default function SignIn() {
       // The previous code stops working either way: the service issued a new
       // one and superseded it, and whether the message carrying it got out is a
       // separate question. Somebody holding an old code needs telling that it
-      // is dead even — especially — when the new one never arrived.
+      // is dead even, especially, when the new one never arrived.
       if (resend) {
         setNotice(
           delivering
@@ -424,7 +424,7 @@ export default function SignIn() {
         title: "Enter the six-digit code.",
         // The last sentence on this page that asserted a message had been sent.
         // It is shown when the field is short, which is exactly when somebody
-        // is hunting for a code — so telling them to look in an email that was
+        // is hunting for a code, so telling them to look in an email that was
         // never sent is the same harm as the panel above, in smaller type.
         body: mailDelivering
           ? "It is the number in the email that was just sent."
@@ -505,8 +505,8 @@ export default function SignIn() {
   /**
    * Returns to the landing step, discarding whatever the other path held.
    *
-   * Everything the alternative accumulated goes with it — the code, the
-   * banner, the field-level complaint about the address — so that coming back
+   * Everything the alternative accumulated goes with it (the code, the
+   * banner, the field-level complaint about the address) so that coming back
    * to it later starts clean instead of opening on a criticism of something
    * that has since been retyped. The address itself is kept, because it is the
    * one thing worth not making somebody type twice.
@@ -576,7 +576,7 @@ export default function SignIn() {
               disabled={pending}
               onClick={() => {
                 // Back to whichever door this reader came through. The
-                // alternative — always the passkey step — strands anybody who
+                // alternative, always the passkey step, strands anybody who
                 // reached here without one.
                 setStep(codeOrigin);
                 setCode("");
@@ -599,7 +599,7 @@ export default function SignIn() {
        *
        * The honest branch still renders the form. A code that was issued before
        * the relay broke is still live until it expires, and a reader holding
-       * one has a way in that costs nothing to leave open — whereas a screen
+       * one has a way in that costs nothing to leave open. Whereas a screen
        * that removed the field would strand them for a reason that has nothing
        * to do with them. What it does not do is claim anything arrived.
        */
@@ -726,7 +726,7 @@ export default function SignIn() {
     return (
       <AuthCard
         title="Sign in with an emailed code"
-        lede="For a device that cannot use a passkey — a shared machine, an older computer, or one whose policy forbids enrolling one."
+        lede="For a device that cannot use a passkey. A shared machine, an older computer, or one whose policy forbids enrolling one."
       >
         {heading}
         {errorBanner}
@@ -769,7 +769,7 @@ export default function SignIn() {
 
         {/* Said before the code is asked for rather than after, because it is
             the reason the next screen will not tell them whether the address
-            was right — and a reader who learns that only once they are stuck
+            was right, and a reader who learns that only once they are stuck
             reasonably concludes the page is broken. */}
         <p className="auth-note">
           A code is sent only if that address already has an account, and this
@@ -832,7 +832,7 @@ export default function SignIn() {
         {/* There is deliberately no email field on *this* step, and adding one
             back would be offering a control that cannot do anything. The API
             ignores the request body on `passkey/login/begin`, never accepts an
-            address, and always answers with an empty `allowCredentials` — so
+            address, and always answers with an empty `allowCredentials`. So
             the challenge is identical for every caller, and there is no input
             here whose answer could differ between a registered address and an
             unregistered one. Every passkey the site issues is discoverable, so
@@ -843,7 +843,7 @@ export default function SignIn() {
             address it can parse. The property survives; it is now enforced on
             the server rather than by the absence of a field. */}
         <p className="auth-note">
-          A passkey is your device&apos;s own unlock — a fingerprint, your face,
+          A passkey is your device&apos;s own unlock. A fingerprint, your face,
           or the PIN you already use. It never leaves the device, cannot be
           reused on another site, and there is nothing to remember or to leak.
         </p>

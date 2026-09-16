@@ -12,7 +12,7 @@
  *
  * Four decisions are worth knowing about:
  *
- * 1. Sizes are baked into the file names — `wookiee-192x306.webp`. The
+ * 1. Sizes are baked into the file names. `wookiee-192x306.webp`. The
  *    renderer reads width and height straight off the URL, so every `<img>`
  *    can carry explicit dimensions and reserve its space before the bytes
  *    arrive. A separate dimensions manifest would be one more thing to drift.
@@ -26,8 +26,8 @@
  *
  * 4. Gallery thumbnails are flattened onto an opaque plate; detail portraits
  *    keep their alpha. That single difference is worth about 40% of the
- *    species index's weight. These cutouts have soft, complicated edges —
- *    fur, spines, tendrils — and an alpha channel that detailed costs more to
+ *    species index's weight. These cutouts have soft, complicated edges
+ * (   fur, spines, tendrils) and an alpha channel that detailed costs more to
  *    encode than the picture does. On a 190px tile the transparency buys
  *    nothing, because the tile has a solid ground behind it anyway; on the
  *    detail page, where the portrait sits in a tinted frame, it buys the whole
@@ -60,8 +60,8 @@ const OUT_ROOT = "app/assets";
  *
  * That distinction matters here because the archive's art is small and wildly
  * uneven: portraits run from 112 to well over 360 pixels wide. Against a fixed
- * ladder, a 310px source emits a 224 and a 310 — nearly the same picture
- * twice — while a 171px source emits nothing but itself. Against a
+ * ladder, a 310px source emits a 224 and a 310, nearly the same picture
+ * twice, while a 171px source emits nothing but itself. Against a
  * proportional one, the wide source gets a candidate a low-density screen can
  * actually use and the narrow source correctly emits a single file, because
  * anything smaller would be below the size the layout displays it at and could
@@ -97,8 +97,8 @@ const RECIPES = {
 /**
  * Portrait file names the archive spells differently from the dataset's slug
  * in a way no normalization would reconcile. Everything else matches once
- * punctuation and case are stripped, so this table stays short on purpose —
- * if it starts growing, the normalization below is the thing to fix.
+ * punctuation and case are stripped, so this table stays short on purpose.
+ * If it starts growing, the normalization below is the thing to fix.
  */
 const PORTRAIT_ALIASES = {
   hutt: "hutt-adolescent",
@@ -212,7 +212,7 @@ function encode(source, outDir, stem, width, recipe) {
  * The ladder of widths for one source: its own width capped at the role's
  * maximum, then each step down by RATIO for as long as the result is still a
  * size the layout could choose. A source too small for even one step down
- * emits a single file, which is the right answer — a narrower copy of a
+ * emits a single file, which is the right answer. A narrower copy of a
  * 120px portrait is a file no browser would ever pick.
  */
 function ladder(naturalWidth, recipe) {

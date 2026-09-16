@@ -26,7 +26,7 @@ function srcSetWidths(srcSet: string): number[] {
 describe("the image set", () => {
   it("carries a portrait for the great majority of species", () => {
     // 134 of 141 species have art in the archive. A build that has lost the
-    // asset directory would resolve zero and still render — silently going
+    // asset directory would resolve zero and still render. Silently going
     // back to the wall of text this work replaced.
     expect(speciesPortraitCount()).toBeGreaterThan(100);
   });
@@ -85,8 +85,8 @@ describe("what a srcset offers", () => {
   });
 
   /**
-   * The archive's art is small and uneven — portraits run from 112 pixels wide
-   * to over 360 — so sizes are derived from each source rather than taken off
+   * The archive's art is small and uneven, portraits run from 112 pixels wide
+   * to over 360, so sizes are derived from each source rather than taken off
    * a fixed ladder. A wide source has room for a candidate a low-density
    * screen can use.
    */
@@ -112,7 +112,7 @@ describe("what a srcset offers", () => {
 
   /**
    * Thumbnails are the opposite case: they are shown at about 190 pixels, so
-   * nearly every source is wide enough to be worth offering twice — and 141 of
+   * nearly every source is wide enough to be worth offering twice, and 141 of
    * them are on one page, which is where halving a candidate actually pays.
    */
   it("gives a gallery thumbnail two candidates wherever the source allows", () => {
@@ -126,7 +126,7 @@ describe("what a srcset offers", () => {
   /**
    * Thumbnails and portraits are separate sets in separate directories, which
    * is what makes it structurally impossible for the species index to reach
-   * for a full-size portrait — 141 of them at once is how that page would
+   * for a full-size portrait. 141 of them at once is how that page would
    * become several megabytes.
    */
   it("never offers a gallery thumbnail wider than the gallery needs", () => {

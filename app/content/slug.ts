@@ -5,7 +5,7 @@
  * trimmed the dashes off the ends and one did not, so a heading called
  * "Actions!" became `actions-` in one place and `actions` in the other. Both
  * were only ever used for `aria-labelledby`, where a trailing dash is merely
- * ugly — but headings in the rules text are about to become addresses people
+ * ugly, but headings in the rules text are about to become addresses people
  * paste to each other, and an address with a stray dash on the end is one
  * somebody will eventually retype without it.
  */
@@ -33,10 +33,10 @@ export function slugify(label: string): string {
  * the same `id`, every link to any of them would land on the first, and
  * `aria-labelledby` on the rest would point at the wrong section. Duplicates
  * are suffixed by their order of appearance, which is stable as long as the
- * document is — the same text produces the same ids on every build, which is
+ * document is. The same text produces the same ids on every build, which is
  * what makes the links worth pasting.
  *
- * A label with nothing addressable in it — punctuation only, or empty — gets
+ * A label with nothing addressable in it (punctuation only, or empty) gets
  * `section` rather than an empty id, because an empty `id` is not addressable
  * and duplicate empty ones are invalid.
  */

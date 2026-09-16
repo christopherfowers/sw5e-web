@@ -2,7 +2,7 @@
  * A stand-in for the flagging API, alongside the account one.
  *
  * The account contract fixture refuses any request that is not under
- * `/api/auth` — deliberately, so a test cannot silently hit something it did
+ * `/api/auth`. Deliberately, so a test cannot silently hit something it did
  * not mean to. Every flag test needs both: the session has to resolve through
  * the real `AuthProvider` before a page can draw anything, and then the page
  * talks to `/api/flags`.
@@ -13,8 +13,8 @@
  * not expect" property the account fixture was built for.
  *
  * It records every call, because most of what these tests assert is about the
- * request rather than the reply: which path, which method, and — for the
- * reporting form — that the body carried the reason and target the reader
+ * request rather than the reply: which path, which method, and, for the
+ * reporting form, that the body carried the reason and target the reader
  * actually chose.
  */
 
@@ -159,8 +159,8 @@ export function flag(overrides: Partial<Flag> = {}): Flag {
  * One `fetch` that serves both APIs.
  *
  * The account half is the real contract fixture, so the session still resolves
- * the way it does in every other test in this suite — through a genuine
- * `GET /api/auth/me` — rather than being injected.
+ * the way it does in every other test in this suite, through a genuine
+ * `GET /api/auth/me`, rather than being injected.
  */
 export function serveBoth(auth: AuthApiContract, flags: FlagApiStub): typeof fetch {
   const account = contractFetch(auth);

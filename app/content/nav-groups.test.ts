@@ -7,7 +7,7 @@
  * still doing it: it takes the real `app/content/nav-groups.ts`, deletes one arm
  * of `TYPE_NAV`, runs TypeScript over the result and asserts the build fails
  * with the deleted type's own name in the message. It is checking that the
- * guard still exists — that `TYPE_NAV` is a total `Record<ContentTypeId, …>` and
+ * guard still exists. That `TYPE_NAV` is a total `Record<ContentTypeId, …>` and
  * has not been softened to a `Partial`, widened to `Record<string, …>` or given
  * a fallback. `app/auth/prerender-safety.test.ts` exists for the same kind of
  * reason. The unmodified source is compiled first, in the same harness, because
@@ -18,8 +18,8 @@
  * Since the menus became written-out lists of destinations rather than a
  * projection of `TYPE_NAV`, placing a type puts no link on screen: a type can
  * name its group, satisfy the compiler, and have nothing anywhere leading to it.
- * The published page would still build, still be prerendered, still be indexed —
- * and be reachable only by somebody who already knew the address. Nothing
+ * The published page would still build, still be prerendered, still be indexed.
+ * And be reachable only by somebody who already knew the address. Nothing
  * observable from inside the app catches that, which is exactly the shape of
  * failure the original version of this file was written to prevent.
  *
@@ -151,8 +151,8 @@ describe("a content type that declares no group fails the build", () => {
           "being placed, and nothing will say so.",
       ).toBeGreaterThan(0);
 
-      // A hyphenated id comes back quoted twice — Property '"class-improvements"'
-      // — so the optional quotes are part of the pattern rather than a typo.
+      // A hyphenated id comes back quoted twice, Property '"class-improvements"',
+      // so the optional quotes are part of the pattern rather than a typo.
       expect(
         messages.join("\n"),
         "the compiler must name the type that is missing, or the error is a " +
@@ -226,7 +226,7 @@ describe("every content type is reachable from the navigation", () => {
     if (indexed.has(type) || named.has(type)) return;
 
     /*
-      Covered by a set of slices rather than by an index — which is a real way
+      Covered by a set of slices rather than by an index. Which is a real way
       to be reachable and a fragile one, so it is proved against the rows
       instead of taken on trust. Equipment is the case: `/equipment` is in no
       menu, and Armor plus Weapons plus Other equipment only add up to it while
@@ -264,7 +264,7 @@ describe("every content type is reachable from the navigation", () => {
     The other half of the same guarantee. The check above asks whether the rows
     a menu offers cover the type; this asks whether every view the site has
     built is in a menu at all. A view that exists and is not offered is a
-    prerendered page nothing links to — and it is also what would make the
+    prerendered page nothing links to, and it is also what would make the
     check above quietly weaker, since it only ever looks at the views the menus
     name.
   */
@@ -296,8 +296,8 @@ describe("every content type is reachable from the navigation", () => {
     stops at the declaration and never looks, and those rows are published and
     unreachable with nothing anywhere going red.
 
-    It is the same arrangement as equipment — `/equipment` is in no menu and
-    Armor plus Weapons plus Other equipment stand in for it — with one
+    It is the same arrangement as equipment, `/equipment` is in no menu and
+    Armor plus Weapons plus Other equipment stand in for it, with one
     difference worth stating: `/class-improvements` is not the index above the
     three, it is the first of them. There is no thirty-row page any more,
     deliberately, because the three answer three different questions and the
@@ -326,8 +326,8 @@ describe("every content type is reachable from the navigation", () => {
  * An entry pointing at an address with no prerendered file still works
  * everywhere anybody looks: `npm run dev` serves it, the e2e suite clicks
  * through it, every assertion above stays green. What happens instead is that
- * nginx answers it from the SPA fallback, which is wired to `error_page 404` —
- * so the page renders perfectly in a browser and is broken to a crawler, a
+ * nginx answers it from the SPA fallback, which is wired to `error_page 404`.
+ * So the page renders perfectly in a browser and is broken to a crawler, a
  * monitor and a shared link. Three of this header's entries are addresses that
  * exist for no other reason than to be linked from it, so the failure is one
  * typo away rather than hypothetical.
@@ -346,7 +346,7 @@ describe("every menu entry has a file behind it", () => {
           Off-site destinations are exempt, and narrowly: they are exempt
           because this build cannot write a file for somebody else's domain,
           not because links are hard to check. Filtering on the kind rather
-          than on the shape of the address is what keeps that narrow — a
+          than on the shape of the address is what keeps that narrow. A
           relative path that had been typed wrongly would still be caught,
           where `startsWith("https://")` would have quietly excused it.
         */
@@ -446,7 +446,7 @@ describe("the placement table", () => {
 
   it("keeps site metadata out of content navigation", () => {
     /*
-      The credits types — the people who made this and the artwork they made —
+      The credits types, the people who made this and the artwork they made,
       are not game content and belong in the footer, which already links them.
       There is no such type in the published set today, which is exactly why the
       rule is exercised against a menu built here: a rule only tested by data
@@ -581,7 +581,7 @@ describe("building the groups", () => {
  * Two things are worth holding still here. The first is the addresses: they
  * were read off sw5e.com and confirmed to answer before they were written
  * down, and a character sheet is the one link on this site a reader is most
- * likely to follow from a table rather than a browser — a rotted one is
+ * likely to follow from a table rather than a browser. A rotted one is
  * noticed by somebody mid-session.
  *
  * The second is the kind. Everything about how these render depends on

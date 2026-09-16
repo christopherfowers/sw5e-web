@@ -9,10 +9,10 @@ import { isContentTypeId, type AnySummary, type ContentTypeId } from "~/content/
 import type { Route } from "./+types/type-index";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  if (!loaderData) return [{ title: "Not found — Star Wars 5e" }];
+  if (!loaderData) return [{ title: "Not found | Star Wars 5e" }];
   const meta = TYPE_META[loaderData.type];
   return [
-    { title: `${meta.plural} — Star Wars 5e` },
+    { title: `${meta.plural} | Star Wars 5e` },
     {
       name: "description",
       content: `${loaderData.rows.length} ${meta.plural.toLowerCase()} for Star Wars 5e. ${meta.blurb}`,
@@ -69,7 +69,7 @@ export default function TypeIndex({ loaderData }: Route.ComponentProps) {
           statements of the same number, four elements apart, read as a
           rendering fault rather than as emphasis.
 
-          Naming the group instead turns a duplicate into a wayfinder — it is
+          Naming the group instead turns a duplicate into a wayfinder. It is
           the word in the header menu this page was reached through, and the
           rail beside it is the same group's contents. A type that belongs to
           no group draws the icon alone.

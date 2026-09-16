@@ -11,7 +11,7 @@ import { SiteFooter } from "./site-chrome";
  * made the conversion or about the site's own licence.
  *
  * These assertions are on the substance rather than on the exact sentences, so
- * the copy can be edited without a test rewrite — but a rewrite that drops one
+ * the copy can be edited without a test rewrite, but a rewrite that drops one
  * of the three claims, or that starts implying the site owns Star Wars or that
  * MIT covers the game content, fails.
  */
@@ -67,7 +67,7 @@ describe("the site footer", () => {
    * It read "This site continues that work and does not speak for sw5e.com or
    * the people who ran it", and it disclaimed a relationship that exists. This
    * site is Star Wars 5e. A disclaimer of that is not a modest hedge, it is a
-   * false statement, and it appeared on every page of the site — which is
+   * false statement, and it appeared on every page of the site. Which is
    * exactly why it is pinned here: the removed sentence is short, plausible and
    * of the kind a tidy-up would happily reinstate.
    *
@@ -86,7 +86,7 @@ describe("the site footer", () => {
   /**
    * And what stands in its place. The footer has to say which project this is,
    * because it is one of only two things on every page that says anything about
-   * the site at all — the wordmark tagline is the other.
+   * the site at all. The wordmark tagline is the other.
    */
   it("says that this site is the reference, not a bystander to it", () => {
     const footer = renderFooter().container;

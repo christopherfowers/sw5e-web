@@ -7,8 +7,8 @@
  * whether a static host's HTML error page can be mistaken for an API response.
  *
  * The error-decoding tests carry more weight than they look like they should.
- * This API answers its failures as RFC 9457 problem documents — content type
- * `application/problem+json`, message in `detail` — and answers two of its most
+ * This API answers its failures as RFC 9457 problem documents (content type
+ * `application/problem+json`, message in `detail`) and answers two of its most
  * common refusals with no body at all. A client written for
  * `application/json` and `message` misreads every one of them, and misreads
  * them as "the service is unreachable", which is the one failure a reader is
@@ -112,7 +112,7 @@ describe("cross-site protection", () => {
   /**
    * The API does not use double-submit. It checks `Origin` and
    * `Sec-Fetch-Site`, both of which the browser writes and neither of which
-   * script can forge — so the correct client behaviour is to send nothing
+   * script can forge, so the correct client behaviour is to send nothing
    * extra. These tests pin that absence, because a token header is the thing
    * somebody reaches for when a 403 appears, and adding one here would be
    * inventing a credential for JavaScript to look after in exchange for
@@ -337,7 +337,7 @@ describe("error decoding", () => {
   it("tells the two 403s apart, because one of them is fixable", async () => {
     /*
      * A plain forbidden is the end of the conversation: the account does not
-     * hold the role. This one is not — the account holds it, and the session
+     * hold the role. This one is not. The account holds it, and the session
      * behind the request was simply established with an emailed code, so
      * enrolling a passkey or an authenticator app clears it in a minute. The
      * client can only draw that distinction if the code survives the decode,
@@ -458,7 +458,7 @@ describe("request bodies", () => {
 
   it("sends both halves when redeeming a sign-in code", async () => {
     // The code is issued *for* an address and the server checks the pair, so a
-    // client that sent only the digits would be refused every time — and would
+    // client that sent only the digits would be refused every time, and would
     // be indistinguishable, from the reader's side, from one sending a wrong
     // code.
     const calls = recordFetch(() =>

@@ -11,7 +11,7 @@
  * archive-derived set and is gitignored; `app/data/fixture/` is the small
  * curated set that is committed so tests and CI pass without the archive.
  * Generated wins when present. Both are matched with `import.meta.glob`, which
- * quietly yields nothing when a directory is absent — the mechanism that lets
+ * quietly yields nothing when a directory is absent. The mechanism that lets
  * one build work in both situations.
  */
 

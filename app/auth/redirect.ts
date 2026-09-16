@@ -4,7 +4,7 @@
  * The destination travels through the URL, which means it is attacker-supplied
  * input: anyone can send a link to `/sign-in?next=https://evil.example/`, and
  * a client that navigates to whatever it finds there has built an open
- * redirect — a phishing primitive that borrows this site's domain for the
+ * redirect. A phishing primitive that borrows this site's domain for the
  * first hop.
  *
  * So this is an allow-list, not a block-list. A destination has to be a path
@@ -23,7 +23,7 @@ export const DEFAULT_SIGNED_IN_PATH = "/account";
  * tabs, newlines and carriage returns out of a URL *before* parsing it, so a
  * value of "/<tab>/evil.example" passes a `startsWith("/")` check, passes a
  * `startsWith("//")` rejection, and is then navigated to as
- * "//evil.example" — a host, not a path. A block-list has to remember that;
+ * "//evil.example". A host, not a path. A block-list has to remember that;
  * an allow-list cannot forget it.
  */
 const PATH_CHARACTERS = new Set(

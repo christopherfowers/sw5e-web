@@ -89,7 +89,7 @@
  *
  * Separated by a rule and set in smaller, muted type on purpose. Passkeys are
  * the recommendation, and a block styled to match the primary action would say
- * the opposite of what the copy says — two equal choices, where the page means
+ * the opposite of what the copy says. Two equal choices, where the page means
  * one recommendation and one fallback. It has to be easy to find and obviously
  * secondary at the same time, which is what the divider plus the plain button
  * buys. */
@@ -535,7 +535,7 @@
 /* --- authenticator enrolment --- */
 
 /* The numbers are restored explicitly: the base stylesheet strips list markers
- * everywhere, and here the order is the instruction — add the account, then
+ * everywhere, and here the order is the instruction. Add the account, then
  * confirm it works. */
 .enrol-steps {
   display: grid;

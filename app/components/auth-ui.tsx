@@ -3,7 +3,7 @@
  *
  * These exist so that every message in the account area is announced the same
  * way, and so that no screen has to reinvent the association between a field,
- * its label, its hint and its error — the part that quietly stops working the
+ * its label, its hint and its error. The part that quietly stops working the
  * third time it is written out by hand.
  *
  * Two rules run through all of it:
@@ -47,7 +47,7 @@ export function AuthCard({
 
 /**
  * `warning` is for the case where what the reader asked for was accepted and
- * the thing they were promised will not happen anyway — the account endpoints
+ * the thing they were promised will not happen anyway. The account endpoints
  * answer 202 whether or not the mail behind them got out, so a refused relay is
  * neither a failure of the submission nor a success worth a green banner.
  */
@@ -76,8 +76,8 @@ export function Banner({
       /*
        * Alert only for `error`. Everything else is polite, `warning` included,
        * and that is a decision rather than an oversight: the screens that draw
-       * a warning move focus to a heading in the same commit — a step change,
-       * a confirmation panel — and an assertive region firing on top of a focus
+       * a warning move focus to a heading in the same commit (a step change,
+       * a confirmation panel) and an assertive region firing on top of a focus
        * move makes a screen reader say two things at once, of which the reader
        * reliably catches neither.
        */
@@ -213,7 +213,7 @@ export function SubmitButton({
  * reader is.
  *
  * It deliberately says nothing about whether anyone is signed in. This is the
- * state the prerendered HTML is frozen in — see `app/auth/session.tsx` — so it
+ * state the prerendered HTML is frozen in, see `app/auth/session.tsx`, so it
  * is served to every visitor, cached, and read by crawlers. Any claim it made
  * would be wrong for somebody.
  */

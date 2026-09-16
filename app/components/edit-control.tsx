@@ -1,14 +1,14 @@
 /**
- * "Edit this page" — from the page it edits.
+ * "Edit this page". From the page it edits.
  *
  * ## Why it exists
  *
  * The authoring screens were reachable from exactly one place: a button inside
  * `/account/contributions`, two clicks below the header, on a page nobody
- * visits to fix a typo. So somebody with every permission the site grants
+ * visits to fix a typo, so somebody with every permission the site grants
  * could read a page with a wrong number on it and have no way to act on it
  * except to remember a URL. The reporting control next to this one had the
- * shape right — put the affordance on the thing — and this is the same idea
+ * shape right, put the affordance on the thing, and this is the same idea
  * for the people who can do something about it directly.
  *
  * ## Why it is quiet
@@ -24,7 +24,7 @@
  *
  * Every content page is a static file written at build time and served to
  * everybody, so this component renders nothing at all until the session has
- * resolved — which is the state the prerendered HTML is frozen in. The first
+ * resolved. Which is the state the prerendered HTML is frozen in. The first
  * client render therefore matches the served markup exactly, and the link
  * appears afterwards, in an update, only for an account that can use it.
  *
@@ -42,8 +42,8 @@ import { useSession } from "~/auth/session";
 
 interface EditControlProps {
   /**
-   * The site's own route segment for this kind of thing — `species`,
-   * `enhanced-items` — which is what the authoring screens address documents
+   * The site's own route segment for this kind of thing (`species`,
+   * `enhanced-items`) which is what the authoring screens address documents
    * by, so no mapping table has to be kept in step here.
    */
   type: string;

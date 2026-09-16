@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 /**
  * The contract suite, kept separate from the unit suite on purpose.
  *
- * `npm test` must stay fast, offline and hermetic — it is what runs on every
+ * `npm test` must stay fast, offline and hermetic. It is what runs on every
  * save. The tests under `tests/contract` are none of those things: they need
  * the account API image running somewhere, they talk to it over the network,
  * and they take as long as a container takes to start. Folding them into the

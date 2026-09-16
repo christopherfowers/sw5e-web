@@ -9,7 +9,7 @@ import { expect, test } from "@playwright/test";
  *
  * That is worth guarding because the failure is silent. A type declared in
  * `app/content/types.ts` but missed in `react-router.config.ts` still appears
- * in the header, still type-checks, and still builds — and then answers every
+ * in the header, still type-checks, and still builds, and then answers every
  * one of its links with the SPA fallback, which nginx serves as a 404 with
  * markup that looks fine in a browser. The row counts themselves are compared
  * against the published content image in the container job, which is the only
@@ -38,7 +38,7 @@ test.describe("starship types", () => {
           "rather than a page of its own",
       ).toMatch(new RegExp(`<h1[^>]*>${heading}</h1>`));
 
-      expect(html).not.toContain("Not found — Star Wars 5e");
+      expect(html).not.toContain("Not found | Star Wars 5e");
     });
   }
 

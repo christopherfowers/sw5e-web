@@ -1,5 +1,5 @@
 /**
- * The passkey ceremonies, and — mostly — their failures.
+ * The passkey ceremonies, and, mostly, their failures.
  *
  * WebAuthn reports nearly everything as `NotAllowedError`, so the value of
  * this module is entirely in the translation. These tests pin each branch of

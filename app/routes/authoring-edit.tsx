@@ -4,9 +4,9 @@
  * ## Drafting and publishing are two acts, because the service says so
  *
  * Writing a draft needs `Contributor`; publishing it needs `Administrator`.
- * That is the service's rule, not this client's, and it is a good one — a
+ * That is the service's rule, not this client's, and it is a good one, a
  * contributor proposes a correction and somebody with the books open agrees to
- * it — so the interface is built around it rather than hiding it. A contributor
+ * it, so the interface is built around it rather than hiding it. A contributor
  * sees "Save draft" and a sentence saying who publishes; an administrator sees
  * both buttons. Neither is shown a control that would answer 403.
  *
@@ -16,7 +16,7 @@
  * reader cannot publish something other than what they are looking at. That
  * would be the single most damaging line in this file. Writing a draft
  * recaptures its base revision on the server, so a save-then-publish would
- * *erase the staleness check* — and staleness is exactly the condition where
+ * *erase the staleness check*, and staleness is exactly the condition where
  * publishing overwrites somebody else's published work.
  *
  * So publishing publishes the stored draft, the button says so, and it is
@@ -31,7 +31,7 @@
  *   the worklist marks a draft whose base is no longer current;
  *
  *   opening such a draft shows, before a single keystroke is spent, what was
- *   published underneath it — field by field, so the author can fold those
+ *   published underneath it. Field by field, so the author can fold those
  *   changes into what they are writing;
  *
  *   publishing one is refused with `409 draft-stale`, and that refusal changes
@@ -191,7 +191,7 @@ async function loadSubject(
   // site is in: revisions are written when somebody publishes through the
   // authoring API, and the corpus arrived through the importer, which writes
   // none. Reading the newest revision and giving up when there is not one made
-  // the editor offer a blank form for 7,877 published documents — an edit
+  // the editor offer a blank form for 7,877 published documents. An edit
   // button that could only ever add.
   //
   // The published document is still there to be read, so read it. The base
@@ -265,8 +265,8 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
    * Whether a publish has just been refused as stale.
    *
    * A separate flag from {@link isStale}, which is derived from what was
-   * loaded. The refusal is newer information than the load — it means somebody
-   * published in the seconds since — and it has to hold the panel open even
+   * loaded. The refusal is newer information than the load, it means somebody
+   * published in the seconds since, and it has to hold the panel open even
    * though nothing about the loaded subject has changed.
    */
   const [refused, setRefused] = useState(false);
@@ -275,7 +275,7 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
    * Whether a draft exists to publish.
    *
    * `subject.draft` answers that for the moment the document was opened, and
-   * saving a brand-new draft does not change it — so without this, the first
+   * saving a brand-new draft does not change it, so without this, the first
    * save of something new would leave the publish control disabled until the
    * page was reloaded, which reads as the save not having worked.
    */
@@ -339,7 +339,7 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
 
         `readSchemaViolations` answers null for "not sent" and an empty array
         for "sent and empty", which is why this checks for null rather than for
-        length — an empty structured list means there was nothing to place, not
+        length. An empty structured list means there was nothing to place, not
         that the parser should have a go.
       */
       const structured = readSchemaViolations(error.extensions);
@@ -368,8 +368,8 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
     try {
       await saveDraft(subject.type, subject.key, {
         document,
-        // Sent only when there is one. The link is set-only on the service —
-        // a later save cannot detach it — so this client never pretends to
+        // Sent only when there is one. The link is set-only on the service,
+        // a later save cannot detach it, so this client never pretends to
         // offer a control that would clear it.
         ...(flagId ? { resolvesFlagId: flagId } : {}),
       });
@@ -399,7 +399,7 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
       if (force) {
         // The deliberate override, and the only path that writes the draft on
         // its way to publishing. Re-saving recaptures the base revision, which
-        // is exactly what makes the publish below succeed — and exactly why it
+        // is exactly what makes the publish below succeed, and exactly why it
         // is never done implicitly.
         await saveDraft(subject.type, subject.key, {
           document,
@@ -515,7 +515,7 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
         <Banner tone="info" title="No schema is published for this content type.">
           The document is edited directly as JSON. It is still checked against
           the schema by the service when it is saved, so a mistake is refused
-          rather than stored — the refusal simply arrives at the end instead of
+          rather than stored. The refusal simply arrives at the end instead of
           against the field.
         </Banner>
       ) : null}
@@ -548,7 +548,7 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
                     <a href={`#${fieldId(scope, violation.pointer)}`}>
                       {violation.pointer || "The document"}
                     </a>{" "}
-                    — {violation.message}
+                   , {violation.message}
                   </li>
                 ))}
               </ul>
@@ -632,7 +632,7 @@ function Editor({ subject, flagId, canPublish, onPublished, reload }: EditorProp
  * The panel shows the other person's change rather than only announcing it.
  * That is the difference between a conflict a contributor can resolve and one
  * they can only be blocked by: the service offers no merge and no re-base, so
- * folding the two together is done by hand — and doing it by hand requires
+ * folding the two together is done by hand, and doing it by hand requires
  * being able to read what the other change was, right next to the editor.
  *
  * There is no "take theirs" button, and that is deliberate. It would have to
@@ -663,7 +663,7 @@ function ConflictPanel({
    *
    * That keeps two whole documents out of the editor's state, where they would
    * have to be cleared on every transition that could invalidate them, and it
-   * keeps every state change in this file inside a promise callback — the rule
+   * keeps every state change in this file inside a promise callback. The rule
    * `app/auth/session.tsx` sets out for the whole app.
    */
   useEffect(() => {
@@ -713,7 +713,7 @@ function ConflictPanel({
 
       {load.state === "failed" ? (
         <Banner tone="error" title="What changed could not be loaded.">
-          {messageFor(load.error)} The conflict is still real — publishing will
+          {messageFor(load.error)} The conflict is still real. Publishing will
           be refused until the draft is saved again.
         </Banner>
       ) : load.state === "loading" ? (
@@ -766,7 +766,7 @@ function ConflictPanel({
  * something a dozen effects have to remember to do. It is also what keeps every
  * state change in this file inside a promise callback: an effect that reset the
  * load state on the way in would repaint the page before the browser had drawn
- * the previous one — the same rule `app/auth/session.tsx` is built around.
+ * the previous one. The same rule `app/auth/session.tsx` is built around.
  */
 function DocumentWorkspace({
   type,
@@ -893,7 +893,7 @@ export default function AuthoringEdit() {
   if (!key) {
     /*
      * A type with no key. Reachable only by typing the address, because every
-     * link into here carries one — and it has to, because the key is the
+     * link into here carries one, and it has to, because the key is the
      * document's address on the service as well as on this site: a draft is
      * written to `/drafts/{type}/{key}`, and the service refuses a document
      * whose own `key` disagrees with it.
@@ -906,7 +906,7 @@ export default function AuthoringEdit() {
       <section className="account-section">
         <h2>Editor</h2>
         <p className="account-section-lede">
-          A document needs a key before it can be edited — it is the address the
+          A document needs a key before it can be edited. It is the address the
           published page lives at, and the service stores the draft under it.{" "}
           <Link to="/authoring">Start from the worklist</Link>, which asks for
           one.
@@ -947,9 +947,9 @@ export default function AuthoringEdit() {
         What publishing noticed, beside the confirmation rather than inside it.
 
         Its own region for two reasons. `Banner` wraps its children in a
-        paragraph, and a list inside a paragraph is invalid — the parser closes
+        paragraph, and a list inside a paragraph is invalid. The parser closes
         the paragraph early and the markup a browser ends up with is not the
-        markup written here. And these are two different statements: the
+        markup written here, and these are two different statements: the
         document is live, which is a success, and there is something to go and
         fix, which is not. Recolouring one banner would blur them.
 
@@ -976,7 +976,7 @@ export default function AuthoringEdit() {
 
       <DocumentWorkspace
         // Remounted when the address changes or after a publish, so no state
-        // from the last document — a half-typed field, an open conflict panel —
+        // from the last document (a half-typed field, an open conflict panel)
         // can survive into the next. The alternative is a dozen effects
         // resetting a dozen pieces of state, and one of them being forgotten.
         key={`${generation}:${address}`}
@@ -1008,5 +1008,5 @@ function headingFor(subject: Subject): string {
       : subject.key;
 
   const kind = subject.descriptor?.name ?? subject.type;
-  return `${name || "New document"} — ${kind}`;
+  return `${name || "New document"}, ${kind}`;
 }

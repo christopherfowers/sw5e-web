@@ -1,5 +1,5 @@
 /**
- * What each content type's index page shows, filters on, sorts by — and what
+ * What each content type's index page shows, filters on, sorts by, and what
  * shape it takes.
  *
  * A creature list needs challenge rating; a power list needs level and casting
@@ -63,8 +63,8 @@ export interface Column<Row> {
    * What the header stands for, when it is an abbreviation.
    *
    * "AC", "CR", "HP" and "Conc." are the language of the books and the right
-   * words for the column — a header reading "Challenge rating" in full would
-   * push a numeric column three times wider than the numbers in it. But they
+   * words for the column. A header reading "Challenge rating" in full would
+   * push a numeric column three times wider than the numbers in it, but they
    * are also jargon nobody is born knowing, and until now the site expanded
    * them nowhere: a reader who did not already know what CR meant had no way
    * to find out from the page they were looking at.
@@ -350,7 +350,7 @@ const classImprovements: ListConfig<ClassImprovementSummary> = {
 };
 
 /**
- * The longest table on the site by some distance — over a thousand rows — so it
+ * The longest table on the site by some distance, over a thousand rows, so it
  * is striped, and the two facets that cut it down are the ones a reader
  * actually has in mind: the level they are about to reach, and the class or
  * archetype they are playing.
@@ -681,7 +681,7 @@ const maneuvers: ListConfig<ManeuverSummary> = {
 
 /**
  * A die cost as a reader would say it. "Free" rather than "0 dice" because
- * zero is not an absence here — it is the defining property of an upgrade.
+ * zero is not an absence here. It is the defining property of an upgrade.
  */
 function diceLabel(dice: number | null): string | null {
   if (dice == null) return null;
@@ -742,7 +742,7 @@ function benefitsLabel(benefits: number | null): string | null {
 
 /**
  * Weapon focuses and weapon supremacies. Eight rows each, one per weapon
- * group, so the group is the column a reader is actually scanning for — the
+ * group, so the group is the column a reader is actually scanning for. The
  * names differ from it only in whether the books wrote the word "Weapon".
  */
 const weaponTraining: ListConfig<WeaponTrainingSummary> = {
@@ -859,7 +859,7 @@ const equipment: ListConfig<EquipmentSummary> = {
 
 /**
  * The rarity ladder, ascending. Rarity is the enhanced-item corpus's substitute
- * for a price — nothing in it has a cost in credits — so the filter has to
+ * for a price, nothing in it has a cost in credits, so the filter has to
  * offer it in the game's order rather than the alphabet's, which would put
  * Artifact at the top and Standard at the bottom.
  */
@@ -892,8 +892,8 @@ function rarityAccent(rarity: string | null): Accent | null {
  * question a reader actually arrives with. Rarity is the closest thing this
  * corpus has to a price, so it stands in for "what can my party plausibly
  * have". Item type separates the four hundred things you install in equipment
- * you already own from the eighteen suits of armour. Kind — the wristpad, the
- * body slot, the base weapon — is what turns "modifications" into "the seven
+ * you already own from the eighteen suits of armour. Kind (the wristpad, the
+ * body slot, the base weapon) is what turns "modifications" into "the seven
  * modifications that go in a wristpad", which is the shape of the question
  * someone asks with a wristpad in front of them.
  *
@@ -969,7 +969,7 @@ const enhancedItems: ListConfig<EnhancedItemSummary> = {
  * does without opening it, so the second column is the rule's opening sentence
  * rather than a facet nobody would use.
  *
- * No source column either — the archive records no book for any of these, so a
+ * No source column either. The archive records no book for any of these, so a
  * column of empty badges would be all the page had to say about provenance.
  */
 const properties: ListConfig<PropertySummary> = {
@@ -992,14 +992,14 @@ const properties: ListConfig<PropertySummary> = {
  *
  * This is the one type the site does not present as a sortable table, and the
  * reason is that a rule is not a row. There is nothing to compare between
- * "Chapter 9: Combat" and the "Flanking" variant — no cost, no level, no
- * challenge rating — so a table of them would be a column of names with four
+ * "Chapter 9: Combat" and the "Flanking" variant (no cost, no level, no
+ * challenge rating) so a table of them would be a column of names with four
  * columns of nothing beside it. What a reader looking up a rule actually needs
  * is the shape of the books: which chapters exist, in the order they are
  * printed, under the book they belong to.
  *
  * So the layout groups by book and orders by position, and the toolbar keeps
- * only the controls that still mean something — filter by name, filter by
+ * only the controls that still mean something. Filter by name, filter by
  * book, filter by chapter or variant. Sorting stays available because the
  * columns below are what the sort control reads, but the default is the one
  * order the material has of its own.
@@ -1029,7 +1029,7 @@ const rules: ListConfig<RuleSummary> = {
 
         Deliberately not chapterNumber. That records where a passage fell in a
         printed book, and sorting by it puts "What's Different?" ahead of the
-        introduction it is different from — right for a reader holding the
+        introduction it is different from. Right for a reader holding the
         book, wrong for one meeting the game on a website. The path is authored
         for exactly that reason, and this is the list that has to honour it.
       */
@@ -1037,8 +1037,8 @@ const rules: ListConfig<RuleSummary> = {
         // Three bands, not two. Something on the reading path comes first, in
         // the order somebody authored. Then chapters nobody has placed, which
         // is every book but the handbook today. Then the variant rules, which
-        // are optional and belong after the material they are variants of —
-        // collapsing those last two would interleave an unplaced chapter with
+        // are optional and belong after the material they are variants of.
+        // Collapsing those last two would interleave an unplaced chapter with
         // the options for it, which is what the old chapter sort quietly
         // prevented.
         if (row.order != null) return `A${String(row.order).padStart(5, "0")}`;
@@ -1226,8 +1226,8 @@ const starshipDeployments: ListConfig<StarshipDeploymentSummary> = {
 };
 
 /**
- * The shipyard list. Category is the first thing a reader narrows by — nobody
- * shopping for a hyperdrive wants to scroll past sixty-two guns — and mounting
+ * The shipyard list. Category is the first thing a reader narrows by, nobody
+ * shopping for a hyperdrive wants to scroll past sixty-two guns, and mounting
  * is the second, because a hardpoint only takes the weapons built for it.
  */
 /** Mountings read in the order a ship fires them, not alphabetically. */
@@ -1306,8 +1306,8 @@ const SHIP_SIZE_ORDER = [
  *
  * Three facets, each answering a question a crew actually arrives with. Grade
  * is what a modification costs in slots, so a ship with six slots left is
- * reading one band and ignoring the rest. Type is what it competes with —
- * suites are capped separately from everything else. Ship size is the one that
+ * reading one band and ignoring the rest. Type is what it competes with.
+ * Suites are capped separately from everything else. Ship size is the one that
  * would otherwise be invisible: 35 of these are gated on the hull, the clause
  * is buried in prose, and "what can my Small ship fit?" is unanswerable
  * without it.
@@ -1451,7 +1451,7 @@ const starshipVentures: ListConfig<StarshipVentureSummary> = {
  * authored fields, because they are the same kind of thing: a book somebody
  * reads front to back. It used to sort by chapterNumber and label each row
  * "Chapter 4", which told a reader on a website the one fact about the passage
- * they cannot act on — there is no book in their hands to turn to page 4 of.
+ * they cannot act on. There is no book in their hands to turn to page 4 of.
  * The heading it is read under is the useful answer to the same question.
  */
 const starshipRules: ListConfig<StarshipRuleSummary> = {
@@ -1484,7 +1484,7 @@ const starshipRules: ListConfig<StarshipRuleSummary> = {
       /*
         Two bands rather than the rules list's three: this type has no variant
         rules, so there is nothing optional to keep behind the placed chapters.
-        Unplaced ones still sort after, alphabetically — every chapter of this
+        Unplaced ones still sort after, alphabetically. Every chapter of this
         book is placed today and a test in the content repository says so, but
         a list that renders nothing for an unplaced row is better than one that
         puts it at position zero.

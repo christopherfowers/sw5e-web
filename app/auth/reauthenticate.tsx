@@ -6,7 +6,7 @@
  * else on the internet is recovered through, so it can never be the thing
  * standing between an attacker and the content of the site. What was wrong was
  * the only remedy on offer. Somebody who signed in by code and then enrolled a
- * passkey — a minute later, on the same screen, on the device in their hand —
+ * passkey (a minute later, on the same screen, on the device in their hand)
  * was told to add a passkey. They had one. The session did not know about it,
  * because a session records how it was established and does not gain strength
  * from the account changing underneath it.
@@ -71,7 +71,7 @@ export function ReauthenticatePrompt({ user, purpose }: ReauthenticatePromptProp
   const nothingEnrolled = !hasPasskey && !hasAuthenticator;
 
   // A passkey on the account is no use on a browser that cannot perform an
-  // assertion — an old browser, or a locked-down one. Saying so is better than
+  // assertion. An old browser, or a locked-down one. Saying so is better than
   // offering a button that can only fail.
   const canPrompt = hasPasskey && supportsWebAuthn();
 
@@ -145,7 +145,7 @@ export function ReauthenticatePrompt({ user, purpose }: ReauthenticatePromptProp
           closed until there is a second factor on the account.{" "}
           <Link to="/account/passkeys">Add a passkey</Link> or{" "}
           <Link to="/account/security">set up an authenticator app</Link>. You
-          will be asked to use it here straight away — there is no need to sign
+          will be asked to use it here straight away. There is no need to sign
           out.
         </Banner>
       </>
@@ -157,7 +157,7 @@ export function ReauthenticatePrompt({ user, purpose }: ReauthenticatePromptProp
       <Banner tone="info" title="Confirm it is you.">
         You signed in with a code sent to your email address, which confirms the
         address but says nothing about this device. Use the second factor
-        already on your account and {purpose} opens straight away — you stay
+        already on your account and {purpose} opens straight away. You stay
         signed in either way.
       </Banner>
 

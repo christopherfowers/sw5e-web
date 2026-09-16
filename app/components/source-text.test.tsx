@@ -20,7 +20,7 @@ describe("text that came from the legacy archive", () => {
 
   /**
    * The whole point of the component. A bare U+FFFD on screen reads as game
-   * content — a rune, a symbol, part of a name — so it must always be replaced
+   * content (a rune, a symbol, part of a name) so it must always be replaced
    * by something that announces itself as a gap.
    */
   it("never puts a replacement character on the screen", () => {

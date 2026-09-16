@@ -19,7 +19,7 @@ const CONTROL = ".theme-control";
  * Presses one of the three options, the way a person does.
  *
  * The radio itself is clipped to a pixel and sits under its label, so clicking
- * the input directly is something only automation would try — and Playwright
+ * the input directly is something only automation would try, and Playwright
  * refuses, reporting that the label intercepts the click. It is right to: the
  * label *is* the control, and forwarding to its input is what a label is for.
  * So the test presses the label, which is both what a reader does and the only
@@ -32,7 +32,7 @@ async function choose(page: import("@playwright/test").Page, value: string) {
 test.describe("the theme control", () => {
   /*
     A dark desktop throughout, because that is the configuration where every
-    interesting case lives. Choosing dark on a dark system proves nothing — the
+    interesting case lives. Choosing dark on a dark system proves nothing. The
     page already looked like that.
   */
   test.use({ colorScheme: "dark" });
@@ -96,7 +96,7 @@ test.describe("the theme control", () => {
 
     await expect(page.locator("html")).not.toHaveAttribute("data-theme");
 
-    // And the choice is forgotten, not merely overridden — otherwise "system"
+    // And the choice is forgotten, not merely overridden. Otherwise "system"
     // would be a third stored value that the script would have to understand.
     const stored = await page.evaluate(() =>
       window.localStorage.getItem("sw5e-theme"),
@@ -107,7 +107,7 @@ test.describe("the theme control", () => {
   /**
    * The control is reachable and operable from the keyboard.
    *
-   * It is a radio group, so the browser gives this for free — which is most of
+   * It is a radio group, so the browser gives this for free. Which is most of
    * why it is a radio group. The test is here because the inputs are visually
    * clipped, and the tempting way to hide them is `display: none`, which would
    * silently take them out of the tab order along with the appearance.
@@ -127,7 +127,7 @@ test.describe("the theme control", () => {
    *
    * Asserted through the arrow keys because that is the only place the order
    * is observable behaviour rather than a detail of the markup. The control
-   * reads as a slider, so pressing right has to make the site darker — an
+   * reads as a slider, so pressing right has to make the site darker. An
    * order that put "system" at one end would be three buttons wearing a
    * slider's clothes.
    */

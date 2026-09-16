@@ -79,7 +79,7 @@ describe("everybody else", () => {
 
 describe("the file the build writes", () => {
   it("contains none of it", () => {
-    // Rendered with no session provider resolution at all — the first frame,
+    // Rendered with no session provider resolution at all. The first frame,
     // which is the state the prerendered HTML is frozen in. Anything drawn
     // here would ship to every anonymous reader of every content page and
     // would not match the first client render.

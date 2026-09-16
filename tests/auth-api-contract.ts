@@ -2,7 +2,7 @@
  * A stand-in for the account API, written to the contract rather than to the
  * client.
  *
- * The tests mock the service at the network boundary — the `fetch` call — and
+ * The tests mock the service at the network boundary, the `fetch` call, and
  * nowhere else. That matters: a mock placed one layer higher, over
  * `app/auth/api.ts`, would make every test pass without the request headers,
  * the credentials mode, the cross-site check or the error decoding ever being
@@ -13,13 +13,13 @@
  * An earlier version of this fixture modelled a contract nobody had checked: a
  * `{user}` envelope on `/me`, a `label` on registration, `mfa-required` with a
  * hyphen, a double-submit CSRF header. The client agreed with it exactly,
- * because both were written from the same guess — so both suites were green
+ * because both were written from the same guess, so both suites were green
  * while disagreeing with the running service on nearly every endpoint. A shared
  * fixture is only worth having if it is a model of the *server*; the moment it
  * becomes a model of the client, it stops being able to fail.
  *
  * So everything below is checked against `docs/account-api-contract.md`, and it
- * is strict rather than permissive — it enforces what the real service
+ * is strict rather than permissive. It enforces what the real service
  * enforces, so a client that forgets something fails here rather than in
  * production:
  *
@@ -47,7 +47,7 @@ import type {
  * Read from the environment rather than hard-coded, so that changing the jsdom
  * URL cannot silently turn every unit test into a cross-site request. There is
  * no `location` in the Playwright runner's Node process, hence the fallback and
- * hence `ContractOptions.origin` — the e2e adapter passes the preview server's
+ * hence `ContractOptions.origin`. The e2e adapter passes the preview server's
  * address explicitly.
  */
 export const PAGE_ORIGIN =
@@ -70,7 +70,7 @@ export const VALID_TOTP_CODE = "123456";
  * Deliberately not the same six digits as `VALID_TOTP_CODE`. The two codes
  * enter the client through different endpoints and mean different things, and
  * a fixture where either value satisfies either check cannot notice a client
- * that posts the emailed code to `/mfa/totp/verify` — which is precisely the
+ * that posts the emailed code to `/mfa/totp/verify`. Which is precisely the
  * mistake available now that both steps look identical on screen.
  */
 export const VALID_EMAIL_CODE = "654321";
@@ -82,7 +82,7 @@ export const VALID_EMAIL_CODE = "654321";
  *
  * The per-address budget is the interesting one, because exhausting it is
  * *invisible*: the caller still gets the same 202, and simply never receives a
- * code. That is the contract, not an oversight — a different answer for an
+ * code. That is the contract, not an oversight. A different answer for an
  * address that has run out is a different answer for an address that exists.
  */
 export const EMAIL_CODE_REQUEST_BUDGET = 5;
@@ -141,8 +141,8 @@ function requiresSecondFactor(roles: readonly Role[]): boolean {
  * The three session fields default to a strongly authenticated passkey
  * session, because that is what almost every test means by "signed in" and
  * because the weaker case is the one worth spelling out at the call site. A
- * test about the emailed-code path says so explicitly —
- * `user({ authenticationMethod: "email", strongAuthentication: false })` — and
+ * test about the emailed-code path says so explicitly
+ * (`user({ authenticationMethod: "email", strongAuthentication: false })`) and
  * reads as what it is.
  *
  * `secondFactorRequired` is derived from the roles rather than defaulted flat,
@@ -197,7 +197,7 @@ function problem(status: number, detail: string, code?: string): Reply {
 /**
  * The anonymous 401 is deliberately bodiless. It is the cookie authentication
  * scheme's own challenge, written before any handler runs, so it carries no
- * problem document and no content type at all — which is precisely the shape
+ * problem document and no content type at all. Which is precisely the shape
  * that used to be misread as "the service is unreachable".
  */
 const UNAUTHENTICATED: Reply = { status: 401 };
@@ -239,8 +239,8 @@ export interface ContractOptions {
 
 /**
  * The fixture's whole surface. `state` is readable by tests so they can assert
- * on what the server ended up holding, rather than only on what the UI drew —
- * a UI that says "removed" without ever calling the endpoint is exactly the
+ * on what the server ended up holding, rather than only on what the UI drew.
+ * A UI that says "removed" without ever calling the endpoint is exactly the
  * kind of pass a test has to refuse.
  */
 export class AuthApiContract {
@@ -253,14 +253,14 @@ export class AuthApiContract {
    * Settable rather than readonly, for one caller: the browser adapter cannot
    * know it at construction time. It builds the contract before the page has
    * navigated anywhere, so `page.url()` is still `about:blank`, and hard-coding
-   * a port meant the same specs could only ever run against one server — which
+   * a port meant the same specs could only ever run against one server. Which
    * is how eleven account tests came to fail against the development server for
    * a reason that had nothing to do with accounts.
    *
    * It is set once, from the first intercepted request's own URL. That is the
    * server the browser is really talking to, so the property being defended
-   * here — that the origin is a header the browser writes and a client cannot
-   * forge — is untouched.
+   * here, that the origin is a header the browser writes and a client cannot
+   * forge, is untouched.
    */
   origin: string;
   readonly resendAfterSeconds: number;
@@ -272,7 +272,7 @@ export class AuthApiContract {
    * part of the contract: `GET /api/site/environment` publishes it, and the
    * account screens read it to decide whether they may say a message is on its
    * way. Modelled as one global boolean with no per-address dimension, exactly
-   * as the service models it — a fixture that let a test answer differently for
+   * as the service models it. A fixture that let a test answer differently for
    * different addresses would be a fixture in which the account-existence
    * oracle is reachable, and the client tests would go on passing.
    *
@@ -295,7 +295,7 @@ export class AuthApiContract {
    * A separate field from `session` on purpose, because that separation is the
    * contract's whole point: this ticket authorises passkey registration and
    * *nothing else*, and `GET /me` still answers 401 while it is held. A fixture
-   * that modelled verification as a sign-in — as the previous one did — cannot
+   * that modelled verification as a sign-in, as the previous one did, cannot
    * catch a client that assumes it has an account when it does not.
    */
   private enrolmentTicketExpiresAt: number | null = null;
@@ -303,7 +303,7 @@ export class AuthApiContract {
   /**
    * Emailed sign-in codes, by address.
    *
-   * One live code per address — asking for another replaces the previous one,
+   * One live code per address. Asking for another replaces the previous one,
    * which is why `redeemed` is reset rather than a second entry appended.
    * `issued` counts against the per-address budget and is never reset, since
    * the budget is what makes the endpoint useless as a way to mail somebody
@@ -338,7 +338,7 @@ export class AuthApiContract {
   /**
    * Whether the fixture would post a code to this address at all.
    *
-   * It holds exactly one account, so "known" is that account's address — the
+   * It holds exactly one account, so "known" is that account's address. The
    * configured session's when there is one, and the registered address the
    * rest of the fixture uses when there is not. Crucially, the answer to
    * `POST /email/code` does not depend on this in any way; only whether a code
@@ -370,7 +370,7 @@ export class AuthApiContract {
      * from anywhere else is refused outright and told nothing about why.
      *
      * Enforced here so that a client which starts sending requests some other
-     * way — or a test that fakes an origin it should not have — fails against
+     * way, or a test that fakes an origin it should not have, fails against
      * the fixture rather than in production.
      */
     if (method !== "GET" && headers.get("origin") !== this.origin) {
@@ -468,7 +468,7 @@ export class AuthApiContract {
         }
 
         // The caller's own budget, which is about this caller and not about
-        // any address — so it is the one refusal this endpoint may show.
+        // any address, so it is the one refusal this endpoint may show.
         this.emailCodeRequests += 1;
         if (this.emailCodeRequests > EMAIL_CODE_REQUEST_BUDGET) {
           return problem(
@@ -509,7 +509,7 @@ export class AuthApiContract {
        *
        * Wrong code, expired code, code already redeemed, code issued for a
        * different address, attempts exhausted, address with no account,
-       * locked-out account — all of them land on the same problem document
+       * locked-out account. All of them land on the same problem document
        * with the same wording. A fixture that distinguished any of them would
        * let a client ship copy that distinguishes them too, and that copy is
        * an account-existence oracle written in reader-facing English.
@@ -533,7 +533,7 @@ export class AuthApiContract {
         }
 
         // One use, and the code is spent whether or not a second factor is
-        // still to come — otherwise a code that stopped at `mfaRequired` would
+        // still to come. Otherwise a code that stopped at `mfaRequired` would
         // remain redeemable by whoever else had it.
         record.redeemed = true;
 
@@ -543,8 +543,8 @@ export class AuthApiContract {
         /*
          * The session an emailed code establishes is deliberately the weaker
          * kind. It proves control of an inbox and nothing about this device,
-         * so it is marked as such and the contributor endpoints refuse it —
-         * see the roles endpoint below.
+         * so it is marked as such and the contributor endpoints refuse it.
+         * See the roles endpoint below.
          */
         this.session = {
           ...(this.session ?? user()),
@@ -628,7 +628,7 @@ export class AuthApiContract {
       }
 
       // The request body is ignored entirely, and the answer is identical for
-      // every caller — there is nothing here to probe an address with.
+      // every caller. There is nothing here to probe an address with.
       case "POST /passkey/login/begin":
         return {
           status: 200,
@@ -676,7 +676,7 @@ export class AuthApiContract {
        * Raising a session that already exists.
        *
        * Modelled as requiring a session and never creating one, because that
-       * is the property that makes these endpoints safe to expose at all — a
+       * is the property that makes these endpoints safe to expose at all. A
        * fixture that answered them for an anonymous caller would let a client
        * bug that treats them as a sign-in route go on passing.
        */
@@ -838,8 +838,8 @@ export class AuthApiContract {
           }
           /*
            * The role check and this one are both 403s and they are not the
-           * same refusal. The first is final — the account does not hold the
-           * role. This one is temporary — the account holds it, but the
+           * same refusal. The first is final. The account does not hold the
+           * role. This one is temporary. The account holds it, but the
            * session behind the request was established with an emailed code,
            * which proves an inbox and not a device. Enrolling a passkey or an
            * authenticator app clears it in a minute, and the client is
@@ -902,7 +902,7 @@ export class AuthApiContract {
 export interface FetchAdapterOptions {
   /**
    * The `Origin` header to send on unsafe methods. Defaults to the contract's
-   * own origin, which is what a browser would really put there — so ordinary
+   * own origin, which is what a browser would really put there, so ordinary
    * tests need nothing. A test proving the cross-site check works overrides it
    * with a foreign origin, or with `null` for a request that carries none.
    */
@@ -916,11 +916,11 @@ export interface FetchAdapterOptions {
  * that placement is the point: `Origin` is a forbidden header name, written by
  * the browser and unforgeable from script. Client code that tried to set it
  * would be ignored by every real browser, so the adapter stands in for the
- * browser and the client stays as it should be — sending nothing.
+ * browser and the client stays as it should be. Sending nothing.
  *
  * Two prefixes are served. `/api/auth` is the account surface. `/api/site` is
  * the small anonymous document the prerendered site reads for the facts it
- * cannot work out for itself, including whether mail is getting out — which the
+ * cannot work out for itself, including whether mail is getting out. Which the
  * account screens consult before they tell anybody to check an inbox.
  *
  * Anything else is refused rather than passed through: a test that accidentally
@@ -944,7 +944,7 @@ export function contractFetch(
       });
 
       // The real body, field for field. Notably it says nothing about any
-      // address and does not carry the provider's reply — the service refuses
+      // address and does not carry the provider's reply. The service refuses
       // to publish either, and a fixture that invented a richer body would let
       // a client start depending on something it will never be sent.
       return new Response(

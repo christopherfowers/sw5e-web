@@ -2,8 +2,8 @@
  * The search client, read against a response the service actually sent.
  *
  * This module had no tests at all, and shipped a results page that showed
- * "240 results for 'difficult' (showing 0)". The service answered correctly —
- * twenty groups, results in every one of them — and every result was silently
+ * "240 results for 'difficult' (showing 0)". The service answered correctly
+ * (twenty groups, results in every one of them) and every result was silently
  * discarded here, because the reader looked for `item.slug` and `item.source`
  * and the service sends `item.key` and `item.sourceKey`. The total rendered,
  * because the total is read from a field whose name happened to be right.
@@ -11,12 +11,12 @@
  * `__fixtures__/search-response.json` is not written by hand. It was captured
  * verbatim from the deployed API and trimmed to two groups of two, because a
  * fixture invented on this side would encode the same assumption that caused
- * the bug — and two mocks agreeing with the code that wrote them is not
+ * the bug, and two mocks agreeing with the code that wrote them is not
  * evidence of anything. If the service ever changes those names, the fixture
  * has to be recaptured, and that is the point: the change becomes visible
  * instead of silent.
  *
- * `tests/contract/live-api.test.ts` covers the other half — that the fixture
+ * `tests/contract/live-api.test.ts` covers the other half. That the fixture
  * still matches the running service.
  */
 
@@ -74,7 +74,7 @@ describe("reading a search response", () => {
 
     const result = readSearchResponse(broken);
 
-    // Still dropped — a result with no key cannot be linked to. What changed is
+    // Still dropped. A result with no key cannot be linked to. What changed is
     // that a well-formed result is no longer dropped alongside it.
     expect(result.groups.flatMap((group) => group.results)).toHaveLength(0);
   });

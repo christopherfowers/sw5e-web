@@ -4,16 +4,16 @@
  * ## Why there is no `loader` in this file, or in any auth route
  *
  * This site sets `ssr: false` and prerenders every published path
- * (`react-router.config.ts`). A `loader` therefore does not run per request —
- * it runs **once, on the build machine, months before anybody visits**, and
+ * (`react-router.config.ts`). A `loader` therefore does not run per request.
+ * It runs **once, on the build machine, months before anybody visits**, and
  * whatever it returns is serialized into a static HTML file and into a `.data`
  * payload beside it. Those files are then served, byte for byte, to every
  * visitor, and cached by nginx and by every proxy in between.
  *
  * A `loader` that looked up the current user would therefore do one of two
  * things, both catastrophic: return nothing, because there is no session at
- * build time and the whole feature silently does nothing; or — if the build
- * ever had a session — bake one person's identity into a file handed to
+ * build time and the whole feature silently does nothing; or, if the build
+ * ever had a session, bake one person's identity into a file handed to
  * everyone who asks for `/account`.
  *
  * So the rule for this area is: **no route module here exports `loader`.**
@@ -40,10 +40,10 @@ import "~/styles/account.css";
 /**
  * The document title for one section of the account area.
  *
- * Every account address used to answer "Your account — Star Wars 5e", because
+ * Every account address used to answer "Your account. Star Wars 5e", because
  * only this module exported `meta` and the sections beneath it inherited it.
  * Three tabs, three entries in a window list and three history entries were
- * therefore indistinguishable — to a screen-reader user moving between
+ * therefore indistinguishable. To a screen-reader user moving between
  * windows, and to anybody reading a tab strip. Each section names itself
  * first, then the area, then the site, which is the order the rest of the site
  * already uses.
@@ -57,8 +57,8 @@ export function accountMeta(section?: string) {
   return [
     {
       title: section
-        ? `${section} — Your account — Star Wars 5e`
-        : "Your account — Star Wars 5e",
+        ? `${section} | Your account | Star Wars 5e`
+        : "Your account | Star Wars 5e",
     },
     // An account page has nothing to offer a search engine, and every one of
     // them indexed is another target handed to credential-stuffing traffic.
@@ -87,7 +87,7 @@ function AccountFrame({ user }: { user: CurrentUser }) {
     // The other order looks more natural and is wrong. Dropping the session
     // while this page is still mounted makes the route guard above notice an
     // anonymous reader on a protected route and send them to `/sign-in`,
-    // remembering `/account` as where to return to — so someone who asked to
+    // remembering `/account` as where to return to, so someone who asked to
     // leave lands on a sign-in page pointed back at the page they just left.
     // Two navigations race, and the guard's usually wins.
     await navigate("/", { replace: true });
@@ -138,8 +138,8 @@ function AccountFrame({ user }: { user: CurrentUser }) {
             </li>
             {/*
               Reports is offered to every signed-in account, not only to
-              contributors. What it shows differs — a community account sees
-              what it filed, a contributor sees the queue underneath — and that
+              contributors. What it shows differs (a community account sees
+              what it filed, a contributor sees the queue underneath) and that
               is a decision the page makes from the session rather than one the
               navigation makes by hiding a link. Hiding it would mean the
               reader who filed a report has nowhere to find out what happened
@@ -158,7 +158,7 @@ function AccountFrame({ user }: { user: CurrentUser }) {
               </li>
             ) : null}
             {/*
-              Administration, and hidden from everybody else — which is the one
+              Administration, and hidden from everybody else. Which is the one
               place in this navigation where hiding a link is the right answer
               rather than a substitute for a guard.
 
@@ -170,7 +170,7 @@ function AccountFrame({ user }: { user: CurrentUser }) {
               a refusal is offering a dead end.
 
               The link being absent is not the protection. Both pages guard
-              themselves — see `RequireSession role="Administrator"` in each —
+              themselves, see `RequireSession role="Administrator"` in each,
               and behind them the API refuses every request under
               `/api/auth/admin` on its own, which is the boundary that actually
               holds, because everything here runs on hardware the reader
@@ -210,7 +210,7 @@ export default function Account() {
     <div className="page account-page">
       {/*
         The heading is drawn above the guard, so it is in the markup in every
-        state the area can be in — including the one the prerendered file is
+        state the area can be in. Including the one the prerendered file is
         frozen in.
 
         This page is a static file, served byte for byte to everybody, and its
@@ -218,7 +218,7 @@ export default function Account() {
         resolved after hydration and must never be baked in. A heading that
         waited for that answer would be absent from the file nginx serves,
         leaving a `<main>` landmark with no heading structure at all for every
-        reader before hydration and every reader without JavaScript — and it
+        reader before hydration and every reader without JavaScript, and it
         would differ between the prerendered markup and the first client
         render, which is a hydration mismatch.
 

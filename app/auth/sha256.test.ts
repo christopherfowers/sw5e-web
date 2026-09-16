@@ -2,9 +2,9 @@
  * A hand-written hash, checked against the published answers.
  *
  * This is the file that makes `sha256.ts` defensible. Writing a hash by hand is
- * a thing to be nervous about, and the reason it is acceptable here — that a
- * wrong digest cannot forge anything, only fail to be accepted — is an argument
- * about consequences, not a reason to believe it is right. So it is compared
+ * a thing to be nervous about, and the reason it is acceptable here (that a
+ * wrong digest cannot forge anything, only fail to be accepted) is an argument
+ * about consequences, not a reason to believe it is right, so it is compared
  * against the vectors.
  *
  * The two cases that matter most are the ones a partly-correct implementation
@@ -76,7 +76,7 @@ describe("counting leading zero bits", () => {
     /*
       Difficulty 18 is two whole zero bytes and two more bits, which is the
       shape the service actually issues. 0x3f has exactly two leading zeros, so
-      this is 18 and not 19 — an implementation that rounded up to whole bytes
+      this is 18 and not 19. An implementation that rounded up to whole bytes
       would call it 16 and one that rounded down would call it 24.
     */
     const eighteen = digest(0x00, 0x00, 0x3f);

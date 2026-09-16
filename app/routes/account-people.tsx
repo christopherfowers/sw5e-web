@@ -4,8 +4,8 @@
  * ## What this page is, before anything else
  *
  * It is a directory of real people's email addresses. Nothing else on this site
- * shows one that is not the reader's own — the flag queue deliberately shows
- * contributors a display name and never an address — and the whole shape of
+ * shows one that is not the reader's own, the flag queue deliberately shows
+ * contributors a display name and never an address, and the whole shape of
  * this page follows from that.
  *
  * It is guarded for `Administrator`, and the guard is the *usability* half. The
@@ -29,7 +29,7 @@
  *
  * It used to be both. Managing an account opened a panel underneath the
  * directory, on the same address, which meant that pressing Manage on a list
- * long enough to scroll produced no visible change whatsoever — the thing the
+ * long enough to scroll produced no visible change whatsoever. The thing the
  * reader asked for was drawn below the fold, so the button read as broken.
  * Managing one account is now its own address, `/account/people/manage?user=…`,
  * and lives in `app/routes/account-people-manage.tsx`.
@@ -37,7 +37,7 @@
  * That page is a **child route** of this one, and the nesting is the mechanism
  * rather than a filing decision. React Router keeps a parent route's component
  * mounted while a child renders, so `Directory` below survives the trip into an
- * account and back — with its search term, its filters and its page number
+ * account and back. With its search term, its filters and its page number
  * intact. Nothing else here could carry them: the term is somebody's email
  * address, which rules out the query string, `history.state` and storage alike.
  * So `Directory` renders the outlet *instead of* the list when the child is
@@ -49,7 +49,7 @@
  * `app/routes/account.tsx` sets out the rule: this site prerenders every
  * published path, so a `loader` runs once on a build machine and its result is
  * written into a static file served to everybody and cached by everything in
- * between. A loader here would bake either nothing or — far worse — one build
+ * between. A loader here would bake either nothing or, far worse, one build
  * machine's view of the account directory, addresses and all, into a file
  * behind a CDN. Everything below is fetched after hydration.
  * `app/auth/prerender-safety.test.ts` fails the build if a loader reappears.
@@ -90,8 +90,8 @@ export function meta() {
 /**
  * Which query parameter names the account being managed.
  *
- * A version 7 GUID and nothing else. Everything else this page holds — the
- * search term above all — stays out of the address bar; see the note at the top
+ * A version 7 GUID and nothing else. Everything else this page holds, the
+ * search term above all, stays out of the address bar; see the note at the top
  * of this file.
  */
 export const SELECTED = "user";
@@ -211,7 +211,7 @@ export function AuditEntry({
  * A stored role set, written out.
  *
  * `null` means "no assignable role", which on this platform is a plain
- * community account — and saying so is more useful than an empty space. It also
+ * community account, and saying so is more useful than an empty space. It also
  * covers "this action was not about roles", which is why only the
  * `roles-changed` row draws it.
  */
@@ -235,7 +235,7 @@ function Directory() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
-  // The child route — `/account/people/manage` — when one is matched. This
+  // The child route, `/account/people/manage`, when one is matched. This
   // component stays mounted while that page is drawn, which is the whole reason
   // the two are nested: everything below is the reader's search, and it has to
   // still be here when they come back. It is rendered *instead of* the list
@@ -265,7 +265,7 @@ function Directory() {
 
   // No `setList({ state: "loading" })` here, deliberately. This runs from an
   // effect, and a synchronous state write inside one is a cascading render the
-  // lint rule refuses — but it is also the wrong behaviour: the refetch that
+  // lint rule refuses, but it is also the wrong behaviour: the refetch that
   // happens on returning from managing an account would blank the list for a
   // round trip, so somebody who suspended one person would come back to a
   // spinner where their search results were. The list keeps showing what it has

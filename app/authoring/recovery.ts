@@ -18,7 +18,7 @@
  * reviewed, and they are what publishing works from. This is a private safety
  * net in one browser, and it is deliberately kept in a different place with a
  * different name so that nobody reads it as the second half of a
- * synchronisation scheme. When the two disagree, the editor asks — it never
+ * synchronisation scheme. When the two disagree, the editor asks. It never
  * silently prefers one, because "silently preferred the wrong one" is the exact
  * failure this exists to prevent.
  *
@@ -28,7 +28,7 @@
  * readable only by this origin. It is the same material that is about to be
  * published to the public reference, so the risk of keeping it is small and the
  * cost of not keeping it is somebody's evening. It is cleared as soon as it is
- * no longer needed — on publish, and on discarding the draft — and entries older
+ * no longer needed (on publish, and on discarding the draft) and entries older
  * than a fortnight are swept on the next write so a browser does not accumulate
  * them forever.
  *
@@ -68,7 +68,7 @@ export function recoveryKey(type: string, key: string): string {
 /**
  * The store, or `null` where there is not one.
  *
- * Absent during the prerender, where there is no `window` at all — every module
+ * Absent during the prerender, where there is no `window` at all. Every module
  * in this app is imported by the build, and one that touched `localStorage` at
  * module scope would fail the build rather than the browser.
  */

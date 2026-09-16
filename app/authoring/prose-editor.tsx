@@ -21,7 +21,7 @@
  * buys a feature set the renderer would then have to refuse most of.
  *
  * And a WYSIWYG surface owns the document. What it does not understand it
- * either drops or mangles on the way in — which for a corpus written by hand
+ * either drops or mangles on the way in. Which for a corpus written by hand
  * over years, with pipe tables and cross-reference links in it, means every
  * document that is merely *opened* comes back different. The editor here
  * cannot do that: it only ever splices strings into text the author can see.
@@ -29,8 +29,8 @@
  * So: a toolbar that writes the markdown, and a preview that proves it. The
  * preview is `app/components/prose.tsx`, the same component the reference
  * pages use, so it renders through `parseMarkdown` and there is no second
- * implementation to drift from the first. That has bitten this project before
- * — two implementations agreeing with each other and not with reality — and a
+ * implementation to drift from the first. That has bitten this project before,
+ * two implementations agreeing with each other and not with reality, and a
  * preview is exactly the place it would happen again.
  *
  * ## The preview is off until it is asked for
@@ -38,7 +38,7 @@
  * A class document has six markdown fields and a forty-row progression. Six
  * always-open previews double the height of the form and push the fields that
  * are actually being edited off the screen. It is per-field, one keystroke
- * away, and remembers nothing — which is right, because the question it
+ * away, and remembers nothing. Which is right, because the question it
  * answers ("did that table come out as a table?") is asked at a moment, not
  * for a session.
  */
@@ -70,7 +70,7 @@ interface ToolbarAction {
  *
  * Everything the dialect has and nothing it does not. There is no image
  * button, no code button and no strike-through button, because there is no
- * renderer for any of them — see the header of `markdown-editing.ts`.
+ * renderer for any of them. See the header of `markdown-editing.ts`.
  *
  * Three heading levels rather than six. The corpus writes its sections at one
  * or two depths and `Prose` re-maps whatever it finds onto the page's outline,
@@ -147,8 +147,8 @@ export function MarkdownEditor({
   useLayoutEffect(() => {
     const next = pendingSelection.current;
     // Cleared unconditionally. A pending selection that no longer matches the
-    // text belongs to an edit that never arrived — the document rejected it,
-    // or something else wrote over it — and holding on to it would move
+    // text belongs to an edit that never arrived (the document rejected it,
+    // or something else wrote over it) and holding on to it would move
     // somebody's caret at an unrelated moment later on.
     pendingSelection.current = null;
     if (!next) return;
@@ -169,8 +169,8 @@ export function MarkdownEditor({
       end: area.selectionEnd,
     });
 
-    // A toggle that changed nothing but the selection — pressing Bold with an
-    // empty document, say — produces no re-render to wait for, so the caret is
+    // A toggle that changed nothing but the selection (pressing Bold with an
+    // empty document, say) produces no re-render to wait for, so the caret is
     // placed here. Left to the effect it would sit until some unrelated render
     // came along.
     if (next.text === area.value) {
@@ -206,12 +206,12 @@ export function MarkdownEditor({
    * field and the second. Somebody navigating by keyboard would be right to
    * call that unusable. `role="toolbar"` is what promises a screen reader
    * user the arrow keys will work, so the role and this handler have to ship
-   * together — the role without the behaviour is a lie told in ARIA.
+   * together. The role without the behaviour is a lie told in ARIA.
    *
    * The buttons are found in the DOM rather than collected into an array of
    * refs as they render. One ref for the strip is less to keep in step than
    * twelve for its contents, and document order is the order the arrows should
-   * follow by definition — so there is no second list that can disagree with
+   * follow by definition, so there is no second list that can disagree with
    * what is on the screen.
    */
   function onToolbarKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -259,8 +259,8 @@ export function MarkdownEditor({
     className: "authoring-tool",
     disabled,
     tabIndex: index === rover ? 0 : -1,
-    // Focus arriving by any other route — a click, a Tab from the field above
-    // — moves the tab stop with it, so the next Tab leaves the toolbar rather
+    // Focus arriving by any other route (a click, a Tab from the field above)
+    // moves the tab stop with it, so the next Tab leaves the toolbar rather
     // than jumping back to a button nobody is looking at.
     onFocus: () => setRover(index),
   });
@@ -274,7 +274,7 @@ export function MarkdownEditor({
         ref={toolbarRef}
         role="toolbar"
         className="authoring-toolbar"
-        aria-label={`Formatting — ${label}`}
+        aria-label={`Formatting: ${label}`}
         onKeyDown={onToolbarKeyDown}
       >
         {ACTIONS.map((action, index) => (
@@ -283,7 +283,7 @@ export function MarkdownEditor({
             {...buttonProps(index)}
             // The visible word opens the accessible name, so somebody driving
             // this by voice can say what they can read.
-            aria-label={`${action.label} — ${label}`}
+            aria-label={`${action.label}: ${label}`}
             title={action.hint}
             onClick={() => apply(action.run)}
           >
@@ -293,7 +293,7 @@ export function MarkdownEditor({
 
         <button
           {...buttonProps(linkIndex)}
-          aria-label={`Link — ${label}`}
+          aria-label={`Link: ${label}`}
           aria-expanded={linkOpen}
           title="Link (Ctrl+K)"
           onClick={() => (linkOpen ? setLinkOpen(false) : openLink())}
@@ -304,7 +304,7 @@ export function MarkdownEditor({
         <button
           {...buttonProps(previewIndex)}
           className="authoring-tool authoring-tool-preview"
-          aria-label={`Preview — ${label}`}
+          aria-label={`Preview: ${label}`}
           aria-pressed={previewOpen}
           aria-controls={previewId}
           onClick={() => setPreviewOpen((open) => !open)}
@@ -318,7 +318,7 @@ export function MarkdownEditor({
           A panel rather than `window.prompt`, which cannot be styled, cannot be
           read by assistive technology as part of this field, and cannot be
           driven by a test. Not a nested `<form>` either: the whole document is
-          already inside one — see `DocumentForm` — and nesting forms is invalid
+          already inside one, see `DocumentForm`, and nesting forms is invalid
           markup that browsers repair by discarding the inner one.
         */
         <div className="authoring-link-panel">
@@ -361,7 +361,7 @@ export function MarkdownEditor({
             Said here because the renderer's rule is invisible from inside the
             text area. `app/components/prose.tsx` follows site-relative links
             and renders anything else as bare words, so a pasted external
-            address does not fail loudly — it just stops being a link. Better
+            address does not fail loudly. It just stops being a link. Better
             to say so before it is typed than to let the preview be the first
             anyone hears of it.
           */}
@@ -394,8 +394,8 @@ export function MarkdownEditor({
             /*
               `startLevel` is 3 because this sits below the field's own label
               inside a page whose title is the `h1` and whose section headings
-              are `h2`. It is not what a published page will use — the page
-              decides that — and a preview cannot know, which is also why no
+              are `h2`. It is not what a published page will use, the page
+              decides that, and a preview cannot know, which is also why no
               heading ids are passed: an anchor here would be an address for
               something that does not exist yet.
             */

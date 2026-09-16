@@ -17,7 +17,7 @@ import type {
  * 75 passages of rules prose.
  *
  * They are tested together because they are the two answers to the same
- * question — what does a reader do with a list this shape — and the answers are
+ * question, what does a reader do with a list this shape, and the answers are
  * opposite. Enhanced items are a catalogue and get the full filter bar, because
  * nobody scrolls 1,918 rows. Rules are not a catalogue at all: there is nothing
  * to compare between "Chapter 9: Combat" and the "Flanking" variant, so they
@@ -136,7 +136,7 @@ describe("the enhanced item index", () => {
 
     await user.click(screen.getByRole("button", { name: /^Rarity/ }));
 
-    // Standard, Premium, Prototype, Legendary — the ladder. Sorted as the text
+    // Standard, Premium, Prototype, Legendary. The ladder. Sorted as the text
     // in the badge this would read Legendary, Premium, Prototype, Standard,
     // which is an order nothing in the game recognises.
     expect(rowNames()).toEqual([

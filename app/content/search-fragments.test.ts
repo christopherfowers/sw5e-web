@@ -3,7 +3,7 @@
  *
  * There are two sluggers. `app/content/slug.ts` names the headings on the page
  * and `scripts/build-content-fixture.mjs` writes the fragments that point at
- * them, and they are separate because they run in different places — the
+ * them, and they are separate because they run in different places. The
  * script is plain ESM run by node before a bundler exists, the module is
  * TypeScript compiled into the application.
  *
@@ -42,8 +42,8 @@ describe("the fragments in the built search index", () => {
     const mismatches: string[] = [];
 
     for (const record of records) {
-      // One slugger per document, fed the headings in the order they appear —
-      // which is the order the page assigns ids in. A slug computed in any
+      // One slugger per document, fed the headings in the order they appear.
+      // Which is the order the page assigns ids in. A slug computed in any
       // other order collides differently and points somewhere else.
       const slug = uniqueSlugger();
 
@@ -66,7 +66,7 @@ describe("the fragments in the built search index", () => {
   it("covers the headings inside a chapter, not only its outer sections", () => {
     /*
       The regression that started this. A rules chapter is one section with
-      forty-odd headings inside it, and only the outer one was indexed — so the
+      forty-odd headings inside it, and only the outer one was indexed, so the
       site held the rule for difficult terrain and could not find it. Searching
       "difficult terrain" returned nothing.
     */

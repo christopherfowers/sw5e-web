@@ -16,16 +16,16 @@
  *                                             which is what it used to be
  *   the search survives the trip into an      the two pages being made
  *   account and back                          siblings, so the directory
- *                                             unmounts and the term — which
- *                                             may not be stored anywhere — is
+ *                                             unmounts and the term, which
+ * may not be stored anywhere, is
  *                                             gone
  *
  * What one account can be *done to* lives in `account-people-manage.test.tsx`,
  * beside the page that does it.
  *
  * Everything here mounts the real `AuthProvider` against the contract fixture,
- * so the session resolves the way it does in a browser — through a genuine
- * `GET /api/auth/me` — and the administrative stub reads that same session to
+ * so the session resolves the way it does in a browser, through a genuine
+ * `GET /api/auth/me`, and the administrative stub reads that same session to
  * decide what to refuse. A test cannot hand itself an administrator.
  */
 
@@ -53,7 +53,7 @@ const ADMINISTRATOR = user({ roles: ["Community", "Administrator"] });
  * Where the router thinks it is.
  *
  * `createRoutesStub` drives a memory router, so `window.location` never moves
- * and an assertion against it passes whatever the page does — including the
+ * and an assertion against it passes whatever the page does. Including the
  * thing it is checking for. Two of the assertions below are about an email
  * address never reaching a URL, which is the last claim in this file that may
  * be made vacuously, so the address bar under test is this one.
@@ -173,7 +173,7 @@ describe("who may see the directory", () => {
   });
 
   it("asks an administrator who signed in with a code to prove their passkey", async () => {
-    // The account holds the role. This is not "you may not" — it is "not from
+    // The account holds the role. This is not "you may not". It is "not from
     // this sign-in", and the two must not be worded alike: one is the end of
     // the conversation and the other is one prompt away. The account has a
     // passkey, so what it meets is the prompt rather than a description of it.
@@ -355,7 +355,7 @@ describe("coming back to the directory", () => {
   it("brings the administrator's search and filters back with them", async () => {
     // The annoyance this must not trade the old one for. A search here is an
     // email address, so it cannot be put in the URL, in `history.state` or in
-    // storage to be recovered — the only thing that can carry it across the
+    // storage to be recovered. The only thing that can carry it across the
     // trip is the directory staying mounted, which is why the two pages are
     // nested rather than siblings.
     const admin = new AdminApiStub({
@@ -463,7 +463,7 @@ describe("the shipped route configuration", () => {
 
   it("nests the management page inside the directory", () => {
     // `createRoutesStub` above builds its own table, so nothing in this file
-    // would notice the shipped one being flattened — and flattening it is the
+    // would notice the shipped one being flattened, and flattening it is the
     // one change that silently undoes the search-survives-the-trip behaviour
     // two tests up. React Router keeps a parent route's component mounted while
     // a child renders; it keeps nothing at all for a sibling.

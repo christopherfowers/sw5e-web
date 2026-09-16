@@ -53,7 +53,7 @@ export interface AccountSuspension {
  * One account as the directory shows it.
  *
  * Notice what is here and what is not. `secondFactorEnrolled` is a boolean and
- * not a credential list — an administrator needs to know whether granting
+ * not a credential list. An administrator needs to know whether granting
  * `Contributor` will produce a role the person can actually use, and does not
  * need anybody else's credential identifiers. There is no security stamp, no
  * lockout end date and no normalised address, because none of them is something
@@ -70,7 +70,7 @@ export interface AdminUser {
   /** Whether an authenticator app is enrolled. */
   twoFactorEnabled: boolean;
   /**
-   * Whether the account holds a passkey **or** an authenticator app — that is,
+   * Whether the account holds a passkey **or** an authenticator app. That is,
    * whether an elevated role granted to it would be usable. Answered by the
    * server rather than derived from `twoFactorEnabled` here, because passkeys
    * are not listed on this response and never should be.
@@ -102,7 +102,7 @@ export interface AdminUserList {
 /**
  * One account in full.
  *
- * `outstandingDrafts` is `null` — not `0` — on a deployment that serves content
+ * `outstandingDrafts` is `null`, not `0`, on a deployment that serves content
  * from files and has no authoring at all, so an interface never draws "0
  * drafts" beside an account where the concept does not exist. When it is a
  * number above zero, deletion is refused; that is why it is worth fetching
@@ -116,7 +116,7 @@ export interface AdminUserDetail {
 /**
  * What an administrator did.
  *
- * Hyphenated and lower case, which is also what is stored — not the service's
+ * Hyphenated and lower case, which is also what is stored. Not the service's
  * C# member names. A rename on either side is a breaking change, and spelling
  * the literals out here is what makes it one that fails a test.
  */
@@ -149,7 +149,7 @@ export function isAdministrativeAction(
  *
  * `rolesBefore` and `rolesAfter` list only assignable roles, so `null` covers
  * both "this action was not about roles" and "the account held none". `action`
- * is what tells those apart — a reader of this type must not infer the kind of
+ * is what tells those apart. A reader of this type must not infer the kind of
  * action from whether the role fields are present.
  */
 export interface AdministrativeAction {
@@ -178,7 +178,7 @@ export interface AdministrativeLog {
 /**
  * Which accounts the directory should list.
  *
- * `unverified` is registrations that never completed — the accounts an
+ * `unverified` is registrations that never completed. The accounts an
  * administrator is looking at when somebody reports that a verification email
  * never arrived.
  */

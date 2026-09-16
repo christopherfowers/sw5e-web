@@ -7,7 +7,7 @@
  * collaborator who wrote a book of archetypes have each earned a different
  * acknowledgement, and one long list of names takes that away from all three.
  * So each category keeps its own heading, its own introduction, and its own
- * shape — the categories that recorded what somebody actually did are drawn as
+ * shape. The categories that recorded what somebody actually did are drawn as
  * a description list with that sentence attached, and the rosters, which
  * recorded only that somebody took part, are drawn as rosters.
  *
@@ -32,7 +32,7 @@ import type { Route } from "./+types/credits";
 
 export function meta() {
   return [
-    { title: "Credits — Star Wars 5e" },
+    { title: "Credits | Star Wars 5e" },
     {
       name: "description",
       content:
@@ -105,7 +105,7 @@ export default function Credits({ loaderData }: Route.ComponentProps) {
           again to check for changes, so treat this as the credits as they stood
           when the site was archived rather than as a verified current list. If
           you are missing from it, or credited for the wrong thing, please say
-          so — the original credits ended with that same invitation and it still
+          so. The original credits ended with that same invitation and it still
           stands.
         </p>
       </div>
@@ -132,7 +132,7 @@ export default function Credits({ loaderData }: Route.ComponentProps) {
                       // Rendering the source text raw would print the asterisks
                       // on the most prominent credit on the page, so it goes
                       // through the same inline renderer the rest of the site
-                      // uses rather than being stripped — the emphasis is part
+                      // uses rather than being stripped. The emphasis is part
                       // of how the credit was written.
                       <Inline nodes={parseInline(person.contribution)} />
                     ) : (

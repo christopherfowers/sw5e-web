@@ -5,7 +5,7 @@
  * content" is not one job. It is three, and they arrive from different places:
  *
  *   a report somebody filed and a reviewer accepted, which names the document
- *   it is about and is currently a dead end — the queue can say "yes, that is
+ *   it is about and is currently a dead end. The queue can say "yes, that is
  *   wrong" and then has nowhere to send anybody;
  *
  *   a draft already started, by this account or another, which may or may not
@@ -136,10 +136,10 @@ function AcceptedReports() {
                       /*
                         Named for what it acts on. Half a dozen rows each
                         offering "Correct this" are six identical links to
-                        anything reading them out of context — which is what a
+                        anything reading them out of context. Which is what a
                         screen reader's list of links is.
                       */
-                      aria-label={`Correct this — ${flag.targetName}`}
+                      aria-label={`Correct this: ${flag.targetName}`}
                     >
                       Correct this
                     </Link>
@@ -204,7 +204,7 @@ function DraftRows({ drafts, canPublish }: { drafts: DraftSummary[]; canPublish:
               /*
                * The case the whole feature has to handle well. This draft was
                * started against a version of the document that is no longer the
-               * current one, so publishing it will be refused — and saving over
+               * current one, so publishing it will be refused, and saving over
                * it would replace whatever was published in between, because a
                * draft carries the whole document rather than a patch.
                *
@@ -228,7 +228,7 @@ function DraftRows({ drafts, canPublish }: { drafts: DraftSummary[]; canPublish:
               <Link
                 className="button button-primary"
                 to={editorPath(draft.type, draft.key)}
-                aria-label={`${canPublish ? "Review and publish" : "Keep editing"} — ${draft.name}`}
+                aria-label={`${canPublish ? "Review and publish" : "Keep editing"}: ${draft.name}`}
               >
                 {canPublish ? "Review and publish" : "Keep editing"}
               </Link>
@@ -298,8 +298,8 @@ function Drafts({ canPublish }: { canPublish: boolean }) {
     <section className="account-section" aria-labelledby="drafts-heading">
       <h2 id="drafts-heading">Drafts in progress</h2>
       <p className="account-section-lede">
-        Every draft anybody has open, newest first. Drafts are shared — two
-        people cannot hold separate ones for the same document — so a draft here
+        Every draft anybody has open, newest first. Drafts are shared. Two
+        people cannot hold separate ones for the same document, so a draft here
         is a piece of work somebody is in the middle of.
       </p>
 
@@ -353,8 +353,8 @@ function StartSomething() {
 
   const types = useMemo(() => {
     if (!index) return [];
-    // The index holds every type twice — once under its key, once under its
-    // route segment — so it is reduced back to one entry each before it is
+    // The index holds every type twice (once under its key, once under its
+    // route segment) so it is reduced back to one entry each before it is
     // offered as a menu.
     const unique = new Map(
       [...index.values()].map((descriptor) => [descriptor.key, descriptor]),
@@ -412,7 +412,7 @@ function StartSomething() {
           onChange={(event) => setKey(event.target.value)}
         />
         <p className="auth-field-hint" id="new-key-hint">
-          Lower case, digits and single hyphens — <code>bo-rifle</code>,{" "}
+          Lower case, digits and single hyphens, <code>bo-rifle</code>,{" "}
           <code>heavy-blaster-pistol</code>. This becomes the address of the
           published page and cannot be changed afterwards without leaving the old
           one behind.

@@ -19,8 +19,8 @@
  * does not draw is a field the next save deletes. Two rules follow, and both
  * have tests:
  *
- *   a shape the generator does not understand still gets a control — a text
- *   area holding it as JSON — rather than being skipped;
+ *   a shape the generator does not understand still gets a control, a text
+ * area holding it as JSON, rather than being skipped;
  *
  *   a property in the *document* that the schema does not describe is drawn
  *   too, under a heading that says so, with a control to remove it. Hiding it
@@ -41,7 +41,7 @@
  *
  * The form carries `noValidate`, and the constraint attributes on each control
  * are hints rather than gates. The service validates every write against the
- * schema and is the only thing that can — it re-validates at publish as well as
+ * schema and is the only thing that can. It re-validates at publish as well as
  * at save, and it knows about the object-level conditions this form only
  * describes. A browser that refused to submit would be a second, weaker
  * validator that stops the real one from ever answering.
@@ -121,7 +121,7 @@ function violationsAt(violations: SchemaViolations, pointer: string): SchemaViol
  *
  * Written once because the association between the four is the part that
  * quietly stops working when it is written out by hand for the fifteenth
- * control — which is exactly what a generated form would otherwise be.
+ * control. Which is exactly what a generated form would otherwise be.
  */
 function Field({
   id,
@@ -222,8 +222,8 @@ function LineField(props: ControlFieldProps & { control: LineControl }) {
 /**
  * A markdown field.
  *
- * The control is `app/authoring/prose-editor.tsx` — a toolbar over the text
- * and a preview under it — and not a plain text area, because the schemas mark
+ * The control is `app/authoring/prose-editor.tsx`, a toolbar over the text
+ * and a preview under it, and not a plain text area, because the schemas mark
  * these fields as markdown and nothing else on this form tells the author what
  * that dialect contains. The clearing rule is unchanged and still lives here:
  * emptying the box removes the property rather than storing `""`, exactly as
@@ -287,7 +287,7 @@ function NumberField(props: ControlFieldProps & { control: NumberControl }) {
               return;
             }
             const parsed = Number(raw);
-            // A half-typed number — "-", "1e" — parses as NaN, and storing NaN
+            // A half-typed number ("-", "1e") parses as NaN, and storing NaN
             // would serialize as null and be refused as the wrong type. The
             // document keeps whatever it had until the reader has typed
             // something that is a number.
@@ -402,7 +402,7 @@ function JsonField(props: ControlFieldProps & { control: JsonControl }) {
   const [broken, setBroken] = useState<string | null>(null);
 
   /*
-   * Re-synchronised when the value changes underneath — a draft reloaded, a
+   * Re-synchronised when the value changes underneath. A draft reloaded, a
    * recovered copy put back, an entry above this one removed.
    *
    * Adjusted during the render that notices, rather than in an effect. An
@@ -500,8 +500,8 @@ function ArrayField(props: ControlFieldProps & { control: ArrayControl }) {
         <ol className="authoring-list-items">
           {items.map((item, index) => (
             // Keyed by position, which is right here and unusual. These entries
-            // have no identity of their own — an entry *is* its position in the
-            // document — and a key derived from the content would remount every
+            // have no identity of their own, an entry *is* its position in the
+            // document, and a key derived from the content would remount every
             // row on every keystroke, taking the caret with it.
             <li key={index} className="authoring-list-item">
               <div className="authoring-list-item-head">
@@ -518,7 +518,7 @@ function ArrayField(props: ControlFieldProps & { control: ArrayControl }) {
                     type="button"
                     className="link-button"
                     disabled={disabled || index === 0}
-                    aria-label={`Move up — ${control.itemLabel} ${index + 1}`}
+                    aria-label={`Move up: ${control.itemLabel} ${index + 1}`}
                     onClick={() => props.onMove?.(pointer, index, index - 1)}
                   >
                     Move up
@@ -527,7 +527,7 @@ function ArrayField(props: ControlFieldProps & { control: ArrayControl }) {
                     type="button"
                     className="link-button"
                     disabled={disabled || index === items.length - 1}
-                    aria-label={`Move down — ${control.itemLabel} ${index + 1}`}
+                    aria-label={`Move down: ${control.itemLabel} ${index + 1}`}
                     onClick={() => props.onMove?.(pointer, index, index + 1)}
                   >
                     Move down
@@ -536,7 +536,7 @@ function ArrayField(props: ControlFieldProps & { control: ArrayControl }) {
                     type="button"
                     className="link-button authoring-remove"
                     disabled={disabled}
-                    aria-label={`Remove — ${control.itemLabel} ${index + 1}`}
+                    aria-label={`Remove: ${control.itemLabel} ${index + 1}`}
                     onClick={() => onEdit(joinPointer(pointer, index), undefined)}
                   >
                     Remove
@@ -699,7 +699,7 @@ export interface DocumentFormProps {
   /**
    * The prefix for every generated element id.
    *
-   * Supplied by the page when it needs to build links to the controls — the
+   * Supplied by the page when it needs to build links to the controls. The
    * error summary above the form is a list of anchors, and an anchor needs the
    * id before the control exists. Left out, the form makes its own.
    */
@@ -711,8 +711,8 @@ export interface DocumentFormProps {
 /**
  * The whole document as a form.
  *
- * With no `control` — a service that publishes no schemas, or a schema whose
- * root is not an object — the document is edited as JSON in one control. That
+ * With no `control` (a service that publishes no schemas, or a schema whose
+ * root is not an object) the document is edited as JSON in one control. That
  * is not a degraded mode to be embarrassed about: it is what makes this
  * interface deployable against a service one version behind, and it is the
  * reason the editor never simply refuses to open.

@@ -3,7 +3,7 @@
  *
  * An outbound link on a community's reference site is a phishing primitive. If
  * whoever can edit these is compromised, the valuable move is not defacing the
- * corpus — it is repointing "Discord" at a credential-harvesting clone that
+ * corpus. It is repointing "Discord" at a credential-harvesting clone that
  * people click precisely because this domain vouched for it.
  *
  * The host allowlist is the half of that which can be closed mechanically, and
@@ -37,7 +37,7 @@ describe("the channels the corpus describes", () => {
    * The Patreon the old site carried belongs to the previous maintainer and is
    * shared with another project, so it is deliberately not carried over. An
    * earlier design gave it a dedicated admin toggle defaulting to off; this is
-   * the assertion that replaced it, and it needs no code at all — a group
+   * the assertion that replaced it, and it needs no code at all. A group
    * nothing is filed under does not exist.
    */
   it("has no support group, because nothing is filed under one", () => {
@@ -112,7 +112,7 @@ describe("the host allowlist", () => {
   /**
    * Every published channel passes its own check.
    *
-   * The reader never sees a channel that fails, because `read` drops it — so
+   * The reader never sees a channel that fails, because `read` drops it. So
    * without this test a seed pointing somewhere unexpected would vanish
    * silently rather than failing loudly, and "the Discord link disappeared" is
    * a worse way to find out than a red test.

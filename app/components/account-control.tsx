@@ -14,7 +14,7 @@
  *
  * The placeholder is not a nicety. If this component drew "Sign in" while the
  * session was still resolving, then every signed-in reader would see "Sign
- * in" briefly on every page they opened — a flash of the wrong state that
+ * in" briefly on every page they opened. A flash of the wrong state that
  * looks exactly like having been logged out. Drawing something deliberately
  * neutral says nothing false, and because it reserves the same width, the real
  * control does not shove the search field sideways when it arrives.
@@ -34,7 +34,7 @@ export function AccountControl() {
   const session = useSession();
   /*
     The router's location, not `window.location`. Called before the early
-    returns below because hooks must run unconditionally — and read from the
+    returns below because hooks must run unconditionally, and read from the
     router because this component renders during the prerender, where the
     global does not describe the page being built.
   */
@@ -67,7 +67,7 @@ export function AccountControl() {
         Carries where the reader is, so signing in puts them back there.
 
         The sign-in page has always honoured `?next=`, but only the route guard
-        was setting it — somebody bounced off a page they were not allowed to
+        was setting it. Somebody bounced off a page they were not allowed to
         see went back to it afterwards, while somebody who simply pressed Sign
         in from the header landed on the account page. That is the more common
         path by far, and it is the one that dumped a reader somewhere they had

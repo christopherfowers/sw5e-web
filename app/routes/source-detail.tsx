@@ -12,9 +12,9 @@ import type { ContentTypeId } from "~/content/types";
 import type { Route } from "./+types/source-detail";
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  if (!loaderData) return [{ title: "Not found — Star Wars 5e" }];
+  if (!loaderData) return [{ title: "Not found | Star Wars 5e" }];
   return [
-    { title: `${loaderData.source.name} — Star Wars 5e` },
+    { title: `${loaderData.source.name} | Star Wars 5e` },
     {
       name: "description",
       content: `${loaderData.total} Star Wars 5e entries from ${loaderData.source.name}. ${loaderData.source.blurb}`,
@@ -76,7 +76,7 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
               Book covers are the pictures on this site most likely to attract a
               rights complaint, and the ones whose provenance is least
               documented. The attribution record is keyed on the same source
-              code the image file is — `sources-phb` — so the report points at
+              code the image file is, `sources-phb`, so the report points at
               the record a reviewer edits.
             */}
             <ReportControl
@@ -93,7 +93,7 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
           /*
             Expanded Content is community material and has no cover art
             anywhere in the archive. Rather than an empty frame or a broken
-            image, it gets a plate of its own initials in its own colour — the
+            image, it gets a plate of its own initials in its own colour. The
             same treatment species without a portrait get.
           */
           <span className="source-plate">
@@ -120,7 +120,7 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
             one per content type, reading "Species 30, Classes 10, Features
             825". That is a contents list organised by database table, which is
             nobody's idea of a book, and each card linked to the whole-site
-            index for its type rather than to this book's share of it — so
+            index for its type rather than to this book's share of it. So
             "Species 30" opened a page of a hundred and forty-one.
 
             What a reader wants from a book is its chapters, in the order they
@@ -163,8 +163,8 @@ export default function SourceDetail({ loaderData }: Route.ComponentProps) {
 
           {/*
             What else is in the book, as a sentence rather than a wall of
-            cards. The counts are worth knowing — a book with 825 features is a
-            different proposition from one with none — but they are context for
+            cards. The counts are worth knowing, a book with 825 features is a
+            different proposition from one with none, but they are context for
             the chapters above, not the point of the page.
           */}
           {present.length > 0 ? (

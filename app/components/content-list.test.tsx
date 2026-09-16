@@ -362,7 +362,7 @@ describe("a species index", () => {
 /**
  * The page that froze.
  *
- * `/features` published all 2,682 rows as 2.1 MB of HTML — 40,342 elements for
+ * `/features` published all 2,682 rows as 2.1 MB of HTML. 40,342 elements for
  * the browser to parse and lay out and for React to hydrate, in one block, on
  * the main thread. It was not slow to arrive; it arrived and then stopped
  * responding. Enhanced items, 1,918 rows, is the next type to land.
@@ -370,7 +370,7 @@ describe("a species index", () => {
  * The two numbers asserted below are the two halves of that: how much markup
  * the page is, and how many elements it is. Both are budgets rather than exact
  * figures, and both are far enough under what an unwindowed render produces
- * that no amount of ordinary drift reaches them — the unwindowed version of
+ * that no amount of ordinary drift reaches them. The unwindowed version of
  * this same list is roughly eight times the element budget.
  *
  * The third assertion is the one that keeps the other two honest. Publishing
@@ -385,7 +385,7 @@ describe("a very long index", () => {
   /*
     Headroom for the tests that drive the list rather than just read it.
     Rendering and re-rendering 2,682 rows in jsdom is genuinely slow, and a
-    shared CI runner is several times slower than a laptop — the default five
+    shared CI runner is several times slower than a laptop. The default five
     seconds is a flake waiting to happen rather than a budget anyone set.
   */
   const SLOW = 30_000;
@@ -585,7 +585,7 @@ describe("an abbreviated column header", () => {
       The trap this pins. `title` on an `<abbr>` looks like it names the
       element and does not: the accessible name of something with text content
       is its text content, and `title` is consulted only when there is nothing
-      else. So `<abbr title="Challenge rating">CR</abbr>` is announced "C R",
+      else, so `<abbr title="Challenge rating">CR</abbr>` is announced "C R",
       and a hover affordance reaches neither a touch screen nor a keyboard
       anyway.
 
@@ -597,8 +597,8 @@ describe("an abbreviated column header", () => {
     const sort = screen.getByRole("button", { name: /challenge rating/i });
 
     // Both halves are in the name: the abbreviation a sighted reader sees, and
-    // the words it stands for. The separator between them is not asserted —
-    // jsdom's accessible-name computation collapses the space that a browser
+    // the words it stands for. The separator between them is not asserted.
+    // Jsdom's accessible-name computation collapses the space that a browser
     // keeps, and pinning that would be pinning the test environment rather
     // than the behaviour.
     expect(sort).toHaveAccessibleName(/CR/);

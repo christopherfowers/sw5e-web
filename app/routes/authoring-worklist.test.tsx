@@ -5,7 +5,7 @@
  * used to be the end of the road. The queue could say "yes, that is wrong" and
  * then had nowhere to send anybody. What is asserted below is that accepting
  * one now leads into the editor for the thing it is about, carrying the
- * report's identifier — which is what makes publishing the correction close the
+ * report's identifier. Which is what makes publishing the correction close the
  * report for the person who filed it.
  *
  * The other is that an overtaken draft is drawn as the state it is rather than
@@ -117,7 +117,7 @@ describe("reports waiting on a correction", () => {
     const correct = screen.getByRole("link", { name: /correct this/i });
 
     // The canonical key, not the route segment the report happened to carry,
-    // and the report's identifier alongside it — which is what ties the draft
+    // and the report's identifier alongside it. Which is what ties the draft
     // to the report so that publishing closes it.
     expect(correct).toHaveAttribute(
       "href",
@@ -133,7 +133,7 @@ describe("reports waiting on a correction", () => {
     // Waited for rather than read once. The heading is static markup and is
     // there the instant the guard lets the page draw; the request is issued
     // from an effect afterwards, so reading the call log at that moment is a
-    // race — one this test lost on CI while winning it locally.
+    // race. One this test lost on CI while winning it locally.
     await waitFor(() => {
       const asked = flags.calls.find((call) => call.path.startsWith("/api/flags?"));
       expect(asked?.path).toContain("status=accepted");

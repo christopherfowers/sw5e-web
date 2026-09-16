@@ -9,8 +9,8 @@
  * The one place this does depart from the rest of the site is emphasis. A row
  * here can end in an irreversible action, so the state markers are louder than
  * the badges on a content page and the destructive control is the only element
- * on the page allowed to use the danger accent. Everything else — search, role
- * ticks, paging — is deliberately plain, so that the loud things stay loud.
+ * on the page allowed to use the danger accent. Everything else (search, role
+ * ticks, paging) is deliberately plain, so that the loud things stay loud.
  */
 
 .people-search {
@@ -168,7 +168,7 @@
 
 /*
  * The name of the account being managed. Larger than a section heading because
- * it is not one — it is the subject of the page, and the reader arriving from a
+ * it is not one. It is the subject of the page, and the reader arriving from a
  * list of twenty rows needs to see at a glance which of them they opened.
  */
 .people-panel > h2 {

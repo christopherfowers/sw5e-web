@@ -3,8 +3,8 @@
  *
  * Each source document carries its own shelf name, the line under it, the hue
  * it is drawn in and where it sits among the others. That used to be a table
- * in this repository, which meant a new book — a supplement, or eventually
- * somebody's homebrew — could be added to the corpus and still not appear as a
+ * in this repository, which meant a new book (a supplement, or eventually
+ * somebody's homebrew) could be added to the corpus and still not appear as a
  * book until the site was edited and deployed.
  *
  * ## The fallback is the point
@@ -16,7 +16,7 @@
  * the property the hand-written table had that this must not lose.
  *
  * So `bookFor` answers `null` rather than a placeholder, and every caller is
- * written to cope with null — which they already were, because the old table
+ * written to cope with null. Which they already were, because the old table
  * could be missing an abbreviation too.
  *
  * ## Why this is not in `dataset.server.ts`
@@ -24,7 +24,7 @@
  * That module is server-only because the dataset beside it is several
  * megabytes, and shipping it to a browser would send the whole library to
  * render one page. The books are about a kilobyte, and a book's name and colour
- * are needed while rendering a row on the client — so they are their own file,
+ * are needed while rendering a row on the client, so they are their own file,
  * imported directly. Keeping them separate is what makes that safe to see at a
  * glance rather than something to reason about.
  */
@@ -49,7 +49,7 @@ export interface Book {
    *
    * The front page opens with this book and walks a new reader down its
    * chapters. Exactly one source sets it, and the content repository has a test
-   * saying so — neither failure is loud enough to notice otherwise.
+   * saying so. Neither failure is loud enough to notice otherwise.
    */
   isCoreRulebook: boolean;
 }

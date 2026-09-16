@@ -4,8 +4,8 @@
  * Every role question in the UI goes through this module rather than
  * comparing strings at the call site. That is not tidiness: a check written
  * inline as `roles.includes("Contributor")` silently stops being true for an
- * admin, and the bug it produces — an administrator who cannot see the
- * contributor tools — is the kind nobody reports because it looks like a
+ * admin, and the bug it produces, an administrator who cannot see the
+ * contributor tools, is the kind nobody reports because it looks like a
  * permissions decision rather than a mistake.
  *
  * None of this is a security boundary. The browser decides what to *draw*;
@@ -92,9 +92,9 @@ export function canAdministerAccounts(
  *
  * Separate from {@link canUploadContent} because the service separates them:
  * writing a draft needs `Contributor`, and publishing or reverting needs
- * `Administrator`. That is an editorial policy rather than an accident — a
+ * `Administrator`. That is an editorial policy rather than an accident, a
  * contributor proposes a correction and somebody with the books to hand agrees
- * to it — and it is the reason the authoring interface is shaped as two acts
+ * to it, and it is the reason the authoring interface is shaped as two acts
  * rather than one save button.
  *
  * Written as its own function rather than reusing {@link canAdministerAccounts}

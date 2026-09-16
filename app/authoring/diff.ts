@@ -5,7 +5,7 @@
  * answers with a whole document and says so in its own notes: which fields
  * matter, and what "changed" should even mean for a list, is a presentation
  * decision, and a diff computed on the server would have to pick one answer for
- * every client forever. So this module picks ours, and everything in it is a
+ * every client forever, so this module picks ours, and everything in it is a
  * decision about what a reviewer needs to see rather than about JSON.
  *
  * Three of those decisions are worth stating outright, because the naive
@@ -13,7 +13,7 @@
  *
  * **Arrays are matched, not zipped.** A class document carries its features in
  * a list. Inserting one feature at level 3 shifts every later entry by one, and
- * an index-wise comparison reports that all forty of them changed — which is
+ * an index-wise comparison reports that all forty of them changed. Which is
  * both wrong and the single most common edit anybody will make. Items are
  * therefore matched by identity where they have one, and by a longest common
  * subsequence where they do not, so an insertion reads as one insertion.
@@ -86,7 +86,7 @@ function isObject(value: unknown): value is Record<string, unknown> {
  * Whether two values are the same document content.
  *
  * Serialized rather than compared structurally, because the comparison has to
- * be stable for objects whose keys arrived in a different order — two API
+ * be stable for objects whose keys arrived in a different order. Two API
  * responses for the same revision are not guaranteed to serialize their
  * properties identically, and a diff that reported every field of an untouched
  * object as changed because a key moved would be worse than no diff.
@@ -116,8 +116,8 @@ function sortKeys(value: unknown): unknown {
  *
  * Every item on both sides has to be an object carrying the key, and the values
  * on each side have to be unique, or matching by it would silently pair the
- * wrong two rows. Two features both called "Extra Attack" — which really happens
- * across archetypes — must not be matched by name, and this is what stops it.
+ * wrong two rows. Two features both called "Extra Attack", which really happens
+ * across archetypes, must not be matched by name, and this is what stops it.
  */
 function identityKeyFor(before: unknown[], after: unknown[]): string | null {
   for (const candidate of IDENTITY_KEYS) {
@@ -259,7 +259,7 @@ function alignByIndex(before: unknown[], after: unknown[]): Pairing[] {
  * Only adjacent runs are paired, and only positionally within the run. Pairing
  * across the whole array would confidently marry a deletion at the top of a
  * list to an insertion at the bottom, and then present two unrelated entries as
- * one edit — a diff that invents a change is worse than one that misses it.
+ * one edit. A diff that invents a change is worse than one that misses it.
  */
 function pairRewrites(pairs: Pairing[]): Pairing[] {
   const out: Pairing[] = [];
@@ -369,7 +369,7 @@ function walkArray(
 /**
  * Every difference between two documents, in document order.
  *
- * An empty result means the two are the same content — which is a real answer a
+ * An empty result means the two are the same content. Which is a real answer a
  * reviewer needs, because a revision that changed nothing is a thing that
  * happens and "no changes" is more use than a blank panel.
  */
@@ -390,7 +390,7 @@ export interface WordSpan {
  * Splits prose into diffable tokens, keeping the whitespace.
  *
  * Whitespace is kept as its own token rather than trimmed, so that reassembling
- * the spans reproduces the original text exactly — including the paragraph
+ * the spans reproduces the original text exactly. Including the paragraph
  * breaks, which in this corpus are meaningful and are a thing an editor changes
  * on purpose.
  */

@@ -20,7 +20,7 @@ export const CONTENT_TYPE_IDS = [
   // because a character chooses from six separate lists granted by six
   // different features, and an entry on one is never a substitute for an entry
   // on another. Collapsing them would need a "kind" column that did nothing but
-  // undo the collapse, and would make the six counts — 119, 32, 32, 20, 8, 8 —
+  // undo the collapse, and would make the six counts (119, 32, 32, 20, 8, 8)
   // one number that says nothing.
   "maneuvers",
   "fighting-styles",
@@ -101,8 +101,8 @@ export interface DataTable {
 }
 
 /**
- * A full content item. Types vary enormously — a feat has six fields, a
- * creature has forty-seven — so the detail view is driven by these four
+ * A full content item. Types vary enormously (a feat has six fields, a
+ * creature has forty-seven) so the detail view is driven by these four
  * open-ended collections rather than by a fixed field list.
  */
 export interface ContentItem {
@@ -155,7 +155,7 @@ export interface ArchetypeSummary extends BaseSummary {
 }
 
 export interface FeatureSummary extends BaseSummary {
-  /** "Class", "Archetype" or "Species" — what kind of thing grants it. */
+  /** "Class", "Archetype" or "Species", what kind of thing grants it. */
   grantedBy: string | null;
   grantedByName: string | null;
   level: number | null;
@@ -186,7 +186,7 @@ export interface ManeuverSummary extends BaseSummary {
   kind: string | null;
   prerequisite: string | null;
   /**
-   * Dice spent by using the maneuver — almost always one. Zero is the case
+   * Dice spent by using the maneuver. Almost always one. Zero is the case
    * worth showing: a tiered upgrade changes how a maneuver a character has
    * already paid for behaves, and costs nothing itself.
    */
@@ -198,7 +198,7 @@ export interface ManeuverSummary extends BaseSummary {
 /**
  * Fighting styles and fighting masteries are the same shape: the same
  * disciplines chosen from two lists at two points in a career. `benefits` is
- * the count, which is the honest one-number comparison between them — a style
+ * the count, which is the honest one-number comparison between them. A style
  * grants two, a mastery three or four.
  */
 export interface FightingOptionSummary extends BaseSummary {
@@ -235,8 +235,8 @@ export interface EquipmentSummary extends BaseSummary {
  * Enhanced gear: a specific artefact, a modification bolted onto ordinary
  * equipment, an augmentation, or a consumable.
  *
- * Deliberately not an `EquipmentSummary`. Nothing here has a cost or a weight —
- * the archive records no price for any of the 1,918 — and everything here has a
+ * Deliberately not an `EquipmentSummary`. Nothing here has a cost or a weight
+ * (the archive records no price for any of the 1,918) and everything here has a
  * rarity band and an attunement requirement, which no mundane item does. The
  * columns a reader scans are different, so the row is different.
  */
@@ -261,8 +261,8 @@ export interface PropertySummary extends BaseSummary {
  *
  * `readingGroup` and `order` are the authored reading path and are what this
  * site navigates by. `chapterNumber` is where the passage fell in a printed
- * book: kept because it is true, and deliberately not used to order anything —
- * it puts "What's Different?" ahead of the introduction it is different from,
+ * book: kept because it is true, and deliberately not used to order anything.
+ * It puts "What's Different?" ahead of the introduction it is different from,
  * which is the right answer for a reader holding the book and the wrong one for
  * a reader meeting the game.
  */
@@ -355,7 +355,7 @@ export interface StarshipRuleSummary extends BaseSummary {
  * A lookup rather than a chain of conditional types: with nineteen types the
  * chain was nineteen levels of nesting for what is a table, every addition
  * moved every line below it, and the compiler's error for a missing arm was
- * "MonsterSummary" — the final fallback — rather than "you forgot a type".
+ * "MonsterSummary", the final fallback, rather than "you forgot a type".
  * Indexing `Record<ContentTypeId, …>` makes a missing entry a compile error
  * naming the type that is missing.
  */
@@ -405,8 +405,8 @@ export interface SearchField {
    *
    * Set for a heading, and it is the id the page renders for that heading, so
    * a result can link past the top of a half-megabyte rules chapter to the
-   * section that actually matched. Absent for a field that is not a place —
-   * a summary, a statistic, the description excerpt.
+   * section that actually matched. Absent for a field that is not a place.
+   * A summary, a statistic, the description excerpt.
    */
   fragment?: string;
 }
@@ -440,7 +440,7 @@ export interface Manifest {
  * artist and the particular work; an `inherited-unattributed` one describes a
  * picture the original site carried whose artist it never recorded, and it
  * holds no artist at all rather than a guess. The two are drawn differently
- * on purpose — a reader told the author is unknown can go looking, whereas a
+ * on purpose. A reader told the author is unknown can go looking, whereas a
  * reader shown a plausible wrong name cannot.
  */
 export interface AssetCredit {

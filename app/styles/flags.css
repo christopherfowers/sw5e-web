@@ -3,7 +3,7 @@
  *
  * The trigger is the part with a rule behind it. It sits at the foot of what it
  * is about, it is text rather than a button shape, and it is quieter than
- * everything around it — this is a reference people read at the table, and an
+ * everything around it. This is a reference people read at the table, and an
  * affordance that competes with the content for attention is one the content
  * loses. It becomes a normal interactive control on hover and on focus, so a
  * keyboard user is never hunting for something that only exists visually.
@@ -210,8 +210,8 @@
  * Report text and reviewer notes.
  *
  * `white-space: pre-wrap` keeps the line breaks somebody typed, and
- * `overflow-wrap: anywhere` is what stops a single thousand-character word —
- * which the server accepts, because refusing one would be arbitrary — from
+ * `overflow-wrap: anywhere` is what stops a single thousand-character word
+ * (which the server accepts, because refusing one would be arbitrary) from
  * pushing the whole queue sideways on a phone.
  */
 .flag-details,

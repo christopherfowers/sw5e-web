@@ -2,7 +2,7 @@
  * Credential management: add a passkey, see the ones you have, revoke one.
  *
  * Revocation is the half that is easy to leave out and the half that matters
- * most. A list that can only grow is not credential management — it is a
+ * most. A list that can only grow is not credential management. It is a
  * record of every device that has ever been able to sign in as you, including
  * the laptop you sold.
  *
@@ -95,8 +95,8 @@ export default function AccountPasskeys() {
       byCode: {
         // The server refuses to remove an account's last credential, because
         // doing so would strand it. That is a deliberate answer rather than a
-        // failure, and it deserves the sentence that says what to do about it
-        // — the warning shown before confirming says removal *will* happen, so
+        // failure, and it deserves the sentence that says what to do about it.
+        // The warning shown before confirming says removal *will* happen, so
         // reporting this as "that could not be completed" would leave the
         // reader unsure whether it did.
         "last-credential": {
@@ -136,7 +136,7 @@ export default function AccountPasskeys() {
           : "Your new passkey can now sign you in.",
       );
       // The list lives on the session's user, so it comes back from the server
-      // rather than being patched locally — otherwise this page and the header
+      // rather than being patched locally. Otherwise this page and the header
       // would disagree about the same account.
       await refresh();
     } catch (error) {
@@ -206,7 +206,7 @@ export default function AccountPasskeys() {
                     <p className="credential-name">{shownAs}</p>
                     {/* Added, and nothing else. The API tracks no last-used
                         instant, and a "last used" line filled with a guess
-                        would be worse than the fact being absent — it is
+                        would be worse than the fact being absent. It is
                         exactly the line somebody would revoke a credential
                         on. */}
                     <p className="credential-meta">
@@ -219,7 +219,7 @@ export default function AccountPasskeys() {
                       aria-label={`Confirm removing ${shownAs}`}>
                       <p>
                         {onlyCredential
-                          ? "This is your only passkey, and the server will refuse to remove it — that would leave you no way to sign in."
+                          ? "This is your only passkey, and the server will refuse to remove it. That would leave you no way to sign in."
                           : "Remove this passkey?"}
                       </p>
                       <div className="auth-actions">
@@ -277,7 +277,7 @@ export default function AccountPasskeys() {
         {unsupported ? (
           <Banner tone="error" title="This browser cannot create passkeys.">
             Passkeys need a current version of Chrome, Edge, Safari or Firefox.
-            Open your account on a device that has one and add it there — it
+            Open your account on a device that has one and add it there. It
             will then work for signing in everywhere.
           </Banner>
         ) : null}
@@ -298,7 +298,7 @@ export default function AccountPasskeys() {
             onChange={setName}
             maxLength={60}
             disabled={adding || unsupported}
-            hint="For your own reference — “Work laptop”, “iPhone”. Left blank, it is listed as an unnamed passkey."
+            hint="For your own reference, “Work laptop”, “iPhone”. Left blank, it is listed as an unnamed passkey."
           />
           <div className="auth-actions">
             <SubmitButton

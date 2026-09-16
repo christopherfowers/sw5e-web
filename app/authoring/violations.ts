@@ -8,8 +8,13 @@
  *
  *     {instance location}: {keyword} — {message}
  *
- * The instance location is a JSON Pointer — empty for the document root — and
- * the keyword is the JSON Schema keyword that failed. So the information needed
+ * That dash is the API's wire format, not prose: `IContentSchemaValidator`
+ * builds the line and the regex below takes it apart again. It is the one
+ * place in this file the character is deliberate, and changing it here alone
+ * would stop every schema error finding its field.
+ *
+ * The instance location is a JSON Pointer, empty for the document root. And
+ * the keyword is the JSON Schema keyword that failed, so the information needed
  * to put an error next to the field that caused it is in the string, and this
  * module is where it is taken back out.
  *
@@ -17,7 +22,7 @@
  *
  * Nothing on the wire promises this shape. It is `string[]`, the service's own
  * tests assert only that it is not empty, and the format is produced by a
- * validator in a third repository. So this parser is a bet, and the whole
+ * validator in a third repository, so this parser is a bet, and the whole
  * module is arranged around losing that bet safely:
  *
  *   - a line that does not parse is not dropped and is not mangled. It goes to
@@ -34,7 +39,7 @@
  * ## Required is reported at the parent, and has to be moved
  *
  * A missing property is a failure of the object that should have contained it,
- * so the validator reports it at the parent's location: `": required — Required
+ * so the validator reports it at the parent's location: `": required. Required
  * properties ["description"] were not present"`. Left there, every missing
  * field on a document would stack up at the root and none of them would be next
  * to the control the reader has to fill in. The property names are in the
@@ -69,7 +74,7 @@ export interface SchemaViolations {
 }
 
 /**
- * `{pointer}: {keyword} — {message}`.
+ * `{pointer}: {keyword}. {message}`.
  *
  * The pointer group excludes `:` because a JSON Pointer in this corpus is a
  * path made of property names and array indices, none of which contain one. The
@@ -126,8 +131,8 @@ function add(
 /**
  * Reads the `schemaErrors` extension off a refusal.
  *
- * Takes `unknown` because that is what it is — an extension member of a problem
- * document, typed by nobody — and answers an empty list for anything that is
+ * Takes `unknown` because that is what it is (an extension member of a problem
+ * document, typed by nobody) and answers an empty list for anything that is
  * not an array of strings. A service that changed the shape gets the generic
  * refusal message rather than a page that throws while rendering an error.
  */
@@ -191,7 +196,7 @@ export function readSchemaViolations(
  * The same output as {@link parseSchemaErrors} and none of its guesswork: the
  * pointer arrives as a pointer, the keyword as a keyword, and the only thing
  * still read out of a message is the list of property names in a `required`
- * failure — which is a fact about the JSON Schema vocabulary rather than about
+ * failure. Which is a fact about the JSON Schema vocabulary rather than about
  * this validator's prose.
  */
 export function placeSchemaViolations(

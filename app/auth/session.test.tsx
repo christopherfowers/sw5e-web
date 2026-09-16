@@ -1,5 +1,5 @@
 /**
- * The session state machine — the piece that makes accounts possible on a
+ * The session state machine. The piece that makes accounts possible on a
  * prerendered site with no runtime server.
  *
  * The first test is the most important one in this file. It asserts that the
@@ -20,8 +20,8 @@ function Probe() {
     <div>
       <p data-testid="status">{session.status}</p>
       <p data-testid="role">{session.role}</p>
-      <p data-testid="name">{session.user?.displayName ?? "—"}</p>
-      <p data-testid="error">{session.error ?? "—"}</p>
+      <p data-testid="name">{session.user?.displayName ?? "none"}</p>
+      <p data-testid="error">{session.error ?? "none"}</p>
       <button type="button" onClick={() => void session.signOut()}>
         Sign out
       </button>
@@ -58,7 +58,7 @@ describe("AuthProvider", () => {
     mount(contract);
 
     expect(screen.getByTestId("status")).toHaveTextContent("loading");
-    expect(screen.getByTestId("name")).toHaveTextContent("—");
+    expect(screen.getByTestId("name")).toHaveTextContent("none");
   });
 
   it("resolves to the signed-in account once the server answers", async () => {
@@ -78,7 +78,7 @@ describe("AuthProvider", () => {
   it("resolves to anonymous on the bodiless 401 the API really sends", async () => {
     // The anonymous challenge carries no problem document and no content type.
     // Reading the kind of failure from the body rather than from the status
-    // turned every signed-out visitor into an outage — the header offered no
+    // turned every signed-out visitor into an outage. The header offered no
     // way in and the guard never redirected.
     mount(new AuthApiContract({ session: null }));
 

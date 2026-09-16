@@ -2,8 +2,8 @@
  * The editor, and the one property that matters most about the preview.
  *
  * A preview with its own parser is the bug this project keeps meeting: two
- * implementations that agree with each other and not with the site. So the
- * first two tests below are structural rather than cosmetic — one proves the
+ * implementations that agree with each other and not with the site, so the
+ * first two tests below are structural rather than cosmetic. One proves the
  * blocks on screen came out of `parseMarkdown` and nowhere else, the other
  * proves the preview behaves like the real renderer on the two cases where a
  * general-purpose markdown parser would disagree with this dialect.
@@ -23,7 +23,7 @@ import { MarkdownEditor } from "./prose-editor";
  *
  * Every test but one runs the real `parseMarkdown`, so the preview is exercised
  * as it ships. `sentinel`, when a test sets it, makes the parser return blocks
- * that no markdown could have produced — which is what turns "the preview shows
+ * that no markdown could have produced. Which is what turns "the preview shows
  * the right words" into "the preview shows what this function returned".
  */
 const parser = vi.hoisted(() => ({
@@ -52,7 +52,7 @@ afterEach(() => {
  *
  * The router is not ceremony: `Prose` renders site-relative links as
  * `<Link>`, so a preview containing a cross-reference cannot mount without
- * one. The parent state is not ceremony either — the text area is controlled,
+ * one. The parent state is not ceremony either. The text area is controlled,
  * and a test that let the component keep its own value would be testing a
  * component that does not exist.
  */
@@ -98,10 +98,10 @@ describe("the preview", () => {
       { kind: "paragraph", children: [{ kind: "text", value: "returned by parseMarkdown" }] },
     ];
 
-    await user.click(screen.getByRole("button", { name: "Preview — Description" }));
+    await user.click(screen.getByRole("button", { name: "Preview: Description" }));
 
     // These words are in no markdown anywhere. Their presence is only possible
-    // if the blocks on screen are the ones `parseMarkdown` handed back — and
+    // if the blocks on screen are the ones `parseMarkdown` handed back. And
     // the field's own text being absent from the preview is what rules out a
     // second parser quietly producing the same thing.
     const preview = container.querySelector(".authoring-preview")!;
@@ -117,7 +117,7 @@ describe("the preview", () => {
     // link. A preview carrying its own parser fails both.
     const markdown = "- outer\n  - not nested\n\n[Reference](https://example.com/x)";
     const { user, container } = renderEditor(markdown);
-    await user.click(screen.getByRole("button", { name: "Preview — Description" }));
+    await user.click(screen.getByRole("button", { name: "Preview: Description" }));
 
     const preview = container.querySelector(".authoring-preview .prose-body")!;
     expect(preview.querySelectorAll("ul")).toHaveLength(1);
@@ -137,7 +137,7 @@ describe("the preview", () => {
   it("stays closed until it is asked for", () => {
     const { container } = renderEditor("# Combat");
     expect(container.querySelector(".authoring-preview")).toBeNull();
-    expect(screen.getByRole("button", { name: "Preview — Description" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Preview: Description" })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
@@ -147,32 +147,32 @@ describe("the preview", () => {
 describe("the toolbar", () => {
   it("names every control after the field it belongs to", () => {
     renderEditor();
-    const toolbar = screen.getByRole("toolbar", { name: "Formatting — Description" });
+    const toolbar = screen.getByRole("toolbar", { name: "Formatting: Description" });
     const names = within(toolbar)
       .getAllByRole("button")
       .map((button) => button.getAttribute("aria-label"));
 
     expect(names).toEqual([
-      "Bold — Description",
-      "Italic — Description",
-      "Heading 1 — Description",
-      "Heading 2 — Description",
-      "Heading 3 — Description",
-      "Bullets — Description",
-      "Numbers — Description",
-      "Quote — Description",
-      "Rule — Description",
-      "Table — Description",
-      "Link — Description",
-      "Preview — Description",
+      "Bold: Description",
+      "Italic: Description",
+      "Heading 1: Description",
+      "Heading 2: Description",
+      "Heading 3: Description",
+      "Bullets: Description",
+      "Numbers: Description",
+      "Quote: Description",
+      "Rule: Description",
+      "Table: Description",
+      "Link: Description",
+      "Preview: Description",
     ]);
   });
 
   it("holds one tab stop and moves between its controls with the arrow keys", async () => {
     const { user } = renderEditor();
-    const bold = screen.getByRole("button", { name: "Bold — Description" });
-    const italic = screen.getByRole("button", { name: "Italic — Description" });
-    const preview = screen.getByRole("button", { name: "Preview — Description" });
+    const bold = screen.getByRole("button", { name: "Bold: Description" });
+    const italic = screen.getByRole("button", { name: "Italic: Description" });
+    const preview = screen.getByRole("button", { name: "Preview: Description" });
 
     expect(bold).toHaveAttribute("tabindex", "0");
     expect(italic).toHaveAttribute("tabindex", "-1");
@@ -201,7 +201,7 @@ describe("the toolbar", () => {
     const { user, area } = renderEditor("the rules text");
     select(area, "rules");
 
-    await user.click(screen.getByRole("button", { name: "Bold — Description" }));
+    await user.click(screen.getByRole("button", { name: "Bold: Description" }));
 
     expect(area.value).toBe("the **rules** text");
     expect(area.value.slice(area.selectionStart, area.selectionEnd)).toBe("rules");
@@ -210,7 +210,7 @@ describe("the toolbar", () => {
   it("takes bold back off the second time", async () => {
     const { user, area } = renderEditor("the rules text");
     select(area, "rules");
-    const bold = screen.getByRole("button", { name: "Bold — Description" });
+    const bold = screen.getByRole("button", { name: "Bold: Description" });
 
     await user.click(bold);
     await user.click(bold);
@@ -223,7 +223,7 @@ describe("the toolbar", () => {
     area.focus();
     area.setSelectionRange(0, area.value.length);
 
-    await user.click(screen.getByRole("button", { name: "Numbers — Description" }));
+    await user.click(screen.getByRole("button", { name: "Numbers: Description" }));
 
     expect(area.value).toBe("1. first\n2. second");
   });
@@ -231,7 +231,7 @@ describe("the toolbar", () => {
   it("lays down a table skeleton with its first header selected", async () => {
     const { user, area } = renderEditor("");
 
-    await user.click(screen.getByRole("button", { name: "Table — Description" }));
+    await user.click(screen.getByRole("button", { name: "Table: Description" }));
 
     expect(area.value).toContain("| Column 1 | Column 2 | Column 3 |");
     expect(area.value).toContain("| --- | --- | --- |");
@@ -240,7 +240,7 @@ describe("the toolbar", () => {
 
   it("does nothing at all when the field is disabled", async () => {
     const { user, area } = renderEditor("the rules text", { disabled: true });
-    const bold = screen.getByRole("button", { name: "Bold — Description" });
+    const bold = screen.getByRole("button", { name: "Bold: Description" });
 
     expect(bold).toBeDisabled();
     await user.click(bold);
@@ -282,7 +282,7 @@ describe("the link panel", () => {
     const { user, area } = renderEditor("see the rules");
     select(area, "rules");
 
-    await user.click(screen.getByRole("button", { name: "Link — Description" }));
+    await user.click(screen.getByRole("button", { name: "Link: Description" }));
     await user.type(screen.getByLabelText("Address"), "/rules/combat");
     await user.click(screen.getByRole("button", { name: "Insert link" }));
 
@@ -294,7 +294,7 @@ describe("the link panel", () => {
     const { user, area } = renderEditor("see the rules");
     select(area, "rules");
 
-    await user.click(screen.getByRole("button", { name: "Link — Description" }));
+    await user.click(screen.getByRole("button", { name: "Link: Description" }));
     await user.type(screen.getByLabelText("Address"), "/rules/combat");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 

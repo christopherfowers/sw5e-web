@@ -3,7 +3,7 @@
  *
  * The tests that matter most here are about what is *not* only a QR code. A
  * picture of a shared key is useless to a screen reader, and useless to anyone
- * whose authenticator app is on the same device as the browser — which is most
+ * whose authenticator app is on the same device as the browser. Which is most
  * people, most of the time.
  */
 

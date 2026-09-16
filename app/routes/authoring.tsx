@@ -3,7 +3,7 @@
  *
  * ## Why this is a place of its own rather than a tab in the account area
  *
- * `/account` is where somebody looks after themselves — their passkeys, their
+ * `/account` is where somebody looks after themselves. Their passkeys, their
  * two-factor, the reports they have filed. Correcting the reference is not
  * that. It is the work, it needs the width of the page, and a reader is in the
  * middle of it for an hour rather than for the thirty seconds it takes to
@@ -16,7 +16,7 @@
  *
  * ## Why there is no `loader` in this file, or in any authoring route
  *
- * The same rule, and the same reason, as the account area — see
+ * The same rule, and the same reason, as the account area. See
  * `app/routes/account.tsx` for the long version. This site sets `ssr: false`
  * and prerenders every published path, so a `loader` runs once on a build
  * machine and its result is written into a static file served to every visitor.
@@ -31,7 +31,7 @@
  * either a file the build wrote or a 404 from nginx's fallback, and this
  * feature has to open on documents that do not exist yet as well as on the five
  * thousand that do. A path segment would need a prerendered file per document
- * plus a way to address one that has no document — a route that cannot exist.
+ * plus a way to address one that has no document. A route that cannot exist.
  * A query string is read after hydration by a page that is one file, which is
  * the same shape `/search?q=` already has on this site.
  *
@@ -53,7 +53,7 @@ import "~/styles/authoring.css";
 /**
  * The document title for one screen of the workspace.
  *
- * Each screen names itself first, then the area, then the site — the order the
+ * Each screen names itself first, then the area, then the site. The order the
  * rest of this site already uses, and the reason three open tabs can be told
  * apart. `robots` rides along rather than being left to the caller, because
  * React Router keeps only the deepest matching route's descriptors: a screen
@@ -63,8 +63,8 @@ export function authoringMeta(section?: string) {
   return [
     {
       title: section
-        ? `${section} — Authoring — Star Wars 5e`
-        : "Authoring — Star Wars 5e",
+        ? `${section} | Authoring | Star Wars 5e`
+        : "Authoring | Star Wars 5e",
     },
     // Nothing here is for a search engine, and every address indexed is another
     // one handed to traffic looking for a write endpoint.

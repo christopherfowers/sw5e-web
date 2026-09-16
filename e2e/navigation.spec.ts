@@ -11,7 +11,7 @@ import { hydrated } from "./hydration";
  * Tab, open it with Enter, hear that it opened, and get out with Escape.
  *
  * The last group of tests runs with JavaScript switched off. That is not a
- * nicety on this site — every page is static HTML and the whole point is that
+ * nicety on this site. Every page is static HTML and the whole point is that
  * it is readable without a bundle. A menu that only opens once React has
  * hydrated would put most of the site's destinations behind JavaScript.
  */
@@ -44,7 +44,7 @@ const GROUPS = [
   "NPC statblocks",
   // Last, and the only menu whose destinations are not this site: the four
   // sheets, which live on Google Drive. It is listed here because the count
-  // below is the assertion — a menu appearing or vanishing should fail loudly
+  // below is the assertion. A menu appearing or vanishing should fail loudly
   // rather than be absorbed by a length that follows whatever exists.
   "Resources",
 ];
@@ -116,8 +116,8 @@ test.describe("grouped navigation", () => {
     Most of what the header offers is no longer a content type, and a menu entry
     is only worth having if the address behind it is a real prerendered file
     rather than something nginx answers 404 for. These four are four of the
-    kinds of destination a menu can hold — a book, a slice of a type, a hub and
-    a filtered rules view — none of which the old model could express at all.
+    kinds of destination a menu can hold (a book, a slice of a type, a hub and
+    a filtered rules view) none of which the old model could express at all.
   */
   test("every kind of destination in a menu is a real page", async ({
     page,
@@ -168,7 +168,7 @@ test.describe("grouped navigation", () => {
     await page.goto("/maneuvers");
 
     // One-at-a-time is React's doing: without it the browser's own disclosure
-    // opens both, quite correctly. So this has to wait, unlike the tests above
+    // opens both, quite correctly, so this has to wait, unlike the tests above
     // it that are about the menus working before React arrives at all.
     await hydrated(page);
 
@@ -184,7 +184,7 @@ test.describe("grouped navigation", () => {
 
   test("an open menu never pushes the page sideways", async ({ page }) => {
     // A panel anchored to its own trigger runs off the right edge of a narrow
-    // screen — Starships sits two thirds of the way across a phone — and a
+    // screen, Starships sits two thirds of the way across a phone, and a
     // horizontal scrollbar on a page nobody scrolled sideways reads as a broken
     // layout. This is the failure the flat strip had, arriving by another door.
     for (const width of [375, 768, 1280]) {
@@ -216,7 +216,7 @@ test.describe("grouped navigation", () => {
     await expect(rail).toBeVisible();
 
     // The point of the rail: moving between siblings costs no trip through a
-    // menu. Species rather than the fighting styles this used to click — the
+    // menu. Species rather than the fighting styles this used to click. The
     // styles live behind the customization hub now, and a maneuver's siblings
     // are everything else a character is assembled from.
     await rail.getByRole("link", { name: "Species", exact: true }).click();

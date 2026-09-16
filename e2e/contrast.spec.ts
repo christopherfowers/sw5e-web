@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
  * Text contrast, in both themes.
  *
  * This site is read at a table, often on a phone, sometimes in a badly lit
- * room, and the palette carries meaning — a Force power is violet, a tech
+ * room, and the palette carries meaning. A Force power is violet, a tech
  * power is cyan, every source book has a hue. That is a lot of colour choices,
  * each made against one background, and a token nudged for one of them lands
  * on all of them.
@@ -18,11 +18,11 @@ import { expect, test } from "@playwright/test";
  * ## Two ways this test can lie, and what it does about them
  *
  * **Reading colours with a regular expression.** This palette is authored in
- * `oklab`, and that is what `getComputedStyle` hands back —
+ * `oklab`, and that is what `getComputedStyle` hands back.
  * `oklab(0.825 0.005 -0.084)`. Pulling the numbers out with `/[\d.]+/g` yields
  * 0.825, 0.005, 0.084, reads them as red, green and blue out of 255, and calls
  * every colour on the site black. The first version of this did exactly that
- * and reported the monogram plates at a contrast ratio of 1.0 — the two
+ * and reported the monogram plates at a contrast ratio of 1.0. The two
  * colours are in fact 180,195,253 on 28,35,50, which is fine.
  *
  * So colours are resolved by painting them onto a 1×1 canvas and reading the

@@ -12,22 +12,22 @@
  *   - This module reads `sw5e-database/content`: one hand-maintained,
  *     schema-validated JSON document per item, nested rather than flat
  *     (`armor.class`, `hitPoints.average`, `castingTime.period`), keyed by a
- *     stable `key`, and clean — there is no corruption to repair and no
+ *     stable `key`, and clean. There is no corruption to repair and no
  *     legacy vocabulary to strip.
  *
  * Canonical documents are therefore mapped straight into the envelope rather
  * than being pushed back through the archive's normalizers: doing that would
  * mean first translating clean, nested data into the archive's flat legacy
  * field names and then translating it out again, and every canonical field
- * the archive never had — an archetype's level progression, a background's
- * variant table, structured condition immunities — would have nowhere to go
+ * the archive never had (an archetype's level progression, a background's
+ * variant table, structured condition immunities) would have nowhere to go
  * in the middle.
  *
  * What the two modules do share is identity. `slugify` decides the URL of
  * every page on the site, so it is imported rather than reimplemented: a
  * canonical Wookiee and an archive Wookiee must resolve to `/species/wookiee`
  * or the two datasets would publish different sites. `humanize` is shared for
- * the same reason — the canonical set stores enums in camelCase
+ * the same reason. The canonical set stores enums in camelCase
  * (`martialBlaster`, `bonusAction`) exactly as the archive did, and the labels
  * the UI filters on have to come out identical. `splitIntoSections` joins
  * them for a third: a rules chapter divides into the same sections whichever
@@ -55,13 +55,13 @@ import {
  *   - `source` is a canonical directory with no site type. The site
  *     describes its books in `app/content/source-meta.ts`, which carries the
  *     blurb, colour and cover a page needs and a data file cannot supply.
- *     The canonical documents are still read — they are what turns a
+ *     The canonical documents are still read. They are what turns a
  *     `sourceKey` of `phb` into the `PHB` badge every row carries.
  *
  * A `null` here is still meaningful: it says the site publishes a type the
  * canonical set cannot feed, and `build-content-fixture.mjs` writes that type
  * an empty dataset so its index renders an empty state rather than 404ing on a
- * link the header offers. Nothing is null today, which is the point — the gap
+ * link the header offers. Nothing is null today, which is the point. The gap
  * this mechanism was built for was maneuvers, and it is now closed.
  *
  * `feature` used to be a third mismatch: 2,682 documents held back on the
@@ -74,7 +74,7 @@ import {
  * Form says; they ask what Deflection does, in the middle of a turn, and they
  * expect to search for it by name and send someone the link. Unpublished, all
  * 2,682 of them were reachable only by opening one of 288 long pages and
- * reading — search could only answer with the archetype whose prose happened to
+ * reading. Search could only answer with the archetype whose prose happened to
  * contain the words, which is the wrong answer to "what does Reckless Attack
  * do". They are also the far end of every level grant in the corpus: a class
  * table that names what arrives at 7th level has nothing to point at unless the
@@ -83,7 +83,7 @@ import {
  * The duplication is real and is handled rather than avoided. A class or
  * archetype still prints its own page in full, because 38 of these features
  * carry a sentence their parent's prose lost and a parent's own tables and
- * introductions belong to no feature at all — so dropping either side would
+ * introductions belong to no feature at all, so dropping either side would
  * lose content. What the parent gains is a linked index of what it grants, by
  * level, which is a table of contents rather than a second copy of the text.
  */
@@ -173,7 +173,7 @@ function statCollector() {
 /**
  * A roll table: `[{ roll, name, description }]` becomes a captioned table.
  * The die is the number of rows, which is how the published tables are
- * written — a background with eight personality traits is rolled on a d8.
+ * written. A background with eight personality traits is rolled on a d8.
  */
 function rollTable(caption, options, valueHeader) {
   if (!Array.isArray(options) || options.length === 0) return null;
@@ -240,7 +240,7 @@ function common(record, sources) {
  * class, an improvement names its class, a feature names what grants it and the
  * level it arrives at. This walks them once, up front, so that a page can be
  * rendered with links to its neighbours instead of with their text copied into
- * it — which is what stops "the feature is already written out in the
+ * it. Which is what stops "the feature is already written out in the
  * archetype" from being an argument against publishing features.
  *
  * Built from the canonical documents rather than from the normalized items,
@@ -282,7 +282,7 @@ export function buildClassGraph({
   // Equipment, by name, for the one edge that crosses out of the class graph:
   // an enhanced item names the gear it is built on or installed in, and that
   // name only becomes a link if exactly one equipment document answers to it.
-  // A name two documents share is dropped rather than arbitrated — the point
+  // A name two documents share is dropped rather than arbitrated. The point
   // of this index is that a link built from it is certainly right, and an
   // ambiguous name has no certainly-right answer.
   const equipmentByName = new Map();
@@ -350,7 +350,7 @@ export function buildClassGraph({
     Sets rather than maps because the slug is the route: a power lives at
     `/powers/<slug>` and a table at `/reference-tables/<slug>`, so knowing the
     slug exists answers the whole question. Unlike equipment there is nothing
-    to arbitrate — two documents sharing a name would have collided on their
+    to arbitrate. Two documents sharing a name would have collided on their
     URL long before reaching here.
   */
   const powerSlugs = new Set(
@@ -438,7 +438,7 @@ function grantedFeaturesSection(features) {
  * handful more that no two classes share, so the fixed three are read from
  * their own fields and the rest from the row's labelled cells. A cell the book
  * prints as an em dash is absent from the document rather than stored, so the
- * placeholder is filled in here — which is what makes a class table with
+ * placeholder is filled in here. Which is what makes a class table with
  * twenty rows and nine columns cost only the cells that say something.
  */
 function classProgressionTable(progression) {
@@ -536,7 +536,7 @@ function normalizeClass(record, sources, graph) {
       grantedFeaturesSection(graph.grantedBy("class", base.name)),
       section(null, text(record.description)),
       // The introduction and the list of archetypes are one section, under the
-      // name this class gives its archetypes — Berserker Approaches, Monastic
+      // name this class gives its archetypes. Berserker Approaches, Monastic
       // Orders. Two sections would print that heading twice.
       section(
         text(record.archetypeLabel) ?? "Archetypes",
@@ -559,7 +559,7 @@ function normalizeClass(record, sources, graph) {
 }
 
 /**
- * "Choose two from Athletics, Insight…" — the printed sentence when there is
+ * "Choose two from Athletics, Insight…". The printed sentence when there is
  * one, and a sentence built from the parts when there is not. An absent list
  * means the class may choose any skill, which is the operative's case.
  */
@@ -684,7 +684,7 @@ function formatIncrease(increase) {
 }
 
 /**
- * The options are mutually exclusive — a human picks one row or the other —
+ * The options are mutually exclusive, a human picks one row or the other,
  * while the increases inside one option all apply together. Commas separate
  * the increases and a semicolon separates the options, so the two levels stay
  * distinguishable in a species that has both.
@@ -1008,7 +1008,7 @@ function normalizeManeuver(record, sources) {
  * The benefits are entries rather than prose: each bullet is an independent
  * rules exception a player checks the situation against, and the detail page
  * already renders `entries` as a list of named blocks. They have no names of
- * their own in the books, so only the body is set — which the entry renderer
+ * their own in the books, so only the body is set. Which the entry renderer
  * handles, and which is why a bullet is not forced into a heading it never had.
  */
 function benefitEntries(record) {
@@ -1159,7 +1159,7 @@ function normalizeEquipment(record, sources) {
 
 /**
  * The rarity ladder, ascending. This is the enhanced-item corpus's substitute
- * for a price — nothing in it carries a cost in credits — so a list page has to
+ * for a price, nothing in it carries a cost in credits, so a list page has to
  * be able to sort by it, and sorting by it has to mean sorting by power rather
  * than by spelling. Alphabetical order would put artifact first and standard
  * last, which is close to exactly backwards.
@@ -1223,9 +1223,9 @@ function normalizeEnhancedItem(record, sources, graph) {
  *
  * This is the whole of the relationship between the two types, and it is
  * deliberately the whole of it. An enhanced item is not a piece of equipment
- * with extra fields — it has no price, no weight, no armor class and no damage
+ * with extra fields (it has no price, no weight, no armor class and no damage
  * dice, and it has a rarity band, an attunement requirement and a prerequisite
- * that no mundane item has — so the two are separate types that point at each
+ * that no mundane item has) so the two are separate types that point at each
  * other rather than one type with half its fields empty.
  *
  * What `subtype` holds varies with `itemType`: a specific base weapon
@@ -1235,7 +1235,7 @@ function normalizeEnhancedItem(record, sources, graph) {
  * where exactly one item answers to it. Twenty of the corpus's 56 subtypes
  * resolve that way, covering 321 enhanced items; the other 36 name something
  * the equipment catalogue has no single entry for, and produce no link. A
- * looser rule — a prefix, a word overlap — would produce links that resolve
+ * looser rule (a prefix, a word overlap) would produce links that resolve
  * and are wrong, which is worse than none, because a wrong link is invisible.
  */
 function equipmentRoute(subtype, graph) {
@@ -1249,8 +1249,8 @@ function equipmentRoute(subtype, graph) {
  *
  * The two property glossaries and the reference tables are the three content
  * types with no `sourceKey`, and that is a decision rather than an omission:
- * the archive records their source as "None", and unlike the rule chapters —
- * where the file a record sits in names the book — there is nothing to infer
+ * the archive records their source as "None", and unlike the rule chapters,
+ * where the file a record sits in names the book, there is nothing to infer
  * one from. A guessed citation on a rules page is worse than none at all.
  *
  * `common` is bypassed here rather than taught to tolerate a missing key,
@@ -1374,8 +1374,8 @@ function normalizeReferenceTable(record) {
     stats,
     // The table is markdown and is rendered as markdown rather than being
     // parsed into the structured `tables` collection. The archived tables
-    // disagree about their own shape — some carry an alignment row, some an
-    // empty header, two a merged caption — so parsing them into a grid would
+    // disagree about their own shape (some carry an alignment row, some an
+    // empty header, two a merged caption) so parsing them into a grid would
     // need a repair pass per table and would gain a reader nothing.
     sections: compact([section(null, text(record.body))]),
     entries: [],
@@ -1408,9 +1408,9 @@ const BEHAVIOR_GROUPS = {
 
 /**
  * A damage or condition immunity line. The canonical set splits these into
- * the enumerated values it can validate and the free text it cannot — a
+ * the enumerated values it can validate and the free text it cannot (a
  * creature immune to `poison` the damage type and to disease, which is not a
- * damage type at all — and a stat block prints them as one line.
+ * damage type at all) and a stat block prints them as one line.
  */
 function affinityLine(affinity) {
   if (!affinity) return null;
@@ -1546,7 +1546,7 @@ function formatAdjustments(adjustments) {
 }
 
 /**
- * `{ normal: 1200, long: 4800 }` becomes `1,200/4,800 ft.` — the two bands a
+ * `{ normal: 1200, long: 4800 }` becomes `1,200/4,800 ft.`. The two bands a
  * gunner reads off a weapon, grouped because at this scale the digits run
  * together otherwise.
  */
@@ -1612,8 +1612,8 @@ function normalizeStarshipBaseSize(record, sources) {
 }
 
 /**
- * The tier table, with the size's own signature die as a column heading —
- * every size names that die differently, so the heading comes from the data.
+ * The tier table, with the size's own signature die as a column heading.
+ * Every size names that die differently, so the heading comes from the data.
  */
 function tierTable(progression) {
   const tiers = Array.isArray(progression?.tiers) ? progression.tiers : [];
@@ -1806,8 +1806,8 @@ function formatPrerequisites(prerequisites) {
  * The hull requirement, as the short phrase a filter can offer.
  *
  * It is pulled out of the prerequisite list and given a column of its own
- * because it is the question a crew actually arrives with — "what can my Small
- * ship fit?" — and because leaving it inside a prose prerequisite makes it
+ * because it is the question a crew actually arrives with, "what can my Small
+ * ship fit?", and because leaving it inside a prose prerequisite makes it
  * unfilterable across 257 rows. The clause is printed as "Ship size Medium or
  * larger"; the leading words are the same on every one of them and only the
  * tail distinguishes them, so the tail is what the facet lists.
@@ -1973,7 +1973,7 @@ const NORMALIZERS = {
 
 /**
  * Builds the `sourceKey` lookup every item's badge depends on. The site keys
- * its books by abbreviation — `PHB`, `SnV` — and the canonical documents are
+ * its books by abbreviation (`PHB`, `SnV`) and the canonical documents are
  * the only place that says which abbreviation a key like `snv` stands for.
  */
 export function indexSources(records) {
@@ -2036,15 +2036,15 @@ export function shelveBooks(sources) {
  *
  * Shaped like `shelveBooks` and for the same reasons: the site draws these in
  * the book form factor, so what it needs per row is a name, a line under it, a
- * hue and a position — about a kilobyte in total, wanted on the client, and
+ * hue and a position. About a kilobyte in total, wanted on the client, and
  * therefore its own small file rather than part of the several-megabyte
  * dataset.
  *
  * `order` is required here where a book's is optional. A book with no place on
  * the shelf falls back to its name, which is a reasonable answer for a
  * supplement nobody has placed. These are four files in a deliberate reading
- * order — the sheet you print, then the one you type into, then the two for
- * ships — and alphabetical would put the starship sheet before the character
+ * order (the sheet you print, then the one you type into, then the two for
+ * ships) and alphabetical would put the starship sheet before the character
  * sheet, which is not a shelf anybody meant.
  */
 export function shelveResources(resources) {
@@ -2059,7 +2059,7 @@ export function shelveResources(resources) {
       /*
         Carried through to the page rather than kept as a build-time note. A
         file that has been altered, however safely, must not be presented as
-        the author's untouched work — so the site says so, and says what came
+        the author's untouched work, so the site says so, and says what came
         out, where the reader deciding whether to download it can see it.
       */
       sanitized: resource.sanitized === true,
@@ -2112,7 +2112,7 @@ export function shelveChannels(channels) {
  *
  * One pass over the whole item rather than a call in each mapping that
  * happens to carry prose. The bug this is shaped around is not that the
- * rewriting was wrong — it was correct, and had been for as long as the
+ * rewriting was wrong. It was correct, and had been for as long as the
  * archive builder existed. It was that the canonical builder never called it,
  * so the path that runs in production silently did nothing, and the only
  * symptom was three hundred power and table names rendering as grey text that

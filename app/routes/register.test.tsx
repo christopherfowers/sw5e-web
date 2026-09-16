@@ -146,7 +146,7 @@ describe("an already signed-in reader", () => {
  *
  * Registering on QA answered 202 and produced, verbatim:
  *
- *   Check your inbox — A verification link is on its way to
+ *   Check your inbox. A verification link is on its way to
  *   chris.w.fowers@gmail.com. Open it to finish setting up your account.
  *
  * followed by an offer to check the spam folder. Nothing had been sent. The
@@ -154,9 +154,9 @@ describe("an already signed-in reader", () => {
  * reporting `account-email: degraded` at that moment. The site told a reader to
  * wait for something it already knew would never arrive.
  *
- * The 202 cannot change — it is identical for a registered address and an
+ * The 202 cannot change. It is identical for a registered address and an
  * unknown one, and that is what stops this endpoint being used to discover who
- * has an account here. So what changes is the sentence, on the strength of one
+ * has an account here, so what changes is the sentence, on the strength of one
  * global fact the service publishes separately.
  *
  * Both halves are asserted. A healthy relay must leave every word alone, or the
@@ -214,7 +214,7 @@ describe("when mail is not getting out", () => {
    * told to go and search a folder for a message that was never handed to a
    * relay spends their time proving nothing, and concludes the fault is theirs.
    *
-   * The folder is still named, and deliberately — going to look is the first
+   * The folder is still named, and deliberately. Going to look is the first
    * instinct, so the sentence that heads it off has to be the one that mentions
    * it. What must not survive is the *instruction*, which the healthy panel
    * still gives and this one must not.
@@ -255,7 +255,7 @@ describe("when mail is not getting out", () => {
    * The security property, at the level a reader meets it.
    *
    * The panel is drawn from a global fact, so it must not contain the address
-   * that was typed — not in the heading, not in the banner, not in the note. A
+   * that was typed. Not in the heading, not in the banner, not in the note. A
    * panel that said "we could not send to reader@example.com" would be a
    * different answer for a registered address than for an unknown one the
    * moment anything downstream varied, and it is the shape of sentence that
@@ -274,7 +274,7 @@ describe("when mail is not getting out", () => {
 
   /**
    * The 202 is unchanged and so is the request. A client that had started
-   * asking a different question — or asking about the address — would show up
+   * asking a different question, or asking about the address, would show up
    * here as a changed body or an extra parameter.
    */
   it("registers exactly as before and asks the delivery question without an address", async () => {
@@ -306,7 +306,7 @@ describe("when mail is not getting out", () => {
    *
    * `offline: true` on the contract makes every account call fail, but the
    * delivery read is answered normally, so this is not that case. This one is
-   * the delivery read itself failing while registration succeeds — a proxy that
+   * the delivery read itself failing while registration succeeds. A proxy that
    * has not been given the site route, an API a release behind, a request that
    * timed out. The reader must see exactly the panel they saw before any of
    * this was written, because nobody has reported an outage.

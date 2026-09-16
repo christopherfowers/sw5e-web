@@ -4,7 +4,7 @@
  * Be clear about what this is. There is no server rendering these pages and no
  * middleware in front of them: `/account` is a static HTML file that nginx
  * hands to anybody who asks. This component decides what that file *draws*
- * once JavaScript runs. It is a usability boundary — it keeps a signed-out
+ * once JavaScript runs. It is a usability boundary. It keeps a signed-out
  * reader from staring at an account page that can never fill in, and it takes
  * them somewhere they can do something about it.
  *
@@ -17,7 +17,7 @@
  * The four states below are the reason this is a component and not a one-line
  * `if`. Collapsing `loading` into `anonymous` would bounce every signed-in
  * reader to the sign-in page for the length of one round trip, on every hard
- * navigation — the exact bug that makes an app feel like it forgets you.
+ * navigation. The exact bug that makes an app feel like it forgets you.
  */
 
 import { useEffect } from "react";
@@ -48,7 +48,7 @@ export function RequireSession({ role, children }: RequireSessionProps) {
   useEffect(() => {
     if (!mustSignIn) return;
     // `replace` so that pressing Back from the sign-in page does not land on
-    // the protected page again and bounce straight back — the loop that makes
+    // the protected page again and bounce straight back. The loop that makes
     // the Back button look broken.
     void navigate(signInPathFor(returnTo), { replace: true });
   }, [mustSignIn, navigate, returnTo]);
@@ -62,7 +62,7 @@ export function RequireSession({ role, children }: RequireSessionProps) {
       <div className="page">
         <Banner tone="error" title="Your account could not be loaded.">
           {session.error} Signing in and out are unavailable until this
-          resolves. The reference itself is unaffected —{" "}
+          resolves. The reference itself is unaffected:{" "}
           <Link to="/">everything is still readable</Link>.
         </Banner>
         <p className="auth-actions">
@@ -109,9 +109,9 @@ export function RequireSession({ role, children }: RequireSessionProps) {
    * The account holds the role and still cannot use it, because the session
    * behind this page was established with an emailed code.
    *
-   * This mirrors a rule the API enforces on its own — a contributor or
+   * This mirrors a rule the API enforces on its own, a contributor or
    * administrator request from a session that only proved an inbox is refused
-   * with a 403 whose `code` is `strong-authentication-required` — and it
+   * with a 403 whose `code` is `strong-authentication-required`, and it
    * exists here for the same reason the role check does: so the reader meets
    * an explanation instead of an action that silently fails.
    *
@@ -124,8 +124,8 @@ export function RequireSession({ role, children }: RequireSessionProps) {
    * to prove it here rather than sending them round the sign-in loop.
    *
    * Only gated when an area names a role. `/account`, `/account/passkeys` and
-   * `/account/security` must stay reachable from exactly this kind of session
-   * — they are where the passkey gets enrolled, and locking them would be a
+   * `/account/security` must stay reachable from exactly this kind of session.
+   * They are where the passkey gets enrolled, and locking them would be a
    * catch-22 with no way out of it.
    */
   if (role && role !== "Community" && !session.user.strongAuthentication) {

@@ -42,8 +42,8 @@ const REPORT_EVERY = 4096;
  * The ceiling on attempts.
  *
  * Not a timeout, because a worker that has genuinely stalled will not run the
- * clock either. This is a guard against a difficulty nobody meant to issue —
- * a mistyped configuration asking for 40 bits would otherwise spin a reader's
+ * clock either. This is a guard against a difficulty nobody meant to issue.
+ * A mistyped configuration asking for 40 bits would otherwise spin a reader's
  * fan until they closed the tab, and failing loudly is better than working
  * indefinitely towards something unreachable. At the difficulty the service
  * issues, exceeding this is roughly a one-in-ten-million accident.
@@ -79,14 +79,14 @@ export function solve(
 /*
   The worker entry point.
 
-  Guarded so this module can be imported by a test — and by the main thread, to
-  reuse `solve` directly where a worker cannot be started — without registering
+  Guarded so this module can be imported by a test (and by the main thread, to
+  reuse `solve` directly where a worker cannot be started) without registering
   a message handler in an environment that has no `self` to register it on.
 */
 /*
   Typed structurally rather than as `DedicatedWorkerGlobalScope`. That type
   comes from the "webworker" lib, and adding it to tsconfig would put the
-  worker's globals into scope for the whole application — including a `self`
+  worker's globals into scope for the whole application. Including a `self`
   and a `postMessage` that a component could then call without the compiler
   objecting. Naming the two members this file uses keeps that surface at two
   members.
@@ -111,7 +111,7 @@ declare const self:
  *
  * It is written down because "unreachable" is a property of how this file is
  * used today, and the cost of stating the assumption is three lines. If this
- * ever becomes a shared worker — which any page on the origin can connect to —
+ * ever becomes a shared worker, which any page on the origin can connect to,
  * the check stops being a formality without anybody having to notice that it
  * needed adding.
  */
@@ -127,7 +127,7 @@ function isFromThisOrigin(origin: string): boolean {
  * type, and a declared type is a claim about the compiler's view of the call
  * site rather than about the bytes that arrive at runtime. A difficulty of 0
  * makes `hasLeadingZeroBits` true on the first attempt, so a malformed message
- * does not fail — it returns a counter of 0 as though it had solved something,
+ * does not fail. It returns a counter of 0 as though it had solved something,
  * and the service rejects the answer with no indication of why.
  *
  * The bounds are the ones the protocol can actually mean: a digest is 256 bits,

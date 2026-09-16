@@ -16,8 +16,8 @@
  * to do with what was asked.
  *
  * **`type` and `key` are percent-encoded on their way into a path.** Both are
- * constrained today — the type comes from the service's own registry and the
- * key is a slug — and a value that reaches a URL should never depend on a
+ * constrained today, the type comes from the service's own registry and the
+ * key is a slug, and a value that reaches a URL should never depend on a
  * constraint staying true somewhere else.
  *
  * **Publishing and reverting need an administrator; everything else needs a
@@ -62,7 +62,7 @@ function contentPath(type: string, key: string): string {
  * The published document, on the read API rather than the authoring one.
  *
  * A different root on purpose: {@link contentPath} addresses a document's
- * authoring history — its revisions and its revert — and lives under
+ * authoring history, its revisions and its revert, and lives under
  * `/api/authoring`. What is currently published is ordinary public content and
  * is served from `/api/content`, which is also the only place it can be got
  * from when a document has no revisions at all.
@@ -91,7 +91,7 @@ export function listContentTypes(signal?: AbortSignal): Promise<ContentTypeList>
 /**
  * Every outstanding draft, newest first.
  *
- * Unpaged and unfiltered — the service takes no query parameters here at all —
+ * Unpaged and unfiltered, the service takes no query parameters here at all,
  * so the grouping and the ordering a reviewer sees are this client's work. That
  * is fine at the scale this starts at and is worth knowing before somebody adds
  * a filter control that would have to be applied in the browser.
@@ -103,7 +103,7 @@ export function listDrafts(signal?: AbortSignal): Promise<DraftList> {
 /**
  * One draft, or `null` when there is not one.
  *
- * A 404 here is an ordinary answer — most documents have no draft open — and
+ * A 404 here is an ordinary answer, most documents have no draft open, and
  * turning it into a value rather than an exception is what lets the editor open
  * on a published document without a branch at every call site. Every other
  * failure is re-thrown: "there is no draft" and "the service refused you" must
@@ -133,13 +133,13 @@ export async function getDraft(
  * that is 7,877 documents with no revision between them.
  *
  * The editor used to read the newest revision and, finding none, offer a blank
- * form — so every existing document opened as though it did not exist, and the
+ * form, so every existing document opened as though it did not exist, and the
  * only thing an author could do was retype it. "No history" and "no document"
  * are not the same state, and this is what tells them apart.
  *
  * A 404 is an ordinary answer and becomes `null`: the document really may not
  * exist, which is what creating one looks like. Every other failure is
- * re-thrown, for the reason {@link getDraft} gives — a refused session and an
+ * re-thrown, for the reason {@link getDraft} gives. A refused session and an
  * absent document must not both present as an empty editor.
  */
 export async function getPublishedDocument(
@@ -165,8 +165,8 @@ export async function getPublishedDocument(
  * The document is the whole document rather than a patch, which is the single
  * most important thing about this endpoint: saving a draft that was started
  * against an older revision silently replaces everything somebody else
- * published in the meantime. The service does not refuse that — it recaptures
- * the base revision and carries on — so noticing it is entirely this client's
+ * published in the meantime. The service does not refuse that, it recaptures
+ * the base revision and carries on, so noticing it is entirely this client's
  * job, and `app/routes/authoring-edit.tsx` does it before the author has spent
  * any effort rather than after.
  */
@@ -211,7 +211,7 @@ export async function publishDraft(
     Defended rather than trusted, because the absence is indistinguishable from
     the empty case and only one of them is safe to read. A service older than
     this field answers without it, and `.map` on undefined is a blank screen
-    where a confirmation should be — a worse outcome than the missing notice.
+    where a confirmation should be. A worse outcome than the missing notice.
   */
   return { ...result, notices: result.notices ?? [] };
 }
@@ -221,8 +221,8 @@ export async function publishDraft(
 /**
  * The newest revisions of a document, newest first.
  *
- * `limit` is the only control the service offers — there is no cursor and no
- * offset — and it is capped at 100, so a document with a longer history cannot
+ * `limit` is the only control the service offers, there is no cursor and no
+ * offset, and it is capped at 100, so a document with a longer history cannot
  * be read past its hundredth most recent change. The history page says so
  * rather than presenting a truncated list as a complete one.
  *
@@ -260,7 +260,7 @@ export function getRevision(
  * Writes a *new* revision rather than deleting anything, so the history stays
  * append-only and the mistake being undone remains readable. The restored body
  * is re-validated against the schema as it stands now, so a document that was
- * valid under an older schema can be refused — which is a 400 carrying
+ * valid under an older schema can be refused. Which is a 400 carrying
  * `schemaErrors` like any other refusal, and has to be reported as one rather
  * than as "revert failed".
  */
@@ -284,8 +284,8 @@ export function revertContent(
  *
  * The null is the whole point of the signature. Thirty-one content types with
  * thirty-one different shapes cannot be edited through thirty-one hand-built
- * forms — that does not scale and it rots the first time a schema changes — so
- * the form is generated from the schema. But an interface that cannot open at
+ * forms, that does not scale and it rots the first time a schema changes, so
+ * the form is generated from the schema, but an interface that cannot open at
  * all against a service one version behind is an interface nobody can deploy,
  * so a 404 here is an answer rather than an error and the editor falls back to
  * editing the document as JSON. That fallback is not a nicety: it is also what

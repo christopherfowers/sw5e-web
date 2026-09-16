@@ -4,13 +4,13 @@
  * Server-only for the same reason `dataset.server.ts` is: every page here is
  * prerendered, so a `loader` runs on a build machine and only what it returns
  * is written into the page. This document carries a citation for all 150 of
- * the site's pictures, and a species page needs exactly one of them — so the
+ * the site's pictures, and a species page needs exactly one of them, so the
  * whole document stays on the build machine and each page ships its own share.
  *
  * Generated from the canonical content set by `scripts/build-credits.mjs` and
  * committed. Unlike the game-content dataset there is no curated sample: four
  * patrons out of three hundred and eighty-four is not a smaller credits list,
- * it is a wrong one, and wrong in the way that matters here — it leaves people
+ * it is a wrong one, and wrong in the way that matters here. It leaves people
  * out.
  */
 
@@ -35,7 +35,7 @@ export function creditedPeopleCount(): number {
  *
  * Null and `inherited-unattributed` are different answers and callers must not
  * conflate them. Null means nobody has written anything down about this file,
- * which is a bug — the generator and `credits.test.ts` exist to keep it from
+ * which is a bug. The generator and `credits.test.ts` exist to keep it from
  * happening. `inherited-unattributed` means somebody did write it down, and
  * what they wrote is that the author is not known.
  *

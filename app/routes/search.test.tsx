@@ -3,7 +3,7 @@
  *
  * The service searches every word of every document; the downloaded index
  * searches names, statistics, headings and the first 240 characters of prose.
- * The page prefers the service and falls back — so the cases worth pinning are
+ * The page prefers the service and falls back, so the cases worth pinning are
  * the fallback happening at all, the reader being told when it does, and the
  * results looking the same either way.
  */
