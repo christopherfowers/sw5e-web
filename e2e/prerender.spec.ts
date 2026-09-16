@@ -178,7 +178,7 @@ test.describe("the site's self-description", () => {
     expect(
       html,
       "the site positioned itself as one fan project among several for as " +
-        "long as this phrase appeared anywhere on the page — the description " +
+        "long as this phrase appeared anywhere on the page. The description " +
         "was only the most visible place it did",
     ).not.toMatch(/a community reference/i);
   });
@@ -204,7 +204,7 @@ test.describe("the site's self-description", () => {
 
     expect(
       response.status(),
-      "a 404 here means /about fell through to nginx's SPA fallback — it " +
+      "a 404 here means /about fell through to nginx's SPA fallback. It " +
         "renders in a browser and is broken to everything else, including " +
         "the search results this page exists to be found in",
     ).toBe(200);
