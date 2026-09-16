@@ -41,7 +41,7 @@ export const REASON_META: Record<FlagReason, ReasonDescription> = {
     label: "I know who made this picture",
     hint: "You can name the artist, or point at where the work was published.",
     detailsPrompt:
-      "Who made it, and how we can check — a portfolio, a post, a commission thread. This is the one report that lets a credit actually be written.",
+      "Who made it, and how we can check: a portfolio, a post, a commission thread. This is the one report that lets a credit actually be written.",
   },
   "image-attribution-missing": {
     label: "This picture has no proper credit",

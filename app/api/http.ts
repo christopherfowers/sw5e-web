@@ -90,6 +90,25 @@ export type ApiFailure =
  */
 export const STRONG_AUTHENTICATION_REQUIRED = "strong-authentication-required";
 
+/**
+ * The `code` on the 403 that means "prove it again", as opposed to "prove it at
+ * all".
+ *
+ * Sent only by the handful of routes that change what another account may do:
+ * the role grant, the suspension switch and the deletion. A session lasts a
+ * working day, which is the right length for reading and writing and the wrong
+ * length for handing somebody the administrator role, so those three ask for
+ * the second factor to have been used in the last few minutes.
+ *
+ * Distinct from the constant above because the two want opposite things from
+ * the reader. That one means the account may have nothing to prove with and
+ * should go and enrol something. This one means the account definitely has
+ * something, has already used it, and is being asked to use it once more. A
+ * client that collapsed them would send somebody holding a passkey off to add a
+ * passkey, which is the dead end the account area already had once.
+ */
+export const RECENT_AUTHENTICATION_REQUIRED = "recent-authentication-required";
+
 export class ApiError extends Error {
   readonly kind: ApiFailure;
   readonly status: number;

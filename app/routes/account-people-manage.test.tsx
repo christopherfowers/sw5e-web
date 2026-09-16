@@ -33,7 +33,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AuthApiContract, user } from "../../tests/auth-api-contract";
+import { AuthApiContract, user, VALID_TOTP_CODE } from "../../tests/auth-api-contract";
 import {
   AdminApiStub,
   adminAction,
@@ -47,6 +47,21 @@ import AccountPeople from "./account-people";
 import AccountPeopleManage from "./account-people-manage";
 
 const ADMINISTRATOR = user({ roles: ["Community", "Administrator"] });
+
+/**
+ * An administrator with an authenticator app as well as a passkey.
+ *
+ * The confirmation tests answer the prompt with six digits rather than with an
+ * assertion, because a WebAuthn ceremony in jsdom is a stub answering a stub and
+ * proves nothing about this page. What is being tested here is that the page
+ * notices the refusal, asks, and re-sends the request it was holding; which half
+ * of the prompt the reader used is the ceremony's business and is covered where
+ * the ceremony lives.
+ */
+const ADMINISTRATOR_WITH_AUTHENTICATOR = user({
+  roles: ["Community", "Administrator"],
+  twoFactorEnabled: true,
+});
 
 /** Shaped like `app/routes.ts`: the management page is a child of the list. */
 function routes() {
@@ -540,5 +555,141 @@ describe("what has been done to an account", () => {
     // Filtered by the server, on the identifier of the account being looked at.
     const call = admin.lastCall("GET", "/api/auth/admin/audit");
     expect(new URLSearchParams(call?.path.split("?")[1]).get("subjectId")).toBe("u");
+  });
+});
+
+/* ------------------------------------------------- confirming before acting */
+
+/**
+ * The three actions that change what another account may do ask for the second
+ * factor again, and this page has to make that survivable.
+ *
+ * The service refuses the role grant, the suspension switch and the deletion on
+ * a session whose factor was proved hours ago. It is the only 403 on this
+ * surface a reader clears without leaving the page, so the failure mode worth
+ * guarding against is not the refusal being ignored; it is the refusal being
+ * rendered as "that did not go through", which tells an administrator holding
+ * every credential the action needs that something is broken.
+ *
+ * The stub clears its refusal only for a session that has genuinely
+ * re-authenticated through the account contract, so a page that quietly re-sent
+ * the request without asking would still be refused and these would still fail.
+ */
+describe("an action the service wants confirmed", () => {
+  function stale(users: Parameters<typeof adminUser>[0][] = [{ id: "u" }]) {
+    return new AdminApiStub({
+      staleUntilConfirmed: true,
+      users: users.map((overrides) => adminUser({ email: "zeb@example.test", ...overrides })),
+    });
+  }
+
+  async function confirm() {
+    await userEvent.type(
+      await screen.findByLabelText(/six-digit code/i),
+      VALID_TOTP_CODE,
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^confirm$/i }));
+  }
+
+  it("asks, then saves the roles it was holding", async () => {
+    const admin = stale();
+    mount(admin, ADMINISTRATOR_WITH_AUTHENTICATOR);
+
+    await screen.findByRole("heading", { name: /^roles$/i });
+    await userEvent.click(screen.getByRole("checkbox", { name: /^Contributor/ }));
+    await userEvent.click(screen.getByRole("button", { name: /save roles/i }));
+
+    // Not an error. The account holds the role and holds the factor; it is
+    // being asked when it last used it.
+    expect(await screen.findByText(/confirm it is you/i)).toBeInTheDocument();
+    expect(screen.queryByText(/those roles were not saved/i)).not.toBeInTheDocument();
+
+    await confirm();
+
+    // The same request, with the same values, without the reader touching the
+    // checkbox again.
+    await waitFor(() =>
+      expect(admin.calls.filter((call) => call.path === "/api/auth/admin/users/u/roles"))
+        .toHaveLength(2),
+    );
+
+    expect(admin.lastCall("PUT", "/api/auth/admin/users/u/roles")?.body).toEqual({
+      roles: ["Contributor"],
+    });
+  });
+
+  it("asks before suspending, and does not suspend until it is answered", async () => {
+    const admin = stale();
+    mount(admin, ADMINISTRATOR_WITH_AUTHENTICATOR);
+
+    await screen.findByRole("heading", { name: /^suspension$/i });
+    await userEvent.type(screen.getByRole("textbox", { name: /why/i }), "Spam.");
+    await userEvent.click(screen.getByRole("button", { name: /suspend/i }));
+
+    expect(await screen.findByText(/confirm it is you/i)).toBeInTheDocument();
+
+    // One attempt so far, and it was refused. Nothing has been suspended.
+    expect(
+      admin.calls.filter((call) => call.path === "/api/auth/admin/users/u/suspension"),
+    ).toHaveLength(1);
+
+    await confirm();
+
+    await waitFor(() =>
+      expect(admin.lastCall("PUT", "/api/auth/admin/users/u/suspension")?.body).toEqual({
+        suspended: true,
+        reason: "Spam.",
+      }),
+    );
+  });
+
+  it("abandons the action when the reader says never mind", async () => {
+    const admin = stale();
+    mount(admin, ADMINISTRATOR_WITH_AUTHENTICATOR);
+
+    await screen.findByRole("heading", { name: /^roles$/i });
+    await userEvent.click(screen.getByRole("checkbox", { name: /^Contributor/ }));
+    await userEvent.click(screen.getByRole("button", { name: /save roles/i }));
+
+    await screen.findByText(/confirm it is you/i);
+    await userEvent.click(screen.getByRole("button", { name: /never mind/i }));
+
+    await waitFor(() =>
+      expect(screen.queryByText(/confirm it is you/i)).not.toBeInTheDocument(),
+    );
+
+    // Abandoned, not retried. A prompt that re-sent the request on dismissal
+    // would be the opposite of what "never mind" says.
+    expect(
+      admin.calls.filter((call) => call.path === "/api/auth/admin/users/u/roles"),
+    ).toHaveLength(1);
+  });
+
+  it("still reports an ordinary refusal as a failure", async () => {
+    // The branch that must not swallow everything. A 403 that confirming cannot
+    // clear has to read as a refusal, or the page offers a ceremony that ends
+    // in the same place it started.
+    const admin = new AdminApiStub({
+      users: [adminUser({ id: "u", email: "zeb@example.test" })],
+      replies: {
+        "PUT /api/auth/admin/users/u/roles": {
+          status: 403,
+          body: {
+            status: 403,
+            title: "Forbidden",
+            detail: "This account may not perform that action.",
+          },
+        },
+      },
+    });
+
+    mount(admin, ADMINISTRATOR_WITH_AUTHENTICATOR);
+
+    await screen.findByRole("heading", { name: /^roles$/i });
+    await userEvent.click(screen.getByRole("checkbox", { name: /^Contributor/ }));
+    await userEvent.click(screen.getByRole("button", { name: /save roles/i }));
+
+    expect(await screen.findByText(/those roles were not saved/i)).toBeInTheDocument();
+    expect(screen.queryByText(/confirm it is you/i)).not.toBeInTheDocument();
   });
 });

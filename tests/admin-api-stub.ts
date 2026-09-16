@@ -63,6 +63,14 @@ export interface AdminStubOptions {
   outstandingDrafts?: number | null;
   /** Overrides for one route, keyed `"METHOD /path"` without the query string. */
   replies?: Record<string, AdminReply>;
+  /**
+   * Whether this session's second factor is too old for the three routes that
+   * change what another account may do.
+   *
+   * Cleared by a genuine re-authentication through the account contract, not by
+   * this stub, so a page that retried without confirming is refused again.
+   */
+  staleUntilConfirmed?: boolean;
 }
 
 /** A directory row, with everything but the interesting fields filled in. */
@@ -103,6 +111,24 @@ export function adminAction(
 
 const UNAUTHENTICATED: AdminReply = { status: 401 };
 
+/**
+ * The three routes the service will not run on a session whose second factor
+ * was proved hours ago.
+ *
+ * The role grant, the suspension switch and the deletion. Listed rather than
+ * inferred from the method, because the directory and the audit log are reads
+ * and deliberately stay open: working out whether somebody should be suspended
+ * begins by reading about them.
+ */
+function changesWhatAnotherAccountMayDo(method: string, route: string): boolean {
+  if (method === "DELETE") return /^\/api\/auth\/admin\/users\/[^/]+$/.test(route);
+
+  return (
+    method === "PUT" &&
+    /^\/api\/auth\/admin\/users\/[^/]+\/(roles|suspension)$/.test(route)
+  );
+}
+
 function problem(status: number, detail: string, code?: string): AdminReply {
   return { status, body: { status, title: "Refused", detail, code } };
 }
@@ -132,6 +158,7 @@ export class AdminApiStub {
     path: string,
     body: unknown,
     session: AuthApiContract["session"],
+    confirmations = 0,
   ): AdminReply {
     this.calls.push({ method, path, body });
 
@@ -154,6 +181,27 @@ export class AdminApiStub {
         403,
         "This action needs a passkey or an authenticator app. Sign in again with one, or enrol one first if the account has neither.",
         "strong-authentication-required",
+      );
+    }
+
+    // The freshness rule, modelled the way the service applies it: after the
+    // strength check, on the three routes that change what another account may
+    // do, and never on the two that only read.
+    //
+    // `staleUntilConfirmed` stands in for a session whose factor was proved too
+    // long ago. It is cleared by a real re-authentication through the account
+    // contract rather than by this stub, so a client that retried the request
+    // without confirming still meets the refusal, which is the whole point of
+    // the test that uses it.
+    if (
+      this.options.staleUntilConfirmed &&
+      confirmations === 0 &&
+      changesWhatAnotherAccountMayDo(method, route)
+    ) {
+      return problem(
+        403,
+        "This action changes what other accounts may do, so it asks for your passkey or authenticator code again.",
+        "recent-authentication-required",
       );
     }
 
@@ -381,7 +429,13 @@ export function serveAdministration(
 
     const method = init?.method ?? "GET";
     const body = typeof init?.body === "string" ? JSON.parse(init.body) : undefined;
-    const reply = admin.handle(method, url, body, auth.session);
+    const reply = admin.handle(
+      method,
+      url,
+      body,
+      auth.session,
+      auth.reauthentications,
+    );
 
     if (reply.status === 204 || reply.body === undefined) {
       return new Response(null, { status: reply.status });

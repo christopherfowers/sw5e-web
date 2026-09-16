@@ -53,6 +53,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 
 import { ApiError } from "~/api/http";
+import { ConfirmIdentity } from "~/auth/reauthenticate";
 import {
   assignRoles,
   deleteUser,
@@ -60,7 +61,7 @@ import {
   listAdministrativeActions,
   setSuspension,
 } from "~/admin/api";
-import { describeFailure, When, type Load } from "~/admin/format";
+import { describeFailure, needsRecentConfirmation, When, type Load } from "~/admin/format";
 import type {
   AdministrativeAction,
   AdminUser,
@@ -111,6 +112,77 @@ function BackToDirectory() {
 /* ------------------------------------------------------------ the actions */
 
 /**
+ * Holding on to an action the server wants confirmed before it will run it.
+ *
+ * All three actions below change what another account may do, so all three can
+ * come back asking for the second factor to be proved again. Rather than
+ * telling the reader to press Save a second time, the action they already asked
+ * for is kept and re-run the moment they confirm. The alternative reads as the
+ * button having failed, which invites a second press and, on the delete, a
+ * second look at a form somebody has already steeled themselves to fill in.
+ *
+ * The retry is the same closure that failed, so it sends the same request with
+ * the same values. Nothing is re-read from the form in between, and the reader
+ * cannot end up confirming one change and saving another.
+ */
+function useConfirmation() {
+  const [retry, setRetry] = useState<(() => Promise<void>) | null>(null);
+
+  return {
+    /** The action waiting on a confirmation, or null. */
+    retry,
+    /**
+     * Whether this failure was the confirmation refusal, and if so, hold the
+     * action. Answers true when the caller should stop rather than show an
+     * error, so the call site reads as one line.
+     */
+    intercept(failure: unknown, action: () => Promise<void>): boolean {
+      if (!needsRecentConfirmation(failure)) return false;
+
+      // Wrapped, because a state setter handed a function calls it. Storing a
+      // function in state always needs this and it is always the bug when the
+      // action fires at the moment it is stored instead of when it is asked for.
+      setRetry(() => action);
+
+      return true;
+    },
+    clear: () => setRetry(null),
+  };
+}
+
+/**
+ * The confirmation prompt, where one of the three actions is waiting on it.
+ *
+ * Rendered inside the section whose button was pressed rather than at the top
+ * of the page, so that what is being confirmed is next to what asked.
+ */
+function Confirm({
+  viewer,
+  action,
+  confirmation,
+}: {
+  viewer: CurrentUser;
+  action: string;
+  confirmation: ReturnType<typeof useConfirmation>;
+}) {
+  const waiting = confirmation.retry;
+
+  if (!waiting) return null;
+
+  return (
+    <ConfirmIdentity
+      user={viewer}
+      action={action}
+      onConfirmed={() => {
+        confirmation.clear();
+        void waiting();
+      }}
+      onCancel={confirmation.clear}
+    />
+  );
+}
+
+/**
  * The role editor.
  *
  * Checkboxes and one Save rather than a grant button per role, because the API
@@ -121,10 +193,12 @@ function BackToDirectory() {
  */
 function RoleEditor({
   account,
+  viewer,
   disabled,
   onChanged,
 }: {
   account: AdminUser;
+  viewer: CurrentUser;
   disabled: boolean;
   onChanged: () => void;
 }) {
@@ -134,6 +208,7 @@ function RoleEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const confirmation = useConfirmation();
 
   async function save() {
     setSaving(true);
@@ -153,7 +228,7 @@ function RoleEditor({
 
       onChanged();
     } catch (failure) {
-      setError(describeFailure(failure));
+      if (!confirmation.intercept(failure, save)) setError(describeFailure(failure));
     } finally {
       setSaving(false);
     }
@@ -207,6 +282,7 @@ function RoleEditor({
           {error}
         </Banner>
       ) : null}
+      <Confirm viewer={viewer} action="change these roles" confirmation={confirmation} />
       {note ? (
         <Banner tone="info" title="Roles updated.">
           {note}
@@ -239,16 +315,19 @@ function RoleEditor({
  */
 function SuspensionEditor({
   account,
+  viewer,
   disabled,
   onChanged,
 }: {
   account: AdminUser;
+  viewer: CurrentUser;
   disabled: boolean;
   onChanged: () => void;
 }) {
   const [reason, setReason] = useState("");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const confirmation = useConfirmation();
 
   const standing = account.suspension;
 
@@ -261,7 +340,9 @@ function SuspensionEditor({
       setReason("");
       onChanged();
     } catch (failure) {
-      setError(describeFailure(failure));
+      if (!confirmation.intercept(failure, () => apply(next))) {
+        setError(describeFailure(failure));
+      }
     } finally {
       setWorking(false);
     }
@@ -286,8 +367,8 @@ function SuspensionEditor({
           ) : null}
           <p className="people-note">
             The account cannot sign in and cannot use a session it already had.
-            Its passkeys are untouched, so reinstating gives it straight back —
-            nobody has to enrol anything again.
+            Its passkeys are untouched, so reinstating gives it straight back.
+            Nobody has to enrol anything again.
           </p>
         </>
       ) : (
@@ -328,6 +409,11 @@ function SuspensionEditor({
           {error}
         </Banner>
       ) : null}
+      <Confirm
+        viewer={viewer}
+        action={standing ? "lift this suspension" : "suspend this account"}
+        confirmation={confirmation}
+      />
 
       <p className="people-actions">
         <SubmitButton
@@ -357,10 +443,12 @@ function SuspensionEditor({
  */
 function DeleteAccount({
   detail,
+  viewer,
   disabled,
   onDeleted,
 }: {
   detail: AdminUserDetail;
+  viewer: CurrentUser;
   disabled: boolean;
   onDeleted: () => void;
 }) {
@@ -368,6 +456,7 @@ function DeleteAccount({
   const [reason, setReason] = useState("");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const confirmation = useConfirmation();
 
   const outstanding = detail.outstandingDrafts ?? 0;
   const blocked = outstanding > 0;
@@ -387,6 +476,8 @@ function DeleteAccount({
       // what to do, so it is shown rather than paraphrased; what is added is a
       // reason to reload, since this page may have been open since before
       // somebody else saved a draft.
+      if (confirmation.intercept(failure, remove)) return;
+
       setError(
         failure instanceof ApiError && failure.code === "drafts-outstanding"
           ? `${failure.message} Reload this page to see the current count.`
@@ -435,6 +526,7 @@ function DeleteAccount({
           {error}
         </Banner>
       ) : null}
+      <Confirm viewer={viewer} action="delete this account" confirmation={confirmation} />
 
       {confirming ? (
         <>
@@ -628,16 +720,19 @@ function ManagedAccount({ userId, viewer }: { userId: string; viewer: CurrentUse
 
         <RoleEditor
           account={account}
+          viewer={viewer}
           disabled={isSelf}
           onChanged={() => setReloads((count) => count + 1)}
         />
         <SuspensionEditor
           account={account}
+          viewer={viewer}
           disabled={isSelf}
           onChanged={() => setReloads((count) => count + 1)}
         />
         <DeleteAccount
           detail={load.value}
+          viewer={viewer}
           disabled={isSelf}
           // `replace`, so that Back from the directory does not return to the
           // page of an account that no longer exists and sit on a 404 from the

@@ -51,7 +51,7 @@ export function AccountControl() {
           <MonogramPlate name={session.user.displayName} />
         </span>
         <span className="account-chip-name">{session.user.displayName}</span>
-        <span className="sr-only">— your account</span>
+        <span className="sr-only">, your account</span>
       </Link>
     );
   }

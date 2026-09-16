@@ -24,26 +24,19 @@
  *
  * Getting that wrong in the third direction is how the dead end happened in
  * the first place, so `nothingEnrolled` is the branch to read first.
+ *
+ * The ceremony itself lives in `useIdentityProof`, because a second screen now
+ * runs it for a different reason. See `ConfirmIdentity`.
  */
 
-import { useRef, useState } from "react";
 import { Link } from "react-router";
 
-import {
-  beginReauthentication,
-  completeReauthentication,
-  reauthenticateWithTotp,
-} from "./api";
-import { describeFailure } from "./failures";
+import { CODE_LENGTH, useIdentityProof } from "./prove";
 import { useSession } from "./session";
 import type { CurrentUser } from "./types";
-import { getPasskeyAssertion, supportsWebAuthn } from "./webauthn";
 import { Banner, SubmitButton, TextField } from "~/components/auth-ui";
 
 import "~/styles/account.css";
-
-/** How many digits an authenticator code has. */
-const CODE_LENGTH = 6;
 
 interface ReauthenticatePromptProps {
   /** The account behind the session being raised. */
@@ -57,98 +50,18 @@ interface ReauthenticatePromptProps {
 
 export function ReauthenticatePrompt({ user, purpose }: ReauthenticatePromptProps) {
   const session = useSession();
+  const proof = useIdentityProof(user);
 
-  const [pending, setPending] = useState(false);
-  const [code, setCode] = useState("");
-  const [failure, setFailure] = useState<{ title: string; body?: string } | null>(null);
-
-  // So that navigating away mid-ceremony does not leave a WebAuthn prompt
-  // waiting on a component that no longer exists.
-  const ceremony = useRef<AbortController | null>(null);
-
-  const hasPasskey = user.passkeys.length > 0;
-  const hasAuthenticator = user.twoFactorEnabled;
-  const nothingEnrolled = !hasPasskey && !hasAuthenticator;
-
-  // A passkey on the account is no use on a browser that cannot perform an
-  // assertion. An old browser, or a locked-down one. Saying so is better than
-  // offering a button that can only fail.
-  const canPrompt = hasPasskey && supportsWebAuthn();
-
-  function report(error: unknown, refusalTitle: string) {
-    const described = describeFailure(error, {
-      refusal: refusalTitle,
-      byKind: {
-        unavailable: { title: "The account service could not be reached." },
-        "rate-limited": { title: "Too many attempts from here." },
-      },
-      unknown: {
-        title: "That could not be completed.",
-        body: "Try again in a moment.",
-      },
-    });
-
-    if (described) setFailure(described);
-  }
-
-  /**
-   * Adopting the response rather than re-fetching the profile. The endpoint
-   * answers with the same body `/me` would, so a second round trip would only
-   * add a window in which the page still believes the old thing.
-   */
-  function adopt(next: CurrentUser) {
-    setFailure(null);
-    session.adopt(next);
-  }
-
-  async function proveWithPasskey() {
-    setFailure(null);
-    setPending(true);
-
-    ceremony.current?.abort();
-    const controller = new AbortController();
-    ceremony.current = controller;
-
-    try {
-      const options = await beginReauthentication();
-      const credential = await getPasskeyAssertion(options, controller.signal);
-      adopt(await completeReauthentication(credential));
-    } catch (error) {
-      report(error, "That passkey was not accepted.");
-    } finally {
-      if (ceremony.current === controller) ceremony.current = null;
-      setPending(false);
-    }
-  }
-
-  async function proveWithCode(event: React.FormEvent) {
-    event.preventDefault();
-    setFailure(null);
-    setPending(true);
-
-    try {
-      adopt(await reauthenticateWithTotp(code));
-    } catch (error) {
-      report(error, "That code was not accepted.");
-      setCode("");
-    } finally {
-      setPending(false);
-    }
-  }
-
-  if (nothingEnrolled) {
+  if (proof.nothingEnrolled) {
     return (
-      <>
-        <Banner tone="error" title="This area needs a passkey or an authenticator app.">
-          You signed in with a code sent to your email address, which confirms
-          the address but says nothing about this device, so {purpose} stays
-          closed until there is a second factor on the account.{" "}
-          <Link to="/account/passkeys">Add a passkey</Link> or{" "}
-          <Link to="/account/security">set up an authenticator app</Link>. You
-          will be asked to use it here straight away. There is no need to sign
-          out.
-        </Banner>
-      </>
+      <Banner tone="error" title="This area needs a passkey or an authenticator app.">
+        You signed in with a code sent to your email address, which confirms the
+        address but says nothing about this device, so {purpose} stays closed
+        until there is a second factor on the account.{" "}
+        <Link to="/account/passkeys">Add a passkey</Link> or{" "}
+        <Link to="/account/security">set up an authenticator app</Link>. You will
+        be asked to use it here straight away. There is no need to sign out.
+      </Banner>
     );
   }
 
@@ -161,35 +74,13 @@ export function ReauthenticatePrompt({ user, purpose }: ReauthenticatePromptProp
         signed in either way.
       </Banner>
 
-      {failure ? (
-        <Banner tone="error" title={failure.title}>
-          {failure.body}
-        </Banner>
-      ) : null}
+      <IdentityProofControls proof={proof} />
 
-      {canPrompt ? (
-        <section className="reauthenticate-option">
-          <h2>Use your passkey</h2>
-          <p>
-            Your browser will ask for the same fingerprint, face or device PIN
-            it asked for when you enrolled.
-          </p>
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={() => void proveWithPasskey()}
-            disabled={pending}
-          >
-            {pending ? "Waiting for your device…" : "Confirm with a passkey"}
-          </button>
-        </section>
-      ) : null}
-
-      {hasPasskey && !canPrompt ? (
+      {proof.hasUnusablePasskey ? (
         <p className="auth-note">
           There is a passkey on your account, but this browser cannot use one.
-          {hasAuthenticator ? " Use your authenticator app instead." : " "}
-          {hasAuthenticator ? null : (
+          {proof.hasAuthenticator ? " Use your authenticator app instead." : " "}
+          {proof.hasAuthenticator ? null : (
             <>
               {" "}
               <Link to="/account/security">Set up an authenticator app</Link> to
@@ -197,27 +88,6 @@ export function ReauthenticatePrompt({ user, purpose }: ReauthenticatePromptProp
             </>
           )}
         </p>
-      ) : null}
-
-      {hasAuthenticator ? (
-        <section className="reauthenticate-option">
-          <h2>Use your authenticator app</h2>
-          <form onSubmit={(event) => void proveWithCode(event)} noValidate>
-            <TextField
-              label="Six-digit code"
-              name="code"
-              value={code}
-              onChange={setCode}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={CODE_LENGTH}
-              required
-            />
-            <SubmitButton pending={pending} pendingLabel="Checking…">
-              Confirm
-            </SubmitButton>
-          </form>
-        </section>
       ) : null}
 
       {/*
@@ -234,5 +104,132 @@ export function ReauthenticatePrompt({ user, purpose }: ReauthenticatePromptProp
         .
       </p>
     </div>
+  );
+}
+
+interface ConfirmIdentityProps {
+  /** The account behind the session being confirmed. */
+  user: CurrentUser;
+  /**
+   * The action that was refused, as a verb phrase finishing "before you can".
+   * For example "grant this role" or "delete this account".
+   */
+  action: string;
+  /** Run once the session has been re-issued. Where the caller retries. */
+  onConfirmed: () => void;
+  /** Abandon the action. */
+  onCancel: () => void;
+}
+
+/**
+ * Asking for a factor the session already proved, because the action is one
+ * that changes what somebody else may do.
+ *
+ * Distinct from {@link ReauthenticatePrompt} in what it says rather than in
+ * what it does. That one is speaking to somebody who has proved nothing yet and
+ * may have nothing to prove with, so it explains the rule and offers a way to
+ * enrol. This one is speaking to an administrator who signed in with a passkey
+ * hours ago, holds every credential the action needs, and is being asked purely
+ * because of when they last used it. Telling them the site "needs a passkey"
+ * would be telling them something they already did.
+ *
+ * There is no `nothingEnrolled` branch here and there cannot be one. The server
+ * only asks for confirmation on a session that already carries a second factor,
+ * so an account with nothing enrolled meets the other refusal instead and never
+ * reaches this.
+ */
+export function ConfirmIdentity({
+  user,
+  action,
+  onConfirmed,
+  onCancel,
+}: ConfirmIdentityProps) {
+  const proof = useIdentityProof(user, onConfirmed);
+
+  return (
+    <div className="reauthenticate" role="group" aria-labelledby="confirm-identity-heading">
+      <Banner tone="info" title="Confirm it is you.">
+        <span id="confirm-identity-heading">
+          This changes what another account may do, so it asks for your second
+          factor again before you {action}. Your session is not ending and
+          nothing has been saved yet.
+        </span>
+      </Banner>
+
+      <IdentityProofControls proof={proof} />
+
+      {proof.hasUnusablePasskey && !proof.hasAuthenticator ? (
+        <p className="auth-note">
+          There is a passkey on your account, but this browser cannot use one.
+          Use a browser that can, or{" "}
+          <Link to="/account/security">set up an authenticator app</Link>.
+        </p>
+      ) : null}
+
+      <p className="auth-actions">
+        <button type="button" className="button" onClick={onCancel} disabled={proof.pending}>
+          Never mind
+        </button>
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The two controls, shared by both screens.
+ *
+ * Only the controls. Every sentence of explanation stays with the screen that
+ * owns it, because the explanation is the entire difference between the two and
+ * a shared component that tried to parameterise the wording would end up as a
+ * list of strings with no way to read what either screen actually says.
+ */
+function IdentityProofControls({ proof }: { proof: ReturnType<typeof useIdentityProof> }) {
+  return (
+    <>
+      {proof.failure ? (
+        <Banner tone="error" title={proof.failure.title}>
+          {proof.failure.body}
+        </Banner>
+      ) : null}
+
+      {proof.canPrompt ? (
+        <section className="reauthenticate-option">
+          <h2>Use your passkey</h2>
+          <p>
+            Your browser will ask for the same fingerprint, face or device PIN it
+            asked for when you enrolled.
+          </p>
+          <button
+            type="button"
+            className="button button-primary"
+            onClick={() => void proof.proveWithPasskey()}
+            disabled={proof.pending}
+          >
+            {proof.pending ? "Waiting for your device…" : "Confirm with a passkey"}
+          </button>
+        </section>
+      ) : null}
+
+      {proof.hasAuthenticator ? (
+        <section className="reauthenticate-option">
+          <h2>Use your authenticator app</h2>
+          <form onSubmit={(event) => void proof.proveWithCode(event)} noValidate>
+            <TextField
+              label="Six-digit code"
+              name="code"
+              value={proof.code}
+              onChange={proof.setCode}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={CODE_LENGTH}
+              required
+            />
+            <SubmitButton pending={proof.pending} pendingLabel="Checking…">
+              Confirm
+            </SubmitButton>
+          </form>
+        </section>
+      ) : null}
+    </>
   );
 }
