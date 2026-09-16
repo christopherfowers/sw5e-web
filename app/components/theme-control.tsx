@@ -2,7 +2,7 @@
  * Choosing light or dark, from anywhere on the site.
  *
  * Three states, not two. "Dark" and "light" are choices; **system** is the
- * absence of one, and it has to be reachable — a reader who turns the site
+ * absence of one, and it has to be reachable. A reader who turns the site
  * dark at night and then wants it to follow their desktop again has no way
  * back from a two-state switch, and their desktop is the thing that already
  * knows whether it is night.
@@ -10,7 +10,7 @@
  * ## Why the choice is written to the document, not just to state
  *
  * The palette lives in CSS, keyed on `data-theme` on the root element. React
- * state alone would repaint the components and leave the tokens alone. So the
+ * state alone would repaint the components and leave the tokens alone, so the
  * control writes the attribute, and `localStorage` remembers it; the inline
  * script in `root.tsx` replays it before first paint.
  *
@@ -27,11 +27,11 @@ import { useSyncExternalStore } from "react";
 
 export type ThemeChoice = "system" | "light" | "dark";
 
-/** Where the choice is remembered. Read by the inline script too — keep in step. */
+/** Where the choice is remembered. Read by the inline script too, keep in step. */
 export const THEME_STORAGE_KEY = "sw5e-theme";
 
 /*
-  Light, system, dark — in that order, left to right.
+  Light, system, dark. In that order, left to right.
 
   The first arrangement put system first because it is the default, and that
   made a three-stage control whose middle position was an end. Read as a
@@ -46,7 +46,7 @@ const ORDER: ThemeChoice[] = ["light", "system", "dark"];
  *
  * The old site called dark mode the dark side and its button said "Join the
  * dark side". That is the right joke and it is kept, but as the name a screen
- * reader and a tooltip give — the visible control has to be legible at a
+ * reader and a tooltip give. The visible control has to be legible at a
  * glance to somebody who has never seen this site, and a joke nobody
  * recognises is worse than none.
  *
@@ -63,7 +63,7 @@ const LABELS: Record<ThemeChoice, string> = {
 /*
   The choice is external state, so it is read as external state.
 
-  The obvious shape — `useState` seeded in an effect — is wrong twice. It sets
+  The obvious shape, `useState` seeded in an effect, is wrong twice. It sets
   state during an effect purely to reach something the render could not see,
   and it leaves a second tab showing a stale switch forever. `useSyncExternalStore`
   is the primitive for exactly this: a value that lives outside React, with a
@@ -71,8 +71,8 @@ const LABELS: Record<ThemeChoice, string> = {
 
   The source of truth is the **document attribute**, not storage. The inline
   script in `root.tsx` has already applied it before React exists, so reading
-  the attribute means the switch cannot disagree with the page it is sitting on
-  — which is the bug a separate read of `localStorage` would eventually cause.
+  the attribute means the switch cannot disagree with the page it is sitting on.
+  Which is the bug a separate read of `localStorage` would eventually cause.
 */
 const listeners = new Set<() => void>();
 
@@ -97,7 +97,7 @@ function getSnapshot(): ThemeChoice {
  * What the server renders, and what the first client render must match.
  *
  * Always "system". The server cannot know the choice, and guessing would make
- * the first client render disagree with the markup it is hydrating — which
+ * the first client render disagree with the markup it is hydrating. Which
  * React resolves by throwing the markup away. The attribute is already correct
  * by then regardless, because the inline script set it before paint; only the
  * switch itself briefly shows "system", and only in the tick before hydration.
@@ -136,7 +136,7 @@ export function ThemeControl() {
       {/*
         A radio group rather than a cycling button. Three states cycled by one
         button means a reader who wants light has to guess how many presses it
-        takes and watch the page flash through dark on the way — and there is
+        takes and watch the page flash through dark on the way, and there is
         no way to see which state you are in without changing it.
       */}
       <fieldset>
@@ -146,7 +146,7 @@ export function ThemeControl() {
             The label both wraps the input and names it with `htmlFor`.
 
             Wrapping alone is a valid accessible name, and the site's own
-            structural check does not accept it — it looks for `label[for]`,
+            structural check does not accept it. It looks for `label[for]`,
             `aria-label` or `aria-labelledby`. Rather than loosen a check that
             guards every form on the site so that one component can be
             different, the association is stated explicitly. It is the more
@@ -205,7 +205,7 @@ export function ThemeControl() {
  * The script that runs before the first paint.
  *
  * Without it the page renders in the system's theme and then corrects itself
- * once React has hydrated — a white flash on every navigation for anybody who
+ * once React has hydrated. A white flash on every navigation for anybody who
  * chose dark, which is the single most annoying bug a theme toggle has.
  *
  * It is deliberately tiny, synchronous and inline. An external file would be a
@@ -222,7 +222,7 @@ export function ThemeControl() {
  * This was built by interpolating `THEME_STORAGE_KEY` through `JSON.stringify`,
  * and CodeQL refused it: code construction from a value it cannot prove
  * constant. It was right to, even though the value *is* constant and
- * `JSON.stringify` escapes it correctly — what it flags is the shape, not this
+ * `JSON.stringify` escapes it correctly. What it flags is the shape, not this
  * instance. The result is written into `<head>` unescaped, so anything that
  * ever made the key dynamic would turn a storage rename into script injection,
  * and whoever made that change would have no reason to look at this file.

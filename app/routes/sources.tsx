@@ -9,7 +9,7 @@ import type { Route } from "./+types/sources";
 
 export function meta() {
   return [
-    { title: "Source books — Star Wars 5e" },
+    { title: "Source books | Star Wars 5e" },
     {
       name: "description",
       content:

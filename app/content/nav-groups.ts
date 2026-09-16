@@ -5,7 +5,7 @@
  * The header used to be one flat strip of every content type. That worked at
  * eight and was already scrolling at nineteen; at twenty-seven it is a
  * horizontal list nobody can hold in their head. The fix is not a longer strip
- * or a smaller font — it is that the types are not a flat set. They fall into a
+ * or a smaller font. It is that the types are not a flat set. They fall into a
  * handful of subjects a reader is actually in the middle of: looking a rule up,
  * building a character, buying gear, flying a ship, running a creature.
  *
@@ -28,8 +28,8 @@
  *   - A type index, which is the only case the old model could express.
  *
  * So a menu is now an ordered list of destinations, written out. It is an
- * editorial artifact — the order and the wording are decisions, not a
- * projection of the data — and writing it out is the honest way to hold it.
+ * editorial artifact (the order and the wording are decisions, not a
+ * projection of the data) and writing it out is the honest way to hold it.
  *
  * The property that made the old file worth having must not be lost in that
  * move, so it has been split into the two questions it was answering at once:
@@ -41,18 +41,18 @@
  *      message. That is what drives the rail beside the page, and it is what
  *      stops a new type being nobody's business.
  *   2. "And how does a reader get to it?" is now a separate question, because a
- *      type can belong to a subject and still have no way in — the menu is
+ *      type can belong to a subject and still have no way in. The menu is
  *      hand-written, so nothing about placing a type puts a link on screen.
  *      `nav-groups.test.ts` answers it against the dataset: every type must
  *      either have its own index in a menu, be named by a hub, or have every
  *      one of its rows claimed by the subcategory views the menus offer. That
- *      last clause is the one worth having — it is what fails when somebody
+ *      last clause is the one worth having. It is what fails when somebody
  *      gives ammunition its own view and quietly takes 50 rows out of
  *      `/other-equipment`.
  *
  * `group: "none"` is the escape hatch for question 1, and it is deliberately
- * not the default. The credits types — the people who made this and the artwork
- * they made — are site metadata rather than game content. They belong in the
+ * not the default. The credits types, the people who made this and the artwork
+ * they made, are site metadata rather than game content. They belong in the
  * footer, which already links them, and they must never appear in content
  * navigation. Saying so explicitly costs one line, keeps the exhaustiveness
  * check catching a type somebody forgot to think about, and exempts the type
@@ -71,11 +71,11 @@
  *   the corpus has no vehicle stat block at all. An entry would be a link to a
  *   filter that matches nothing.
  *
- *   Tools — the character builder, the ship builder, PDF export — will be a
+ *   Tools (the character builder, the ship builder, PDF export) will be a
  *   peer of these groups in the header, not a group inside it. It is not a
  *   subject of the reference; it is a different thing to do with the reference.
  *
- *   Homebrew — a facet on the types that already exist, not a section. A
+ *   Homebrew. A facet on the types that already exist, not a section. A
  *   homebrew power is a power. It belongs in the powers index behind a filter,
  *   which is why nothing here is shaped as "official" versus "community": that
  *   shape would force homebrew to become a group, and then every type would
@@ -122,7 +122,7 @@ export type TypePlacement =
  * It opens with the books rather than with the catalogue, for the reason the
  * front page was reordered: a reader who does not yet know the game needs the
  * rules before they need a list of things to choose from. Everything after that
- * follows the order a table reaches the material — you make a character, you
+ * follows the order a table reaches the material. You make a character, you
  * equip it, you acquire a ship, and then you meet something.
  */
 export const NAV_GROUP_ORDER: NavGroupId[] = [
@@ -158,7 +158,7 @@ export const NAV_GROUP_META: Record<NavGroupId, NavGroupMeta> = {
   },
   /*
     "Equipment", not "Gear". The heading a reader is looking for is the one the
-    book uses — Equipment is chapter 5 of the Player's Handbook — and a menu
+    book uses, Equipment is chapter 5 of the Player's Handbook, and a menu
     named after a category the reader has never seen in print makes them open it
     to find out what is inside.
   */
@@ -192,9 +192,9 @@ export const NAV_GROUP_META: Record<NavGroupId, NavGroupMeta> = {
  * kept apart rather than flattened to `{ to, label }` because two things other
  * than the anchor depend on knowing which is which. The front page draws a card
  * per destination and needs its blurb, its icon and its hue, all of which come
- * from somewhere different in each case. And the reachability check in
- * `nav-groups.test.ts` has to tell a type index — which covers its type on its
- * own — from a subcategory view, which only covers its type together with its
+ * from somewhere different in each case, and the reachability check in
+ * `nav-groups.test.ts` has to tell a type index, which covers its type on its
+ * own, from a subcategory view, which only covers its type together with its
  * siblings.
  */
 export type NavDestination = {
@@ -222,7 +222,7 @@ export type NavDestination = {
    * reason and renders an anchor.
    *
    * `host` is carried separately rather than parsed out of `to` at render
-   * time, because it is shown to the reader — a link on a site whose
+   * time, because it is shown to the reader. A link on a site whose
    * Content-Security-Policy names no external host at all should say where it
    * is about to send them, and working that out from the URL in the component
    * would put a parser in the render path to recover something already known
@@ -234,7 +234,7 @@ export type NavDestination = {
       /**
        * The types whose own index this page links. It is a claim about what
        * the page renders, and `customization-options.test.tsx` holds the page
-       * to it — otherwise a hub could go on claiming to cover six types after
+       * to it. Otherwise a hub could go on claiming to cover six types after
        * somebody deleted three cards from it.
        *
        * A type belongs here only if the page leads to the whole of it. That is
@@ -242,7 +242,7 @@ export type NavDestination = {
        * the hub is where a reader finds them: what the hub links is three cuts
        * of that type, and three cuts add up to the type only while every row
        * lands on one of them. That is a question about the dataset, so it is
-       * asked of the dataset — see `offers` and `nav-groups.test.ts`.
+       * asked of the dataset. See `offers` and `nav-groups.test.ts`.
        */
       covers: readonly ContentTypeId[];
       /**
@@ -253,7 +253,7 @@ export type NavDestination = {
        * an index covers its type on its own, a view covers its type only
        * together with its siblings. The reachability check treats them as such.
        * The front page also needs them told apart to put an honest number on
-       * the card — a hub's count is the sum of what it holds, and half of what
+       * the card. A hub's count is the sum of what it holds, and half of what
        * this one holds has to be counted by running a predicate.
        */
       offers: readonly SubcategoryView[];
@@ -284,8 +284,8 @@ function typeIndex(
  *
  * Resolved through `requireSubcategoryView` rather than by writing the path, so
  * a menu entry pointing at a view that does not exist throws when this module
- * is first imported — which is at the top of every page render and therefore at
- * the very start of the build — instead of shipping a link to an address nginx
+ * is first imported, which is at the top of every page render and therefore at
+ * the very start of the build, instead of shipping a link to an address nginx
  * answers 404 for.
  */
 function subcategory(
@@ -320,7 +320,7 @@ function book(code: string, prominence: Prominence = "primary"): NavDestination 
  *
  * These carry no accent and no mark. Every other destination is drawn in the
  * hue of the subject it belongs to, and a character sheet hosted on somebody
- * else's drive belongs to no subject here — giving it equipment's steel would
+ * else's drive belongs to no subject here. Giving it equipment's steel would
  * be claiming it as ours.
  */
 function external(
@@ -375,15 +375,15 @@ function page(
  * those three the same statement rather than three statements that happen to
  * match today.
  *
- * The three class-improvement views go last and are the odd ones out — nobody
+ * The three class-improvement views go last and are the odd ones out (nobody
  * browses a class improvement, they are reached from the class table that
- * grants one — but they are customization options and the chapter says so, so
+ * grants one) but they are customization options and the chapter says so, so
  * the hub is where they live rather than in a menu nobody would look in.
  *
  * Three entries rather than one, and that is the change this list exists to
  * record. `class-improvements` is a single content type holding three
- * unrelated answers — what advancing in a class gives you, what multiclassing
- * into it gives you, what one splashed level is worth — and the site this one
+ * unrelated answers (what advancing in a class gives you, what multiclassing
+ * into it gives you, what one splashed level is worth) and the site this one
  * replaces published them as three pages. One merged page of thirty rows hands
  * a reader who asked about multiclassing twenty rows about something else.
  */
@@ -406,7 +406,7 @@ export const CUSTOMIZATION_OPTION_DESTINATIONS: readonly NavDestination[] = [
  * types the hub mentions": the class improvements are on the page and are not
  * in here, because what the page links is three cuts of them. A hub that
  * claimed the type outright would satisfy the reachability check by assertion,
- * and the check would stop looking at the rows — which is precisely the check
+ * and the check would stop looking at the rows. Which is precisely the check
  * that would catch a fourth kind of improvement appearing in the archive with
  * no page to land on.
  */
@@ -419,8 +419,8 @@ export const CUSTOMIZATION_OPTION_TYPES: readonly ContentTypeId[] =
  * The menus, in the order they are offered.
  *
  * This is the owner's table, written down. Where an entry says something the
- * dataset does not — "Character deployments" for `/starship-deployments`,
- * whose type is called Deployments — the menu's word wins, because the menu is
+ * dataset does not ("Character deployments" for `/starship-deployments`,
+ * whose type is called Deployments) the menu's word wins, because the menu is
  * read by somebody deciding where to go and the type name is read by somebody
  * already there.
  *
@@ -444,12 +444,12 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
     `source` says which book it came from. Variant rules are cut on ruleType
     alone and deliberately not on source: all 40 of them happen to be Expanded
     Content today, but a variant rule printed in a future book is still a
-    variant rule — the handbook's own Appendix B is a list of recommended ones —
+    variant rule, the handbook's own Appendix B is a list of recommended ones,
     and cutting on the book would silently drop it.
 
     Expanded rules are cut on both: Expanded Content's ten chapters. They need
     an entry of their own because Expanded Content is the one book with no entry
-    above — the owner's three are the three that teach something new, and EC's
+    above. The owner's three are the three that teach something new, and EC's
     chapters extend chapters the other books already have. Its ten chapters
     would otherwise be reachable only through `/sources/ec`, which is a page
     about a book rather than a page about its rules.
@@ -474,7 +474,7 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
       // Clay is the rules hue. The index of the books belongs to the same body
       // of material as the prose in them.
       "clay",
-      // Holds nothing, and therefore covers nothing — deliberately. A book
+      // Holds nothing, and therefore covers nothing. Deliberately. A book
       // page is a view over every type at once, so letting it claim coverage
       // would make one link to `/sources` satisfy the reachability of the
       // entire corpus.
@@ -514,9 +514,9 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
       The three cuts of the class improvements, quiet like the features beside
       them and for the same reason: they are read from the class that grants
       one, not browsed. They are in the menu as well as on the hub because the
-      hub is a page and this is the header — a reader on `/multiclass-
+      hub is a page and this is the header, a reader on `/multiclass-
       improvements` needs the other two beside them without a trip through a
-      third address — and because a menu entry is what the reachability check
+      third address, and because a menu entry is what the reachability check
       reads. Between them they are the whole of the type, which is a claim
       about the rows and is proved against the rows in `nav-groups.test.ts`
       exactly the way the three equipment shelves are.
@@ -530,7 +530,7 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
     Three shelves and the enhanced items, and no `/equipment` entry: the three
     shelves are the whole of it, which the reachability test proves against the
     data rather than taking on trust. The index still exists and is still
-    prerendered — it is the crumb above every shelf — it just is not a
+    prerendered, it is the crumb above every shelf, it just is not a
     destination anybody needs to be offered.
   */
   equipment: [
@@ -545,7 +545,7 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
   /*
     "Character deployments" and "Character ventures" rather than the types'
     own names, because both are things a person takes and neither is a thing a
-    ship has — which is exactly what a reader assumes from a menu called
+    ship has. Which is exactly what a reader assumes from a menu called
     Starships unless it says otherwise.
 
     The hulls are not in the owner's table. They are six documents, they are
@@ -565,7 +565,7 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
 
   /*
     One destination, so the header renders it as a plain link rather than a
-    disclosure — see `soleDestination`. Vehicle and starship stat blocks were
+    disclosure. See `soleDestination`. Vehicle and starship stat blocks were
     asked for beside it and are not here: there are none in the corpus.
   */
   statblocks: [typeIndex("monsters", "Creatures")],
@@ -580,8 +580,8 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
     MIT but its content is licensed separately, and re-hosting a community
     member's PDF is a decision for the people who own the community rather than
     a convenience for whoever is editing this file. Hosting them here would be
-    better — a Drive link can rot, and it is one more third party between a
-    reader and a character sheet — and that is worth doing on purpose, with
+    better (a Drive link can rot, and it is one more third party between a
+    reader and a character sheet) and that is worth doing on purpose, with
     permission, rather than by default.
 
     The two the owner also asked for are absent because they do not exist yet:
@@ -621,7 +621,7 @@ const GROUP_MENUS: Record<NavGroupId, readonly NavDestination[]> = {
  *
  * Indexed by `ContentTypeId`, so adding a type to `CONTENT_TYPE_IDS` without
  * adding it here fails `npm run typecheck` with the type's own name in the
- * message. That is half the point of this file — see the header comment for the
+ * message. That is half the point of this file. See the header comment for the
  * other half, which is the test that makes sure the placed type also has a way
  * in.
  */
@@ -681,7 +681,7 @@ export interface NavGroup {
  * Resolves the menus into the groups the header renders.
  *
  * Takes its input rather than reading `GROUP_MENUS` directly so that the rules
- * below — dropping an empty group, keeping the declared order — can be tested
+ * below (dropping an empty group, keeping the declared order) can be tested
  * against menus the site does not have. A rule only exercised by data that does
  * not exist yet is a rule that breaks on the change that introduces it.
  *
@@ -744,7 +744,7 @@ export function groupOfType(type: ContentTypeId): NavGroupId | null {
  *
  * Note what this is not: it is not the reachability check. A subcategory view
  * reports its type here because a reader who lands on `/weapons` is in the
- * equipment corpus and can walk out of it — that is the question this answers,
+ * equipment corpus and can walk out of it. That is the question this answers,
  * and it is the right one for "is anything leading to a type that is supposed
  * to be site metadata". Whether the type is *fully* reachable is a question
  * about a set of views and about the rows in the dataset, and it lives in
@@ -756,7 +756,7 @@ export function typesBehind(
   switch (destination.kind) {
     /*
       Nothing on this site. The reachability guarantee is about content we
-      publish, and a character sheet on somebody else's drive is not that — a
+      publish, and a character sheet on somebody else's drive is not that. A
       Resources menu must never be able to satisfy the claim that a content
       type is reachable.
     */
@@ -792,9 +792,9 @@ export function typesBehind(
  * How a destination is drawn where it gets more room than a menu line: a card
  * on the front page, or the hub it stands for.
  *
- * The four arms take their face from four different places — a type from
+ * The four arms take their face from four different places (a type from
  * `TYPE_META`, a view from its own registry entry, a book from `SOURCE_META`,
- * a page from the menu — which is precisely why this is one function rather
+ * a page from the menu) which is precisely why this is one function rather
  * than a conditional in each renderer.
  */
 export interface DestinationFace {

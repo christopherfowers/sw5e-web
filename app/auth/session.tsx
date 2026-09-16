@@ -18,7 +18,7 @@
  *
  * `loading` is not a nicety. It is the *only* state the prerendered HTML and
  * the first client render are allowed to be in, and because both are in it,
- * the markup React hydrates onto is the markup the build produced — no
+ * the markup React hydrates onto is the markup the build produced. No
  * mismatch, no re-render of the whole tree on first paint.
  *
  * It is also what stops a flash of the wrong state. Modelling this as
@@ -173,7 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * is a correctness requirement rather than an optimisation.
    *
    * They are handed out through context, so any effect elsewhere that lists
-   * one of them as a dependency re-runs whenever the session changes — and one
+   * one of them as a dependency re-runs whenever the session changes, and one
    * of them does: the page that follows a verification link. Rebuilding these
    * on every state change made that page submit its single-use token a second
    * time, the moment the first attempt succeeded and changed the state.

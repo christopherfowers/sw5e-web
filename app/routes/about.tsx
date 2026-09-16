@@ -4,7 +4,7 @@
  * This page exists because a reader arriving from a dead bookmark needs more
  * than a hero can hold. The hero has room for what the site is and nothing
  * more; it has no room for the address that stopped answering, for what came
- * across, or for the one distinction that genuinely matters — that being Star
+ * across, or for the one distinction that genuinely matters. That being Star
  * Wars 5e is not being official. That last one is the reason this is a page
  * rather than another sentence: the gap between "this is the project" and
  * "this is licensed by Lucasfilm" is legally load-bearing, and a claim that
@@ -18,7 +18,7 @@
  * one of those sentences described a relationship that does not exist. This is
  * not a third party keeping somebody else's reference warm; it is Star Wars
  * 5e, the same project, rebuilt. A modest disclaimer about a relationship you
- * are actually inside of is not modesty — it is telling the reader something
+ * are actually inside of is not modesty. It is telling the reader something
  * untrue, and the one page whose entire job is to say where the site went was
  * the worst place on the site to say it.
  *
@@ -29,8 +29,8 @@
  * about rights this project has never held, and it is right.
  *
  * It is still the page a search for "what happened to sw5e.com" lands on. A
- * reader whose bookmark went quiet does not search for this site by name —
- * they search for the address they lost. It simply answers that as a move
+ * reader whose bookmark went quiet does not search for this site by name.
+ * They search for the address they lost. It simply answers that as a move
  * rather than as a succession.
  *
  * The counts come from the manifest rather than from prose. Every number in
@@ -50,7 +50,7 @@ import type { Route } from "./+types/about";
 
 export function meta() {
   return [
-    { title: "About — Star Wars 5e" },
+    { title: "About | Star Wars 5e" },
     {
       name: "description",
       content:
@@ -87,8 +87,8 @@ export default function About({ loaderData }: Route.ComponentProps) {
         {/*
           No eyebrow. It said "About", directly above a heading that says
           "About", under a breadcrumb that says "About". Everywhere else on the
-          site the eyebrow carries something the heading does not — the source
-          book, the navigation group, the role on the account — and there is
+          site the eyebrow carries something the heading does not (the source
+          book, the navigation group, the role on the account) and there is
           nothing of that kind to say here.
         */}
         <h1>About</h1>

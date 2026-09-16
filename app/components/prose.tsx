@@ -25,7 +25,7 @@ interface ProseProps {
   /**
    * The id for each heading in this markdown, in document order.
    *
-   * Worked out before anything renders — see `app/content/headings.ts` — and
+   * Worked out before anything renders, see `app/content/headings.ts`, and
    * read here rather than generated here. Generating was the obvious design
    * and was wrong: uniqueness has to hold across a whole page, a page contains
    * several of these, and a shared name-generator makes rendering a mutation.
@@ -104,7 +104,7 @@ function Block({
         /*
           The `aria-label` is not decoration. A link nested inside a heading
           contributes its own name to the heading's, so without this every
-          heading on the page announced as "Benefits Link to Benefits" — the
+          heading on the page announced as "Benefits Link to Benefits". The
           anchor made the outline it was meant to serve worse to listen to.
           Naming the heading explicitly pins it to the words a reader sees,
           and the anchor keeps its own name for when it is tabbed to.

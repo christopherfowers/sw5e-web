@@ -2,7 +2,7 @@
  * Where the contract suites are allowed to point.
  *
  * The account contract suite registers accounts. That is not a side effect to
- * be tidied up afterwards — it is the only way to test a registration client
+ * be tidied up afterwards. It is the only way to test a registration client
  * against a real server. It is safe because the target is meant to be a
  * container that is thrown away when the job ends.
  *

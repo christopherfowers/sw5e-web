@@ -1,11 +1,11 @@
 /**
- * "Something here is wrong" — from the page it is wrong on.
+ * "Something here is wrong". From the page it is wrong on.
  *
  * ## Why it looks like almost nothing
  *
  * This is a reference people read at the table, mid-sentence, on a phone,
  * looking for one number. It is not a moderation tool with a reference
- * attached. So the affordance is a single quiet line of text at the foot of
+ * attached, so the affordance is a single quiet line of text at the foot of
  * what it is about, it never moves anything above it, and it stays collapsed
  * until somebody asks for it. A reader who never wants it should be able to use
  * this site for a year without noticing it is there.
@@ -19,7 +19,7 @@
  * ## Why it is a disclosure and not a modal
  *
  * A modal has to trap focus, restore it, close on Escape, and be inert to
- * everything behind it — four things to get right, on every page of the site,
+ * everything behind it. Four things to get right, on every page of the site,
  * for a form that is used once. A disclosure that expands in place has none of
  * that: the reader stays where they were, the page behind it stays readable,
  * and Escape means what it always meant. It also degrades honestly, since what
@@ -30,12 +30,12 @@
  * Report text passes through this module untouched: it is sent as the reader
  * typed it, and neither this file nor anything it calls interpolates it into
  * markup. React's raw-HTML escape hatch does not appear here and may not be
- * added — `app/routes/account-flags.test.tsx` searches this file for it by
+ * added. `app/routes/account-flags.test.tsx` searches this file for it by
  * name, which is why the name is not written out even in this comment.
  *
  * Every content page on this site is a static file written at build time and
  * served to everybody. This component therefore renders the same markup for
- * every visitor — a button, collapsed — and resolves who the reader is only
+ * every visitor (a button, collapsed) and resolves who the reader is only
  * after hydration, through the session context. Nothing identity-shaped is in
  * the file nginx serves, and there is no state in which the button is absent,
  * so the markup does not change under hydration.
@@ -61,13 +61,13 @@ import "~/styles/flags.css";
 export interface ReportTarget {
   /**
    * Whether this is a picture or a page. It decides which reasons are offered,
-   * and the server derives the same thing from whichever one is chosen — so a
+   * and the server derives the same thing from whichever one is chosen, so a
    * mismatch here is refused rather than filed.
    */
   kind: FlagTargetKind;
   /**
-   * The API's content type. A page sends its own route segment — `species`,
-   * `enhanced-items` — which the service resolves against its registry. A
+   * The API's content type. A page sends its own route segment (`species`,
+   * `enhanced-items`) which the service resolves against its registry. A
    * picture sends `asset-credit`, because every image this site publishes has
    * an attribution record and that record is what a reviewer edits to put the
    * report right.
@@ -75,7 +75,7 @@ export interface ReportTarget {
   type: string;
   /**
    * The document key. For a page that is its slug; for a picture it is
-   * `{group}-{key}`, the site's own image naming — `species-wookiee`,
+   * `{group}-{key}`, the site's own image naming. `species-wookiee`,
    * `classes-guardian`.
    */
   key: string;
@@ -111,8 +111,8 @@ export function ReportControl({ target, label = "Report a problem" }: ReportCont
 
   // The subject is in the accessible name rather than only in the visible
   // text. A screen-reader user listing the buttons on a species page would
-  // otherwise hear "Report a problem" twice — once for the page and once for
-  // its portrait — with nothing to tell them apart.
+  // otherwise hear "Report a problem" twice, once for the page and once for
+  // its portrait, with nothing to tell them apart.
   const accessibleName =
     target.kind === "image"
       ? `Report a problem with the picture of ${target.name}`
@@ -130,7 +130,7 @@ export function ReportControl({ target, label = "Report a problem" }: ReportCont
         targetType: target.type,
         targetKey: target.key,
         // Sent as the reader typed it. Trimming is the server's job and
-        // sanitising is nobody's — see app/flags/api.ts.
+        // sanitising is nobody's. See app/flags/api.ts.
         details: details.trim() === "" ? null : details,
       });
 
@@ -144,8 +144,8 @@ export function ReportControl({ target, label = "Report a problem" }: ReportCont
       }
 
       // The server's own wording where it sent one. It knows things this
-      // client does not — which of two rate limits was reached, that the
-      // document has since been retired — and paraphrasing would lose them.
+      // client does not (which of two rate limits was reached, that the
+      // document has since been retired) and paraphrasing would lose them.
       const message =
         error instanceof ApiError
           ? error.message
@@ -196,7 +196,7 @@ export function ReportControl({ target, label = "Report a problem" }: ReportCont
             </p>
           ) : (
             // Anonymous, or the account service is unreachable. Both end in
-            // the same place — there is no session to file under — and the
+            // the same place, there is no session to file under, and the
             // sign-in link remembers where the reader was, so they come back
             // to the page they were reporting rather than to their account.
             <p className="report-note">
@@ -242,7 +242,7 @@ function ReportForm({
     return (
       <div className="report-note" role="status">
         <p>
-          Filed. A contributor will look at it — you can see what happens to it
+          Filed. A contributor will look at it. You can see what happens to it
           on <Link to="/account/flags">your reports</Link>.
         </p>
         <p>
@@ -320,7 +320,7 @@ function ReportForm({
             A count rather than a silent truncation. The server refuses text
             past its limit rather than cutting it down, so somebody who writes
             past the end without being told would lose the part they cared most
-            about — which, for an attribution report, is the evidence at the
+            about. Which, for an attribution report, is the evidence at the
             end.
           */}
           <p className="report-details-count" id={`${detailsId}-count`}>

@@ -39,7 +39,7 @@ export function SiteHeader() {
       <div className="site-header-inner">
         {/*
           The mark alone. It reads "SW5e", so setting the name beside it said
-          the same thing twice in an inch of screen — as did the tagline that
+          the same thing twice in an inch of screen. As did the tagline that
           used to sit under it. What the site is belongs on the about page and
           in the footer, at the length it actually takes.
 
@@ -85,9 +85,9 @@ export function SiteHeader() {
  * which credited nobody by name and conflated three different positions into
  * one vague sentence. Star Wars belongs to Lucasfilm and always did. The
  * conversion of D&D into Star Wars 5e is the work of Galiphile and a named
- * community, made in accordance with Wizards of the Coast's Fan Content Policy
- * — that is what the original site's credits actually claim, and it is a
- * different claim from owning Star Wars. And this website's own source code is
+ * community, made in accordance with Wizards of the Coast's Fan Content Policy.
+ * That is what the original site's credits actually claim, and it is a
+ * different claim from owning Star Wars, and this website's own source code is
  * MIT licensed, which is a third thing again: the code being freely reusable
  * says nothing about the game content or the artwork, and reading one as the
  * other is precisely the confusion the old wording invited.
@@ -107,8 +107,8 @@ export function SiteHeader() {
  *
  * The two disclaimers on either side of it are a different matter entirely and
  * are untouched. Being Star Wars 5e is not being official with respect to
- * Lucasfilm or Wizards of the Coast — the first is a statement about which
- * project this is, the second is a statement about rights nobody here holds —
+ * Lucasfilm or Wizards of the Coast (the first is a statement about which
+ * project this is, the second is a statement about rights nobody here holds)
  * and collapsing the two is exactly the mistake the removed sentence invited
  * from the other direction. Star Wars belongs to Lucasfilm, the conversion is
  * fan content made under the Fan Content Policy, and neither of those stops

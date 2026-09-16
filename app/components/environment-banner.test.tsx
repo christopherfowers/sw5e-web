@@ -4,7 +4,7 @@
  * `app/site/environment.test.ts` pins the decision; this pins the rendering,
  * and the two failures it has to rule out are different in kind. There, the
  * risk is a failure being read as "QA". Here, the risk is the banner reaching
- * the prerendered HTML — which would put a "TEST ENVIRONMENT" strip into all
+ * the prerendered HTML. Which would put a "TEST ENVIRONMENT" strip into all
  * ~2,200 static files, production included, and flash it on every first paint
  * before hydration removed it again.
  */
@@ -44,7 +44,7 @@ describe("the environment banner", () => {
   /**
    * The assertion this component exists to be safe about.
    *
-   * "Configuration absent" is not a special code path — it is the state of a
+   * "Configuration absent" is not a special code path. It is the state of a
    * deployment where nobody set anything, and it reaches the browser as a
    * service that reports production or as no answer at all. Both are here.
    * Change the default in `app/site/environment.ts` so that an unknown or
@@ -127,7 +127,7 @@ describe("the environment banner", () => {
    * The live region has to be in the document before it has anything to say.
    * A region inserted together with its text is often not announced at all,
    * because there was no region there for assistive technology to observe a
-   * change in — and a banner nobody hears is the same as no banner for the
+   * change in, and a banner nobody hears is the same as no banner for the
    * readers most likely to be confused by a test deployment.
    */
   it("has a polite live region from the first render, before any answer", () => {
@@ -143,8 +143,8 @@ describe("the environment banner", () => {
 
   /**
    * Nothing focusable, ever. This sits above the skip link, which has to stay
-   * the first thing a keyboard user reaches on every page — a dismiss button
-   * here would take that place — and a strip with no focusable descendants
+   * the first thing a keyboard user reaches on every page, a dismiss button
+   * here would take that place, and a strip with no focusable descendants
    * cannot trap focus by construction.
    */
   it("puts nothing focusable in front of the skip link", async () => {

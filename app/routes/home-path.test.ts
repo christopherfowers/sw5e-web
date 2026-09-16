@@ -3,8 +3,8 @@
  *
  * `home.test.tsx` renders the path from loader data it writes itself, which is
  * the right way to test the rendering and no way at all to test the ordering:
- * the fixture arrives already sorted, so the loader could sort by anything —
- * or by nothing — and every one of those tests would go on passing. Reverting
+ * the fixture arrives already sorted, so the loader could sort by anything,
+ * or by nothing, and every one of those tests would go on passing. Reverting
  * the sort to `chapterNumber` did exactly that.
  *
  * So this runs the real loader over a dataset shaped like the corpus, with the
@@ -87,7 +87,7 @@ const RULES = [
 
     This one carries the weight. The two below it are from other books, so the
     source check alone keeps them out and they prove nothing about the filter
-    that matters — removing the order test entirely left every assertion green
+    that matters. Removing the order test entirely left every assertion green
     until this was added. Being unplaced is the only thing keeping this one off
     the path.
   */
@@ -182,8 +182,8 @@ describe("the reading path the front page is given", () => {
   /**
    * A passage with no position is not on the path, whatever else it has.
    *
-   * Both of the excluded fixtures carry something that looks orderable — the
-   * Wretched Hives chapter has a chapter number, the variant rule has a name —
+   * Both of the excluded fixtures carry something that looks orderable (the
+   * Wretched Hives chapter has a chapter number, the variant rule has a name)
    * so a loader that fell back to either would include them.
    */
   it("leaves out what nobody placed", async () => {

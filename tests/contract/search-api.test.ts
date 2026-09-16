@@ -5,7 +5,7 @@
  * way, for the same reason.
  *
  * The results page shipped showing "240 results for 'difficult' (showing 0)".
- * The service answered correctly — twenty groups with results in every one —
+ * The service answered correctly, twenty groups with results in every one,
  * and the client discarded all of it, because it read `item.slug` where the
  * service sends `item.key`, and matched groups on `type` (`rule`) where this
  * application identifies a type by its plural route segment (`rules`). Both
@@ -15,7 +15,7 @@
  *
  * A mock that agrees with the code that wrote it is not evidence. This suite
  * asks the running service instead, and the last block is the one that matters
- * most: it compares the committed fixture — the one the fast unit tests read —
+ * most: it compares the committed fixture, the one the fast unit tests read,
  * against a live response, field by field, so that a fixture drifting from the
  * service it stands in for fails here rather than on the deployed site.
  *

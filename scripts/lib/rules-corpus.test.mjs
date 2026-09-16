@@ -21,7 +21,7 @@ import { REPLACEMENT } from "./repair-text.mjs";
  *
  * The first is the mapping itself, tested against records taken verbatim from
  * the archive. A trimmed inline record proves the code runs; a real one proves
- * it copes with what the corpus actually contains — a prerequisite with a
+ * it copes with what the corpus actually contains. A prerequisite with a
  * leading space, a chapter numbered -2, a body that opens by repeating its own
  * title.
  *
@@ -29,7 +29,7 @@ import { REPLACEMENT } from "./repair-text.mjs";
  * the canonical content set or straight from the archive, and the whole point
  * of keeping both alive is that they publish the same site. For the rules that
  * is not automatic: chapter titles repeat across books, so the two paths have
- * to arrive at the same book-qualified slug by different routes — one reading
+ * to arrive at the same book-qualified slug by different routes. One reading
  * a document's key, the other deriving it from the file the record came from.
  */
 
@@ -39,7 +39,7 @@ import { REPLACEMENT } from "./repair-text.mjs";
   Every assertion here reads the real corpus off disk and pushes 7,191 documents
   through the full mapping, which takes seconds on an idle machine and longer on
   a busy one. At the default these passed alone and failed intermittently in the
-  full suite — a flake that reads as "the corpus is broken" when it means "the
+  full suite. A flake that reads as "the corpus is broken" when it means "the
   machine was busy", and the worst kind to leave in a suite because people learn
   to re-run rather than read it.
 
@@ -358,7 +358,7 @@ describe("rules", () => {
    * position at all: the archive files both changelogs at 99 and the handbook
    * preface at -2, so the label suppressed anything outside 1..90 rather than
    * show a reader "Chapter 99". Those numbers are still in the corpus and
-   * still sort correctly, and they are no longer anybody's problem — an
+   * still sort correctly, and they are no longer anybody's problem. An
    * authored heading was written to be read rather than derived from a page
    * count, so there is nothing to suppress.
    */
@@ -702,10 +702,10 @@ describe("the canonical set and the archive publish the same corpus", () => {
  *
  * The bug this exists for was silent in an unusual way. `rewriteReferences`
  * was correct and had been for as long as the archive builder existed; the
- * canonical builder simply never called it. So the path that runs in
+ * canonical builder simply never called it, so the path that runs in
  * production did nothing, the renderer declined to follow a link that was not
  * site-relative, and three hundred power and table names printed as grey text
- * that looked like a deliberate choice. No error, no warning, no 404 — the
+ * that looked like a deliberate choice. No error, no warning, no 404. The
  * failure mode of a link that is never made is silence.
  *
  * Reads the real corpus, because that is the only place these anchors exist.
@@ -723,7 +723,7 @@ describe("the corpus's in-page anchors", () => {
     Built once and shared.
 
     Each assertion below needs the whole corpus normalized, and that is 7,191
-    documents through every mapping — comfortably over the five-second default
+    documents through every mapping. Comfortably over the five-second default
     on its own. Four of them doing it separately did not merely take four times
     as long; under the load of the full suite they began timing out, which
     reads as a broken corpus rather than as a slow test. The one that made them
@@ -815,7 +815,7 @@ describe("the corpus's in-page anchors", () => {
    * The empty link is its own case because it survives by a different route.
    * The inline parser needs at least one character of link text, so `[](#)`
    * matches no rule and is carried through to the page as those five literal
-   * characters — which is what a reader could see on the live site, mid stat
+   * characters. Which is what a reader could see on the live site, mid stat
    * block, before this.
    */
   it.runIf(hasContent)("leave no empty links behind", async () => {
@@ -831,7 +831,7 @@ describe("the corpus's in-page anchors", () => {
    * `/powers/<slug>` is worse than leaving it alone if that slug is not a
    * page: a dead-looking word becomes a confident link to a 404. The slugs
    * come from the same `slugify` that decides each item's URL, so this holds
-   * by construction — and that is exactly the kind of reasoning worth pinning,
+   * by construction, and that is exactly the kind of reasoning worth pinning,
    * since it stops holding the moment either side changes.
    */
   it.runIf(hasContent)("point at pages that exist", async () => {

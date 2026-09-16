@@ -62,7 +62,7 @@ describe("once the session is known", () => {
    * And the way in remembers where the reader was.
    *
    * The sign-in page has always honoured `?next=`, but only the route guard
-   * set it — somebody bounced off a page they could not see returned to it,
+   * set it. Somebody bounced off a page they could not see returned to it,
    * while somebody who simply pressed Sign in from the header was put on the
    * account page instead. That is the commoner path, and it was the one that
    * moved a reader somewhere they had not asked to go.

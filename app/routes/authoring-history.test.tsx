@@ -2,8 +2,8 @@
  * Revision history, the diff it shows, and putting a version back.
  *
  * The diff is the part worth testing here. The service deliberately does not
- * compute one — `GET .../revisions/{id}` answers with a whole document and
- * leaves the comparison to whoever is presenting it — so what a reviewer sees
+ * compute one, `GET .../revisions/{id}` answers with a whole document and
+ * leaves the comparison to whoever is presenting it, so what a reviewer sees
  * is entirely this client's work, and "shows the field that changed rather than
  * two walls of text" is a behaviour with a test rather than an intention.
  */

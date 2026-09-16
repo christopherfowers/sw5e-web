@@ -3,7 +3,7 @@
  *
  * The site is dark when the operating system says so, and dark when a reader
  * has chosen it. CSS has no way to share one declaration list between a media
- * query and an attribute selector, so the palette is written twice — once under
+ * query and an attribute selector, so the palette is written twice. Once under
  * `@media (prefers-color-scheme: dark)` and once under `:root[data-theme="dark"]`.
  *
  * That duplication is safe only if something checks it. A palette that drifts
@@ -77,7 +77,7 @@ describe("choosing light explicitly", () => {
    * The system block yields to an explicit light choice.
    *
    * Without the `:not([data-theme="light"])`, a reader on a dark desktop who
-   * asked for light would get the dark palette anyway — the media query would
+   * asked for light would get the dark palette anyway. The media query would
    * still match, and nothing in the light branch would override it. That is the
    * whole mechanism by which the toggle can turn the site *lighter* than the
    * operating system, and it is one selector wide.

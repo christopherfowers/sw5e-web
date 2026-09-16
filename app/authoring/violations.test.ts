@@ -4,8 +4,8 @@
  * The format being parsed is not promised by anything: `schemaErrors` is
  * `string[]` on the wire, its shape comes from a validator in a third
  * repository, and the service's own tests assert only that the array is not
- * empty. So the tests that matter most here are the ones about *losing* the
- * bet — a line that does not parse must still reach the reader, in the
+ * empty, so the tests that matter most here are the ones about *losing* the
+ * bet. A line that does not parse must still reach the reader, in the
  * service's own words, or a refused save becomes a save that failed for no
  * stated reason.
  */
@@ -193,8 +193,8 @@ describe("the case that made this worth doing", () => {
    * A property that does not belong to a content type.
    *
    * `additionalProperties: false` is implemented as a false schema, and a false
-   * schema fails with no keyword at all — the line reads
-   * `/quantumEntanglement:  — All values fail against the false schema`. The
+   * schema fails with no keyword at all, the line reads
+   * `/quantumEntanglement: , All values fail against the false schema`. The
    * line parser cannot place that, because its pattern requires a keyword of
    * at least one letter, so it went into the list of things shown above the
    * form with no field attached.

@@ -3,7 +3,7 @@
  *
  * These are request-shape tests. Almost nothing here asserts a happy return
  * value, because the interesting failures in a client like this one are not
- * "the wrong object came back" — they are "the filter was never sent", "the
+ * "the wrong object came back". They are "the filter was never sent", "the
  * reason was sent on a call that refuses one", "a 403 was reported as the wrong
  * kind of 403". Every one of those is invisible to a test that only checks a
  * promise resolved.
@@ -198,7 +198,7 @@ describe("what a refusal says", () => {
   it("says nothing about whether the account exists", async () => {
     // The refusal a non-administrator meets must be the same whether the
     // identifier they asked about is real or invented. It is, because the
-    // service refuses before it looks — and the fixture models that ordering
+    // service refuses before it looks, and the fixture models that ordering
     // rather than reproducing the answer.
     serve(
       new AdminApiStub({ users: [adminUser({ id: "real" })] }),

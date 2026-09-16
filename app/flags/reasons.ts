@@ -3,15 +3,15 @@
  *
  * The service owns the taxonomy; this owns the wording. They are separate for a
  * reason that shows up the first time somebody reads the list: the service's
- * names are routing keys — `image-artist-known` — and the question a reader is
+ * names are routing keys, `image-artist-known`, and the question a reader is
  * actually answering is "what is wrong with this?". A menu of routing keys gets
  * the wrong answer picked, and a wrongly-routed report is worse than no report,
  * because it lands in a queue somebody has already decided not to work today.
  *
  * Each entry is written as the sentence the reader would say, with a second
  * line for the case where two of them look similar. The two that most need
- * telling apart are `image-artist-known` and `image-attribution-missing` — "I
- * know who made this" against "nobody knows who made this" — because the first
+ * telling apart are `image-artist-known` and `image-attribution-missing`, "I
+ * know who made this" against "nobody knows who made this", because the first
  * is the whole point of the feature and the second is what somebody picks by
  * accident when the first is worded vaguely.
  */
@@ -107,7 +107,7 @@ export function requiresDetails(reason: FlagReason): boolean {
  *
  * A copy of a number the server owns, which is a thing worth being uneasy
  * about. It is safe in exactly one direction: if the two ever disagree, this
- * one is the smaller of the two by construction — a client that let more
+ * one is the smaller of the two by construction. A client that let more
  * through would meet the server's refusal, which is the failure mode that
  * already works.
  */
@@ -168,7 +168,7 @@ export const NEXT_STATUSES: Record<FlagStatus, readonly FlagStatus[]> = {
  * A reason the service has and this build has not is rendered as its own wire
  * name rather than dropped. Dropping it would leave a row in the queue with no
  * explanation of what was reported, which is worse than an unfamiliar-looking
- * label — and a reviewer can still act on a row whose reason they can read.
+ * label, and a reviewer can still act on a row whose reason they can read.
  */
 export function reasonLabel(reason: string): string {
   return REASON_META[reason as FlagReason]?.label ?? reason;

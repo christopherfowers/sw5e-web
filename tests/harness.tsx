@@ -5,11 +5,11 @@
  * skip all of this. They deliberately do not: the whole architecture of this
  * feature is "the session is resolved after the first render, by a network
  * call", and a test that injects a resolved session has quietly deleted the
- * only interesting part. So these helpers mount the real `AuthProvider`, which
+ * only interesting part, so these helpers mount the real `AuthProvider`, which
  * really calls `GET /api/auth/me`, against the contract fixture.
  *
  * The consequence is that every test starts in the loading state and has to
- * wait for the session — which is exactly the sequence a reader experiences,
+ * wait for the session. Which is exactly the sequence a reader experiences,
  * and the reason `findBy*` rather than `getBy*` appears throughout.
  */
 
@@ -29,7 +29,7 @@ import {
  *
  * There is nothing to plant beforehand. The API's cross-site protection is an
  * `Origin` allow-list, and `Origin` is written by the browser on every unsafe
- * method — so the adapter supplies it and the client sends nothing of its own.
+ * method, so the adapter supplies it and the client sends nothing of its own.
  * A test that wants to prove the check is real passes a foreign `origin`, or
  * `null` for a request that carries none, and asserts the 403.
  */

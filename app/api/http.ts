@@ -1,7 +1,7 @@
 /**
  * The one transport this app uses to reach its own API.
  *
- * Lifted out of `app/auth/api.ts` when a second feature — content flagging —
+ * Lifted out of `app/auth/api.ts` when a second feature, content flagging,
  * needed to talk to the same service under a different path prefix. Nothing
  * about the rules below is specific to accounts, and duplicating them for a
  * second client is how one of the two copies quietly stops treating
@@ -39,8 +39,8 @@
  * foreign `Origin` answers 403, and the site's own origin answers 200.
  *
  * The browser writes both of those headers itself on every state-changing
- * fetch, and script cannot forge or suppress either — they are forbidden header
- * names. So a same-origin client has nothing to do, which is the whole appeal
+ * fetch, and script cannot forge or suppress either. They are forbidden header
+ * names, so a same-origin client has nothing to do, which is the whole appeal
  * of the scheme. A readable CSRF cookie would only hand JavaScript a credential
  * to look after, and buy nothing in exchange: the case double-submit is usually
  * defended for, a hostile same-site subdomain, is covered here too, because a
@@ -76,7 +76,7 @@ export type ApiFailure =
  * opposed to "this account is not allowed".
  *
  * The two are worth telling apart everywhere they can be. A plain forbidden is
- * the end of the conversation — the account does not hold the role, and
+ * the end of the conversation. The account does not hold the role, and
  * nothing the reader does in this browser changes that. This one is the
  * opposite: the account holds the role, the session was simply established
  * with an emailed code rather than with a passkey or an authenticator, and
@@ -147,7 +147,7 @@ function failureFor(status: number): ApiFailure {
  * The reader-facing default for each kind of failure.
  *
  * A server message is preferred when one arrives, but there has to be
- * something sensible to say when it does not — an empty error region is how a
+ * something sensible to say when it does not. An empty error region is how a
  * form ends up looking like it did nothing. These defaults carry more weight
  * than they look like they should: the API answers several of its most common
  * failures with no body at all, deliberately, so this table is what the reader
@@ -182,7 +182,7 @@ interface ErrorBody {
  * out of the body by name above. Everything outside this set is an extension
  * and is handed to the caller untouched.
  *
- * `message` is here because {@link readMessage} reads it — it is not an RFC
+ * `message` is here because {@link readMessage} reads it. It is not an RFC
  * member, and it is listed for the same reason the real ones are: a member this
  * module has already turned into a field must not also arrive as an extension,
  * or a feature reading extensions would find a second copy of something it has
@@ -220,7 +220,7 @@ function readFieldErrors(value: unknown): Record<string, string> {
  * Whether a body is worth parsing as JSON.
  *
  * `application/problem+json` is the content type every error from this API
- * carries, and it does not contain the substring `application/json` — so the
+ * carries, and it does not contain the substring `application/json`, so the
  * obvious check silently classified every 400, 409 and 429 as "the service is
  * not there". Matching the structured-syntax suffix as well is what stops that.
  */
@@ -245,7 +245,7 @@ export interface RequestOptions {
    *
    * Added for the proof-of-work challenge, whose solution is a statement about
    * the request rather than about the account and so travels in headers rather
-   * than in the body — the published request schemas stay unchanged, and a
+   * than in the body. The published request schemas stay unchanged, and a
    * custom header cannot ride along on a cross-origin form post.
    *
    * Deliberately merged *under* the two headers this function sets for itself,
@@ -258,7 +258,7 @@ export interface RequestOptions {
 /**
  * One request to this site's own API.
  *
- * `path` is an absolute path on this origin — `/api/auth/me`, `/api/flags` —
+ * `path` is an absolute path on this origin (`/api/auth/me`, `/api/flags`)
  * and never a URL. A caller that assembled an absolute URL here would defeat
  * both the CSP rule and the `same-origin` credentials mode in one line, so the
  * prefix belongs to the caller and the origin belongs to nobody.
@@ -289,8 +289,8 @@ export async function apiRequest<T>(
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
   } catch (error) {
-    // An aborted request is the caller's own doing — a component unmounting,
-    // usually — and must not be reported to the reader as a failure.
+    // An aborted request is the caller's own doing (a component unmounting,
+    // usually) and must not be reported to the reader as a failure.
     if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new ApiError("unavailable", DEFAULT_MESSAGE.unavailable);
   }

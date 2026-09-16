@@ -7,7 +7,7 @@
  * types by hand and nobody is going to, so the rules here have to hold for a
  * four-field armour property and for a class with a forty-row progression and
  * six markdown fields. That means depth is expressed with a left rule and
- * indentation rather than with boxes inside boxes — nested cards three deep are
+ * indentation rather than with boxes inside boxes. Nested cards three deep are
  * unreadable at the widths this actually runs at.
  *
  * **The conflict panel and the error summary are the two things that must be
@@ -189,7 +189,7 @@
 
 /*
  * A toolbar, the text under it, and a preview under that, read as one control
- * rather than as three things that happen to be adjacent — so the toolbar sits
+ * rather than as three things that happen to be adjacent, so the toolbar sits
  * flush on top of the text area and the pair share one outer edge. Without
  * that, six markdown fields on a class document read as eighteen boxes.
  */
@@ -621,8 +621,8 @@
  * Removed and added text.
  *
  * `<del>` and `<ins>` carry the meaning; these only make it visible. Both keep
- * their own decoration as well as their tint — a strike-through and an
- * underline — so the difference is legible in a screenshot, on a projector, and
+ * their own decoration as well as their tint, a strike-through and an
+ * underline, so the difference is legible in a screenshot, on a projector, and
  * to anybody who does not distinguish these two hues.
  */
 .diff-removed {

@@ -3,7 +3,7 @@
  *
  * The community's own request was for "more links to sections for
  * navigation", and the state before this was that a rules chapter carried
- * forty-four headings and not one of them could be linked to — the only
+ * forty-four headings and not one of them could be linked to. The only
  * address anybody could send was the whole chapter with "scroll down" after
  * it.
  *
@@ -85,7 +85,7 @@ describe("the anchor and the outline", () => {
       The regression this exists for, and it is one that only shows up in a
       screen reader. A link nested inside a heading contributes its name to the
       heading's, so the first version of this made every heading announce as
-      "Benefits Link to Benefits" — an anchor added to help people navigate the
+      "Benefits Link to Benefits". An anchor added to help people navigate the
       outline, making the outline worse to listen to.
 
       Asserted as an exact name rather than a substring, because a substring

@@ -10,8 +10,8 @@
  * still needs the UI to render, and four species is enough to prove a species
  * page works. Credits do not work that way: four patrons out of three hundred
  * and eighty-four is not a smaller version of the credits, it is a wrong one,
- * and it would be wrong in the specific way that matters here — it would leave
- * people out. So there is one document, it is complete, and it is committed.
+ * and it would be wrong in the specific way that matters here. It would leave
+ * people out, so there is one document, it is complete, and it is committed.
  *
  * It is regenerated only when the canonical credits change, which is why this
  * is a script somebody runs rather than a build step: the output is reviewed
@@ -49,7 +49,7 @@ function parseArguments(argv) {
  *
  * The null case is not a failure. The container build runs this against the
  * published content image, and that image is built from the content
- * repository's main branch — so between a credits change being written and
+ * repository's main branch, so between a credits change being written and
  * that image carrying it, the directories here simply do not exist yet. A
  * missing directory therefore means "the canonical set has nothing newer than
  * what is committed", which is the committed document's cue to stand.

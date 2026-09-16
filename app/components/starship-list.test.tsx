@@ -10,7 +10,7 @@ import type { StarshipRuleSummary } from "~/content/types";
  * The thirteen chapters of Starships of the Galaxy.
  *
  * Its own file rather than a fourth section of `rules-list.test.tsx`, because
- * the thing being checked is that the two lists agree — and a test that shares
+ * the thing being checked is that the two lists agree, and a test that shares
  * a fixture with the list it is comparing against cannot show that. They read
  * different config entries off the same two fields, and the way this breaks is
  * that somebody changes one entry and not the other.
@@ -87,7 +87,7 @@ const chapters: StarshipRuleSummary[] = [
     order: 2,
   },
   // Placed nowhere. Every chapter of this book is placed today, so this is a
-  // shape the corpus does not currently contain — which is why the list has to
+  // shape the corpus does not currently contain. Which is why the list has to
   // be asked about it here rather than left to be discovered.
   {
     slug: "errata",
@@ -158,7 +158,7 @@ describe("the starship chapter index", () => {
    * Not a list written into the site. These come from the rows: the groups are
    * built by walking the already-sorted chapters, so the order each heading
    * first appears in is the authored order. Renaming "Flying it" in the corpus
-   * renames it here, with no site change and no deploy — which is the whole
+   * renames it here, with no site change and no deploy. Which is the whole
    * point of the headings being content.
    */
   it("draws the headings in the order the path puts them", () => {
@@ -179,7 +179,7 @@ describe("the starship chapter index", () => {
 
   /**
    * Alphabetically these would read "Also in this book", "Building a
-   * starship", "Flying it", "Start here" — which puts the introduction fourth
+   * starship", "Flying it", "Start here". Which puts the introduction fourth
    * and the leftovers first. Stated so the assertion above is pinning a
    * decision rather than a coincidence.
    */

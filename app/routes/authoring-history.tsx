@@ -5,8 +5,8 @@
  *
  * `GET .../revisions/{id}` answers with a whole document, deliberately. Which
  * fields matter, and what "changed" means for a list of forty class features,
- * is a presentation decision — and a service that picked one answer would have
- * picked it for every client forever. So two revisions are fetched and
+ * is a presentation decision, and a service that picked one answer would have
+ * picked it for every client forever, so two revisions are fetched and
  * `app/authoring/diff.ts` compares them. The comparison is the interesting
  * part; see that file for why an inserted list entry has to read as one
  * insertion rather than as forty changes.
@@ -23,7 +23,7 @@
  *
  * ## The list has a ceiling and says so
  *
- * The service offers `limit` and nothing else — no cursor, no offset — capped
+ * The service offers `limit` and nothing else (no cursor, no offset) capped
  * at a hundred. A document with a longer history cannot be read past its
  * hundredth most recent change. A page that quietly showed a hundred rows would
  * be presenting a truncated history as a complete one, which is precisely the
@@ -66,8 +66,8 @@ const REVISION_LIMIT = 100;
  *
  * A wording for each action rather than the wire value, because "updated" in a
  * column of forty rows tells a reader nothing they could not have guessed,
- * while "imported" — which is the state of nearly everything in this corpus
- * today — is a genuinely different thing and worth marking.
+ * while "imported", which is the state of nearly everything in this corpus
+ * today, is a genuinely different thing and worth marking.
  */
 const ACTION_LABEL: Record<string, string> = {
   imported: "Imported from the archive",
@@ -371,10 +371,10 @@ function History({
                   setFromId(event.target.value === "" ? null : Number(event.target.value))
                 }
               >
-                <option value="">Nothing — show everything it contains</option>
+                <option value="">Nothing. Show everything it contains</option>
                 {revisions.map((revision) => (
                   <option key={revision.id} value={String(revision.id)}>
-                    Revision {revision.number} — {actionLabel(revision.action)}
+                    Revision {revision.number}, {actionLabel(revision.action)}
                   </option>
                 ))}
               </select>
@@ -392,7 +392,7 @@ function History({
               >
                 {revisions.map((revision) => (
                   <option key={revision.id} value={String(revision.id)}>
-                    Revision {revision.number} — {actionLabel(revision.action)}
+                    Revision {revision.number}, {actionLabel(revision.action)}
                   </option>
                 ))}
               </select>
@@ -476,7 +476,7 @@ export default function AuthoringHistory() {
 
   // See `app/routes/authoring-edit.tsx`: the canonical key is used from the
   // first request so that what is asked for and what comes back are spelled the
-  // same way. A registry that could not be fetched is not fatal — the address
+  // same way. A registry that could not be fetched is not fatal. The address
   // is sent as it was given and the service resolves it.
   const type = index ? canonicalTypeKey(index, requestedType) : requestedType;
   const descriptor = index ? findContentType(index, requestedType) : null;

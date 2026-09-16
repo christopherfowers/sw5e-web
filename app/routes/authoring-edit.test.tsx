@@ -303,7 +303,7 @@ describe("a publish refused because somebody else got there first", () => {
     // `delay: null` dispatches every keystroke exactly as before and simply
     // stops awaiting a macrotask between them. The distinction matters because
     // the assertion below is about characters surviving the round trip, so the
-    // keystrokes have to stay individual — what does not have to stay is three
+    // keystrokes have to stay individual. What does not have to stay is three
     // seconds of yielding to the event loop.
     //
     // Typed with the default delay this passage takes 4.2s of a 5s budget on an
@@ -394,7 +394,7 @@ describe("a publish refused because somebody else got there first", () => {
       screen.getByRole("button", { name: /publish what is on screen over it/i }),
     );
 
-    // Overriding re-saves — which is what recaptures the base revision — and
+    // Overriding re-saves, which is what recaptures the base revision, and
     // then publishes. Both, in that order, and only because it was asked for.
     await waitFor(() =>
       expect(stub.lastCall("PUT", "/api/authoring/drafts/armor-property/bulky")).toBeDefined(),
@@ -404,7 +404,7 @@ describe("a publish refused because somebody else got there first", () => {
 
   it("does not let a publish happen while there are unsaved edits", async () => {
     // Publishing publishes what the service holds. Offering it with unsaved
-    // edits would publish something other than what is on the screen — and,
+    // edits would publish something other than what is on the screen. And,
     // worse, a save-then-publish would recapture the base revision and erase
     // the staleness check entirely.
     const stub = new AuthoringApiStub({
@@ -492,7 +492,7 @@ describe("an address with no key", () => {
   it("asks for one rather than firing requests that cannot match a route", async () => {
     // Reachable only by typing the address. The key is the document's address
     // on the service as well as on this site, so there is nothing to open
-    // without one — and the three requests the load would otherwise make would
+    // without one, and the three requests the load would otherwise make would
     // have an empty path segment and be refused by routing, which would be
     // reported as the document failing to open.
     const { stub } = mount(contributor(), published(), "?type=armor-property");
@@ -546,11 +546,11 @@ it("uses a schema fixture whose root is an object with named properties", () => 
  *
  * This is not an edge case; on the deployed site it is every document. A
  * revision is written when somebody publishes through the authoring API, and
- * the whole corpus arrived through the importer, which writes none — 7,877
+ * the whole corpus arrived through the importer, which writes none. 7,877
  * documents and not one revision between them.
  *
  * The editor read the newest revision to find what to open, and when there was
- * not one it offered a blank form. So the edit button on every page in the
+ * not one it offered a blank form, so the edit button on every page in the
  * library led to an empty document, and the only thing an author could do with
  * it was retype what was already there. The report was exactly that: "found an
  * edit page button but it instead seems to only give me adding content. Cannot
@@ -695,8 +695,8 @@ describe("a publish the service had something to say about", () => {
    * The wording is the service's, shown as it was sent.
    *
    * Rather than a sentence this client assembles from `code` and a target it
-   * parses back out of the message. The service knows why a reference failed —
-   * absent, or ambiguously named — and a client that rewrote it would have to
+   * parses back out of the message. The service knows why a reference failed
+   * (absent, or ambiguously named) and a client that rewrote it would have to
    * know that too, and would drift.
    */
   it("shows the service's own sentence rather than one of its own", async () => {

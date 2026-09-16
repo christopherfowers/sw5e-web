@@ -14,7 +14,7 @@
  *
  * An outbound link on a community's reference site is a phishing primitive. If
  * an administrator account is compromised, the valuable move is not defacing
- * the corpus — it is repointing "Discord" at a credential-harvesting clone that
+ * the corpus. It is repointing "Discord" at a credential-harvesting clone that
  * people will click precisely because this domain vouched for it.
  *
  * So a channel's platform decides which hosts its URL may use, and that table
@@ -165,7 +165,7 @@ export function groupHeading(group: ChannelGroup): string {
  * The channels of one group, and the paragraph above them.
  *
  * Returns null for a group nothing is filed under, which is how a site with no
- * funding page has no Support column rather than an empty one — and is why the
+ * funding page has no Support column rather than an empty one, and is why the
  * Patreon needed no toggle of its own. "Off by default with nothing filled in"
  * is not a setting; it is the absence of a channel.
  */

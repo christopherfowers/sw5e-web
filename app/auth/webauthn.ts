@@ -1,6 +1,6 @@
 /**
  * The browser side of passkeys: capability probes, the two credential calls,
- * and — the part that actually decides whether this feature is usable — a
+ * and, the part that actually decides whether this feature is usable, a
  * translation from the WebAuthn error vocabulary into something a person can
  * act on.
  *
@@ -13,8 +13,8 @@
  * wrong ("You cancelled") accuses a reader of something they did not do.
  *
  * What this module does instead is narrow the ambiguity with the information
- * it legitimately has — whether the API exists at all, whether the origin is
- * secure, whether a platform authenticator is present — and, where ambiguity
+ * it legitimately has (whether the API exists at all, whether the origin is
+ * secure, whether a platform authenticator is present) and, where ambiguity
  * genuinely remains, say both possibilities plainly rather than pick one.
  */
 
@@ -77,7 +77,7 @@ export function supportsWebAuthn(): boolean {
 }
 
 /**
- * Whether the device has a built-in authenticator — Touch ID, Face ID, Windows
+ * Whether the device has a built-in authenticator. Touch ID, Face ID, Windows
  * Hello, an Android screen lock.
  *
  * A `false` here is not a reason to hide the button. A security key or a
@@ -146,7 +146,7 @@ type Ceremony = "register" | "authenticate";
  */
 function translate(error: unknown, ceremony: Ceremony): WebAuthnError {
   // Read `name` off the value rather than narrowing with `instanceof Error`.
-  // `DOMException` — which is what every one of these actually is — does not
+  // `DOMException`, which is what every one of these actually is, does not
   // inherit from `Error` in every environment this code runs in, and an
   // `instanceof` guard silently routes all of them to the default branch,
   // replacing every specific message below with the vague one.
@@ -171,7 +171,7 @@ function translate(error: unknown, ceremony: Ceremony): WebAuthnError {
         ? new WebAuthnError(
             "already-registered",
             "This device already has a passkey for your account.",
-            "Nothing to do — you can sign in with it. To replace it, remove the existing passkey first.",
+            "Nothing to do. You can sign in with it. To replace it, remove the existing passkey first.",
           )
         : new WebAuthnError(
             "unknown",

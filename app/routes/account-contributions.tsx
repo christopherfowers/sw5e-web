@@ -6,8 +6,8 @@
  * lives on the route that needs it rather than in a list somewhere else that
  * has to be kept in step with the routing table.
  *
- * A community account that reaches this URL — by typing it, by following an
- * old link, or because their role changed in another tab — gets an explanation
+ * A community account that reaches this URL (by typing it, by following an
+ * old link, or because their role changed in another tab) gets an explanation
  * of what the area needs and what they hold, not a redirect. See
  * `app/auth/guard.tsx` for why, and for the limits of what any of this
  * protects: the API authorises every upload itself, because this file runs on

@@ -1,8 +1,8 @@
 /**
  * Turning a thrown thing into the two sentences a reader needs.
  *
- * Five screens run a credential ceremony — register, verify-email, sign-in,
- * the passkey list, and the re-authentication prompt — and every one of them
+ * Five screens run a credential ceremony (register, verify-email, sign-in,
+ * the passkey list, and the re-authentication prompt) and every one of them
  * had its own copy of the same three-branch cascade. The copies were not quite
  * identical, and the differences were not choices: one of them forgot the
  * abort guard, so cancelling a ceremony by navigating away painted a failure
@@ -18,7 +18,7 @@
  * The *structure* is shared: an abandoned ceremony says nothing, a WebAuthn
  * failure already carries a reader-facing sentence and a hint, an `ApiError`
  * carries the service's own explanation, and anything else gets a flat
- * apology. The *wording* is not, and deliberately is not — "that could not be
+ * apology. The *wording* is not, and deliberately is not. "that could not be
  * sent" is right on the registration form and wrong on the passkey list, and a
  * shared default would have quietly made one of them wrong. Every caller
  * states its own sentences, so this file contains no user-facing copy at all
@@ -36,7 +36,7 @@ export interface Failure {
 
 export interface FailureWording {
   /**
-   * The title when the service refused the request itself — an ordinary 4xx
+   * The title when the service refused the request itself. An ordinary 4xx
    * that is not covered by `byKind` or `byCode`. The body is the service's own
    * `message`, because it is written for a reader and is more specific than
    * anything this side could invent.
@@ -65,7 +65,7 @@ export interface FailureWording {
 }
 
 /**
- * `null` means say nothing — the ceremony was abandoned, and an error message
+ * `null` means say nothing. The ceremony was abandoned, and an error message
  * for something the reader chose to stop is noise at best and alarming at
  * worst.
  */

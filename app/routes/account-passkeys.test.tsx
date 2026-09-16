@@ -59,8 +59,8 @@ describe("the list", () => {
   });
 
   it("gives an unnamed credential something to be called", async () => {
-    // `name` is genuinely nullable — the server invents nothing when the
-    // reader types nothing — so a row for one has to be identifiable anyway.
+    // `name` is genuinely nullable, the server invents nothing when the
+    // reader types nothing, so a row for one has to be identifiable anyway.
     // Without this the row is an empty heading with a Remove button beside it.
     mount(
       new AuthApiContract({
@@ -286,7 +286,7 @@ describe("removing a passkey", () => {
     // The server refuses with 409 `last-credential` rather than letting an
     // account strand itself. The page has already said "yes, remove it", so
     // the one outcome it must never produce is a list with the credential
-    // missing and no explanation — the reader would believe they had revoked
+    // missing and no explanation. The reader would believe they had revoked
     // their only way in.
     const contract = new AuthApiContract({
       session: user({ passkeys: [passkey({ id: "a", name: "Work laptop" })] }),

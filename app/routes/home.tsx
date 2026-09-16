@@ -26,7 +26,7 @@ import type { Route } from "./+types/home";
  * The first is the article. This used to open "A community reference", and the
  * indefinite article did real damage: it filed the site alongside every other
  * fan project rather than saying what it is. The fix for that overshot in the
- * other direction — "The maintained continuation of sw5e.com" — and traded one
+ * other direction, "The maintained continuation of sw5e.com", and traded one
  * wrong self-description for another. A continuation is something that stands
  * outside a project and carries it forward. This is not outside it. It is Star
  * Wars 5e, and the description a search result shows should
@@ -43,11 +43,11 @@ import type { Route } from "./+types/home";
  * it was written, and nobody edits a meta tag when they add a content type. It
  * now counts what the build actually holds, so it cannot fall behind the
  * library again. The named examples that remain are chosen to be the ones a
- * reader would doubt were here — not a manifest.
+ * reader would doubt were here. Not a manifest.
  *
  * `loaderData` is checked rather than trusted because meta also renders when
- * the loader has thrown — the type says it is always there, the error path says
- * otherwise — so there is a sentence that reads without any counts at all.
+ * the loader has thrown (the type says it is always there, the error path says
+ * otherwise) so there is a sentence that reads without any counts at all.
  */
 export function meta({ loaderData }: Route.MetaArgs) {
   const corpus = loaderData
@@ -56,7 +56,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
 
   return [
     // The site's name, and nothing appended to it. Every other page is
-    // "Something — Star Wars 5e", so the home page is the bare name, which is
+    // "Something. Star Wars 5e", so the home page is the bare name, which is
     // both the convention and the only honest answer: a strapline after the
     // dash has been tried twice here and read as filler both times.
     { title: "Star Wars 5e" },
@@ -82,9 +82,9 @@ export function meta({ loaderData }: Route.MetaArgs) {
  * in the data marked it. Something does now: a source sets `isCoreRulebook`,
  * and the content repository holds the invariant that exactly one does.
  *
- * The distinction is editorial and it is the whole point of the page — a reader
+ * The distinction is editorial and it is the whole point of the page (a reader
  * arriving with no idea what this is needs to be sent to one book, not offered
- * five — which is precisely why it belongs to whoever owns the content rather
+ * five) which is precisely why it belongs to whoever owns the content rather
  * than to this file.
  *
  * Null when no book is marked, which an archive build always is. The page
@@ -96,8 +96,8 @@ const HOW_TO_PLAY = coreRulebook()?.code ?? null;
 /**
  * A step of the reading path, and the heading it is read under.
  *
- * The path is authored in the content repository — `readingGroup` and `order`
- * on each passage — and this page renders it rather than deciding it. Nothing
+ * The path is authored in the content repository, `readingGroup` and `order`
+ * on each passage, and this page renders it rather than deciding it. Nothing
  * here consults `chapterNumber`: that records where a passage fell in a printed
  * book, and ordering by it puts "What's Different?" ahead of the introduction
  * it is different from, which is the right answer for a reader holding the book
@@ -114,7 +114,7 @@ export async function loader() {
 
   /*
     The handbook's chapters in the order somebody authored, which is how the
-    page knows which one to open with. Only the first is rendered — the rest
+    page knows which one to open with. Only the first is rendered. The rest
     are returned because the order itself is the invariant worth holding, and
     `home-path.test.ts` asserts it here rather than somewhere it could drift
     from what the page actually reads.
@@ -151,7 +151,7 @@ export async function loader() {
       The shelf, straight from the corpus: which books exist, what they are
       called, the line under each and the hue it is drawn in, in the order
       somebody authored. Nothing here is decided by this file, which is the
-      point — adding a book, renaming one or reordering the shelf is an edit to
+      point. Adding a book, renaming one or reordering the shelf is an edit to
       content and needs no deploy.
     */
     books: BOOKS.map((book) => ({
@@ -164,7 +164,7 @@ export async function loader() {
     /*
       The community's channels, grouped as the columns are read. Resolved here
       rather than in the component because the label comes from the platform
-      rather than from the document — deriving it in the loader keeps the one
+      rather than from the document. Deriving it in the loader keeps the one
       place that decides what a link is called away from the markup that draws
       it, and out of reach of anything a channel's author writes.
     */
@@ -228,14 +228,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <div className="page-home">
       {/*
-        The hero photograph is a ground, not a subject — a table with dice on
+        The hero photograph is a ground, not a subject. A table with dice on
         it, behind a scrim heavy enough that the type above it keeps its
         contrast in either theme. It carries no information a reader needs, so
         it is marked decorative rather than described.
 
         There was a wordmark above the heading as well, and it has gone. It
         drew the same four characters the heading draws, directly under a
-        header that already carries the mark on every page of the site — three
+        header that already carries the mark on every page of the site. Three
         statements of the name before a single sentence about what the site is.
       */}
       <section className="home-hero">
@@ -272,7 +272,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             and "conversion" carries the whole explanation without unpacking it.
             The site it replaces opened by saying plainly that this is an
             overhaul of Dungeons & Dragons 5th edition for a Star Wars
-            campaign, built on the same mechanics and expanded — which is both
+            campaign, built on the same mechanics and expanded. Which is both
             more welcoming and more honest about what the rules rest on.
           */}
           <p className="lede">
@@ -305,7 +305,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           {/*
             Below the buttons rather than beside them, and phrased as the
             question the reader is actually holding. Somebody who followed a
-            dead bookmark is not looking for an "About" link — they are looking
+            dead bookmark is not looking for an "About" link. They are looking
             for an answer to "is this the same site, and is my stuff here". The
             two browse buttons stay first because most arrivals do not need
             this sentence at all.
@@ -330,14 +330,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           The command in this notice has to be one the reader can actually run.
 
           It said "against the legacy archive", which is a private directory
-          almost nobody reading it has — so the honest next step looked
+          almost nobody reading it has, so the honest next step looked
           impossible and the sample looked broken instead of small. The content
           repository is public and sits beside this one, and building from it
           produces the whole library.
 
           Worth knowing while looking at a sample build: the shipped
           `book-contents.json` lists every chapter of every book, while the rest
-          of the sample is four items per type. So a book's rail offers chapters
+          of the sample is four items per type, so a book's rail offers chapters
           whose pages are not in the sample and answers 404. That is the sample
           being small rather than the site being wrong, and the command below is
           the cure.
@@ -365,7 +365,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
           All of them, including the handbook. The old arrangement called this
           "Supplemental rules" and left the handbook out, because the section
-          above it was the handbook — which made the row a list of leftovers
+          above it was the handbook. Which made the row a list of leftovers
           rather than a shelf. A reader looking for the Player's Handbook
           should find it among the books.
 
@@ -425,7 +425,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           Handbook, grouped by heading. It was the right answer while a book's
           own page was a grid of content-type counts and there was nowhere else
           to read a table of contents. Now the handbook's page is its chapters,
-          and the hero's first button goes straight there — so the front page
+          and the hero's first button goes straight there, so the front page
           was saying the same thing twice, at length, above the books it was
           describing.
 
@@ -452,7 +452,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
           They were four links to a Google Drive nobody here controlled. The
           site now holds them, which is what lets it say how many pages a file
-          has and draw its first page — and a first page is the right cover for
+          has and draw its first page, and a first page is the right cover for
           a character sheet in a way a generic icon never was. A letter page and
           a book cover are the same shape, so these sit beside the shelf above
           without a layout of their own.
@@ -496,8 +496,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                           A plain anchor, not a Link: this leaves the router
                           entirely. `download` asks the browser to save rather
                           than hand the file to its PDF viewer, which is the
-                          same decision the hosting design makes for uploads —
-                          a PDF the site serves is never opened in a tab on
+                          same decision the hosting design makes for uploads.
+                          A PDF the site serves is never opened in a tab on
                           this origin.
                         */}
                         <a href={resourceHref(resource.file)} download>
@@ -522,7 +522,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             {/*
               Said once, under the row, rather than on every sheet that carries
               it. Four near-identical notices would be noise; one sentence is
-              the disclosure the design asks for — a reader is told the file
+              the disclosure the design asks for. A reader is told the file
               differs from the author's original before they download it.
             */}
             {resources.some((resource) => resource.sanitized) ? (
@@ -545,7 +545,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           a code edit and a deploy by whoever still holds commit rights.
 
           A group nothing is filed under renders nothing at all. That is why
-          there is no Support column and no toggle for one — the old Patreon
+          there is no Support column and no toggle for one. The old Patreon
           belongs to the previous maintainer and is shared with another
           project, so no Support channel exists. "Off by default with nothing
           filled in" turned out not to be a setting; it is the absence of a

@@ -6,7 +6,7 @@
  * the item to each block. That made rendering a mutation, and React renders a
  * component more than once for the same state whenever it likes. When it did,
  * every id on a page reached by a client-side navigation came out as `time-2`,
- * `difficult-terrain-2` — and every link the search index pointed at was dead.
+ * `difficult-terrain-2`, and every link the search index pointed at was dead.
  *
  * It only failed inside the site. The prerendered HTML was right and a hard
  * refresh was right, so the ordinary ways of checking all said it worked.

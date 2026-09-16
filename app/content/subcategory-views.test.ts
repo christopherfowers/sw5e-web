@@ -1,9 +1,9 @@
 /**
- * What each subcategory view selects, and — the half that is easy to get
- * wrong — what it leaves out.
+ * What each subcategory view selects, and, the half that is easy to get
+ * wrong, what it leaves out.
  *
  * Most of the eleven are ordinary equality on a field and would be hard to break
- * subtly. Two shapes are not, and they fail the same way — a page that still
+ * subtly. Two shapes are not, and they fail the same way. A page that still
  * renders a plausible list.
  *
  * `/other-equipment` is defined by exclusion, so it is correct only relative to
@@ -18,7 +18,7 @@
  * asserted on their counts and on what they exclude, not on a representative
  * row.
  *
- * The values matched are the printed ones — "Weapon", not `weapon`. The
+ * The values matched are the printed ones. "Weapon", not `weapon`. The
  * archive's enums are expanded by `humanize` in `scripts/lib/normalize.mjs`
  * before they reach a summary, because a Category column has to show prose, so
  * the printed form is the only form these predicates ever see. The fixtures
@@ -142,7 +142,7 @@ function rule(name: string, source: string, ruleType: string): RuleSummary {
 /**
  * One row of each combination the rule corpus carries: chapters from three
  * books, and the variant rules that all happen to come from Expanded Content
- * today. The handbook variant is the row that matters — there is none in the
+ * today. The handbook variant is the row that matters. There is none in the
  * data yet, and the predicate is written for the day there is.
  */
 const RULES: RuleSummary[] = [
@@ -155,7 +155,7 @@ const RULES: RuleSummary[] = [
 
 /**
  * The ten classes the corpus carries an improvement for, in each of the three
- * kinds — which is the real shape of the type: thirty documents, ten per kind,
+ * kinds. Which is the real shape of the type: thirty documents, ten per kind,
  * one per class per kind.
  *
  * Built at full size rather than one row per kind because the counts are the
@@ -195,8 +195,8 @@ function improvement(
 }
 
 const IMPROVEMENTS: ClassImprovementSummary[] = [
-  // The printed values, as `humanize` leaves them. Matching the raw enum —
-  // `multiclass` — would pass against a fixture written the same wrong way and
+  // The printed values, as `humanize` leaves them. Matching the raw enum,
+  // `multiclass`, would pass against a fixture written the same wrong way and
   // select nothing at all in production.
   ...IMPROVEMENT_CLASSES.map((name) => improvement(name, "Class")),
   ...IMPROVEMENT_CLASSES.map((name) => improvement(name, "Multiclass")),
@@ -282,7 +282,7 @@ describe("the equipment views", () => {
     expect(others).not.toContain("Bo-rifle");
     expect(others).not.toContain("Combat suit");
 
-    // And the tail, which is the whole reason the view exists — 264 items
+    // And the tail, which is the whole reason the view exists. 264 items
     // that belong to no shelf of their own and would otherwise be unreachable
     // from the Equipment menu.
     expect(others).toContain("Power cell");
@@ -474,7 +474,7 @@ describe("the class improvement views", () => {
 
   it("strands a row whose kind is one nobody has written a view for", () => {
     /*
-      Not a wish — a demonstration that the coverage assertion above and the
+      Not a wish. A demonstration that the coverage assertion above and the
       dataset one in `nav-groups.test.ts` can actually fail. A fourth kind of
       improvement, or a record the reader failed to stamp, lands on none of the
       three; that is the failure those checks exist to report, and it is worth
@@ -534,7 +534,7 @@ describe("the crumb above a view", () => {
  *
  * A weapon crumbs up to `/equipment`, which holds it. A multiclass improvement
  * crumbing up to `/class-improvements` would be offered a list of ten rows that
- * does not contain it — so for the one type whose segment a view has taken, the
+ * does not contain it, so for the one type whose segment a view has taken, the
  * crumb follows the row.
  */
 describe("the list a document belongs to", () => {
@@ -557,7 +557,7 @@ describe("the list a document belongs to", () => {
 
   it("admits it has no list for a row none of the three claims", () => {
     // The caller falls back to the type crumb, which is the least wrong thing
-    // available — better than throwing on a page that renders fine otherwise.
+    // available. Better than throwing on a page that renders fine otherwise.
     expect(
       listHolding("class-improvements", improvement("Sentinel", null)),
     ).toBeUndefined();
@@ -581,7 +581,7 @@ describe("an empty view", () => {
  * A subcategory view that is declared as a route but left out of the prerender
  * list still works: `npm run dev` serves it, the e2e suite clicks through it,
  * every test above stays green. What happens instead is that no file is
- * written for it, so nginx answers it from the SPA fallback — which is wired
+ * written for it, so nginx answers it from the SPA fallback. Which is wired
  * to `error_page 404`. The page renders perfectly in a browser and is broken
  * to a crawler, a monitor and a shared link, which is the exact failure the
  * whole design of these addresses exists to avoid.
@@ -605,15 +605,15 @@ describe("every view is prerendered rather than left to the SPA fallback", () =>
     // routes against the canonical content set by adding a fixed number of
     // content-free pages to it. That number went from 51 to 57 for the first
     // six, from 58 to 60 for the two rule views and from 60 to 62 for the
-    // three class-improvement ones — three views less the type index they
-    // replace — and a twelfth moves it again.
+    // three class-improvement ones, three views less the type index they
+    // replace, and a twelfth moves it again.
     expect(SUBCATEGORY_VIEWS).toHaveLength(11);
   });
 
   /*
     The other half of that arithmetic, and the half nothing else would notice.
     `/class-improvements` is a view now, so the build must stop writing a type
-    index at that address — not because a duplicate path would break anything
+    index at that address. Not because a duplicate path would break anything
     visible, but because the same page would be rendered twice under one
     filename and the prerender listing would be claiming a page the site does
     not have. Every other type keeps its index.

@@ -73,7 +73,7 @@ export function requestChallenge(signal?: AbortSignal): Promise<Challenge> {
  * The five headers a solved challenge becomes.
  *
  * Split out so the solving and the sending can be tested apart, and because
- * every value here except the counter is passed through untouched — writing
+ * every value here except the counter is passed through untouched. Writing
  * that once is the whole defence against somebody helpfully normalising a
  * timestamp on its way into a header.
  */

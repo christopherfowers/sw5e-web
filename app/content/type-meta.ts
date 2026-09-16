@@ -43,7 +43,7 @@ export interface TypeMeta {
    *
    * Most types read correctly as "141 species" or "271 creatures", so most do
    * not set this. Two do not: `plural` is what the heading and the navigation
-   * say, and for a mass noun that is "Equipment" — which produced "4
+   * say, and for a mass noun that is "Equipment". Which produced "4
    * equipment" on the index, and "4 ship equipment" on the other one.
    *
    * Written out rather than derived, because the alternative is an English
@@ -164,8 +164,8 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
   },
   /*
     Both property glossaries take equipment's steel on purpose. They are not a
-    catalogue of their own — they are the definitions an equipment row points
-    into when it says "burst 2" or "strength 13" — so sharing the hue says
+    catalogue of their own, they are the definitions an equipment row points
+    into when it says "burst 2" or "strength 13", so sharing the hue says
     where they belong.
   */
   "weapon-properties": {
@@ -248,8 +248,8 @@ export const TYPE_META: Record<ContentTypeId, TypeMeta> = {
 /**
  * Navigation order, shared by the header and the home page.
  *
- * The order follows how a character is put together — what you are, what you
- * become, what you can do, what you carry — and the six combat options sit
+ * The order follows how a character is put together (what you are, what you
+ * become, what you can do, what you carry) and the six combat options sit
  * together in the middle of that because they are all answers to the same
  * question. Maneuvers lead the group: they are the largest of the six by an
  * order of magnitude and the one a reader arrives looking for.

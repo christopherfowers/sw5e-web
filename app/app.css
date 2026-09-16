@@ -4,14 +4,14 @@
  *
  * The CDN version cost two things. It leaked every visitor's IP address to
  * Google on first paint, which LG Muenchen I held to breach the GDPR
- * (3 O 17493/20, 20 January 2022). And it forced
+ * (3 O 17493/20, 20 January 2022), and it forced
  * `style-src https://fonts.googleapis.com` plus
  * `font-src https://fonts.gstatic.com` into this app's Content-Security-Policy
  * for as long as the link existed, permanently widening a policy that should
  * be able to stay at 'self'.
  *
  * The files in ./fonts are Inter's variable weight axis, subset by Fontsource,
- * under the SIL Open Font License 1.1 — see app/fonts/LICENSE. Vite
+ * under the SIL Open Font License 1.1. See app/fonts/LICENSE. Vite
  * fingerprints and bundles these URLs, so they cache immutably.
  *
  * unicode-range keeps this cheap: an English page downloads only the latin
@@ -79,7 +79,7 @@
  * blue cast, and every surface above it is a step up in lightness rather than
  * a border drawn on the same colour.
  *
- * Light is warm paper — #faf8f4 rather than #ffffff, with warm greys and warm
+ * Light is warm paper. #faf8f4 rather than #ffffff, with warm greys and warm
  * borders. It is designed against the printed books this material comes from,
  * not produced by flipping the dark values, which is why the two blocks below
  * share no arithmetic relationship.
@@ -118,7 +118,7 @@
    *
    * Bronze rather than blue, and the reason is the dark theme's: gold is the
    * one colour this material's two ancestors both reach for when something
-   * matters — the crawl is gold on black, a rulebook's title is gold foil on
+   * matters. The crawl is gold on black, a rulebook's title is gold foil on
    * leather, its page edges are gilt. A link should be that, not the blue of a
    * documentation site.
    *
@@ -178,8 +178,8 @@
   /*
     Square, everywhere.
  *
-    The palette study this site's colours came from — brass on a near-black
-    ground — carries no border-radius at all: every panel, button and plate in
+    The palette study this site's colours came from, brass on a near-black
+    ground, carries no border-radius at all: every panel, button and plate in
     it is a hard rectangle, and that turned out to be as much of why it read
     as Star Wars as the gold was. Rounded corners are the house style of
     software, and a rounded button under a slab serif reads as an app that has
@@ -202,13 +202,13 @@
   :root:not([data-theme="light"]) {
     /* Neutral near-black, with no hue in the ground at all.
      *
-     * This was #0a0e14 — a blue-slate, and the house colour of every developer
+     * This was #0a0e14. A blue-slate, and the house colour of every developer
      * tool built since about 2020. It is legible and it belongs to a
      * documentation site rather than to a space fantasy played with dice.
      *
      * Warming it instead was tried and was worse: a brown ground reads as a
      * saloon, and it fought the category hues, which sit on it. Star Wars is
-     * gold on black, not gold in brown — the crawl scrolls through a void. So
+     * gold on black, not gold in brown. The crawl scrolls through a void. So
      * the ground is the void and the warmth is spent entirely on the accent. */
     --bg: #08090a;
     --bg-deep: #030405;
@@ -225,8 +225,8 @@
     --text-faint: #86847f;
 
     /* Darkened from #ef2b39, which carried white text at 4.14:1 and so put
-       every primary button on the site — "Browse species", "Continue with a
-       passkey", "Add a passkey" — below AA in the dark theme. This is the
+       every primary button on the site ("Browse species", "Continue with a
+       passkey", "Add a passkey") below AA in the dark theme. This is the
        nearest red to the old one that clears 4.5, and it is safe to change
        globally because `--brand` is never a text colour: it is a background,
        a border and a gradient stop, and none of those got worse. */
@@ -284,7 +284,7 @@
  * CSS has no way to share one declaration list between a media query and an
  * attribute selector, so a site that honours both the operating system and an
  * explicit choice has to state the palette twice. The alternative is
- * light-dark(), which would say each value once — and would mean rewriting
+ * light-dark(), which would say each value once, and would mean rewriting
  * every token in the palette at the same time as shipping a toggle, which is
  * two risks taken together to save a duplication a test can hold.
  *
@@ -393,7 +393,7 @@ main:focus {
 
 /* The test-environment strip.
  *
- * The live region is always in the document and is empty on production — see
+ * The live region is always in the document and is empty on production. See
  * app/components/environment-banner.tsx for why it outlives its own contents.
  * `:empty` strips its padding, border and ground so an empty region is a block
  * box of zero height: the production page is laid out exactly as it was before
@@ -401,7 +401,7 @@ main:focus {
  *
  * Not `display: none`, and this is the one rule here that is not cosmetic. A
  * `display: none` element is out of the accessibility tree, so a screen reader
- * is not observing it, so inserting text into it announces nothing — it would
+ * is not observing it, so inserting text into it announces nothing. It would
  * be indistinguishable from mounting the region and its contents together,
  * which is the failure the always-present region exists to avoid. A zero-height
  * box is still rendered, still in the tree, and still watched.
@@ -523,7 +523,7 @@ main:focus {
   The mark carries the header on its own, so it is sized to be seen.
 
   It was 2.25rem wide, and at the artwork's 2.5:1 that is about fourteen pixels
-  of actual mark — smaller than the text beside it and well under half the
+  of actual mark. Smaller than the text beside it and well under half the
   height of the search field it sits next to. The only thing identifying the
   site was the least visible thing in the row.
 */
@@ -663,8 +663,8 @@ main:focus {
 /* A panel anchored to its own trigger runs off the right edge of a phone:
  * Starships sits 266px into a 375px viewport and a 240px panel does not fit
  * beside it, so the document gains 131px of sideways scroll. Below 48rem the
- * panel is anchored to the bar rather than to the group — `position: static` on
- * the group hands the containing block to `.site-nav` — and spans it, which
+ * panel is anchored to the bar rather than to the group, `position: static` on
+ * the group hands the containing block to `.site-nav`, and spans it, which
  * also gives every link a full-width target. */
 @media (max-width: 47.999rem) {
   .site-nav {
@@ -768,7 +768,7 @@ main:focus {
 /* ------------------------------------------------------------------ rail */
 
 /* `display: contents` is the whole trick: on every page where the rail
- * declines to render — the home page, search, the account area — this wrapper
+ * declines to render (the home page, search, the account area) this wrapper
  * disappears from layout entirely and `<main>` is the flex child of `<body>`
  * it has always been. Only a page that actually has a rail becomes a grid. */
 .site-body {
@@ -1424,7 +1424,7 @@ kbd {
 
   It is also a band, and it used not to be. There was a second gradient here
   fading the whole thing into `--bg` from the bottom, which meant the hero
-  dissolved into the page rather than ending at it — no edge, no boundary, just
+  dissolved into the page rather than ending at it. No edge, no boundary, just
   a picture that ran out. On the old blue-slate ground that read as a soft
   transition. On a true black one it reads as a grey smudge in the corner of a
   black page, because the photograph is a pale one and the ground stopped
@@ -1651,8 +1651,8 @@ kbd {
 
   The row this replaces put a 4.25rem thumbnail beside two lines of text in a
   card, which is a list that happens to have pictures in it. A cover is the most
-  recognisable thing a reader owns about a book — somebody who has the Player's
-  Handbook on a shelf behind them knows it by its spine long before its title —
+  recognisable thing a reader owns about a book, somebody who has the Player's
+  Handbook on a shelf behind them knows it by its spine long before its title,
   and at that size it was doing none of that work.
 
   So the cover leads and the text sits under it, and the covers are large enough
@@ -1745,11 +1745,11 @@ kbd {
   The line under a book or a sheet, shown when the tile is pointed at.
 
   Nine tiles each carrying a sentence is a wall of small text under a row of
-  artwork, and the artwork is what a reader is actually scanning. So the
+  artwork, and the artwork is what a reader is actually scanning, so the
   sentence moves onto the cover and waits to be asked for.
 
   It is laid over the cover rather than expanded below it, because expanding
-  one tile in a grid re-flows the whole row — the thing you were pointing at
+  one tile in a grid re-flows the whole row. The thing you were pointing at
   moves out from under the cursor. Matching the cover's own aspect ratio makes
   the panel land exactly on it without the markup knowing its height.
 
@@ -1758,7 +1758,7 @@ kbd {
   Only opacity, never `display: none` or `visibility: hidden`, so the sentence
   stays in the accessibility tree and a screen reader reads it with the rest of
   the tile. `pointer-events: none` keeps the invisible panel from swallowing
-  the click meant for the cover beneath it — the same fault the theme control's
+  the click meant for the cover beneath it. The same fault the theme control's
   icon had.
 
   And it reveals on `focus-within` as well as hover, so arriving by keyboard
@@ -1797,7 +1797,7 @@ kbd {
   Where there is no pointer to hover with, the sentence stays where it was.
 
   A phone has no hover state, so a blurb that only appears on hover is a blurb
-  that never appears — which would quietly make the site tell mobile readers
+  that never appears. Which would quietly make the site tell mobile readers
   less than desktop ones. On touch it sits under the tile in the ordinary way,
   exactly as it did before.
 */
@@ -1841,7 +1841,7 @@ kbd {
   Getting in touch: however many groups the corpus describes, side by side.
 
   `auto-fit` rather than a fixed three columns, because the number of groups is
-  content and not layout — there are two today, because the old funding page
+  content and not layout. There are two today, because the old funding page
   belongs to somebody else and no Support channel exists. A hard-coded third
   column would have left a hole exactly where the thing we deliberately did not
   carry over used to be.
@@ -1889,7 +1889,7 @@ kbd {
 
   The first version was a segmented switch with a sun, a half-circle and a
   moon in a system font, and it read as a weather widget bolted to the header.
-  These are the same three states and the same radio group underneath — what
+  These are the same three states and the same radio group underneath. What
   changed is that the affordance now belongs to this setting rather than to
   software in general.
 
@@ -1963,7 +1963,7 @@ kbd {
   `aria-hidden` decoration, so it must never be a click target: it sat over the
   clipped input and swallowed pointer events aimed at it. A person never
   noticed, because the click landed on the label and a label forwards to its
-  input — but anything aiming at the control itself got nothing.
+  input, but anything aiming at the control itself got nothing.
 */
 .theme-blade {
   pointer-events: none;
@@ -1997,7 +1997,7 @@ kbd {
   Blue for the light side and red for the dark are the two colours this setting
   has agreed on for ninety years, and they are doing the work here that a label
   would otherwise have to. The middle stage lights in the site's own gold: it
-  is a real choice — follow the system — rather than an absence, so it is lit
+  is a real choice, follow the system, rather than an absence, so it is lit
   rather than left dark, and gold is neither side.
 
   The glow is a drop shadow in the blade's own colour, which is what makes it
@@ -2293,8 +2293,8 @@ kbd {
   /*
     Muted text rather than the border colour, which put this at 2.1:1 in dark
     and 2.4:1 in light. It is the only thing on screen saying a column can be
-    sorted at all — the rest of that message is in text only a screen reader
-    hears — so it was the affordance that was hardest to see.
+    sorted at all, the rest of that message is in text only a screen reader
+    hears, so it was the affordance that was hardest to see.
   */
   color: var(--text-muted);
   font-size: 0.875em;
@@ -2379,7 +2379,7 @@ th[aria-sort="descending"] .sort-indicator {
  * Two columns on a wide screen, because a book's chapter list is short and
  * tall and would otherwise leave two thirds of the page empty; one column on a
  * phone, where a two-column list of long titles is unreadable. The numbering
- * comes from the `<ol>` rather than from the data — a chapter's printed number
+ * comes from the `<ol>` rather than from the data. A chapter's printed number
  * is already in its meta line, and the list's own count is what tells a reader
  * how far through the book an entry sits. */
 .chapter-list {
@@ -2563,7 +2563,7 @@ th[aria-sort="descending"] .sort-indicator {
  * This is a book people read at the table, on a phone, mid-sentence, looking
  * for one number. The picture used to come second, on the reasoning that
  * somebody who had just tapped a search result needed to see they had landed
- * in the right place — but the heading and the breadcrumb already say that,
+ * in the right place, but the heading and the breadcrumb already say that,
  * and the picture is 550px tall on a 375px screen. Measured on a species page,
  * the statistics began 898px down: a full screen and a bit of scrolling past
  * decorative art before a single number.
@@ -2694,7 +2694,7 @@ th[aria-sort="descending"] .sort-indicator {
  * own frame: a heavier ground, a rule in the type's colour along the top, and
  * label/value pairs on a fixed grid so the eye can drop straight down the
  * values. Deliberately not the cream-and-red plate of another publisher's
- * books — this is the site's own frame in its own palette.
+ * books. This is the site's own frame in its own palette.
  */
 .stat-block {
   margin-top: var(--space-4);
@@ -3205,8 +3205,8 @@ h6:hover > .heading-anchor,
  * not work. A fragment typed into the address bar was fine; clicking a search
  * result inside the site left the heading at the very top, under the header.
  * The router scrolls the element into view itself on a client-side navigation,
- * and `scroll-margin-top` is read from the element at the moment it scrolls —
- * before `:target` has anything to say. Putting it on every heading that has
+ * and `scroll-margin-top` is read from the element at the moment it scrolls.
+ * Before `:target` has anything to say. Putting it on every heading that has
  * an id removes the timing from the question entirely.
  */
 main :where(h1, h2, h3, h4, h5, h6)[id],
@@ -3218,7 +3218,7 @@ main :where(h1, h2, h3, h4, h5, h6)[id],
  * An abbreviated column header.
  *
  * Browsers underline `<abbr title>` with a dotted line by default, which is a
- * useful signal that there is something to hover — but inside a sort button
+ * useful signal that there is something to hover, but inside a sort button
  * that already underlines on hover it reads as two states of the same
  * control. The dots stay, quieter, and the cursor says the rest.
  */
@@ -3249,7 +3249,7 @@ main :where(h1, h2, h3, h4, h5, h6)[id],
 /*
   The front page's three parts: how to play, what else there is, and the lists.
 
-  The ordering is Drake's and it is editorial rather than visual — a reader
+  The ordering is Drake's and it is editorial rather than visual. A reader
   should meet the game before the catalogue. These rules only give each part
   enough separation to read as a part; the cards inside them are the same cards
   the site already uses.
@@ -3295,7 +3295,7 @@ main :where(h1, h2, h3, h4, h5, h6)[id],
   One step of the reading path: a heading and the passages read under it.
 
   Tighter above than a section heading and looser below, because the heading
-  belongs to the list under it rather than dividing the page — the whole point
+  belongs to the list under it rather than dividing the page. The whole point
   of grouping was to make four shapes a reader can take in, and four headings
   spaced like sections would read as four sections.
 */

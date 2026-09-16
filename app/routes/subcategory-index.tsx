@@ -28,7 +28,7 @@ import type { Route } from "./+types/subcategory-index";
  * Which one is being rendered, read off the address.
  *
  * Every subcategory route shares this module, so there is no `:param` to carry the answer
- * and no route id available to a loader — the path itself is the only thing
+ * and no route id available to a loader. The path itself is the only thing
  * that distinguishes the matches. The `.data` suffix is stripped because
  * React Router asks for a route's data at `/weapons.data` on a client
  * navigation, and that request runs this same loader.
@@ -43,10 +43,10 @@ function slugFromUrl(url: string): string {
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  if (!loaderData) return [{ title: "Not found — Star Wars 5e" }];
+  if (!loaderData) return [{ title: "Not found | Star Wars 5e" }];
   const view = requireSubcategoryView(loaderData.slug);
   return [
-    { title: `${view.label} — Star Wars 5e` },
+    { title: `${view.label} | Star Wars 5e` },
     {
       name: "description",
       content: `${loaderData.rows.length} ${view.counted} for Star Wars 5e. ${view.blurb}`,
@@ -98,7 +98,7 @@ export default function SubcategoryIndex({ loaderData }: Route.ComponentProps) {
       {/*
         The page above is a crumb rather than a decoration. This page is a
         shelf inside a type, and `/equipment` is where a reader goes when the
-        shelf was the wrong one — without that link the only route back to the
+        shelf was the wrong one. Without that link the only route back to the
         other 290 items is the header menu.
 
         Which page that is comes from the registry rather than from
@@ -108,7 +108,7 @@ export default function SubcategoryIndex({ loaderData }: Route.ComponentProps) {
       <Breadcrumbs trail={[parentCrumbOf(view), { label: view.label }]} />
       <div className="page-head">
         {/*
-          The navigation group, exactly as a type index says it — see the note
+          The navigation group, exactly as a type index says it. See the note
           in `type-index.tsx`. The icon is the source type's, which is the
           point: a weapons page is drawn in equipment's steel and carries
           equipment's mark, because it is not a new subject.

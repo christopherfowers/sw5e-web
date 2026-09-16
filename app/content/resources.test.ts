@@ -3,7 +3,7 @@
  *
  * These were four links to a Google Drive nobody here controlled. The site now
  * holds the files, which is what lets it say how many pages one has and draw
- * its first page — and it also means the site is making claims about files it
+ * its first page, and it also means the site is making claims about files it
  * publishes, which is the part worth testing.
  */
 
@@ -40,7 +40,7 @@ describe("the resources the corpus describes", () => {
    *
    * The site's other assets are content-hashed by the build, which is right for
    * a stylesheet and wrong here: a resource document names its file, and a
-   * hashed name would not resolve. So the address is the name, and this is the
+   * hashed name would not resolve, so the address is the name, and this is the
    * assertion that notices if that ever stops being true.
    */
   it("addresses a file by the name its document gives", () => {
@@ -59,7 +59,7 @@ describe("the resources the corpus describes", () => {
 /**
  * What the site says about a file it altered.
  *
- * Every sheet here is a rebuild rather than the original — the fillable
+ * Every sheet here is a rebuild rather than the original. The fillable
  * character sheet carried an action that printed the document the moment it
  * was opened, and that does not survive publication. A reader is entitled to
  * know the file differs from what its author made, so the flag is carried all

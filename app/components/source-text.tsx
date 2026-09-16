@@ -52,7 +52,7 @@ export function LostValue() {
       title="This line was destroyed when the source data was scraped in 2022."
     >
       not recorded
-      <span className="sr-only"> — this line was lost from the source data</span>
+      <span className="sr-only">: this line was lost from the source data</span>
     </span>
   );
 }

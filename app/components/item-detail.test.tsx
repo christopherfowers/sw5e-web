@@ -316,7 +316,7 @@ describe("the order a page is read in", () => {
    *
    * A species page put the illustration between the heading and the numbers.
    * On a 375px screen that is 550px of decorative art, and the statistics
-   * began 898px down — a full screen of scrolling before a single number, on
+   * began 898px down. A full screen of scrolling before a single number, on
    * the device this reference is most used from. The numbers are now a band of
    * their own, above the picture, and the wide layout is unchanged because
    * there the picture has a column to itself.
@@ -326,7 +326,7 @@ describe("the order a page is read in", () => {
    * screen another, which is what a screen reader and the tab sequence follow.
    */
   it("puts the numbers between the heading and the picture", () => {
-    // A species, because that is the shape with a picture in it — a creature
+    // A species, because that is the shape with a picture in it. A creature
     // page carries no illustration and so cannot exercise the ordering.
     const { container } = renderItem({ ...feat, type: "species", slug: "wookiee" });
 

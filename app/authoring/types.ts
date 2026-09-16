@@ -4,7 +4,7 @@
  * The same rule as `app/auth/types.ts` and `app/flags/types.ts`: these are wire
  * strings spelled exactly as the service spells them, and getting one wrong is
  * silent. There is no contract document for `/api/authoring` on the service
- * side — the source is the contract — so this file and `docs/authoring-api-contract.md`
+ * side, the source is the contract, so this file and `docs/authoring-api-contract.md`
  * beside it are where this client records what it believes, and
  * `tests/authoring-api-stub.ts` is where that belief is made to fail if it is
  * wrong.
@@ -12,8 +12,8 @@
  * ## Two asymmetries that are not mistakes
  *
  * A draft in the worklist and a draft fetched on its own are different shapes.
- * The list carries `baseRevisionIsCurrent` — a boolean the server computes by
- * comparing the draft's base against the newest revision — while the single
+ * The list carries `baseRevisionIsCurrent`, a boolean the server computes by
+ * comparing the draft's base against the newest revision, while the single
  * draft carries `baseRevisionId`, the raw number, and no boolean. Neither
  * carries both. The client therefore works out staleness two different ways
  * depending on which endpoint it came from, and {@link DraftSummary} and
@@ -21,7 +21,7 @@
  * response it was handed does not have.
  *
  * The `type` in every one of these is the service's **canonical key**, which is
- * singular — `armor-property`, `class`, `species` — and is not the segment this
+ * singular (`armor-property`, `class`, `species`) and is not the segment this
  * site publishes content under, which is plural. The service accepts either on
  * the way in and always answers with the canonical key, so this client sends
  * canonical keys everywhere and translates only at the edges where a site URL
@@ -44,7 +44,7 @@ export type RevisionAction = (typeof REVISION_ACTIONS)[number];
  * A revision, without its document.
  *
  * Answered by the revision list, by publishing and by reverting. `id` is a
- * number rather than a string — it is a database sequence, and it is the only
+ * number rather than a string. It is a database sequence, and it is the only
  * identifier in this API that is not a GUID.
  */
 export interface RevisionSummary {
@@ -70,7 +70,7 @@ export interface RevisionSummary {
  * Something publishing noticed and did not refuse over.
  *
  * Not a validation failure. The document is live; there is something about it
- * the author would want to know — today, that it names content the catalogue
+ * the author would want to know. Today, that it names content the catalogue
  * does not hold. The service resolves such a reference on its own if the target
  * is published later, which is why this is a sentence rather than a veto:
  * naming the weapon before its property is a normal way to author, and refusing
@@ -119,7 +119,7 @@ export interface Revision extends RevisionSummary {
  * `baseRevisionIsCurrent` is the field this whole interface is arranged around.
  * `false` means somebody published a change to the document after this draft
  * was started, so publishing it will be refused and saving over it would throw
- * their work away — a draft carries the *whole* document, not a patch. It is
+ * their work away. A draft carries the *whole* document, not a patch. It is
  * therefore drawn as a state of the row rather than as an error at the end.
  */
 export interface DraftSummary {
@@ -138,7 +138,7 @@ export interface DraftSummary {
   updatedAt: string;
 }
 
-/** `GET /api/authoring/drafts` — unpaged and unfiltered; every outstanding draft. */
+/** `GET /api/authoring/drafts`, unpaged and unfiltered; every outstanding draft. */
 export interface DraftList {
   drafts: DraftSummary[];
 }
@@ -162,7 +162,7 @@ export interface Draft {
   updatedAt: string;
 }
 
-/** `PUT /api/authoring/drafts/{type}/{key}` — answers 204, so there is no response type. */
+/** `PUT /api/authoring/drafts/{type}/{key}`, answers 204, so there is no response type. */
 export interface SaveDraftRequest {
   /**
    * The complete document, not a patch. Its `key` property has to equal the key
@@ -187,7 +187,7 @@ export interface RevertRequest {
 /**
  * The `code` on the 409 that means somebody published while this draft was open.
  *
- * The body carries nothing else — no current revision id, no current document —
+ * The body carries nothing else (no current revision id, no current document)
  * so recovering from it is a second round trip this client has to make for
  * itself. `app/routes/authoring-edit.tsx` is where that happens, and why it
  * never touches what the author has typed.

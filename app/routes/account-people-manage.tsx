@@ -4,8 +4,8 @@
  * ## Why this is a page and not a panel
  *
  * All of this used to be drawn underneath the directory on `/account/people`.
- * It worked, and it read as broken: on a directory long enough to scroll —
- * which is every directory worth searching — pressing Manage appended a panel
+ * It worked, and it read as broken: on a directory long enough to scroll,
+ * which is every directory worth searching, pressing Manage appended a panel
  * somewhere below the fold and left the reader looking at an unchanged list.
  * The commonest reaction to that is to press the button again, which closed it.
  * An action whose entire result is off-screen is indistinguishable from an
@@ -20,9 +20,9 @@
  * A path segment would have been the obvious shape and is not available here.
  * This site has no runtime server: every published path is prerendered to a
  * file and anything without one falls through to nginx's SPA fallback, which is
- * wired to `error_page 404`. A dynamic segment cannot be prerendered — there is
+ * wired to `error_page 404`. A dynamic segment cannot be prerendered (there is
  * no bounded list of accounts to enumerate, and an account directory is the
- * last thing a build machine should be enumerating — so `/account/people/<id>`
+ * last thing a build machine should be enumerating) so `/account/people/<id>`
  * would render correctly in a browser while answering 404 to a shared link, a
  * crawler and a monitor. The account therefore travels in the query string on a
  * static path, exactly as the document being edited does in the authoring
@@ -37,7 +37,7 @@
  * This is a child route of `/account/people`, so React Router keeps the
  * directory's component mounted while this page is drawn. "Back to the
  * directory" is an ordinary link to `/account/people` and lands on the list the
- * reader left — same search, same filters, same page — because that state never
+ * reader left (same search, same filters, same page) because that state never
  * went anywhere. It could not have been stored: the term is an address, so the
  * query string, `history.state` and `sessionStorage` are all closed to it.
  *
@@ -84,7 +84,7 @@ export function meta() {
  *
  * Bare, with no query string of its own. The directory is still mounted behind
  * this page and is holding the reader's search; anything appended here would be
- * either redundant or — if it were the search term — the one thing that must
+ * either redundant or, if it were the search term, the one thing that must
  * never reach a URL.
  */
 const DIRECTORY = "/account/people";
@@ -96,7 +96,7 @@ const ASSIGNABLE: AssignableRole[] = ["Contributor", "Administrator"];
  * The way back, drawn above the heading rather than below the last control.
  *
  * At the top because that is where somebody looks when they have opened the
- * wrong account, which is the commonest reason to want it — and because the
+ * wrong account, which is the commonest reason to want it, and because the
  * last control on this page is the one that deletes an account, which is not
  * the neighbour a "never mind" link should have.
  */
@@ -116,7 +116,7 @@ function BackToDirectory() {
  * Checkboxes and one Save rather than a grant button per role, because the API
  * is declarative: the request names the complete set the account should end up
  * holding, and anything absent is revoked. A per-role button would have to read
- * the current set, add or remove one, and send the result — which is the same
+ * the current set, add or remove one, and send the result. Which is the same
  * request with a chance of sending a stale set alongside it.
  */
 function RoleEditor({
@@ -146,7 +146,7 @@ function RoleEditor({
       setNote(
         result.awaitingSecondFactor
           ? "Saved. This account holds neither a passkey nor an authenticator app, " +
-              "so it cannot use an elevated role until it enrols one — it has been " +
+              "so it cannot use an elevated role until it enrols one. It has been " +
               "emailed and told what to add."
           : "Saved.",
       );
@@ -234,7 +234,7 @@ function RoleEditor({
  * The copy carries the two facts an administrator needs before pressing it and
  * would otherwise have to learn from the API documentation: that the account's
  * open sessions end immediately rather than at expiry, and that its passkeys
- * survive — so reinstating gives the account back rather than requiring it to
+ * survive, so reinstating gives the account back rather than requiring it to
  * be credentialled again.
  */
 function SuspensionEditor({
@@ -304,7 +304,7 @@ function SuspensionEditor({
           </label>
           <p className="people-note">
             Required, written for the other administrators, and never shown to
-            the account — where the reason is an investigation, quoting it back
+            the account. Where the reason is an investigation, quoting it back
             would tell them what is being looked into. They are emailed that
             they have been suspended and told who to write to.
           </p>
@@ -351,8 +351,8 @@ function SuspensionEditor({
  * Two presses rather than a confirm dialogue: a dialogue is dismissed by
  * reflex, and this is the one action on the site that cannot be undone. The
  * second step also carries the sentence that most changes what somebody expects
- * — that the account's revisions and reports stay behind, attributed to a
- * removed account — because an administrator who believed deletion erased
+ * (that the account's revisions and reports stay behind, attributed to a
+ * removed account) because an administrator who believed deletion erased
  * authorship would be using it for something it does not do.
  */
 function DeleteAccount({
@@ -418,7 +418,7 @@ function DeleteAccount({
           {outstanding === 1
             ? "One draft is outstanding."
             : `${outstanding} drafts are outstanding.`}{" "}
-          Publish or discard {outstanding === 1 ? "it" : "them"} first — deleting
+          Publish or discard {outstanding === 1 ? "it" : "them"} first. Deleting
           now would leave the work attributed to nobody and would keep anyone
           else from editing those entries.
         </Banner>
@@ -449,7 +449,7 @@ function DeleteAccount({
             />
           </label>
           <p className="people-note">
-            Optional, and kept in the administrative log — which survives the
+            Optional, and kept in the administrative log. Which survives the
             deletion, along with the name of the account it was aimed at.
           </p>
           <p className="people-actions">
@@ -496,7 +496,7 @@ function DeleteAccount({
  *
  * On the account rather than only on the log page, because this is where the
  * question is actually asked. Somebody disputing a suspension, or wondering how
- * an account came to hold a role, is looking at that account — sending them to
+ * an account came to hold a role, is looking at that account. Sending them to
  * a separate page and asking them to filter it is asking them to do the join by
  * hand.
  */
@@ -553,7 +553,7 @@ function AccountHistory({ userId }: { userId: string }) {
  *
  * Fetched by identifier rather than handed down from the row that linked here,
  * so that a link somebody was sent opens the same page without needing the
- * search that found it — and so that nothing here is a stale copy of a row the
+ * search that found it, and so that nothing here is a stale copy of a row the
  * directory fetched some time ago, which on a page whose last action is
  * "delete" is worth a round trip.
  */
@@ -598,8 +598,8 @@ function ManagedAccount({ userId, viewer }: { userId: string; viewer: CurrentUse
   const account = load.value.user;
 
   // Every self-directed action the service refuses is refused here too, with
-  // the reason. The server is what actually enforces it — this page runs on
-  // hardware the reader controls — but a button that exists only to answer 400
+  // the reason. The server is what actually enforces it, this page runs on
+  // hardware the reader controls, but a button that exists only to answer 400
   // is a button that reads as broken.
   const isSelf = account.id === viewer.id;
 
@@ -681,7 +681,7 @@ function Manage({ viewer }: { viewer: CurrentUser }) {
  * Redundant while this is a child of `/account/people`, and deliberately so: a
  * route module that only holds because of where it happens to sit in the tree
  * is one re-parenting away from being unguarded, and this one draws somebody
- * else's email address. The guard is the usability half in any case — the API
+ * else's email address. The guard is the usability half in any case. The API
  * refuses every request under `/api/auth/admin` on its own, which is the
  * boundary that actually holds.
  */

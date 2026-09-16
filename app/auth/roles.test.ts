@@ -21,7 +21,7 @@ describe("the wire names", () => {
    *
    * These three strings are what `/api/auth/me` puts on the wire. They are
    * capitalised, and the top one is `Administrator`, not `admin`. The failure
-   * this guards against is entirely silent — when these were lowercase,
+   * this guards against is entirely silent. When these were lowercase,
    * `effectiveRole` recognised none of them, answered `Community` for
    * everybody, and hid the contributor and admin surfaces from the people who
    * held those roles without logging or showing anything.

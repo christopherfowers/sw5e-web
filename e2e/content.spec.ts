@@ -23,7 +23,7 @@ test.describe("pre-rendered content routes", () => {
 
   /**
    * The regression this domain exists to close. `/maneuvers` was in the
-   * header, resolved, returned 200, rendered its `<h1>` — and said "No
+   * header, resolved, returned 200, rendered its `<h1>`, and said "No
    * maneuvers in this build of the reference yet", because nothing fed it.
    * Asserting the heading would have passed throughout. Asserting a row is
    * what does not.
@@ -95,7 +95,7 @@ test.describe("pre-rendered content routes", () => {
     for (const path of ["/species", "/species/abyssin", "/powers/acid-dart"]) {
       const html = await (await request.get(path)).text();
       expect(html, `${path} must be pre-rendered with its own data`).not.toContain(
-        "Not found — Star Wars 5e",
+        "Not found | Star Wars 5e",
       );
     }
   });
@@ -151,7 +151,7 @@ test.describe("pre-rendered content routes", () => {
 
 test.describe("browsing", () => {
   /**
-   * A reader can still get from the front page into a content type — through
+   * A reader can still get from the front page into a content type. Through
    * the header, which is where that job lives now.
    *
    * This used to click a card in the front page's category grid. The grid drew
@@ -162,7 +162,7 @@ test.describe("browsing", () => {
    * happened to make it through a card.
    *
    * The statblocks group is a plain link rather than a disclosure, because it
-   * leads to exactly one place — see `soleDestination`. So there is no menu to
+   * leads to exactly one place. See `soleDestination`, so there is no menu to
    * open here, and a change that gave the group a second destination would fail
    * this test loudly, which is the right way to find out.
    */
@@ -219,8 +219,8 @@ test.describe("browsing", () => {
     await page.getByLabel("Filter by name").fill("absorb");
 
     // Polled, not read once. Filtering is a React state change, so the count
-    // an instant after the keystroke is whatever happened to be on screen —
-    // which is the old one often enough to matter.
+    // an instant after the keystroke is whatever happened to be on screen.
+    // Which is the old one often enough to matter.
     await expect.poll(() => rows.count()).toBeLessThan(before);
     expect(await rows.count()).toBeGreaterThan(1);
   });
@@ -228,7 +228,7 @@ test.describe("browsing", () => {
 
 test.describe("searching", () => {
   /**
-   * The results page carries two fields for one job — its own, and the one in
+   * The results page carries two fields for one job. Its own, and the one in
    * the header that is on every page of the site. They used to disagree: the
    * page's showed what you searched for and the header's showed a placeholder,
    * so refining from the header meant starting again from nothing.
@@ -253,7 +253,7 @@ test.describe("searching", () => {
 
     /*
       The wait is the point of the test working at all. The served HTML has an
-      empty field — it is prerendered without a query string — and React fills
+      empty field, it is prerendered without a query string, and React fills
       it in from the address during hydration. Clearing it before that happens
       clears nothing, and the seeding then puts "speeder" in, which is exactly
       what CI saw.
@@ -267,7 +267,7 @@ test.describe("searching", () => {
 
       `fill` selects the existing text and replaces it, and this field is
       controlled by React inside a tree that is re-rendering for its own
-      reasons — the results arriving, the index loading. A re-render between
+      reasons. The results arriving, the index loading. A re-render between
       the selection and the insertion collapses the selection, and the new text
       lands after the old one instead of over it: CI saw "speederblaster".
 

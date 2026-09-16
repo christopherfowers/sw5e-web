@@ -4,16 +4,16 @@
  * Everything the toolbar does is here, and nothing here knows what a textarea
  * is. That split is the whole design. A formatting action is a pure function
  * from `{ text, start, end }` to `{ text, start, end }`, so the interesting
- * behaviour — that bold toggles back off, that turning a bullet list into a
+ * behaviour (that bold toggles back off, that turning a bullet list into a
  * numbered one does not stack the markers, that the table skeleton is a table
- * the parser recognises — is testable without a DOM, without React, and
+ * the parser recognises) is testable without a DOM, without React, and
  * without a fake caret.
  *
  * ## Everything below stays inside the dialect
  *
  * `app/content/markdown.ts` is a hand-written parser for the subset the corpus
  * uses, and it is the only thing that will ever read what an author writes
- * here. So this file may only emit constructs that file can parse: headings,
+ * here, so this file may only emit constructs that file can parse: headings,
  * paragraphs, flat ordered and unordered lists, block quotes, horizontal
  * rules, pipe tables, and the inline runs `**bold**`, `*italic*`,
  * `***both***` and `[label](/href)`.
@@ -30,7 +30,7 @@
  * selection, so both toggles work by measuring that run and adding to or
  * subtracting from it. Matching on the literal `**` instead is the version
  * that turns `***both***` into `****both****` the first time somebody presses
- * the italic button on text that was already bold — which is the bug this
+ * the italic button on text that was already bold. Which is the bug this
  * shape exists to make unrepresentable.
  *
  * ## The dialect has no escape character
@@ -90,8 +90,8 @@ function asterisksAfter(text: string, index: number): number {
  *
  * The selection is first pulled *inside* any asterisks it happens to contain,
  * so selecting `bold` and selecting `**bold**` do the same thing. Authors do
- * both — double-clicking a word gets you the first, dragging across it gets
- * you the second — and a toolbar where the result depends on which one you did
+ * both (double-clicking a word gets you the first, dragging across it gets
+ * you the second) and a toolbar where the result depends on which one you did
  * is a toolbar people stop trusting.
  *
  * After that there is one rule. Let `applied` be the shorter of the two runs
@@ -111,7 +111,7 @@ export function toggleEmphasis(
   let { start, end } = normalise(state);
 
   // Pull the selection inside asterisks it already contains, but never so far
-  // that the selection is *only* asterisks — `**` selected on its own has no
+  // that the selection is *only* asterisks. `**` selected on its own has no
   // inside, and shrinking it would invent one.
   const selected = text.slice(start, end);
   const lead = /^\**/.exec(selected)![0].length;
@@ -145,16 +145,16 @@ export function toggleEmphasis(
  * Makes an href that the parser's link pattern will actually match.
  *
  * That pattern is `\[([^\]]+)\]\(([^)\s]+)\)`: an href stops at the first
- * space or closing parenthesis. So a URL carrying either — which is most of
- * what gets pasted out of a wiki — would produce a link whose target is the
+ * space or closing parenthesis, so a URL carrying either, which is most of
+ * what gets pasted out of a wiki, would produce a link whose target is the
  * first half of the address and whose second half is loose prose, and the
  * author would have no way to tell from the source that anything was wrong.
  * Percent-encoding the three offending characters is the smallest change that
  * makes the result parse as the one link that was meant.
  *
  * Nothing here is a security control. The renderer follows only site-relative
- * hrefs — `app/components/prose.tsx` turns anything not starting with `/` into
- * plain text rather than a link — so a `javascript:` href is already inert, and
+ * hrefs, `app/components/prose.tsx` turns anything not starting with `/` into
+ * plain text rather than a link, so a `javascript:` href is already inert, and
  * pretending this function is what stops it would put the guarantee in the
  * wrong place.
  */
@@ -231,8 +231,8 @@ function writeLine(parts: LineParts, ordinal: number): string {
     (parts.heading > 0 ? `${"#".repeat(parts.heading)} ` : "") +
     (parts.marker === "bullet" ? "- " : parts.marker === "ordered" ? `${ordinal}. ` : "");
 
-  // A prefix with nothing after it is still a real line — an empty list item
-  // the author is about to type into — but it must not carry a trailing space,
+  // A prefix with nothing after it is still a real line, an empty list item
+  // the author is about to type into, but it must not carry a trailing space,
   // because the parser trims and a line of pure whitespace reads as a blank.
   return parts.content === "" ? prefix.trimEnd() : prefix + parts.content;
 }
@@ -248,8 +248,8 @@ function lineSpan(text: string, start: number, end: number) {
 /**
  * Rewrites the touched lines and keeps the selection over them.
  *
- * Every line-level action ends the same way — replace a run of lines, then put
- * the selection back around the run — and getting that ending subtly wrong is
+ * Every line-level action ends the same way (replace a run of lines, then put
+ * the selection back around the run) and getting that ending subtly wrong is
  * how a toolbar loses somebody's place mid-paragraph.
  */
 function replaceLines(
@@ -276,7 +276,7 @@ function replaceLines(
  * list while sitting on a bullet must swap the marker, not prepend one.
  *
  * Quoting is independent of them, because the parser strips `>` and re-parses
- * the remainder as blocks — so `> - a` really is a quoted list and really does
+ * the remainder as blocks, so `> - a` really is a quoted list and really does
  * render as one. That is the only nesting this dialect has, and it is worth
  * keeping.
  *
@@ -319,7 +319,7 @@ export function toggleLineStyle(
 }
 
 /**
- * Sets — or, asked for the depth a line already has, clears — the heading on
+ * Sets (or, asked for the depth a line already has, clears) the heading on
  * every line the selection touches.
  *
  * A heading is a whole block, so any list marker on the line goes with it.
@@ -358,8 +358,8 @@ export function setHeading(
  * Drops a block in at the caret with the blank lines it needs around it.
  *
  * The parser ends a paragraph at a blank line or at the start of another
- * block, and a table's header row is only a header when a divider follows it —
- * so a skeleton pasted onto the end of a sentence has to be separated from it
+ * block, and a table's header row is only a header when a divider follows it.
+ * So a skeleton pasted onto the end of a sentence has to be separated from it
  * or the whole thing is one paragraph. Counting the newlines already there
  * rather than always adding two keeps repeated insertions from marching the
  * document down the page.

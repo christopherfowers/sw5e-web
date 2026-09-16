@@ -3,7 +3,7 @@
  *
  * The behaviour worth guarding, and the one most likely to be lost. Moving the
  * books out of a hand-written table and into the corpus is only safe while an
- * undescribed source still degrades to a plain badge — that is what lets
+ * undescribed source still degrades to a plain badge. That is what lets
  * somebody add a supplement, or eventually their own homebrew, before anybody
  * has written a sentence about it.
  *
@@ -30,7 +30,7 @@ describe("a book the corpus describes", () => {
    *
    * The handbook is titled "Star Wars 5e Player's Handbook" in the corpus and
    * is called "Player's Handbook" everywhere a reader meets it. Asserting the
-   * shorter one pins which of the two fields the site reads — the two differ
+   * shorter one pins which of the two fields the site reads. The two differ
    * for exactly one book, so a version reading the wrong field breaks only
    * here.
    */
@@ -50,8 +50,8 @@ describe("a book the corpus has not described", () => {
    * Its abbreviation is the honest answer.
    *
    * A reader shown "HB1" can at least search for it. A reader shown "Unknown
-   * source" has been told something that is both useless and slightly wrong —
-   * the source is not unknown, it is undescribed.
+   * source" has been told something that is both useless and slightly wrong.
+   * The source is not unknown, it is undescribed.
    */
   it("keeps its abbreviation as its name", () => {
     expect(bookName(UNKNOWN)).toBe(UNKNOWN);
@@ -74,7 +74,7 @@ describe("the shelf", () => {
   /**
    * Ordered by the corpus, and demonstrably not by the alphabet.
    *
-   * Alphabetically these read EC, PHB, SnV, SotG, WH — which puts Expanded
+   * Alphabetically these read EC, PHB, SnV, SotG, WH. Which puts Expanded
    * Content ahead of the core rulebook. Stated as its own expectation so the
    * order above is pinning a decision somebody made rather than a coincidence
    * of how the five happen to be named.

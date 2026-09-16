@@ -15,7 +15,7 @@ import { expect, test } from "@playwright/test";
  *
  * The second is the sharp one. A `loader` on any of these would run once on a
  * build machine and write its result into a file served to every visitor of a
- * public site — and what it would write here is the draft queue: the name of
+ * public site, and what it would write here is the draft queue: the name of
  * every document somebody has unfinished work on, and of everyone who has it.
  * The rule that prevents it is enforced in `app/auth/prerender-safety.test.ts`;
  * this checks the consequence, from outside, over raw HTTP.
@@ -45,7 +45,7 @@ test.describe("the authoring routes are real files, not the SPA fallback", () =>
     request,
   }) => {
     // The whole reason the subject of an edit travels in the query string. A
-    // path segment would need a prerendered file per document — and none at all
+    // path segment would need a prerendered file per document, and none at all
     // for a document that does not exist yet, which is precisely what the
     // editor has to be able to open.
     const response = await request.get(
@@ -77,7 +77,7 @@ test.describe("no identity and no work is baked into the static files", () => {
     //
     // Searched for rather than named, deliberately. Asserting that
     // `authoring/edit.data` is absent would also pass if React Router named
-    // that file something else entirely — which is a test that cannot fail for
+    // that file something else entirely. Which is a test that cannot fail for
     // the reason it claims to. Anything ending in `.data` anywhere under the
     // authoring output is a payload that should not be there.
     const client = path.resolve("build/client");
@@ -100,9 +100,9 @@ test.describe("no identity and no work is baked into the static files", () => {
 
 test.describe("every authoring route names itself in its own markup", () => {
   const SECTIONS = [
-    { path: "/authoring", title: "Worklist — Authoring — Star Wars 5e" },
-    { path: "/authoring/edit", title: "Editor — Authoring — Star Wars 5e" },
-    { path: "/authoring/history", title: "History — Authoring — Star Wars 5e" },
+    { path: "/authoring", title: "Worklist | Authoring | Star Wars 5e" },
+    { path: "/authoring/edit", title: "Editor | Authoring | Star Wars 5e" },
+    { path: "/authoring/history", title: "History | Authoring | Star Wars 5e" },
   ];
 
   for (const section of SECTIONS) {

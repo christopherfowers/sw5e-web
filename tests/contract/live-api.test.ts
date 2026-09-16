@@ -10,7 +10,7 @@
  * `/me`, the spelling of the MFA literal, the name of the passkey label field,
  * the capitalisation of every role, the path in the verification email, and the
  * content type of an error. Nothing failed, because this side was tested
- * against `tests/auth-api-contract.ts` — our own idea of the server — and the
+ * against `tests/auth-api-contract.ts`, our own idea of the server, and the
  * server was tested against its own idea of us. Two mocks agreeing with the
  * code that wrote them is not evidence of anything.
  *
@@ -47,21 +47,21 @@ const API = writableContractTarget();
 const ORIGIN = process.env.SW5E_CONTRACT_ORIGIN ?? "http://localhost:4173";
 
 /**
- * The client builds relative URLs on purpose — the site's CSP names no host,
+ * The client builds relative URLs on purpose. The site's CSP names no host,
  * and a test that let it build absolute ones would be testing a client we do
- * not ship. So the only thing stubbed here is the resolution of that relative
+ * not ship, so the only thing stubbed here is the resolution of that relative
  * path against the API's origin, plus the `Origin` header a browser sets for
  * itself and script cannot forge.
  *
- * Everything downstream of the response — status handling, content-type
- * sniffing, problem-document decoding, the 401-means-anonymous rule — is the
+ * Everything downstream of the response (status handling, content-type
+ * sniffing, problem-document decoding, the 401-means-anonymous rule) is the
  * shipped code running over real bytes.
  */
 /**
  * The untouched platform `fetch`, captured once at module load.
  *
- * Deliberately not read inside {@link useRealApi}: calling that twice — which
- * the foreign-origin tests do — would otherwise wrap the previous wrapper, and
+ * Deliberately not read inside {@link useRealApi}: calling that twice, which
+ * the foreign-origin tests do, would otherwise wrap the previous wrapper, and
  * the inner one would overwrite the `Origin` the outer one had just set. The
  * cross-site tests then silently pass a well-formed same-origin request and
  * assert nothing at all.
@@ -100,8 +100,8 @@ describe.skipIf(!API)("the account client against the real API", () => {
   describe("reading the session", () => {
     /**
      * The regression that mattered most. The API answers an anonymous caller
-     * with a problem document, whose content type is `application/problem+json`
-     * — which does not contain the substring `application/json`. A client
+     * with a problem document, whose content type is `application/problem+json`.
+     * Which does not contain the substring `application/json`. A client
      * checking for that substring classifies the 401 as "the service is not
      * there" and tells every signed-out reader the site is broken instead of
      * offering them a way in.
@@ -140,7 +140,7 @@ describe.skipIf(!API)("the account client against the real API", () => {
 
   describe("email verification", () => {
     /**
-     * The token is nonsense, so this must fail — but it has to fail as a
+     * The token is nonsense, so this must fail, but it has to fail as a
      * rejected token rather than as a malformed request, which is what proves
      * the client is sending both fields the endpoint requires. Sending only the
      * token, which this client used to do, fails differently.
@@ -189,8 +189,8 @@ describe.skipIf(!API)("the account client against the real API", () => {
 
   describe("re-authentication", () => {
     /**
-     * These routes cannot be driven to completion from here — every one of them
-     * needs a session, and this file has none — so what is pinned is what can
+     * These routes cannot be driven to completion from here (every one of them
+     * needs a session, and this file has none) so what is pinned is what can
      * be: that they are mounted, at these paths, and that an anonymous caller
      * is refused rather than admitted.
      *
@@ -216,7 +216,7 @@ describe.skipIf(!API)("the account client against the real API", () => {
     /**
      * The whole of this client's CSRF story, and the reason there is no token
      * anywhere in `api.ts`. The API decides by provenance, and a foreign origin
-     * is refused with a bodiless 403 — which the client has to render as
+     * is refused with a bodiless 403. Which the client has to render as
      * "forbidden" rather than as an outage, since there is no body to read.
      */
     it("refuses a request that did not come from this site", async () => {
@@ -240,7 +240,7 @@ describe.skipIf(!API)("the account client against the real API", () => {
    *
    * `tests/auth-api-contract.ts` is what every unit test and every Playwright
    * spec in this repository talks to. If it drifts from the service, the entire
-   * suite goes on passing while the deployed site breaks — which is precisely
+   * suite goes on passing while the deployed site breaks. Which is precisely
    * what happened. These assertions compare the mock's answer to the server's
    * for the requests both can serve without a session, so a drift shows up here
    * instead of in production.
@@ -302,7 +302,7 @@ describe.skipIf(!API)("the account client against the real API", () => {
       expect(mocked.status).toBe(actual.status);
 
       // The keys the client reads, rather than every key the server happens to
-      // send — the server is allowed to add fields, and a strict comparison
+      // send. The server is allowed to add fields, and a strict comparison
       // would turn every such addition into a failure here.
       for (const key of ["challenge", "rpId", "allowCredentials"]) {
         expect(actual.body).toHaveProperty(key);
@@ -318,8 +318,8 @@ describe.skipIf(!API)("the account client against the real API", () => {
      * that actually publishes it.
      *
      * This is the drift this suite exists to catch, in its purest form. The
-     * field is consumed by a `!== false` comparison in `app/site/environment.ts`
-     * — so a service that spelled it differently, or sent it as the string
+     * field is consumed by a `!== false` comparison in `app/site/environment.ts`.
+     * So a service that spelled it differently, or sent it as the string
      * `"true"`, or dropped it, would not fail anything on either side: the
      * client would default to "delivering" and the site would go back to
      * promising mail through an outage, silently, which is the original bug.
@@ -328,8 +328,8 @@ describe.skipIf(!API)("the account client against the real API", () => {
      * worth stating rather than discovering: this job runs against
      * `sw5e-api:latest`, which is published from that repository's `main`, so
      * this test is red on a client change that lands before the service change
-     * it depends on. That is the suite reporting a real fact — the shipped
-     * service does not yet say what this client reads — and the fix is to land
+     * it depends on. That is the suite reporting a real fact, the shipped
+     * service does not yet say what this client reads, and the fix is to land
      * the service first, never to soften the assertion. The failure message
      * below says so, because a cryptic red build is how a true finding gets
      * dismissed as flake.
@@ -348,7 +348,7 @@ describe.skipIf(!API)("the account client against the real API", () => {
       expect(typeof actual.isProduction).toBe("boolean");
 
       // Exhaustive rather than a presence check. This body is anonymous, and
-      // the field that must never appear on it is the provider's reply — a
+      // the field that must never appear on it is the provider's reply. A
       // relay writes that about one envelope and it can quote the recipient.
       // A whitelist fails the day one is added; a blacklist never would.
       expect(Object.keys(actual).sort()).toEqual([

@@ -12,8 +12,8 @@
  *
  * The service has held the answer all along. Every string in every document is
  * harvested into one column, and the search endpoint ranks against it with the
- * same scoring ladder the client uses. Nothing here is new work on that side —
- * it is a capability the front end simply was not asking for.
+ * same scoring ladder the client uses. Nothing here is new work on that side.
+ * It is a capability the front end simply was not asking for.
  *
  * ## Why the downloaded index stays
  *
@@ -25,7 +25,7 @@
  *
  * And the reference has to work when the service does not. Everything a reader
  * comes here for is a static file; making the search box depend on a service
- * being up would take the whole catalogue down with it. So the results page
+ * being up would take the whole catalogue down with it, so the results page
  * asks the service and falls back to the index, and says which one answered.
  */
 
@@ -79,7 +79,7 @@ interface WireResult {
 
 interface WireGroup {
   /**
-   * The service's name for the type, which is singular — `rule`, `archetype`.
+   * The service's name for the type, which is singular. `rule`, `archetype`.
    * Not what this application calls it, and not read here; `routeSegment` is.
    */
   type?: unknown;
@@ -105,8 +105,8 @@ function text(value: unknown): string {
 /**
  * Reads the response, discarding anything this build does not understand.
  *
- * The service publishes content types this front end may not have a page for —
- * they are separate deployments and either can be ahead — and a group for a
+ * The service publishes content types this front end may not have a page for,
+ * they are separate deployments and either can be ahead, and a group for a
  * type with no route would render a heading whose every link is a 404. Dropping
  * it is better than showing it, and better than throwing: the rest of the
  * results are still answers.
@@ -126,7 +126,7 @@ export function readSearchResponse(body: unknown): ServerSearch {
     groups: groups.flatMap((group) => {
       // `routeSegment`, not `type`. The service names a type in the singular
       // and this application names it in the plural, so reading `type` here
-      // asked whether "rule" was a known identifier, and it never is — every
+      // asked whether "rule" was a known identifier, and it never is. Every
       // group was dropped and the page rendered a total with nothing under it.
       // The service publishes `routeSegment` precisely so the two vocabularies
       // do not have to agree.
@@ -141,8 +141,8 @@ export function readSearchResponse(body: unknown): ServerSearch {
           totalMatches:
             typeof group.totalMatches === "number" ? group.totalMatches : results.length,
           results: results.flatMap((result) => {
-            // `key` on the wire. Reading `slug` here — the name this
-            // application uses internally — silently discarded every result the
+            // `key` on the wire. Reading `slug` here, the name this
+            // application uses internally, silently discarded every result the
             // service returned, while the total, whose field name happened to
             // match, kept rendering. The page read "240 results (showing 0)".
             const slug = text(result.item?.key);
@@ -204,7 +204,7 @@ export async function searchContent(
  *
  * Adapting rather than teaching the component a second shape. The two searches
  * answer the same question and a reader should not be able to tell which one
- * did — the grouping, the evidence line and the highlight are the same either
+ * did. The grouping, the evidence line and the highlight are the same either
  * way, and a page that looked different depending on whether a service was up
  * would be worse than one that simply had fewer results.
  *

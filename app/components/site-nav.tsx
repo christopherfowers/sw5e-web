@@ -2,9 +2,9 @@
  * Grouped navigation: a menu bar in the header, a rail beside the page.
  *
  * The two halves answer different questions and that is why there are two.
- * The header menus answer "take me somewhere else" — they are how a reader
+ * The header menus answer "take me somewhere else". They are how a reader
  * leaves Combat for Starships. The rail answers "where am I and what is beside
- * me" — it keeps a reader's siblings on screen so moving from maneuvers to
+ * me". It keeps a reader's siblings on screen so moving from maneuvers to
  * fighting styles is one click rather than a round trip through a menu they
  * have to open, aim at and close again. A dropdown alone makes lateral movement
  * expensive; a sidebar alone cannot hold thirty destinations.
@@ -66,7 +66,7 @@ const SUBSCRIBE_NEVER = () => () => {};
  * `useLayoutEffect`, except on the server, where it is `useEffect`.
  *
  * Effects do not run during prerendering at all, so the two are equivalent
- * there — but React warns about the layout variant on the server, and a build
+ * there, but React warns about the layout variant on the server, and a build
  * that prints a warning for every one of ~7,900 pages is a build nobody reads
  * the output of. The distinction only matters in the browser, where it has to
  * be the layout one: what it does is settle the disclosure's open state, and
@@ -84,7 +84,7 @@ const useIsomorphicLayoutEffect =
  * is open while React is the thing opening it. Without JavaScript the browser
  * toggles `<details open>` on its own, and an `aria-expanded="false"` baked
  * into a static file would then tell a screen reader the exact opposite of what
- * just happened — an ARIA attribute overrides the element's native state, so it
+ * just happened. An ARIA attribute overrides the element's native state, so it
  * would be worse than saying nothing. Omitting it from the served markup leaves
  * the browser's own disclosure semantics in charge, which is the right answer
  * for a reader with no JavaScript, and adding it after hydration gives an
@@ -108,9 +108,9 @@ function useHydrated(): boolean {
  * through `TYPE_NAV` at all. A reader standing on one of them is in a group,
  * and the rail beside them has to say which.
  *
- * The two fallbacks catch the addresses no menu names. `/equipment` is one — it
+ * The two fallbacks catch the addresses no menu names. `/equipment` is one, it
  * is the crumb above the three shelves rather than a destination in its own
- * right — and so is every item page under a type, `/features/deflect` as much
+ * right, and so is every item page under a type, `/features/deflect` as much
  * as `/weapons` itself.
  */
 function groupOfPath(pathname: string): NavGroupId | null {
@@ -132,7 +132,7 @@ function groupOfPath(pathname: string): NavGroupId | null {
 /**
  * One menu line.
  *
- * The mark beside it is the destination's own — a type's, or for a slice of a
+ * The mark beside it is the destination's own. A type's, or for a slice of a
  * type the mark of the type it is a slice of, so that `/weapons` carries
  * equipment's. A book and a hub have no mark, which is why the icon is
  * conditional rather than assumed: the alternative would be inventing one for
@@ -186,8 +186,8 @@ function destinationLink(destination: NavDestination, onNavigate?: () => void) {
  * The header's menu bar.
  *
  * A group with a single destination is rendered as a plain link rather than a
- * disclosure. NPC statblocks is one destination today — creatures, with no
- * vehicle or starship stat block anywhere in the corpus to sit beside it — and
+ * disclosure. NPC statblocks is one destination today (creatures, with no
+ * vehicle or starship stat block anywhere in the corpus to sit beside it) and
  * a button that reveals exactly one link is a button that wastes a keystroke.
  * The moment that group grows it becomes a menu on its own, with nothing here
  * to change.
@@ -215,7 +215,7 @@ export function GroupedNav() {
     All three listeners are on the document rather than on the nav, and Escape
     is the reason. A reader who opened a menu with the pointer may have focus
     anywhere on the page, and a handler bound to the bar would only answer
-    Escape while focus happened to be inside it — so the menu would stay open
+    Escape while focus happened to be inside it, so the menu would stay open
     over the page with no obvious way to dismiss it.
   */
   useEffect(() => {
@@ -227,8 +227,8 @@ export function GroupedNav() {
     function onPointerDown(event: MouseEvent) {
       if (!inside(event.target)) close();
     }
-    // Focus moving out of the bar entirely — by Tab, or by clicking something
-    // else focusable — closes it too, so a menu is never left open behind a
+    // Focus moving out of the bar entirely (by Tab, or by clicking something
+    // else focusable) closes it too, so a menu is never left open behind a
     // reader who has moved on.
     function onFocusIn(event: FocusEvent) {
       if (!inside(event.target)) close();
@@ -317,7 +317,7 @@ function GroupMenu({
   isCurrent: boolean;
   onToggle: () => void;
   /**
-   * Called when the element is already open and React did not open it — see
+   * Called when the element is already open and React did not open it. See
    * the effect below. Setting rather than toggling, so that calling it on a
    * menu that is already open in state does nothing.
    */
@@ -336,7 +336,7 @@ function GroupMenu({
    * Every page on this site is static HTML, which means the header works
    * before the bundle has loaded: the browser's own disclosure opens the menu
    * on a click, because none of this component's handlers exist yet. Passing
-   * `open={isOpen}` made React overrule that the moment it arrived — a reader
+   * `open={isOpen}` made React overrule that the moment it arrived. A reader
    * who clicked during the gap watched the menu open and then shut itself,
    * which is indistinguishable from a navigation bar that does not work. The
    * bigger the page, the wider the gap; the heaviest indexes on this site are
@@ -377,7 +377,7 @@ function GroupMenu({
         were why the menus did not open.
 
         `toggle` is dispatched asynchronously, and the click handler below
-        already prevents every native toggle — so once React is running, the
+        already prevents every native toggle, so once React is running, the
         only thing that can emit one is React's own write of the attribute. The
         handler mirrored the element's state back into React state whenever the
         two disagreed, which meant it fired on React's write, found them
@@ -390,7 +390,7 @@ function GroupMenu({
         without the race: a menu the browser opened before React arrived is
         adopted once, on the first pass, rather than argued with on every
         toggle. Without JavaScript nothing here runs at all and the native
-        disclosure works unassisted — `e2e/navigation.spec.ts` covers that with
+        disclosure works unassisted. `e2e/navigation.spec.ts` covers that with
         scripting switched off.
 
         So the click handler on the summary is the only thing that decides.
@@ -426,7 +426,7 @@ function GroupMenu({
           phrase was right while the quiet half of a menu was only the two
           property glossaries, which really are read from the weapon that cites
           them. It is now also where the starship hulls, the rules index and the
-          source-book list sit — destinations a reader may well set out for,
+          source-book list sit. Destinations a reader may well set out for,
           kept quiet because the owner's menu does not name them rather than
           because nobody arrives at them directly. A subhead claiming to say why
           they are here would be wrong about half of them; one that says where
@@ -456,8 +456,8 @@ function GroupMenu({
 /**
  * The rail beside the page, pinned to the group the reader is currently in.
  *
- * It renders nothing at all on a page that is not part of a content group —
- * the home page, search, the account area — so those pages keep exactly the
+ * It renders nothing at all on a page that is not part of a content group
+ * (the home page, search, the account area) so those pages keep exactly the
  * layout they had, and nothing for a group with only one destination in it,
  * where there are no siblings to orient against.
  *
@@ -471,7 +471,7 @@ function GroupMenu({
  * The rail inside a book: that book's chapters, in reading order.
  *
  * Standing in "Ability Scores" and being handed the Rules menu is the wrong
- * answer to "where am I" — the site this replaces put the book's contents
+ * answer to "where am I". The site this replaces put the book's contents
  * here, and that is what a reader reaches for. The chapters are grouped by the
  * heading they are read under where the book has an authored path, and listed
  * plainly where it does not.
@@ -479,7 +479,7 @@ function GroupMenu({
  * **This is for chapter pages, not for the book's own page.** The book's page
  * is its contents, laid out and grouped in the body, and repeating that list
  * in the rail beside it says the same thing twice at desktop width without
- * helping anybody navigate — there is nothing to navigate away from yet. A
+ * helping anybody navigate. There is nothing to navigate away from yet. A
  * reader who is *inside* a chapter is the one who needs the other chapters
  * within reach.
  *
@@ -540,7 +540,7 @@ function BookContentsRail({ code }: { code: string }) {
 /**
  * The rail on a book's own landing page: where you are, and the way out.
  *
- * Deliberately not the contents — the page's body already is the contents, and
+ * Deliberately not the contents. The page's body already is the contents, and
  * drawing them twice side by side reads as duplication rather than
  * reinforcement. What a reader standing here cannot otherwise do is get back
  * to the shelf, so that is what the rail offers.
@@ -581,8 +581,8 @@ export function GroupRail() {
 
   /*
     Inside a chapter, the rail is the book it belongs to. The address does not
-    say which book that is — `/rules/ability-scores` names a content type and a
-    passage — so it is looked up in the contents, which is the only thing that
+    say which book that is, `/rules/ability-scores` names a content type and a
+    passage, so it is looked up in the contents, which is the only thing that
     knows.
   */
   const [, type, slug] = location.pathname.split("/");

@@ -7,8 +7,8 @@
  * is one wasted round trip on the first request after somebody turns it on.
  *
  * Retried exactly once. A challenge is single use, so a second refusal means
- * something is wrong that another solve will not fix — the difficulty moved
- * between issue and use, the clock is out, the secret was rotated mid-flight —
+ * something is wrong that another solve will not fix (the difficulty moved
+ * between issue and use, the clock is out, the secret was rotated mid-flight)
  * and a client that kept trying would hammer the endpoint it is meant to be
  * protecting while burning the reader's battery.
  */
@@ -37,10 +37,10 @@ export interface ChallengedRequestOptions {
  * Solves a challenge, in a worker when one can be started.
  *
  * The inline fallback is not a nicety. A worker can fail to start for reasons
- * that have nothing to do with this code — a policy in a managed browser, an
- * extension, a browser old enough to lack module workers — and the alternative
+ * that have nothing to do with this code (a policy in a managed browser, an
+ * extension, a browser old enough to lack module workers) and the alternative
  * to a frozen second is not a smooth second, it is a reader who cannot register
- * at all. So the tab is allowed to stall rather than the account be refused,
+ * at all, so the tab is allowed to stall rather than the account be refused,
  * and the caller is told work is happening either way.
  */
 export function solveChallenge(
@@ -110,7 +110,7 @@ export function solveChallenge(
  * it again with the headers.
  *
  * `send` takes the headers rather than closing over them so that this knows
- * nothing about which request it is running — registration, a sign-in code, or
+ * nothing about which request it is running. Registration, a sign-in code, or
  * whatever else the service decides to charge for later.
  */
 export async function withChallenge<T>(

@@ -11,8 +11,8 @@ import {
  * The records here are trimmed copies of real canonical documents, kept in
  * the canonical shape rather than the archive's: nested `armor.class`,
  * camelCase enums, `sourceKey` instead of an abbreviation. What each test
- * pins down is the crossing point — the place where a canonical field becomes
- * something the UI renders — because that is what silently breaks if either
+ * pins down is the crossing point, the place where a canonical field becomes
+ * something the UI renders, because that is what silently breaks if either
  * side of the mapping moves.
  */
 const sources = indexSources([
@@ -85,7 +85,7 @@ describe("what the canonical mapping guarantees for every type", () => {
     // could not feed, which is why /maneuvers rendered an empty index while
     // sitting in the site's navigation. Nothing is unmapped now, and this
     // assertion is what notices if a type is ever added to the site without
-    // content behind it — the empty-index machinery still exists for that
+    // content behind it. The empty-index machinery still exists for that
     // case, but it must be a decision rather than an accident.
     for (const [type, directory] of Object.entries(CANONICAL_DIRECTORIES)) {
       expect(directory, `${type} has no canonical directory`).toBeTruthy();
@@ -269,8 +269,8 @@ describe("combat options", () => {
       benefits: ["You gain a +1 bonus to the weapon's damage rolls."],
     });
 
-    // The group is not derivable from the name — three of the eight carry the
-    // word "Weapon" in print and five do not — so the field is what a row and
+    // The group is not derivable from the name, three of the eight carry the
+    // word "Weapon" in print and five do not, so the field is what a row and
     // a filter both read.
     expect(item.summary).toEqual({ weaponGroup: "Crushing", benefits: 1 });
     expect(item.tagline).toBe("Crushing weapons");
@@ -616,7 +616,7 @@ describe("backgrounds", () => {
  * page is worth less on its own than it is joined to its neighbours, so what
  * the tests below pin down is the joins: that a class's table survives the trip
  * intact, that its features are reachable from it, and that a feature can be
- * reached at all — which needs a slug that its name cannot supply.
+ * reached at all. Which needs a slug that its name cannot supply.
  */
 describe("the class graph", () => {
   const berserker = {
@@ -984,8 +984,8 @@ describe("starship base sizes", () => {
   it("renders the tier table under the size's own name for its signature die", () => {
     const item = normalizeOne("starship-base-sizes", small);
 
-    // Every size names this die differently — a Tiny ship rolls Swarm Tactics,
-    // a Gargantuan one Superior Firepower — so the heading has to come out of
+    // Every size names this die differently (a Tiny ship rolls Swarm Tactics,
+    // a Gargantuan one Superior Firepower) so the heading has to come out of
     // the document rather than out of this module.
     expect(item.tables[0]).toEqual({
       caption: "Tier progression",
@@ -1283,7 +1283,7 @@ describe("rules", () => {
    *
    * The stat line used to read "Position: Chapter 3" and the tagline
    * "Player's Handbook · Chapter 3". Both were the last places on a rules page
-   * still telling a reader where a passage fell in a PDF — a fact they cannot
+   * still telling a reader where a passage fell in a PDF. A fact they cannot
    * act on, since there is no book in their hands to turn to page 3 of.
    */
   it("places a chapter by the heading it is read under, not by its page", () => {
@@ -1318,8 +1318,8 @@ describe("rules", () => {
    * `chapterLabel` suppressed anything outside 1..90 because the archive
    * numbers the handbook preface -2 and both changelogs 99, and "Chapter 99"
    * is not a chapter number a reader would recognise. An authored heading
-   * needs no such window — it was written to be read rather than derived from
-   * a page count — so the changelog now says where it sits instead of being
+   * needs no such window, it was written to be read rather than derived from
+   * a page count, so the changelog now says where it sits instead of being
    * blank.
    */
   it("labels a passage the printed numbering could not", () => {
@@ -1423,8 +1423,8 @@ describe("starship rules", () => {
   /**
    * The authored path, carried through and shown instead of a page number.
    *
-   * The fixture's two positions disagree on purpose — printed 9, tenth on the
-   * path — because a chapter where they agreed would pass whichever field the
+   * The fixture's two positions disagree on purpose (printed 9, tenth on the
+   * path) because a chapter where they agreed would pass whichever field the
    * projection actually read.
    */
   it("carries the authored path and labels the chapter with its heading", () => {
@@ -1479,7 +1479,7 @@ describe("a monster's power references", () => {
    * archive wrote each one as an anchor into the old single-page site:
    * `[force push](#force%20push)`. There is no such anchor on a page that
    * holds one creature, so until these are rewritten the renderer drops the
-   * link and prints the text — 224 power names across 19 creatures that a
+   * link and prints the text. 224 power names across 19 creatures that a
    * reader can see and cannot click.
    *
    * The rewriting itself is `normalize.mjs`'s and predates this; what was
@@ -1531,7 +1531,7 @@ describe("a monster's power references", () => {
   /**
    * A reference to a power nobody has written keeps its words and loses its
    * link. That is deliberate: the alternative is a link to a 404, and the
-   * corpus does contain a few — "scorching ray" and "charge power cell" are
+   * corpus does contain a few. "scorching ray" and "charge power cell" are
    * named by creatures and exist nowhere.
    */
   it("keeps the text of a power that does not exist, without linking it", () => {
@@ -1556,7 +1556,7 @@ describe("a monster's power references", () => {
   /**
    * `descriptionWithLinks` is preferred, and it is not merely the same text
    * with links added. Where both exist the plain one is frequently in a
-   * different order — the corpus has fourteen creatures whose `description`
+   * different order. The corpus has fourteen creatures whose `description`
    * ends on the colon that introduces a list printed above it.
    */
   it("prefers the linked description over the plain one", () => {
@@ -1608,7 +1608,7 @@ describe("references to a reference table", () => {
   });
 
   /**
-   * Three table names are cited and do not exist — "Starship Size Cargo
+   * Three table names are cited and do not exist. "Starship Size Cargo
    * Capacity" among them. Those keep their words, exactly as a missing power
    * does.
    */

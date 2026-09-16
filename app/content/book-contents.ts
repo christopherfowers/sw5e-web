@@ -2,14 +2,14 @@
  * Each book's table of contents.
  *
  * A reader who opens the Player's Handbook wants its chapters in the rail, the
- * way the site this replaces did it — not a list of the other books, which is
+ * way the site this replaces did it. Not a list of the other books, which is
  * what the rail showed before: standing inside a book and being offered the
  * shelf it came from.
  *
  * ## Why this is not read from the dataset
  *
  * The rail is part of the site's chrome and is drawn by `root.tsx`, which has
- * no loader and cannot reach `dataset.server.ts` — that module is server-only
+ * no loader and cannot reach `dataset.server.ts`. That module is server-only
  * because the dataset beside it is several megabytes. Forty-eight chapters
  * across four books is about four kilobytes, so the contents are their own
  * small file, exactly like `books.ts`.
@@ -60,7 +60,7 @@ const CONTENTS = read();
 /*
   Which book a chapter belongs to, built once by walking the contents backwards.
 
-  The rail needs this on a chapter's own page — standing in "Ability Scores"
+  The rail needs this on a chapter's own page. Standing in "Ability Scores"
   and being offered the Rules menu is the same wrong answer that standing in a
   book and being offered the shelf was. There is no loader to ask, because the
   rail is chrome drawn by the root layout, and the address alone does not say

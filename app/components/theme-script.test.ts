@@ -7,7 +7,7 @@
  * script injection, and whoever made that change would have no reason to look
  * at this file.
  *
- * The cost of a literal is that the key is written twice — once as the constant
+ * The cost of a literal is that the key is written twice. Once as the constant
  * the application reads and writes, once inside the script that reads it back
  * on the next page load. That drift is what this file exists to catch, and the
  * failure it prevents is quiet: the toggle keeps working, the choice keeps
@@ -32,8 +32,8 @@ describe("the pre-paint theme script", () => {
    * And accepts only the two values the stylesheet has rules for.
    *
    * A script that wrote the attribute back unchecked would let anything in
-   * storage become an attribute value. Nothing could execute — it is an
-   * attribute, not markup — but the site would land in a state with no palette
+   * storage become an attribute value. Nothing could execute (it is an
+   * attribute, not markup) but the site would land in a state with no palette
    * and no way for the reader to tell why.
    */
   it("only ever writes light or dark", () => {

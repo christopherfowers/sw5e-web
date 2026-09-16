@@ -8,7 +8,7 @@
  *   node scripts/build-content-fixture.mjs --curated
  *
  * `--content` reads the canonical, schema-validated content set maintained in
- * the sw5e-database repository — one JSON document per item. This is what the
+ * the sw5e-database repository. One JSON document per item. This is what the
  * container image builds from, so the site publishes the same corpus the API
  * serves.
  *
@@ -167,7 +167,7 @@ function markdownHeadings(markdown) {
  * A heading's address on the page, matching the ids the site renders.
  *
  * This is a second implementation of `app/content/slug.ts`, which is a thing
- * worth being uneasy about — so it is not left to trust. The site renders
+ * worth being uneasy about, so it is not left to trust. The site renders
  * these ids and this writes the fragments that point at them, and
  * `app/content/search-fragments.test.ts` reads the built index and asserts
  * every fragment against the application's own slugger. Drift is a red test
@@ -212,19 +212,19 @@ function toSearchRecord(item) {
     indexing its first paragraph would mean the site could not find any rule
     printed after the first page of the chapter that holds it.
 
-    Indexing the full text is not the answer either — the index is downloaded
+    Indexing the full text is not the answer either. The index is downloaded
     by the browser, and the rules corpus is 2.7 MB of markdown. The headings
     are: they are the words a reader actually searches for ("blinded",
     "flanking", "attunement"), there are about a thousand of them across the
-    corpus, and they cost roughly forty kilobytes. So a rules search finds the
+    corpus, and they cost roughly forty kilobytes, so a rules search finds the
     chapter and names the section it matched in, and reading the section is
     then one page-find away.
   */
   /*
     Every heading, not just the outer one.
 
-    The slugger runs over the whole document in render order — the section's
-    own heading first, then the headings inside its body — because that is the
+    The slugger runs over the whole document in render order (the section's
+    own heading first, then the headings inside its body) because that is the
     order the page assigns ids in, and a fragment computed in any other order
     points at the wrong section or at nothing.
   */
@@ -272,8 +272,8 @@ function toSummary(item) {
 /**
  * The committed fixture must render the whole UI without the archive, so it
  * takes the first few items of each type that carry prose and survived repair
- * with no residual corruption. Selection is deterministic — alphabetical by
- * name — so the fixture only changes when someone means to change it.
+ * with no residual corruption. Selection is deterministic, alphabetical by
+ * name, so the fixture only changes when someone means to change it.
  */
 function selectCurated(items) {
   const usable = items
@@ -290,7 +290,7 @@ function selectCurated(items) {
  * its rules text in one blob. The combat options do not: a fighting style's
  * page is a one-line lead and then its benefits, which are entries, so
  * measuring sections alone found no fighting style worth committing and the
- * fixture would have shipped that type empty — the exact failure the fixture
+ * fixture would have shipped that type empty. The exact failure the fixture
  * exists to rule out.
  */
 function renderedProseLength(item) {
@@ -347,7 +347,7 @@ async function readArchiveType(archiveDirectory, fileName) {
  * which file they came from, while the file is the only thing that says what
  * they are. `class-improvements` is three dumps whose file names the kind of
  * improvement; `rules` is four whose file names the book that printed the
- * chapter — every rules record in the archive has a `contentSource` of "None".
+ * chapter. Every rules record in the archive has a `contentSource` of "None".
  * So the reader stamps whatever the entry declares onto each record as it is
  * read, and the normalizer treats it as a field like any other.
  */
@@ -388,8 +388,8 @@ async function writeJson(directory, name, value) {
  * under four times as many footnotes.
  *
  * Ordered by the authored reading path where there is one, and by the printed
- * chapter number where there is not. Two of the four books are placed today —
- * the handbook and the starship book — and the other two fall back rather than
+ * chapter number where there is not. Two of the four books are placed today,
+ * the handbook and the starship book, and the other two fall back rather than
  * being left unordered, because an arbitrary order is worse than a stale one.
  */
 function tableOfContents(types) {
@@ -465,7 +465,7 @@ async function writeDataset(
     The manifest is read through `dataset.server.ts`, which is server-only
     because the dataset it sits beside is several megabytes. A book's name and
     colour are needed while rendering a row on the client, and five books is
-    about a kilobyte — so this is the one part of the dataset that is safe to
+    about a kilobyte, so this is the one part of the dataset that is safe to
     import directly, and keeping it separate is what makes that obvious rather
     than a thing somebody has to reason about.
   */
@@ -541,7 +541,7 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
 
     An empty directory is a supported state, not a failure. A checkout that has
     not pulled the resources yet, or a corpus that carries none, draws no
-    resources section at all — the same degradation the shelf already makes
+    resources section at all. The same degradation the shelf already makes
     when a build ships no books.
   */
   const resourceRecords = await readCanonicalType(contentDirectory, "resource");
@@ -729,8 +729,8 @@ async function buildFromArchive(options, outputDirectory) {
     outputDirectory,
     options.curated ? pruneLinksOutside(types) : types,
     /*
-      The archive has no source documents — it records the book on each row and
-      nothing about the books themselves — so an archive build ships no shelf
+      The archive has no source documents, it records the book on each row and
+      nothing about the books themselves, so an archive build ships no shelf
       and the site falls back to plain badges. That is the same degradation an
       undescribed source gets, reached by a different route.
     */

@@ -125,8 +125,8 @@ test.describe("no identity is baked into the static files", () => {
     // rule enforced in app/auth/prerender-safety.test.ts.
     //
     // Asserted against the build output rather than over HTTP because the two
-    // hosts answer differently for a path that does not exist — nginx 404s,
-    // `vite preview` falls back to the shell — and neither answer is the thing
+    // hosts answer differently for a path that does not exist (nginx 404s,
+    // `vite preview` falls back to the shell) and neither answer is the thing
     // under test.
     for (const file of ["account.data", "sign-in.data", "register.data"]) {
       expect(
@@ -145,7 +145,7 @@ test.describe("no identity is baked into the static files", () => {
   }) => {
     const html = await (await request.get("/species/abyssin")).text();
 
-    // The control is prerendered like everything else on this page — it has to
+    // The control is prerendered like everything else on this page. It has to
     // be, or a reader without scripts is offered nothing and a crawler sees a
     // page that differs from the one a browser assembles.
     //
@@ -212,8 +212,8 @@ test.describe("with JavaScript disabled", () => {
 /**
  * Every account address names itself, before hydration and without scripts.
  *
- * These four files spend their first moments — and their entire life for a
- * reader whose scripts never run — in the `loading` state, because identity is
+ * These four files spend their first moments, and their entire life for a
+ * reader whose scripts never run, in the `loading` state, because identity is
  * resolved after hydration and must never be written into a file that every
  * visitor shares. That state is allowed to say nothing about *who* the reader
  * is. It is not allowed to say nothing at all.
@@ -228,23 +228,23 @@ test.describe("with JavaScript disabled", () => {
  *   history entry have nothing to tell them apart
  */
 const ACCOUNT_SECTIONS = [
-  { path: "/account", title: "Your account — Star Wars 5e" },
-  { path: "/account/passkeys", title: "Passkeys — Your account — Star Wars 5e" },
+  { path: "/account", title: "Your account | Star Wars 5e" },
+  { path: "/account/passkeys", title: "Passkeys | Your account | Star Wars 5e" },
   {
     path: "/account/security",
-    title: "Two-factor authentication — Your account — Star Wars 5e",
+    title: "Two-factor authentication | Your account | Star Wars 5e",
   },
   {
     path: "/account/contributions",
-    title: "Contributions — Your account — Star Wars 5e",
+    title: "Contributions | Your account | Star Wars 5e",
   },
-  { path: "/account/flags", title: "Reports — Your account — Star Wars 5e" },
-  { path: "/account/people", title: "People — Your account — Star Wars 5e" },
+  { path: "/account/flags", title: "Reports | Your account | Star Wars 5e" },
+  { path: "/account/people", title: "People | Your account | Star Wars 5e" },
   {
     path: "/account/people/manage",
-    title: "Manage an account — Your account — Star Wars 5e",
+    title: "Manage an account | Your account | Star Wars 5e",
   },
-  { path: "/account/audit", title: "Audit log — Your account — Star Wars 5e" },
+  { path: "/account/audit", title: "Audit log | Your account | Star Wars 5e" },
 ];
 
 test.describe("every account route names itself in its own markup", () => {

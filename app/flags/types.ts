@@ -3,7 +3,7 @@
  *
  * The same rule as `app/auth/types.ts`: these are wire strings, spelled exactly
  * as the service spells them, and getting one wrong is silent. A reason name
- * that does not match is not a type error — it is a 400 the reader meets after
+ * that does not match is not a type error. It is a 400 the reader meets after
  * writing out what they wanted to report.
  *
  * Nothing here is rendered as markup anywhere. `details` and `reviewerNote` are
@@ -16,7 +16,7 @@
  *
  * Ordered as the service orders them: the five that are about pictures, the
  * four that are about writing, and `other`, which belongs to both. The split
- * matters to this client because the two menus it draws are drawn from it — a
+ * matters to this client because the two menus it draws are drawn from it. A
  * reader reporting a portrait is never offered "the saving throw is wrong".
  */
 export const IMAGE_REASONS = [
@@ -45,8 +45,8 @@ export type FlagReason = ImageReason | DocumentReason;
  *
  * `open` and `accepted` are both outstanding: the first means nobody has
  * looked, the second means a reviewer agreed and the work is not done. The
- * distinction is the queue's whole reason for being usable — see the service's
- * own notes — and this client has to keep it rather than collapsing both into
+ * distinction is the queue's whole reason for being usable, see the service's
+ * own notes, and this client has to keep it rather than collapsing both into
  * "pending".
  */
 export const FLAG_STATUSES = ["open", "accepted", "declined", "resolved"] as const;
@@ -80,7 +80,7 @@ export interface RaiseFlagRequest {
   reason: FlagReason;
   /**
    * A content type key or route segment. For a picture this is
-   * `asset-credit`, and the key is `{group}-{key}` — the site's own image
+   * `asset-credit`, and the key is `{group}-{key}`. The site's own image
    * naming, so `species-wookiee` and `classes-guardian`.
    */
   targetType: string;

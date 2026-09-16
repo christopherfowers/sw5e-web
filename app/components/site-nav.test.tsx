@@ -1,7 +1,7 @@
 /**
  * The header used to be one flat strip of twenty-three destinations, and the
- * count was the failure — nobody scans twenty-three items, and the strip
- * scrolled sideways at every width. So the first test here is a count, and it
+ * count was the failure. Nobody scans twenty-three items, and the strip
+ * scrolled sideways at every width, so the first test here is a count, and it
  * is written so that it fails against the flat strip it replaced.
  *
  * The second is the menu the site's owner specified, asserted entry by entry
@@ -31,8 +31,8 @@ import { CONTENT_TYPE_IDS } from "~/content/types";
 /**
  * The most destinations the header may offer at its top level.
  *
- * Not a target the grouping was designed to hit — the groups came out of the
- * material — but a ceiling on what a reader has to scan before choosing. Eight
+ * Not a target the grouping was designed to hit, the groups came out of the
+ * material, but a ceiling on what a reader has to scan before choosing. Eight
  * leaves room for the Tools area that is coming, and for the Resources menu
  * that is specified and cannot be built until somebody supplies its five
  * addresses, without this number moving.
@@ -173,8 +173,8 @@ function entriesIn(menu: HTMLElement, selector: string) {
  * Order is asserted along with membership because the order is the argument:
  * Rules opens with the three books that teach something and only then offers
  * the two cuts of the rule text; Characters walks a reader down the character
- * sheet — what you are, what you become, where you came from, what you take on
- * top — rather than listing types alphabetically.
+ * sheet (what you are, what you become, where you came from, what you take on
+ * top) rather than listing types alphabetically.
  */
 describe("the menu behind each group", () => {
   it.each([
@@ -208,8 +208,8 @@ describe("the menu behind each group", () => {
       ],
       /*
         The quiet half of Characters. The three class-improvement cuts are here
-        rather than beside Feats because nobody browses an improvement — they
-        arrive from the class table that grants one — and they are here at all
+        rather than beside Feats because nobody browses an improvement, they
+        arrive from the class table that grants one, and they are here at all
         rather than only on the customization hub because a reader standing on
         one of the three needs the other two without a trip through a third
         page.
@@ -437,7 +437,7 @@ describe("the group rail", () => {
    * This was never covered, which is how it went unnoticed that the contents
    * were being drawn on the one page that already showed them and not on the
    * pages that needed them. A reader standing in a chapter was being handed the
-   * Rules menu — the same wrong answer as being handed the shelf while standing
+   * Rules menu. The same wrong answer as being handed the shelf while standing
    * in a book.
    */
   it("shows the book's chapters while a chapter is being read", () => {
@@ -459,7 +459,7 @@ describe("the group rail", () => {
    *
    * The body of that page is the contents, grouped and laid out. Drawing the
    * same list in the rail beside it says one thing twice at desktop width and
-   * helps nobody navigate — there is nothing to navigate away from yet. What a
+   * helps nobody navigate. There is nothing to navigate away from yet. What a
    * reader cannot otherwise do from here is get back to the shelf.
    */
   it("shows book context rather than contents on the book's own page", () => {
@@ -499,7 +499,7 @@ describe("the group rail", () => {
  * Rendered as an anchor rather than a NavLink, and that is a correctness
  * matter rather than a preference: NavLink hands its address to the client
  * router, which would match a Google Drive URL against no route and draw the
- * not-found page over a working site. So the assertion is on the element and
+ * not-found page over a working site, so the assertion is on the element and
  * its attributes, not on the label.
  */
 describe("a menu that leads off the site", () => {

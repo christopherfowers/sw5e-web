@@ -8,7 +8,7 @@
  *
  * Nothing here escapes or sanitises anything. Free text goes out as the reader
  * typed it and comes back as it was stored, and the components that render it
- * put it in a text node — which is the only place that knows what it is
+ * put it in a text node. Which is the only place that knows what it is
  * escaping for. A helper here that "cleaned" the text would double-encode what
  * React is already going to escape, and would quietly change what a reporter
  * actually said.
@@ -29,7 +29,7 @@ const API_ROOT = "/api/flags";
  * Files a report.
  *
  * Answers 201 with the stored report. The failures worth branching on are a
- * 404 — nothing here has that key — a 409 with `code: "duplicate-report"`, and
+ * 404, nothing here has that key, a 409 with `code: "duplicate-report"`, and
  * a 429 which may be either the per-caller window or the account's own daily
  * quota. `ApiError.fieldErrors` names the field on a 400.
  */
@@ -64,7 +64,7 @@ export interface QueueFilters {
  * session that used a passkey or an authenticator code.
  *
  * Filters are omitted rather than sent empty, because the service refuses a
- * value it does not recognise rather than ignoring it — which is the behaviour
+ * value it does not recognise rather than ignoring it. Which is the behaviour
  * this client wants and the reason an empty string must never be sent as one.
  */
 export function listFlags(
@@ -92,7 +92,7 @@ export function flagSummary(signal?: AbortSignal): Promise<FlagSummary> {
  * Moves one report through the lifecycle.
  *
  * A 409 with `code: "invalid-transition"` means somebody else acted on the row
- * since this page was drawn — its `status` extension says where it got to — and
+ * since this page was drawn, its `status` extension says where it got to, and
  * is worth reporting as that rather than as a generic conflict.
  *
  * The identifier is percent-encoded on its way into the path. It is a

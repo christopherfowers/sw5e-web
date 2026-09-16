@@ -8,7 +8,7 @@
  * ever disagree, that document is the one that was verified.
  *
  * The reason to say so plainly is that an earlier version of this file was
- * written from a specification alone, and was wrong about most of it — the
+ * written from a specification alone, and was wrong about most of it. The
  * envelope on `/me`, the name of the two-factor flag, the shape of the WebAuthn
  * options, the spelling of the MFA literal. All of it type-checked, and all of
  * it passed a test suite that had been written from the same wrong assumptions.
@@ -23,7 +23,7 @@
  *
  * Ordered from least to most privileged so that `roles.ts` can express "at
  * least a contributor" as a comparison rather than as a list of every role
- * that qualifies — a list is the thing that gets forgotten when a role is
+ * that qualifies. A list is the thing that gets forgotten when a role is
  * added.
  *
  * These are wire strings, and they are spelled exactly as the service spells
@@ -34,8 +34,8 @@
  *
  * Getting this wrong is silent, which is why it is worth the paragraph. When
  * this list held lowercase names, `isRole` rejected every role the server
- * actually sent, `effectiveRole` discarded the lot, and every signed-in reader
- * — contributor and administrator alike — was quietly treated as the base
+ * actually sent, `effectiveRole` discarded the lot, and every signed-in reader,
+ * contributor and administrator alike, was quietly treated as the base
  * role. Nothing errored. The upload affordance simply never appeared, and it
  * looked like a permissions decision rather than a typo.
  */
@@ -47,8 +47,8 @@ export type Role = (typeof ROLES)[number];
  * The roles an administrator may grant.
  *
  * `Community` is the floor every account already stands on rather than
- * something conferred, and the API rejects it outright in a role assignment —
- * so it is excluded here, where the compiler can say so, instead of being
+ * something conferred, and the API rejects it outright in a role assignment.
+ * So it is excluded here, where the compiler can say so, instead of being
  * discovered as a 400 at runtime.
  */
 export type AssignableRole = Exclude<Role, "Community">;
@@ -63,8 +63,8 @@ export interface PasskeyCredential {
   id: string;
   /**
    * What the reader called it when they enrolled it, or `null` when they left
-   * the field blank. It is genuinely nullable — the server does not invent a
-   * name from the AAGUID — so every place that shows this has to have an answer
+   * the field blank. It is genuinely nullable, the server does not invent a
+   * name from the AAGUID, so every place that shows this has to have an answer
    * for the empty case rather than rendering "null" at somebody.
    */
   name: string | null;
@@ -92,7 +92,7 @@ export interface CurrentUser {
   roles: Role[];
   /**
    * Whether an authenticator app is enrolled. A flat boolean, spelled exactly
-   * this way — it is not nested under an `mfa` object, and TOTP is the only
+   * this way. It is not nested under an `mfa` object, and TOTP is the only
    * second factor the service offers, so there is nothing for a nested shape
    * to hold.
    */
@@ -109,8 +109,8 @@ export interface CurrentUser {
    * who did, without saying it to the same account on the phone that used a
    * passkey ten minutes ago.
    *
-   * `null` is a session established before the server started recording this
-   * — an older cookie that is still valid. Every reader of this field has to
+   * `null` is a session established before the server started recording this.
+   * An older cookie that is still valid. Every reader of this field has to
    * treat that as "no claim either way" rather than as "email", because
    * guessing the weaker answer would nag people who did nothing wrong.
    */
@@ -122,7 +122,7 @@ export interface CurrentUser {
    * It is a separate field rather than something derived from
    * `authenticationMethod` because the server owns that judgement. An emailed
    * code proves control of an inbox and nothing about a device, so a session
-   * built on one is deliberately weaker than the account it belongs to — and
+   * built on one is deliberately weaker than the account it belongs to. And
    * the API refuses contributor and administrator work to it with a 403 whose
    * `code` is `strong-authentication-required`.
    */
@@ -133,7 +133,7 @@ export interface CurrentUser {
    *
    * True for Contributor and Administrator. It is answered by the server
    * rather than computed from `roles` here, so that a policy change on the
-   * service does not need a deploy of this client to be obeyed — and so that
+   * service does not need a deploy of this client to be obeyed, and so that
    * a role added later is covered without anybody remembering to add it to a
    * list.
    */
@@ -153,8 +153,8 @@ export interface RegisterRequest {
  * there is nothing account-shaped in this response.
  *
  * Which screen that is depends on one thing, and it is not the address: if the
- * deployment reports that mail is not getting out — a global fact, published on
- * `/api/site/environment` and identical for every caller — the confirmation
+ * deployment reports that mail is not getting out (a global fact, published on
+ * `/api/site/environment` and identical for every caller) the confirmation
  * stops claiming a link was sent. Both addresses still get the same screen as
  * each other in both states.
  *
@@ -185,7 +185,7 @@ export interface VerifyEmailRequest {
  * most worth understanding before changing anything near it.
  *
  * Registration takes no password and issues no credential, so a brand-new
- * account has nothing it could authenticate with — which is exactly why an
+ * account has nothing it could authenticate with. Which is exactly why an
  * earlier version of this file assumed verification had to establish a session.
  * It does not. It sets a short-lived HttpOnly enrolment ticket instead, and
  * that ticket authorises `passkey/register/begin` and
@@ -207,7 +207,7 @@ export interface VerifyEmailResponse {
 /**
  * `POST /api/auth/passkey/register/begin`
  *
- * The creation options arrive **unwrapped** — the response body *is* the
+ * The creation options arrive **unwrapped**. The response body *is* the
  * options document, with no `publicKey` envelope around it. It is what
  * `PublicKeyCredential.parseCreationOptionsFromJSON()` accepts, and the binary
  * fields are base64url because JSON has no bytes. `webauthn.ts` is the only
@@ -252,7 +252,7 @@ export interface PasskeyRegistrationCredential {
 export interface PasskeyRegisterCompleteRequest {
   credential: PasskeyRegistrationCredential;
   /**
-   * What the reader typed to name this passkey. The field is `name` — the
+   * What the reader typed to name this passkey. The field is `name`. The
    * server ignores anything called `label`, which is what this client used to
    * send, so every credential enrolled through it arrived nameless.
    */
@@ -275,7 +275,7 @@ export interface PasskeyRegisterCompleteResponse {
  *
  * There is no request type, because there is no request body. The API ignores
  * anything sent, never accepts an email address, and always answers with an
- * empty `allowCredentials` — so the response is byte-identical for every
+ * empty `allowCredentials`, so the response is byte-identical for every
  * caller and cannot be used to probe whether an address is registered. A client
  * that offers an email field here is offering a field that does nothing.
  *
@@ -313,8 +313,8 @@ export interface PasskeyLoginCompleteRequest {
  * not hand out a full session in that case; the reply says only that it wants
  * more, and the cookie it set carries enough to finish the challenge.
  *
- * Two details are load-bearing. The literal is `mfaRequired` — camelCase, no
- * hyphen — and the branch carries `user: null` and nothing else: no `methods`
+ * Two details are load-bearing. The literal is `mfaRequired` (camelCase, no
+ * hyphen) and the branch carries `user: null` and nothing else: no `methods`
  * array, no display name, no hint about the account. That silence is
  * deliberate, because a half-authenticated caller is still an unauthenticated
  * one and must not be told anything it did not already know.
@@ -331,8 +331,8 @@ export type PasskeyLoginCompleteResponse =
  * The alternative to a passkey, for the machines a passkey cannot reach: a
  * borrowed laptop, a desktop old enough to have no platform authenticator, a
  * work device whose policy forbids enrolling one. It is deliberately the
- * second path and not the first — an emailed code proves control of an inbox
- * and nothing about the device typing it — but a sign-in page with only one
+ * second path and not the first, an emailed code proves control of an inbox
+ * and nothing about the device typing it, but a sign-in page with only one
  * door is a sign-in page a real proportion of readers cannot open.
  */
 export interface EmailCodeRequest {
@@ -344,8 +344,8 @@ export interface EmailCodeRequest {
  *
  * The answer is byte-identical whether the address has an account, has never
  * been seen, or has already spent its budget of codes for the quarter hour.
- * That is not vagueness for its own sake: any difference at all — a different
- * status, a different message, a measurably different delay — turns this
+ * That is not vagueness for its own sake: any difference at all (a different
+ * status, a different message, a measurably different delay) turns this
  * endpoint into a way to ask the service which of a list of addresses are
  * registered, which is exactly what `register` was built not to answer either.
  *
@@ -359,8 +359,8 @@ export interface EmailCodeRequest {
  * getting out **at all**, which is a fact about the deployment published
  * separately on `/api/site/environment`, carries no address, and is the same
  * answer for every caller. It has to branch on something, because the honest
- * screen when the relay is refusing everything is not "a code is on its way" —
- * that sentence was false on QA while the API already knew it was. What would
+ * screen when the relay is refusing everything is not "a code is on its way".
+ * That sentence was false on QA while the API already knew it was. What would
  * be a violation is a per-address version of that question, and there is none
  * to ask: the service holds no per-address delivery state, precisely so that
  * this endpoint's silence cannot be recovered from somewhere else.
@@ -393,7 +393,7 @@ export interface EmailCodeVerifyRequest {
 }
 
 /**
- * The same two-legged shape as the passkey path, and the same literals — see
+ * The same two-legged shape as the passkey path, and the same literals. See
  * `PasskeyLoginCompleteResponse` for why `mfaRequired` is camelCase and why
  * the branch carries nothing but `user: null`.
  *
@@ -417,7 +417,7 @@ export type EmailCodeVerifyResponse =
 export interface TotpEnrollResponse {
   /**
    * Base32, grouped for reading. The manual-entry path, and the fallback
-   * whenever a camera is not the right answer — which includes every reader
+   * whenever a camera is not the right answer. Which includes every reader
    * using the site on the same device as their authenticator app.
    */
   sharedKey: string;
@@ -443,7 +443,7 @@ export type TotpVerifyResponse =
       /**
        * Confirmed present: the API returns ten of these, exactly once, and
        * only here. They matter because enrolling a second factor without them
-       * is how people lose accounts — a passkey plus TOTP on one phone means
+       * is how people lose accounts. A passkey plus TOTP on one phone means
        * one lost phone locks the account out forever. Shown once, at
        * enrolment, and never again.
        */
@@ -483,7 +483,7 @@ export interface AssignRolesResponse {
   roles: Role[];
   /**
    * True when the grant landed on an account holding neither a passkey nor an
-   * authenticator app — so it now has a role it cannot actually use until it
+   * authenticator app, so it now has a role it cannot actually use until it
    * enrols one, because the API refuses contributor and administrator work to
    * a session that was established with an emailed code alone.
    *

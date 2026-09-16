@@ -19,8 +19,8 @@ import type { Route } from "./+types/customization-options";
  * tiers and the three kinds of class improvement were nine cards in a grid of
  * twenty-seven, and nine boxes is nine answers to a question a reader asks
  * once: what else can my character take? The Player's Handbook introduces all
- * of them together under one chapter heading, so the header offers one entry —
- * and this is what is behind it.
+ * of them together under one chapter heading, so the header offers one entry.
+ * And this is what is behind it.
  *
  * It is a hub and nothing more: nine links and a sentence each. There is
  * deliberately no merged list of the 219 options themselves. They are chosen
@@ -31,10 +31,10 @@ import type { Route } from "./+types/customization-options";
  * reader can find out they exist.
  *
  * Three of the nine are not content types. `class-improvements` is one type
- * holding three unrelated answers — what advancing in a class grants, what
- * multiclassing into it grants, what one splashed level is worth — told apart
+ * holding three unrelated answers (what advancing in a class grants, what
+ * multiclassing into it grants, what one splashed level is worth) told apart
  * by `improvementType`, and the site this one replaces published them as three
- * pages. So the cards lead to `/class-improvements`, `/multiclass-improvements`
+ * pages, so the cards lead to `/class-improvements`, `/multiclass-improvements`
  * and `/splashclass-improvements`, which are filtered views rather than type
  * indexes. See `app/content/subcategory-views.ts`.
  *
@@ -48,7 +48,7 @@ import type { Route } from "./+types/customization-options";
 export function meta({ loaderData }: Route.MetaArgs) {
   const total = loaderData?.total;
   return [
-    { title: "Customization options — Star Wars 5e" },
+    { title: "Customization options | Star Wars 5e" },
     {
       name: "description",
       content:
@@ -77,7 +77,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
  * That is deliberate, and it is what makes the menu's coverage claim testable.
  * A loader that handed over a list of cards could hand over a short one, and
  * the page would render six cards, look entirely reasonable, and leave content
- * with nothing anywhere leading to it — while every test that fed the component
+ * with nothing anywhere leading to it. While every test that fed the component
  * its own fixture stayed green.
  */
 export async function loader() {
@@ -134,7 +134,7 @@ export default function CustomizationOptions({
             cards of one family without pretending to be three types.
 
             It also puts the six type cards into the sentence case the menus
-            and the front page's grid already use — "Fighting styles" rather
+            and the front page's grid already use. "Fighting styles" rather
             than `TYPE_META`'s "Fighting Styles". That is a change of copy on
             this page and it is the right way round: this grid is the same
             component the front page draws its destinations with, and the two

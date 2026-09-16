@@ -55,7 +55,7 @@ export function SiteSearch() {
     placeholder, so refining from the header meant starting again from nothing.
 
     Seeded rather than controlled by the URL, because the two are the same
-    field for one keystroke and then diverge — somebody typing a new query has
+    field for one keystroke and then diverge. Somebody typing a new query has
     not navigated yet, and yanking their text back to the old one on every
     render would make the field unusable. It re-seeds when the address changes,
     which is what a fresh search or the Back button does.

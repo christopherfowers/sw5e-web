@@ -7,19 +7,19 @@
  * A creature has senses, an ability-score block and three damage affinities; a
  * class has a level progression; an armour property has four fields. Writing
  * thirty-one forms by hand is a week of work that is wrong the first time a
- * schema changes, and nothing would say it had gone wrong — the form would
+ * schema changes, and nothing would say it had gone wrong. The form would
  * simply stop offering a field, and a contributor saving through it would
  * quietly delete that field from the document, because a draft carries the
  * whole document rather than a patch.
  *
  * The schemas are already the authority: the service validates every write
- * against them and refuses anything that does not conform. So the form is
+ * against them and refuses anything that does not conform, so the form is
  * derived from the same document the refusal is derived from, and the two
  * cannot disagree.
  *
  * ## What this module will and will not claim to understand
  *
- * The schemas use a small, consistent vocabulary — `type`, `enum`, `const`,
+ * The schemas use a small, consistent vocabulary. `type`, `enum`, `const`,
  * `$ref` into `$defs`, `items`, `required`, `minLength`, `pattern`, `minimum`,
  * `format`, and a handful of object-level `oneOf`/`anyOf`/`not` constraints.
  * Everything in that list is rendered as a control.
@@ -36,8 +36,8 @@
  * everything". `asset-credit` says, in effect, "either a cited work with an
  * artist and a title, or an inherited record with neither"; `species` says "an
  * ability increase names abilities or a count, not both". Those are conditions
- * on a whole object rather than alternative shapes for it — every branch draws
- * from the same property list — so the properties are rendered once and the
+ * on a whole object rather than alternative shapes for it, every branch draws
+ * from the same property list, so the properties are rendered once and the
  * branch descriptions are carried through as {@link ObjectControl.conditions}
  * for the form to show as rules the author has to satisfy. Trying to render
  * them as a mode switch would invent a control the schema does not describe,
@@ -195,8 +195,8 @@ function resolve(node: SchemaNode, root: SchemaNode, depth = 0): SchemaNode {
   if (!isNode(cursor)) return node;
 
   // The referring node's own keywords win over the target's. That is what lets
-  // `{"$ref": "#/$defs/damageAffinity", "description": "…"}` — which the
-  // creature schema does three times — say what *this* use of the shape means.
+  // `{"$ref": "#/$defs/damageAffinity", "description": "…"}`, which the
+  // creature schema does three times, say what *this* use of the shape means.
   const merged = { ...resolve(cursor, root, depth + 1), ...node };
   delete merged.$ref;
   return merged;
@@ -245,16 +245,16 @@ function singularise(label: string): string {
  * Whether a string field holds prose rather than a value.
  *
  * The schemas say so themselves. Every long-form field in this corpus opens its
- * description with the word "Markdown" — it is the convention the schema
+ * description with the word "Markdown", it is the convention the schema
  * authors used to mark the difference between "the rules text of this feature"
- * and "the name of this feature" — so that is what is read, rather than a list
+ * and "the name of this feature", so that is what is read, rather than a list
  * of field names compiled here that would have to grow with every new type.
  *
  * The test is deliberately forgiving: the word anywhere in the description, not
  * only at the front. The two failures are not equally bad. A false positive
  * gives a name field a text area, which is untidy. A false negative puts three
  * paragraphs of rules text in a control one line high, which is close to
- * unusable — and the renderer widens the net further by refusing to put a value
+ * unusable, and the renderer widens the net further by refusing to put a value
  * that already contains a line break into a single-line control at all.
  */
 function readsAsProse(node: SchemaNode): boolean {
@@ -288,7 +288,7 @@ function base(node: SchemaNode): ControlBase {
  * The conditions an object has to satisfy beyond its own `required` list.
  *
  * Read out of `oneOf` and `anyOf` in the schema's own words where it wrote
- * them, and reconstructed from the branch's `required` list where it did not —
+ * them, and reconstructed from the branch's `required` list where it did not.
  * `background`'s roll-table entries say only "one of `name` or `description`",
  * and a reader meeting the refusal deserves to have been told beforehand.
  */
@@ -521,8 +521,8 @@ export function blankDocument(control: ObjectControl | null, key: string): unkno
  * A blank value of whatever shape a control edits.
  *
  * Used when a reader adds an entry to a list: an empty object for a list of
- * objects, an empty string for a list of strings. The alternative — adding
- * `null` and letting the schema refuse it — puts an error on a row the reader
+ * objects, an empty string for a list of strings. The alternative, adding
+ * `null` and letting the schema refuse it, puts an error on a row the reader
  * has not had a chance to fill in yet.
  */
 export function blankValue(control: Control): unknown {

@@ -9,7 +9,7 @@
  *
  * So there are two assertions here and they pull in opposite directions. One
  * says a populated type must render its rows and must NOT show the empty
- * state — that is the regression guard for this domain, and it fails on an
+ * state. That is the regression guard for this domain, and it fails on an
  * import that produces no items. The other says the empty state itself still
  * works, because the site is still allowed to publish a type the content set
  * cannot feed and must say so rather than 404 on its own link.

@@ -82,7 +82,7 @@ function text(value) {
  * Two rules, both conservative:
  *
  *   - A lower-case letter, a period, then a capitalised word is a sentence
- *     boundary that lost its space. Only a space is restored — whether the
+ *     boundary that lost its space. Only a space is restored. Whether the
  *     original had a paragraph break there is unknowable, and inventing one
  *     would invent structure.
  *   - A bold-italic run before which a sentence ended is a run-in heading, and
@@ -105,7 +105,7 @@ function restoreLostWhitespace(prose) {
  *
  * This walks the delimiters rather than pattern-matching them. A regular
  * expression cannot tell an opening `***` from a closing one, and headings in
- * this corpus end with a period — `***History.***` — so a naive pattern reads
+ * this corpus end with a period, `***History.***`, so a naive pattern reads
  * the closing delimiter as the start of the next run and cuts the heading in
  * half.
  */
@@ -135,7 +135,7 @@ function list(values) {
  * language line was destroyed in the scrape". Every one of the 103 fields in
  * the archive that holds nothing but a replacement character is an element of
  * a monster's `languages` or `senses` array, and the honest rendering is a
- * labelled absence rather than a silently missing row — or, worse, a guess
+ * labelled absence rather than a silently missing row. Or, worse, a guess
  * that the lost character meant "none".
  */
 const LOST = Symbol("lost-in-source");
@@ -152,7 +152,7 @@ function listOrLost(values) {
  *
  * Both corpora carry these. A monster's stat block names the powers it casts
  * as `[force push](#force%20push)`, and a starship rule cites the table it
- * depends on as `[Slowed Level](#Slowed%20Level)` — anchors into the old
+ * depends on as `[Slowed Level](#Slowed%20Level)`. Anchors into the old
  * single-page site, where all of it shared one document. Here it does not, so
  * the anchor points at nothing on the page that holds it, and the renderer
  * refuses to follow a link that is not site-relative. The name reaches the
@@ -181,7 +181,7 @@ export function rewriteReferences(markdown, resolve) {
 
   return markdown
     // An empty link is a scrape artefact with no text to degrade to. Left in,
-    // it reaches the page as the five literal characters `[](#)` — the inline
+    // it reaches the page as the five literal characters `[](#)`. The inline
     // parser requires at least one character of link text, so this matches no
     // rule at all and survives into the middle of a stat block.
     .replace(/\[\s*\]\(#[^)]*\)/g, "")
@@ -769,7 +769,7 @@ const IMPROVEMENT_TAGLINES = {
  * One of the three per-class improvement rules.
  *
  * The archive puts the class name in `name` and records the kind nowhere at
- * all — the file it came from is the only thing that says which of the three
+ * all. The file it came from is the only thing that says which of the three
  * this is, so the reader tags each record with `improvementType` before it
  * reaches here. Both the display name and the slug are rebuilt from the pair,
  * because ten records called "Berserker" across three files would otherwise
@@ -810,8 +810,8 @@ function normalizeClassImprovement(record) {
 /**
  * One granted ability.
  *
- * The archive has no key for a feature and its name is nowhere near unique —
- * "Ability Score Improvement" appears forty times — so the URL is built the way
+ * The archive has no key for a feature and its name is nowhere near unique,
+ * "Ability Score Improvement" appears forty times, so the URL is built the way
  * the canonical set builds its key: from the granting kind, the granting entry,
  * the name and the level.
  *
@@ -861,9 +861,9 @@ function normalizeFeature(record) {
 /**
  * The archive stores every combat option as one prose blob, while the site's
  * rows and pages want the structure that is written inside it. The four rules
- * below each key off a marker the source prints — the phrase that spends a die,
+ * below each key off a marker the source prints (the phrase that spends a die,
  * the parenthesised tier on an upgrade's name, the italic prerequisite run-in,
- * the markdown bullet — so nothing here interprets a sentence, and each one
+ * the markdown bullet) so nothing here interprets a sentence, and each one
  * produces the same fields the canonical mapping in `canonical.mjs` reads
  * straight out of a document. That correspondence is the point: a dataset built
  * from the archive and one built from the canonical set have to be
@@ -1045,10 +1045,10 @@ function normalizeLightsaberForm(record) {
 /* --------------------------------------------------------- enhanced items */
 
 /**
- * Rarity in ascending order. The archive spells it four ways — a one-element
+ * Rarity in ascending order. The archive spells it four ways (a one-element
  * `rarityOptions` array, a stringified `rarityOptionsJson` duplicate, an
  * inconsistently cased `rarityText`, and a `searchableRarity` left over from
- * the old site's search box — and the array is the one that is uniform across
+ * the old site's search box) and the array is the one that is uniform across
  * all 1,918 records.
  *
  * The order is the game's ladder rather than the alphabet, because rarity is
@@ -1070,7 +1070,7 @@ const RARITY_ORDER = [
  * Ten `*Type` discriminator fields are dropped in favour of `subtype`. At most
  * one of the ten is ever set on a record and all ten are "None" on more than
  * half of them, while `subtype` is populated wherever the item has a kind at
- * all — and says it more precisely: `itemModificationType` records "Augment"
+ * all, and says it more precisely: `itemModificationType` records "Augment"
  * or nothing, where `subtype` records the wristpad, blaster or suit of armour
  * the modification actually goes into.
  */
@@ -1198,7 +1198,7 @@ const RULE_BOOKS = {
  * Rules are the one content type in the corpus that is prose rather than a
  * catalogue row, and the passages are long: the Expanded Content archetypes
  * chapter is close to half a megabyte. Rendered as one undivided block it is
- * hard to read and, worse, hard to find anything in — the search index keeps a
+ * hard to read and, worse, hard to find anything in. The search index keeps a
  * fixed-length excerpt of an item's prose, so without this only a chapter's
  * first paragraph would ever match a query.
  *
@@ -1207,7 +1207,7 @@ const RULE_BOOKS = {
  * chapter divides at `##`, the conditions appendix at `####`, and a short
  * variant rule may have no headings at all. Taking the shallowest level gives
  * each passage its own top-level divisions at whatever depth it wrote them.
- * Level 1 is excluded — a lone `#` is the chapter's own title, which the
+ * Level 1 is excluded. A lone `#` is the chapter's own title, which the
  * import strips from the front of a body but which two passages carry in the
  * middle of one.
  */
@@ -1262,7 +1262,7 @@ function chapterLabel(chapterNumber) {
  * This is the only normalizer that needs to know which file its record came
  * from, and `normalizeAll` is what passes it down. Chapter slugs carry the
  * book's abbreviation because seven chapter titles are printed in more than
- * one book — all three print one called "Equipment" — and an unqualified slug
+ * one book, all three print one called "Equipment", and an unqualified slug
  * would collide.
  */
 function normalizeRule(record) {
@@ -1378,7 +1378,7 @@ function normalizeReferenceTable(record) {
  * it holds and the reader tags every record with it.
  * `rules` is the one entry whose `file` is a list. The archive keeps each
  * book's chapters in a dump of its own, plus a fifth for the optional variant
- * rules, and all four hold records of identical shape — the book is a value on
+ * rules, and all four hold records of identical shape. The book is a value on
  * the item rather than a type of its own. Which file a record came from is
  * passed through to the normalizer, because for that type it is the only
  * record of provenance there is.
@@ -1429,7 +1429,7 @@ export const CONTENT_TYPES = [
    * and every piece of ammunition carries a name and a price and nothing else.
    * The canonical documents have the hull dice, the tier tables, the roles and
    * the ammunition damage because the import read them back out of the rules
-   * chapters — work that belongs in the content repository, not in a second
+   * chapters. Work that belongs in the content repository, not in a second
    * copy here. Mapping the flat records instead would publish a starship
    * section that cannot say how much hull a Small ship has, which is worse
    * than an archive build that admits it has no starships.
@@ -1442,8 +1442,8 @@ export const CONTENT_TYPES = [
   { id: "starship-rules", file: null, normalize: null },
   {
     id: "rules",
-    // Four dumps, one type. Which book printed a chapter is not in the record
-    // — every rules record in the archive has a contentSource of "None" — so
+    // Four dumps, one type. Which book printed a chapter is not in the record,
+    // every rules record in the archive has a contentSource of "None", so
     // the file it came from is stamped onto it as it is read, the same way a
     // class improvement is stamped with its kind.
     files: [

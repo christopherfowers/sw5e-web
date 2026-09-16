@@ -95,7 +95,7 @@ test.describe("keyboard-only operation", () => {
   }) => {
     await page.goto("/monsters");
 
-    // Sorting needs React attached — there is no plain-HTML fallback for it,
+    // Sorting needs React attached. There is no plain-HTML fallback for it,
     // unlike the navigation menus. Without this the Enter below lands on a
     // button with no handler and nothing happens.
     await hydrated(page);

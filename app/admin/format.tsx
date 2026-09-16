@@ -2,7 +2,7 @@
  * The small shared pieces both administrative screens need.
  *
  * Two screens is exactly the point at which these stop being local helpers and
- * start being a place where the two can drift apart — one page rendering a date
+ * start being a place where the two can drift apart. One page rendering a date
  * as an ISO string while the other writes it out, one reporting a failure with
  * the server's sentence while the other says "something went wrong".
  *
@@ -25,8 +25,8 @@ export type Load<T> =
  * The sentence to show for a failure.
  *
  * The server's own wording is preferred when there is one, because it is
- * specific — "That is not a status", "A reason is required when suspending an
- * account" — and a client that replaced it with a generic sentence would be
+ * specific ("That is not a status", "A reason is required when suspending an
+ * account") and a client that replaced it with a generic sentence would be
  * throwing away the only part of the answer the reader can act on.
  */
 export function describeFailure(error: unknown): string {
@@ -51,9 +51,9 @@ export function needsStrongerSignIn(error: unknown): boolean {
 /**
  * A date and time, written out.
  *
- * Administrative screens need the time as well as the day — "who suspended this
+ * Administrative screens need the time as well as the day ("who suspended this
  * account, and was it before or after the report came in" is a question about
- * hours — which is the one place this differs from the flag queue's date, and
+ * hours) which is the one place this differs from the flag queue's date, and
  * why it is not shared with it.
  *
  * The `<time>` element keeps the machine-readable value where a machine can

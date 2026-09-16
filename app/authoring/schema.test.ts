@@ -9,7 +9,7 @@
  *
  * The most important test in the file is the last one in "nothing is ever
  * dropped". A generated form that skips what it does not understand deletes
- * that field on the next save — silently, permanently, and with no symptom
+ * that field on the next save. Silently, permanently, and with no symptom
  * until somebody notices a section missing from a published page.
  */
 
@@ -142,8 +142,8 @@ describe("shapes that appear in this corpus", () => {
   });
 
   it("shows an object-level condition rather than inventing a control for it", () => {
-    // `oneOf` here is a condition on one object, not two alternative shapes —
-    // both branches draw from the same property list — so the properties are
+    // `oneOf` here is a condition on one object, not two alternative shapes,
+    // both branches draw from the same property list, so the properties are
     // drawn once and the branches become rules the author is told about.
     const schema: SchemaNode = {
       type: "object",
@@ -228,7 +228,7 @@ describe("nothing is ever dropped", () => {
   it("gives a shape it does not understand a control anyway", () => {
     // The most important behaviour in this module. A draft carries the whole
     // document, so a field the form does not draw is a field the next save
-    // deletes — silently, and with no symptom until somebody notices a section
+    // deletes. Silently, and with no symptom until somebody notices a section
     // missing from a published page.
     const schema: SchemaNode = {
       type: "object",

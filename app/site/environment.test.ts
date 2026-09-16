@@ -3,20 +3,20 @@
  *
  * Almost every assertion in here is about a failure returning `false`, which
  * looks like a lot of ceremony around a `catch`. It is not. The whole design
- * rests on one asymmetry — silence means production — and that asymmetry is a
+ * rests on one asymmetry, silence means production, and that asymmetry is a
  * single character away from being inverted at any point in this file's life.
  * Each of the cases below is a real thing that happens to a deployment: the API
  * not mounted yet, the proxy answering with the SPA shell, a request that never
  * comes back, a body from a version of the service that does not have this
  * field. Every one of them has to draw nothing.
  *
- * The complementary assertion — that a service which says it is QA does produce
- * a banner — is here too, because a fail-closed function that always returns
+ * The complementary assertion, that a service which says it is QA does produce
+ * a banner, is here too, because a fail-closed function that always returns
  * false is trivially "safe" and completely useless, and that is the failure a
  * suite of absence assertions would not catch on its own.
  *
  * The second half of this file is the same shape for the second fact the
- * document carries — whether account mail is getting out — with its default
+ * document carries, whether account mail is getting out, with its default
  * pointing the other way. Both defaults follow one rule: silence must change
  * nothing. For the banner that means production, because a banner nobody asked
  * for is worse than none. For mail that means "delivering", because telling
@@ -33,7 +33,7 @@ function respondWith(
   { status = 200, contentType = "application/json" } = {},
 ) {
   // The parameters are named and unused because the assertion about *how* the
-  // request is made — a relative path, no credentials — reads them off
+  // request is made (a relative path, no credentials) reads them off
   // `mock.calls`, and vi.fn only types that tuple from the implementation's own
   // signature.
   const fetchMock = vi.fn(
@@ -73,8 +73,8 @@ describe("isTestEnvironment", () => {
   /**
    * The one that decides whether this feature is safe to ship.
    *
-   * A deployment with no API reachable at all — during a partial deploy, behind
-   * a proxy that has not been given the route, or simply offline — must look
+   * A deployment with no API reachable at all (during a partial deploy, behind
+   * a proxy that has not been given the route, or simply offline) must look
    * exactly like production. Invert the `catch` in `environment.ts` and this is
    * what fails.
    */
@@ -92,7 +92,7 @@ describe("isTestEnvironment", () => {
   it("reports nothing when the request never answers", async () => {
     // Never settles. The abort signal composed inside `isTestEnvironment` is
     // what has to end this, and if the timeout is ever removed this test hangs
-    // rather than failing quietly — which is the correct way for a missing
+    // rather than failing quietly. Which is the correct way for a missing
     // deadline to show up.
     vi.stubGlobal(
       "fetch",
@@ -209,7 +209,7 @@ describe("isTestEnvironment", () => {
  * The failure this exists for: registering on QA produced "a verification link
  * is on its way to your address", followed by an offer to check the spam
  * folder, while the relay was refusing everything and the API already knew. The
- * assertions below are the two halves that make the fix real — an outage that
+ * assertions below are the two halves that make the fix real. An outage that
  * is reported has to be believed, and everything that is not a report has to be
  * ignored.
  */
@@ -218,7 +218,7 @@ describe("isAccountEmailDelivering", () => {
    * The one that decides whether the feature does anything at all.
    *
    * Invert the comparison in `environment.ts` and this is what fails, leaving a
-   * function that cheerfully reports healthy mail through an outage — which is
+   * function that cheerfully reports healthy mail through an outage. Which is
    * precisely the bug, restored.
    */
   it("believes the service when it says mail is not getting out", async () => {
@@ -238,7 +238,7 @@ describe("isAccountEmailDelivering", () => {
    *
    * It has to mean "carry on", not "announce an outage". A service that has
    * never heard of mail delivery has not reported one, and a warning shown
-   * without grounds is a warning people learn to scroll past — after which the
+   * without grounds is a warning people learn to scroll past. After which the
    * real one is invisible too.
    */
   it("reports delivering when the answer does not carry the field at all", async () => {
@@ -328,7 +328,7 @@ describe("isAccountEmailDelivering", () => {
    * The security property, stated where it can be checked mechanically.
    *
    * Nothing about the reader goes out with this question. It carries no
-   * address, in the path, in a query string or in a body — which is what makes
+   * address, in the path, in a query string or in a body. Which is what makes
    * the answer global, and a global answer is the only kind that can be shown
    * without undoing the identical 202 the account endpoints exist to give.
    *

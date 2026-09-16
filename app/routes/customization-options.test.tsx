@@ -5,14 +5,14 @@
  * `app/content/nav-groups.ts` derives the hub's coverage claims from
  * `CUSTOMIZATION_OPTION_DESTINATIONS`, and the reachability check in
  * `nav-groups.test.ts` believes them: for the six types the hub indexes it
- * stops looking, on the strength of the declaration. So the declaration has to
+ * stops looking, on the strength of the declaration, so the declaration has to
  * be held to the page. Delete three cards from the grid below and, without the
  * first test here, six types would still be reported as reachable while three
  * of them had nothing anywhere leading to them.
  *
  * Three of the nine cards are not type indexes. `class-improvements` is one
  * content type holding three unrelated answers, told apart by
- * `improvementType`, and the previous site published them as three pages — so
+ * `improvementType`, and the previous site published them as three pages. So
  * the hub links `/class-improvements`, `/multiclass-improvements` and
  * `/splashclass-improvements`, which are filtered views. That is the reason
  * this file asserts on addresses rather than on type ids: for three of the nine
@@ -98,8 +98,8 @@ describe("the customization options hub", () => {
     outright.
 
     Deriving the expectation from the same array the page walks proves the page
-    and the menu agree and proves nothing about which lists a reader is offered
-    — put the merged thirty-row index back and every other assertion here goes
+    and the menu agree and proves nothing about which lists a reader is offered.
+    Put the merged thirty-row index back and every other assertion here goes
     on passing. This is the one that would not.
   */
   it("offers the class improvements as the three things they are", () => {
@@ -122,7 +122,7 @@ describe("the customization options hub", () => {
     And the claim the reachability check reads, which is deliberately the
     smaller one: the six types whose whole index is on this page. The class
     improvements are not among them even though they are on the page, because
-    what the page links is three cuts of that type — and three cuts cover a
+    what the page links is three cuts of that type, and three cuts cover a
     type only while every row lands on one of them, which is a question about
     the dataset and is asked of the dataset in `nav-groups.test.ts`.
   */

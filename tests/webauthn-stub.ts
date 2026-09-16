@@ -55,7 +55,7 @@ function clientData(type: string, challenge: BufferSource): ArrayBuffer {
 export interface AuthenticatorOptions {
   /**
    * Thrown instead of producing a credential. Pass a `DOMException` with the
-   * name the browser would really use — that name is the only thing the client
+   * name the browser would really use. That name is the only thing the client
    * has to work from.
    */
   failWith?: DOMException;

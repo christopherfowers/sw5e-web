@@ -2,7 +2,7 @@
  * A QR code, drawn as inline SVG from the data itself.
  *
  * Generated in the browser rather than fetched as an image, because the
- * obvious alternative — pointing an `<img>` at a QR service — would hand a
+ * obvious alternative, pointing an `<img>` at a QR service, would hand a
  * third party the TOTP secret it is asked to draw. That is the entire second
  * factor, in a URL, in someone else's access log. It would also need an
  * external host in `img-src`, which this site's Content-Security-Policy does
@@ -13,7 +13,7 @@
  *
  * A QR code is not an interface on its own. It cannot be read by a screen
  * reader, focused, or used at all by someone whose authenticator app is on the
- * same device as the browser — a phone, which is most people. The secret is
+ * same device as the browser. A phone, which is most people. The secret is
  * always shown as selectable text beside it; see the security page. This
  * element is therefore `aria-hidden`, with the accessible path living in that
  * text rather than in a description of a picture of a number.
@@ -23,7 +23,7 @@ import { encode } from "uqr";
 
 /**
  * One quiet-zone border of four modules, which the specification requires and
- * scanners genuinely need — a code drawn flush to the edge of a dark surface
+ * scanners genuinely need. A code drawn flush to the edge of a dark surface
  * often will not read.
  */
 const QUIET_ZONE = 4;

@@ -3,7 +3,7 @@
  *
  * The account contract fixture serves everything under `/api/auth` and refuses
  * anything else, so a test cannot silently reach something it did not mean to.
- * The administrative routes live *inside* that prefix — `/api/auth/admin/…` —
+ * The administrative routes live *inside* that prefix, `/api/auth/admin/…`,
  * which means this cannot simply sit beside the account fixture the way the
  * flag stub does. It sits in front of it: anything under `/api/auth/admin` is
  * answered here, everything else under `/api/auth` falls through to the real
@@ -12,7 +12,7 @@
  * ## Why it is strict about who may call it
  *
  * Most of what these tests assert is a refusal, and a stub that answered every
- * caller would make every one of them pass by accident. So this enforces what
+ * caller would make every one of them pass by accident, so this enforces what
  * the service enforces, in the same order:
  *
  *   - no session at all is a bodiless 401, exactly as the cookie scheme answers
@@ -22,7 +22,7 @@
  *
  * The third is the one worth having a fixture for. It is a real 403 that the
  * interface must not word as "you do not have access", because the account
- * does — and no amount of role-checking in the client can tell the two apart
+ * does, and no amount of role-checking in the client can tell the two apart
  * without the code.
  *
  * ## And about what it will not do
@@ -304,7 +304,7 @@ export class AdminApiStub {
    *
    * Modelled rather than ignored, because a stub that answered every search
    * with the same rows could not notice a client that forgot to send the term
-   * at all — which is the most likely way this feature breaks.
+   * at all. Which is the most likely way this feature breaks.
    */
   private directory(query: URLSearchParams): AdminUserList {
     let rows = this.users;
@@ -362,8 +362,8 @@ export class AdminApiStub {
  * One `fetch` that serves the account API and the administrative one.
  *
  * The account half is the real contract fixture, so the session still resolves
- * the way it does in every other test in this suite — through a genuine
- * `GET /api/auth/me` — rather than being injected. The administrative half
+ * the way it does in every other test in this suite, through a genuine
+ * `GET /api/auth/me`, rather than being injected. The administrative half
  * reads that same fixture's session to decide what to refuse, which is what
  * makes "an administrator who signed in with an emailed code is refused" a
  * property of the pair rather than a value a test set by hand.

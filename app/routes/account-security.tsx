@@ -3,9 +3,9 @@
  *
  * The QR code is the fast path, not the only path, and treating it as the only
  * path is the usual mistake. A QR code cannot be read by a screen reader,
- * cannot be focused, and — the case nobody tests — cannot be scanned at all by
+ * cannot be focused, and, the case nobody tests, cannot be scanned at all by
  * somebody browsing on the same phone their authenticator app is installed on,
- * which is a large share of readers. So the secret is always present as
+ * which is a large share of readers, so the secret is always present as
  * selectable text, grouped in fours so it can be read aloud or copied by hand,
  * and the QR code is decorative on top of it.
  *
@@ -158,7 +158,7 @@ export default function AccountSecurity() {
         </Banner>
         <p className="auth-note">
           Turning it off, or moving it to a new phone, is deliberately not
-          something this page can do on its own — losing an authenticator app is
+          something this page can do on its own. Losing an authenticator app is
           the moment an account is most worth stealing. Sign in with a recovery
           code and it will walk you through re-enrolling.
         </p>
@@ -184,7 +184,7 @@ export default function AccountSecurity() {
           <li>
             <h3>Add the account to your app</h3>
             <p>
-              Scan this code with your authenticator app — or, if you are
+              Scan this code with your authenticator app. Or, if you are
               reading this on the same device the app is on, type the setup key
               in by hand.
             </p>
@@ -202,7 +202,7 @@ export default function AccountSecurity() {
                   <code>{grouped(sharedKey)}</code>
                 </p>
                 <p className="auth-note">
-                  Time-based, six digits, 30-second period — the defaults every
+                  Time-based, six digits, 30-second period. The defaults every
                   authenticator app uses.
                 </p>
               </div>
@@ -267,7 +267,7 @@ export default function AccountSecurity() {
       ) : null}
 
       <p className="auth-note">
-        You will need an authenticator app — 1Password, Bitwarden, Google
+        You will need an authenticator app, 1Password, Bitwarden, Google
         Authenticator, Aegis and Ente Auth all work, among others.
       </p>
 

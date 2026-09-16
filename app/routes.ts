@@ -3,14 +3,14 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 import { SUBCATEGORY_VIEWS } from "./content/subcategory-views";
 
 // The two dynamic content routes cover every content type. Each type
-// still gets its own columns, filters and detail shaping — that lives in the
+// still gets its own columns, filters and detail shaping. That lives in the
 // per-type configuration, not in a duplicated route module.
 //
 // The static segments are declared before `:type` for readability; React
 // Router ranks a static segment above a dynamic one regardless of order, so
 // `/sources` reaches the source pages rather than being read as one more
 // content type. The account routes are static segments too, and rank the same
-// way — `/account` cannot be mistaken for a content type.
+// way. `/account` cannot be mistaken for a content type.
 export default [
   index("routes/home.tsx"),
   route("about", "routes/about.tsx"),
@@ -43,9 +43,9 @@ export default [
 
     // The administration screens. Static segments beneath `/account`, and
     // deliberately no `:userId` among them: a dynamic administrative route
-    // could not be prerendered — there is no bounded list of accounts, and an
+    // could not be prerendered (there is no bounded list of accounts, and an
     // account identifier is not something the build machine should be
-    // enumerating — so it would fall through to nginx's SPA fallback, which is
+    // enumerating) so it would fall through to nginx's SPA fallback, which is
     // wired to `error_page 404` and answers 404 to everything that reads the
     // status line. The account being managed is a query parameter on a static
     // path instead, exactly as the authoring routes below carry the document
@@ -55,7 +55,7 @@ export default [
     // load-bearing rather than tidy: React Router keeps a parent route's
     // component mounted while a child renders, so the directory's search term
     // and filters survive the trip into one account and back out. They have
-    // nowhere else to survive — the term is somebody's email address, so it may
+    // nowhere else to survive. The term is somebody's email address, so it may
     // not go in the URL, in history state or in storage.
     route("people", "routes/account-people.tsx", [
       route("manage", "routes/account-people-manage.tsx"),
@@ -64,7 +64,7 @@ export default [
   ]),
 
   // The authoring workspace. A static segment like the account routes, and
-  // ranked above `:type` for the same reason — `/authoring` cannot be mistaken
+  // ranked above `:type` for the same reason. `/authoring` cannot be mistaken
   // for a content type. Three addresses, and the subject of the edit travels in
   // the query string rather than the path: there is no runtime server here, so
   // a path segment would need a prerendered file per document and could not
@@ -80,8 +80,8 @@ export default [
   // view is one
   // entry in `app/content/subcategory-views.ts` rather than an entry plus two
   // lines nobody remembers. They rank above `:type` the way every other static
-  // segment on this page does — "weapons" is not read as one more content type
-  // — and each is a real prerendered file rather than `?category=weapon` on
+  // segment on this page does, "weapons" is not read as one more content type,
+  // and each is a real prerendered file rather than `?category=weapon` on
   // `/equipment`, because a query string does not change which file nginx
   // serves and the filtering would only ever happen in a browser that ran the
   // script. `react-router.config.ts` prerenders one path per entry.

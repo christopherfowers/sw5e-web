@@ -1,9 +1,9 @@
 /**
  * A content item, whatever shape it happens to be.
  *
- * The content types are not uniform — a feat carries six fields, a creature
+ * The content types are not uniform (a feat carries six fields, a creature
  * carries forty-seven, and a rules chapter carries one field half a megabyte
- * long — so this renders four open-ended collections rather than a fixed field
+ * long) so this renders four open-ended collections rather than a fixed field
  * list: key/value stats, prose sections, named entries (traits, actions,
  * features) and roll tables. A type that has none of a given collection simply
  * renders nothing for it.
@@ -12,7 +12,7 @@
  * its class illustration, and both come from `itemFigure` below rather than
  * from the caller, so a route does not have to know which types are
  * illustrated. Types with no art render no figure at all and the page falls
- * back to a single column — there is no empty frame and no broken icon,
+ * back to a single column. There is no empty frame and no broken icon,
  * because an `<img>` is only ever emitted for a file this build contains.
  */
 
@@ -44,9 +44,9 @@ interface Figure {
    *
    * These two strings are exactly what `app/content/imagery.ts` looks the image
    * up by, and they have to be, because the attribution record for a picture is
-   * keyed `{group}-{key}` on the same naming. Deriving them a second way here —
-   * from the item's name, say — would produce a report pointing at a record
-   * that does not exist, which the service refuses. So they are computed
+   * keyed `{group}-{key}` on the same naming. Deriving them a second way here
+   * (from the item's name, say) would produce a report pointing at a record
+   * that does not exist, which the service refuses, so they are computed
    * alongside the lookup rather than near it.
    */
   assetGroup: string;
@@ -73,7 +73,7 @@ function itemFigure(item: ContentItem): Figure | null {
     return {
       image: classArt(item.name),
       alt: `Illustration of a ${item.name}`,
-      caption: `${item.name} — illustration from the Star Wars 5e archive`,
+      caption: `${item.name}. Illustration from the Star Wars 5e archive`,
       fallbackNote: `No illustration of the ${item.name} exists in the archive.`,
       assetGroup: "classes",
       assetKey: item.name.toLowerCase(),
@@ -81,7 +81,7 @@ function itemFigure(item: ContentItem): Figure | null {
   }
 
   // An archetype and a class improvement are both about one class and neither
-  // has art of its own, so both borrow the class illustration — which is also
+  // has art of its own, so both borrow the class illustration. Which is also
   // what makes 137 archetypes read as ten families at a glance.
   if (item.type === "archetypes" || item.type === "class-improvements") {
     const className = item.summary.className;
@@ -91,8 +91,8 @@ function itemFigure(item: ContentItem): Figure | null {
       alt: `Illustration of a ${className}`,
       caption:
         item.type === "archetypes"
-          ? `${className} — the class this archetype branches from`
-          : `${className} — the class this improvement belongs to`,
+          ? `${className}. The class this archetype branches from`
+          : `${className}. The class this improvement belongs to`,
       fallbackNote: `No illustration of the ${className} class exists in the archive.`,
       assetGroup: "classes",
       assetKey: className.toLowerCase(),
@@ -108,7 +108,7 @@ function itemFigure(item: ContentItem): Figure | null {
  * Taglines are built for index rows, where they are the only summary a reader
  * gets and they earn their place. On a detail page the stats table is four
  * lines below, and for several types the tagline is assembled out of exactly
- * the values it starts with — a species reads "Medium · Byss" directly above a
+ * the values it starts with. A species reads "Medium · Byss" directly above a
  * table whose first two rows are Size: Medium and Homeworld: Byss. Read twice
  * in a row like that, it stops looking like a summary and starts looking like
  * a mistake.
@@ -116,7 +116,7 @@ function itemFigure(item: ContentItem): Figure | null {
  * The test is per-segment and total: every part of the tagline has to appear
  * as a stat value before it is dropped. A monster's "Large droid, unaligned"
  * and a feat's "No prerequisite" say something the table does not, so they
- * stay — which is the point of checking rather than special-casing species by
+ * stay. Which is the point of checking rather than special-casing species by
  * name, since the next type to grow a redundant tagline would not be covered
  * by a list of names.
  */
@@ -153,7 +153,7 @@ export function ItemDetail({
   item: ContentItem;
   /**
    * The citation for this item's picture, supplied by the route's loader
-   * because it is build-time data. Null when the item has no picture — and
+   * because it is build-time data. Null when the item has no picture. And
    * note that a picture whose artist is unknown still has a citation, one
    * that says so.
    */
@@ -163,7 +163,7 @@ export function ItemDetail({
     Every heading's address, worked out from the item before anything draws.
 
     It used to be a slugger handed down to each block, which read well and made
-    rendering a mutation — and React renders a component more than once for the
+    rendering a mutation, and React renders a component more than once for the
     same state whenever it likes. When it did, every id on the page came out as
     `time-2`, `difficult-terrain-2`, and every link the search index pointed at
     was dead. See `app/content/headings.ts`.
@@ -211,14 +211,14 @@ export function ItemDetail({
       {/*
         The numbers, in a band of their own between the heading and the prose.
         They used to sit at the top of `item-body`, which made them one block
-        with it — and a picture can only go before or after one block, so on a
+        with it, and a picture can only go before or after one block, so on a
         phone the picture came first and the numbers began a full screen down.
         Measured on a species page, the statistics started 898px into a 812px
         viewport: a screen of decorative art before a single number, on the
         device this reference is most read from.
 
         Splitting them out lets the narrow layout read heading, numbers,
-        picture, prose. The wide layout is unchanged — there the picture has a
+        picture, prose. The wide layout is unchanged. There the picture has a
         column of its own and costs the text nothing.
 
         Done by moving the markup rather than by reordering with CSS, because
@@ -299,7 +299,7 @@ export function ItemDetail({
             This is the control that matters most on the whole site right now.
             Around a hundred and fifty of these pictures came from the original
             sw5e.com with no record of who drew them, and the only people who
-            can close that gap are readers who recognise the work — which they
+            can close that gap are readers who recognise the work. Which they
             do here, looking at it, rather than on a contact page later.
 
             The target is the picture's attribution record rather than the page:
@@ -318,7 +318,7 @@ export function ItemDetail({
               /*
                 The wording follows the citation directly above it. On the 149
                 pictures whose artist was never recorded, the caption has just
-                said so — and the next line a reader who recognises the work
+                said so, and the next line a reader who recognises the work
                 should meet is the question, not a generic offer to complain.
                 On the one picture that is properly cited, and on any that
                 becomes so, it goes back to the ordinary quiet line.
@@ -421,8 +421,8 @@ export function ItemDetail({
           read from the top; an affordance for reporting it belongs where
           somebody has finished reading and found the thing that is wrong.
 
-          `item.type` is the site's own route segment — `species`,
-          `enhanced-items` — which the service resolves against its content
+          `item.type` is the site's own route segment (`species`,
+          `enhanced-items`) which the service resolves against its content
           registry, so no mapping table has to be kept in step here.
         */}
         <ReportControl
@@ -448,7 +448,7 @@ export function ItemDetail({
  * A titled section of an item's prose.
  *
  * Its own component because the heading needs an address, and naming it has to
- * happen in the same order the page renders — a slug taken inside a `.map`
+ * happen in the same order the page renders. A slug taken inside a `.map`
  * callback and one taken outside it are the same call, but keeping the
  * ordering visible here is what makes the ids stable across builds.
  */

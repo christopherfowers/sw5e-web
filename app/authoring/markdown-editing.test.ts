@@ -32,7 +32,7 @@ function caret(text: string, offset = text.length): EditorSelection {
  * The result as one string, selection and all.
  *
  * Asserting on the text alone would let half of every one of these tests pass
- * against an action that puts the caret in the wrong place — which is the
+ * against an action that puts the caret in the wrong place. Which is the
  * failure authors actually notice, because it is the one that happens on every
  * keystroke rather than once.
  */

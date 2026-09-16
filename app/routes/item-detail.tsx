@@ -20,10 +20,10 @@ function describe(item: { tagline: string | null; sections: { body: string }[] }
 }
 
 export function meta({ loaderData }: Route.MetaArgs) {
-  if (!loaderData) return [{ title: "Not found — Star Wars 5e" }];
+  if (!loaderData) return [{ title: "Not found | Star Wars 5e" }];
   const label = TYPE_META[loaderData.type].singular;
   return [
-    { title: `${loaderData.item.name} — ${label} — Star Wars 5e` },
+    { title: `${loaderData.item.name}, ${label} | Star Wars 5e` },
     { name: "description", content: describe(loaderData.item) },
   ];
 }
@@ -57,7 +57,7 @@ export async function loader({ params }: Route.LoaderArgs) {
    * document is build-time data and only this one entry of it should end up
    * in the page. Species are keyed by slug and archetypes by the class their
    * illustration belongs to, matching how `imagery.ts` resolves the files
-   * themselves — so an item with no picture asks for no citation.
+   * themselves, so an item with no picture asks for no citation.
    */
   const className = item.summary.className;
   const artCredit =

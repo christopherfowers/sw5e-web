@@ -8,7 +8,7 @@
  * stored cross-site scripting hole in a moderation queue hands an attacker the
  * most valuable session on the platform, so the tests below feed markup through
  * every one of those fields and assert that what lands in the document is a
- * text node — not that it "looks escaped", but that no element was created.
+ * text node. Not that it "looks escaped", but that no element was created.
  *
  * **Who sees the queue.** The browser decides what to draw and the API decides
  * what to allow, and the second is the one that matters. What is asserted here
@@ -143,7 +143,7 @@ describe("who gets the queue", () => {
     );
 
     // Not an empty queue, and not silence. The API refuses contributor work to
-    // a session that only proved a mailbox — and this account has a passkey on
+    // a session that only proved a mailbox, and this account has a passkey on
     // it, so what it meets is the offer to use it rather than an instruction
     // to go and enrol the thing it already has.
     expect(
@@ -201,8 +201,8 @@ describe("untrusted text", () => {
 
   it("renders a display name as text and not as markup", async () => {
     // Chosen by its owner, carried onto every report they file, and rendered
-    // beside it. The service accepts angle brackets in a name — refusing them
-    // would be arbitrary — so escaping is what has to hold.
+    // beside it. The service accepts angle brackets in a name, refusing them
+    // would be arbitrary, so escaping is what has to hold.
     //
     // Asserted against the document's text rather than with `findByText`,
     // because the name sits inline in a sentence: "Filed 1 Sep 2026 by …". The
@@ -244,7 +244,7 @@ describe("untrusted text", () => {
       }),
     );
 
-    // Not a blank space, and not the account identifier — which is neither
+    // Not a blank space, and not the account identifier. Which is neither
     // readable nor anybody's business.
     expect(await screen.findByText(/a removed account/i)).toBeInTheDocument();
   });

@@ -5,7 +5,7 @@
  *
  * The service searches every word of every document. The index this site
  * downloads searches names, statistics, headings and the first 240 characters
- * of each item's prose — which is the whole of a feat and almost none of a
+ * of each item's prose. Which is the whole of a feat and almost none of a
  * rules chapter.
  *
  * So this page asks the service, and falls back to the index when the service
@@ -21,8 +21,8 @@
  *
  * ## Why it is still prerendered as a shell
  *
- * Both searches run in the browser — one over a downloaded index, one over
- * `fetch` — so there is nothing to render at build time. The address is the
+ * Both searches run in the browser (one over a downloaded index, one over
+ * `fetch`) so there is nothing to render at build time. The address is the
  * point: `/search?q=lightsaber` is shareable and the results are reproducible.
  */
 
@@ -54,7 +54,7 @@ const SETTLE_MS = 200;
 
 export function meta() {
   return [
-    { title: "Search — Star Wars 5e" },
+    { title: "Search | Star Wars 5e" },
     {
       name: "description",
       content:
@@ -121,8 +121,8 @@ export default function Search() {
       searchContent(trimmed, { signal: controller.signal }).then(
         (results) => setAnswered({ for: trimmed, value: { from: "service", results } }),
         (error: unknown) => {
-          // An abort is this component's own doing — the query changed, or the
-          // reader left — and must not be reported as the service being down.
+          // An abort is this component's own doing (the query changed, or the
+          // reader left) and must not be reported as the service being down.
           if (error instanceof DOMException && error.name === "AbortError") return;
 
           // Everything else falls back, including a refusal. Whatever the

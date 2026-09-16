@@ -10,7 +10,7 @@
  *
  * The old site used Font Awesome, which is several hundred kilobytes of glyphs
  * to draw six marks. These are the six, inline, at about a line of path data
- * each — and being inline is what lets them take `currentColor` and follow the
+ * each, and being inline is what lets them take `currentColor` and follow the
  * button's own state without a second set of rules per theme.
  *
  * ## What these are

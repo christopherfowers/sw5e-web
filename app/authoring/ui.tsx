@@ -2,7 +2,7 @@
  * The handful of things every authoring screen needs and none of them owns.
  *
  * Deliberately small. The account screens have `app/components/auth-ui.tsx` for
- * the same job and this does not try to be a second one — what is here is only
+ * the same job and this does not try to be a second one. What is here is only
  * what all three authoring screens do identically, which is: report a failure
  * in words rather than in a status code, say when something happened, and
  * explain the one refusal that is not anybody's fault.

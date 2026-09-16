@@ -3,7 +3,7 @@
  *
  * Small, and worth testing carefully: every edit anybody makes in this
  * interface goes through `setAtPointer` or `removeAtPointer`, and a document
- * is saved whole rather than as a patch — so a helper that lost a branch would
+ * is saved whole rather than as a patch, so a helper that lost a branch would
  * publish a document missing a section nobody touched.
  */
 
@@ -117,8 +117,8 @@ describe("removing", () => {
 
 describe("reordering", () => {
   it("moves an entry without disturbing the others", () => {
-    // Order is content in this corpus — a class progression is read top to
-    // bottom — so a list editor without this would make somebody retype four
+    // Order is content in this corpus, a class progression is read top to
+    // bottom, so a list editor without this would make somebody retype four
     // rows to put one in the right place.
     expect(moveArrayItem({ rows: ["a", "b", "c"] }, "/rows", 2, 0)).toEqual({
       rows: ["c", "a", "b"],

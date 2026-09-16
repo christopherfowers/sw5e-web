@@ -3,7 +3,7 @@
  *
  * This site prerenders every published path to HTML at build time and serves
  * it from nginx with no runtime server anywhere. A `loader` on a route
- * therefore does not run per request — it runs once, on a build machine, and
+ * therefore does not run per request. It runs once, on a build machine, and
  * its result is written into a file that every visitor is then served and that
  * every cache in between is free to keep.
  *
@@ -13,7 +13,7 @@
  * `/account/index.html`.
  *
  * Neither failure is visible. The pages still render, the flows still work in
- * a browser, and nothing in the test suite would go red — which is precisely
+ * a browser, and nothing in the test suite would go red. Which is precisely
  * why this file exists. It is checking the shape of the source, because the
  * behaviour it protects cannot be observed from inside the app.
  */
@@ -50,9 +50,9 @@ const AUTH_ROUTE_MODULES = [
   "account-audit.tsx",
 
   // The authoring workspace. Same rule, and if anything a sharper version of
-  // it: a loader here would bake a build machine's view of the draft queue —
-  // the name of every document somebody has unfinished work on, and of everyone
-  // who has it — into a static file served to every visitor of a public site.
+  // it: a loader here would bake a build machine's view of the draft queue
+  // (the name of every document somebody has unfinished work on, and of everyone
+  // who has it) into a static file served to every visitor of a public site.
   "authoring.tsx",
   "authoring-worklist.tsx",
   "authoring-edit.tsx",
@@ -68,7 +68,7 @@ describe("no auth route may run code at build time", () => {
     const text = source(file);
 
     // `loader` and `clientLoader` are matched separately: `clientLoader` is
-    // harmless — it runs in the browser — while `loader` runs during the
+    // harmless, it runs in the browser, while `loader` runs during the
     // prerender. The pattern is anchored so `clientLoader` cannot satisfy it.
     expect(
       /(^|\W)export\s+(async\s+)?function\s+loader\b/.test(text),
@@ -82,8 +82,8 @@ describe("no auth route may run code at build time", () => {
   });
 
   it.each(AUTH_ROUTE_MODULES)("%s exports no action", (file) => {
-    // `ssr: false` makes actions unusable anyway — React Router refuses to
-    // build with one — but a contributor reaching for a `<Form method="post">`
+    // `ssr: false` makes actions unusable anyway, React Router refuses to
+    // build with one, but a contributor reaching for a `<Form method="post">`
     // should meet this message rather than a build error about SSR.
     expect(
       /(^|\W)export\s+(async\s+)?function\s+action\b/.test(source(file)),
@@ -113,7 +113,7 @@ describe("the account routes are prerendered rather than left to the fallback", 
   ])("%s is in the prerender list", (route) => {
     // A path missing from this list is served by nginx's SPA fallback, which
     // is wired to `error_page 404`. It would render correctly in a browser
-    // while answering 404 to everything else — a shared link, a crawler, a
+    // while answering 404 to everything else. A shared link, a crawler, a
     // monitor.
     expect(config).toContain(`"${route}"`);
   });

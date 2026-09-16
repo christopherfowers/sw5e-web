@@ -1,7 +1,7 @@
 /**
  * A book's table of contents, as the rail reads it.
  *
- * The rail on a book's page used to show the other books — standing inside the
+ * The rail on a book's page used to show the other books. Standing inside the
  * Player's Handbook and being handed the shelf it came from. It now shows the
  * book's own chapters, which is what the site this replaces did and what a
  * reader reaches for.
@@ -37,7 +37,7 @@ describe("a book with an authored path", () => {
    *
    * Each appears once. A heading drawn twice would mean its chapters are
    * interleaved with another's, which the content repository has a test
-   * against — this is the rendering half of the same invariant.
+   * against. This is the rendering half of the same invariant.
    */
   it("groups the chapters under the headings they are read under", () => {
     const groups = readingStepsOf("PHB").map((step) => step.group);
@@ -55,7 +55,7 @@ describe("a book with an authored path", () => {
 describe("a book with no authored path", () => {
   /**
    * Wretched Hives has chapters and no reading order. It must still get a
-   * contents list — a book nobody has laid out is the normal state for
+   * contents list. A book nobody has laid out is the normal state for
    * everything except the two that have been done, and showing nothing would
    * put the reader back where they started.
    */

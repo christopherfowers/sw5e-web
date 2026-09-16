@@ -41,7 +41,7 @@ const CONTRACTION = /(?<=\p{L})�(?=(?:t|s|d|m|re|ve|ll)\b)/gu;
  * two unrelated dashes far apart cannot be mistaken for a quotation.
  *
  * The closing context includes `|` because the corpus quotes inside pipe
- * tables — a background's personality-trait table is one quoted line per row —
+ * tables, a background's personality-trait table is one quoted line per row,
  * and a quotation that ends a cell closes against the cell boundary rather
  * than against a space.
  */
@@ -56,7 +56,7 @@ const QUOTE_PAIR =
  * distribution tables where every zero is printed as a dash.
  *
  * The cell boundaries are lookaround rather than consumed, so a run of empty
- * cells — `|1-4|6|3|<?>|<?>|<?>|<?>|9|` — repairs every one of them rather
+ * cells, `|1-4|6|3|<?>|<?>|<?>|<?>|9|`, repairs every one of them rather
  * than every other one.
  */
 const TABLE_CELL_DASH = /(?<=\|)([ \t]*)�([ \t]*)(?=\|)/g;
@@ -78,7 +78,7 @@ const DOUBLED_INITIAL = /(?<=^|\n)([A-Z])\1(?=[a-z])/g;
 
 /**
  * A replacement character standing alone after a space: a spaced em dash.
- * Stat blocks write `Languages —` to mean "none", which is why the form that
+ * Stat blocks write `Languages , ` to mean "none", which is why the form that
  * ends a line matters as much as the one between two words.
  */
 const SPACED_DASH = /(?<= )�(?=\s|$)/gu;
@@ -88,8 +88,8 @@ const SPACED_DASH = /(?<= )�(?=\s|$)/gu;
  * `generation<?>for example`. The source PDFs set em dashes unspaced.
  *
  * The length guards are what keep this rule off proper nouns. The same
- * corruption ate accented letters out of names — `L<?>vern`, `Seelv<?>n`,
- * `Ty<?>k`, `H<?>sk` — and those are unrecoverable. Demanding two word
+ * corruption ate accented letters out of names (`L<?>vern`, `Seelv<?>n`,
+ * `Ty<?>k`, `H<?>sk`) and those are unrecoverable. Demanding two word
  * characters on the left and a real word on the right (two or more letters,
  * or the only two single-letter English words) excludes every such name in
  * the archive while still catching sentence dashes after short words like

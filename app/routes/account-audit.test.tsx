@@ -2,7 +2,7 @@
  * The administrative log.
  *
  * Shorter than the directory's suite because the page does less: it reads, it
- * filters, it pages. What it must not do is the interesting part — it must not
+ * filters, it pages. What it must not do is the interesting part. It must not
  * open to anybody but an administrator, and it must not interpret anything a
  * person wrote as markup.
  */

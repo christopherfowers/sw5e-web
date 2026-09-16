@@ -1,9 +1,9 @@
 /**
  * Translating between the three names one content type has.
  *
- * The service's registry key is singular — `armor-property`, `class` — and is
- * what every authoring address is built from. The route segment is plural —
- * `armor-properties`, `classes` — and is what this site publishes under. The
+ * The service's registry key is singular (`armor-property`, `class`) and is
+ * what every authoring address is built from. The route segment is plural
+ * (`armor-properties`, `classes`) and is what this site publishes under. The
  * display name is neither. All three come from `GET /api/content-types`, which
  * is why this module takes a fetched list rather than holding one: a fourth
  * copy of the registry, compiled here, would drift the first time a type is
@@ -11,8 +11,8 @@
  *
  * The two sets are also not the same size. The service manages thirty-one
  * types; this site browses twenty-seven of them. The four extra are the credit
- * records — the people who made the artwork and the licences it is shown
- * under — which are site metadata rather than game content and have no page of
+ * records, the people who made the artwork and the licences it is shown
+ * under, which are site metadata rather than game content and have no page of
  * their own. They are editable, and they are the *most* editable: the single
  * most requested correction on this site is an artist's name, and a hundred and
  * fifty pictures are waiting for one. What they do not have is somewhere to
@@ -30,7 +30,7 @@ export type ContentTypeIndex = ReadonlyMap<string, ContentTypeDescriptor>;
  *
  * Both, because an address this client is handed does not always come from the
  * authoring API. A content report names its target as `targetType`, and that is
- * documented as "a content type key or route segment" — so a flag filed from
+ * documented as "a content type key or route segment", so a flag filed from
  * `/species/wookiee` says `species` and one filed from a page under a plural
  * segment says the plural. Resolving either means the "correct the thing this
  * report is about" link works whichever the report happens to carry.
@@ -43,8 +43,8 @@ export function indexContentTypes(
   // Segments first, then keys over the top. The canonical key therefore wins
   // wherever one type's plural segment collides with another type's key.
   // Nothing in the registry does that today; the ordering makes it harmless if
-  // something ever does, and the alternative — resolving a name to the wrong
-  // type — would edit the wrong document.
+  // something ever does, and the alternative, resolving a name to the wrong
+  // type, would edit the wrong document.
   for (const type of types) index.set(type.routeSegment.toLowerCase(), type);
   for (const type of types) index.set(type.key.toLowerCase(), type);
 

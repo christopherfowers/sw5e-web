@@ -19,7 +19,7 @@
  * that worth doing: the API attempts its send before it replies, so the state
  * read here has already seen the failure this very submission caused.
  *
- * What is asked is global — is mail getting out, for anyone — and never about
+ * What is asked is global (is mail getting out, for anyone) and never about
  * the address in the form. A per-address answer would undo the whole reason the
  * 202 is identical for a registered address and an unknown one, because asking
  * whether mail to an address failed is asking whether it has an account.
@@ -27,8 +27,8 @@
  * If the delivery state cannot be read at all, the wording is exactly what it
  * was before any of this existed. See `app/site/environment.ts`.
  *
- * This route exports no `loader`. That is load-bearing rather than incidental
- * — see the note in `app/routes/account.tsx`.
+ * This route exports no `loader`. That is load-bearing rather than incidental.
+ * See the note in `app/routes/account.tsx`.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -44,7 +44,7 @@ import "~/styles/account.css";
 
 export function meta() {
   return [
-    { title: "Create an account — Star Wars 5e" },
+    { title: "Create an account | Star Wars 5e" },
     {
       name: "description",
       content:
@@ -60,8 +60,8 @@ export function meta() {
  * Deliberately permissive. The only address that matters is one the reader can
  * receive mail at, and that is settled by the verification link rather than by
  * a regular expression; a stricter pattern here would reject valid addresses
- * and teach nobody anything. This catches the typo — a missing "@", a trailing
- * comma — before it costs a round trip.
+ * and teach nobody anything. This catches the typo (a missing "@", a trailing
+ * comma) before it costs a round trip.
  */
 function emailProblem(value: string): string | null {
   const trimmed = value.trim();
@@ -129,7 +129,7 @@ export default function Register() {
        * Not one sentence of this says anything about the address that was
        * typed. It says what is true of the site: mail is not going out. That is
        * the same statement for every reader, so it tells nobody whether any
-       * particular address has an account here — which is the only reason it
+       * particular address has an account here. Which is the only reason it
        * can be shown at all.
        */
       <AuthCard title="Email is not being delivered right now">
@@ -137,7 +137,7 @@ export default function Register() {
           Verification email not sent
         </h2>
         <Banner tone="warning" title="No verification link was sent.">
-          Email from this site is failing to go out at the moment — for
+          Email from this site is failing to go out at the moment. For
           everyone. It is not a problem with your address and there is nothing
           wrong with what you typed. Checking your spam folder will not help,
           because nothing was sent to it.
@@ -206,7 +206,7 @@ export default function Register() {
       await register({ email: email.trim(), displayName: displayName.trim() });
 
       // The response is the same whether or not this address was already
-      // registered — the API refuses to be an account-existence oracle — so
+      // registered, the API refuses to be an account-existence oracle, so
       // nothing about the address decides what is shown next.
       //
       // What does decide it is whether mail is getting out at all, and this is
@@ -283,7 +283,7 @@ export default function Register() {
 
         <p className="auth-note">
           There is no password to choose. Once your address is verified you will
-          set up a passkey — your device's fingerprint, face or PIN — which
+          set up a passkey. Your device's fingerprint, face or PIN. Which
           cannot be phished or reused anywhere else.
         </p>
 

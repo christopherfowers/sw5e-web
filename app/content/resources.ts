@@ -2,7 +2,7 @@
  * The files this reference hosts, as the corpus describes them.
  *
  * The sheets used to be four links to somebody else's Google Drive. The site
- * did not hold them, and knew nothing about them — not their size, not their
+ * did not hold them, and knew nothing about them. Not their size, not their
  * page count, not whether the link still answered. They are content now: a
  * document in the content repository describes each one, the bytes sit beside
  * it, and adding a sheet is an edit to content rather than to this file.

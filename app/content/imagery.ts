@@ -23,7 +23,7 @@ const SPECIES_FILES = import.meta.glob("../assets/species/*.webp", {
  * Gallery thumbnails are a separate set, not small copies of the portraits.
  * They are flattened onto an opaque plate, and that one difference is worth
  * about 40% of the species index's weight: these cutouts have soft,
- * complicated edges — fur, spines, tendrils — and an alpha channel that
+ * complicated edges (fur, spines, tendrils) and an alpha channel that
  * detailed costs more to encode than the picture itself does. At 190px on a
  * tile with a solid ground behind it the transparency buys nothing. On the
  * detail page, where the portrait sits in a tinted frame, it buys the whole
@@ -51,8 +51,8 @@ const SOURCE_FILES = import.meta.glob("../assets/sources/*.webp", {
  * Page one of each downloadable sheet, rendered by
  * `scripts/build-resource-previews.mjs` and committed like every other image.
  *
- * A letter page is 612x792, and a book cover is drawn at 352x455 — the same
- * ratio to within a pixel. So a sheet's first page needs no cropping or
+ * A letter page is 612x792, and a book cover is drawn at 352x455. The same
+ * ratio to within a pixel, so a sheet's first page needs no cropping or
  * letterboxing to sit on the shelf beside the books, which is the whole reason
  * the resources can share their form factor rather than needing one of their
  * own.
@@ -115,7 +115,7 @@ const RESOURCE_PREVIEWS = indexVariants(RESOURCE_FILES);
  * Turns a set of variants into an `<img>`'s attributes.
  *
  * The largest variant is the `src`, which is what a browser too old for
- * `srcset` gets, and its dimensions are what reserve the layout box — the
+ * `srcset` gets, and its dimensions are what reserve the layout box. The
  * aspect ratio is identical across variants, so any of them would do.
  */
 function toImageSource(variants: Variant[] | undefined): ImageSource | null {
@@ -156,7 +156,7 @@ export function speciesPortraitCount(): number {
 
 /**
  * Class illustrations are keyed by the lowercased class name the archetype
- * dataset carries — "Guardian" resolves to `classes/guardian-*.webp`.
+ * dataset carries. "Guardian" resolves to `classes/guardian-*.webp`.
  */
 export function classArt(className: string | null): ImageSource | null {
   if (!className) return null;
@@ -177,7 +177,7 @@ export function brandImage(key: string): ImageSource | null {
  * The first page of a downloadable sheet, keyed by the resource's own key.
  *
  * Null for a resource nobody has rendered a preview for, which the shelf draws
- * as a monogram plate — the same fallback a book with no cover art gets, and
+ * as a monogram plate. The same fallback a book with no cover art gets, and
  * the reason a new sheet can be added to the corpus and appear immediately
  * rather than waiting for somebody to run the preview script.
  */

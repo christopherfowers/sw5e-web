@@ -1,5 +1,5 @@
 /**
- * Reports: what you filed, and — for a contributor — what everybody filed.
+ * Reports: what you filed, and, for a contributor, what everybody filed.
  *
  * ## One route, two audiences
  *
@@ -9,7 +9,7 @@
  * reports" and "the queue" are separate pages is a site where widening the
  * first means inventing the second's navigation all over again. It also keeps
  * the prerendered route count down by one, which is arithmetic this repository
- * has to state deliberately — see `react-router.config.ts` and the container
+ * has to state deliberately. See `react-router.config.ts` and the container
  * job.
  *
  * ## No loader, and it matters here more than anywhere
@@ -17,7 +17,7 @@
  * `app/routes/account.tsx` explains the rule: this site prerenders every
  * published path, so a `loader` runs once on a build machine and its result is
  * written into a file served to everybody. A loader on this page would bake
- * either nothing or — worse — one build machine's view of a moderation queue,
+ * either nothing or, worse, one build machine's view of a moderation queue,
  * carrying the display names of everybody who had reported anything, into a
  * static file behind a CDN. Everything below is fetched after hydration.
  *
@@ -35,7 +35,7 @@
  * The prop is not named here, deliberately. `account-flags.test.tsx` guards
  * that rule with a plain substring search over this file, which is the only
  * kind of guard that also catches it appearing in a comment somebody later
- * turns into code — so the name must not be written out even to explain it.
+ * turns into code, so the name must not be written out even to explain it.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -117,7 +117,7 @@ function Who({ name }: { name: string | null }) {
 
 /** The page a report points at, when the site publishes one to point at. */
 function targetHref(flag: Flag): string | null {
-  // An asset-credit record is not a published page — the picture is on the page
+  // An asset-credit record is not a published page. The picture is on the page
   // that uses it, and this client cannot work out which page that is from the
   // key alone. Linking to a 404 is worse than not linking.
   return flag.targetKind === "image"
@@ -189,7 +189,7 @@ function OwnReports() {
               <p className="flag-reason">{reasonLabel(flag.reason)}</p>
               {/*
                 A text node. This is what the reader themselves wrote, and it is
-                still rendered as text — the rule does not have an exception for
+                still rendered as text. The rule does not have an exception for
                 "their own", because a reader is not always the person whose
                 browser is showing it.
               */}
@@ -235,7 +235,7 @@ function ReviewQueue() {
     (signal?: AbortSignal) => {
       const filters = {
         // "outstanding" is the service's own default, expressed by sending no
-        // status at all rather than by naming two — the server decides what
+        // status at all rather than by naming two. The server decides what
         // counts as outstanding, and a client that listed the states here would
         // silently stop agreeing with it the day a fifth one is added.
         status: view === "outstanding" ? undefined : (view as FlagStatus | "all"),
@@ -274,7 +274,7 @@ function ReviewQueue() {
     } catch (error) {
       // A 409 here means somebody else acted on this row since the page was
       // drawn. Saying so is the difference between a page that looks broken and
-      // one that tells a reviewer to reload — and the service names the status
+      // one that tells a reviewer to reload, and the service names the status
       // it actually reached.
       setActionError(
         error instanceof ApiError && error.code === "invalid-transition"
@@ -380,7 +380,7 @@ function ReviewQueue() {
                   <Link
                     className="button button-primary"
                     to={editorPath(flag.targetType, flag.targetKey, flag.id)}
-                    aria-label={`Correct this — ${flag.targetName}`}
+                    aria-label={`Correct this: ${flag.targetName}`}
                   >
                     Correct this
                   </Link>
@@ -506,7 +506,7 @@ function Sections({ user }: { user: CurrentUser }) {
           // The account holds the role and this session cannot use it. The
           // queue carries the names of everybody who has reported anything and
           // what they wrote, so it stays closed to a session that only proved a
-          // mailbox — but the way out of that is offered here rather than
+          // mailbox, but the way out of that is offered here rather than
           // described, because in the ordinary case the credential it asks for
           // is already on the account.
           //

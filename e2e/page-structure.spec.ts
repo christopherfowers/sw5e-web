@@ -7,8 +7,8 @@ import { expect, test } from "@playwright/test";
  * These are the faults that do not announce themselves. A page with two `h1`s
  * or a heading level skipped from two to four still looks correct; what it
  * does is destroy the outline a screen-reader user navigates by, and nothing
- * in a screenshot or a unit test shows it. The same goes for a duplicate `id`
- * — perfectly invisible, and it silently breaks every `aria-labelledby` and
+ * in a screenshot or a unit test shows it. The same goes for a duplicate `id`.
+ * Perfectly invisible, and it silently breaks every `aria-labelledby` and
  * `<label for>` pointing at the second one.
  *
  * They are checked here rather than in jsdom because several of them are only
@@ -19,7 +19,7 @@ import { expect, test } from "@playwright/test";
  * ## What this is not
  *
  * Not an accessibility audit. It is a small set of structural facts that can
- * be asserted mechanically and are always wrong when they fail — colour
+ * be asserted mechanically and are always wrong when they fail. Colour
  * contrast, focus order and whether the wording makes sense are not among
  * them, and a green run here says nothing about any of those.
  */
@@ -138,7 +138,7 @@ test.describe("every page", () => {
         single read caught that empty frame and reported a missing `h1` that
         appears a moment later.
 
-        This still fails when a heading is genuinely absent — it just gives the
+        This still fails when a heading is genuinely absent. It just gives the
         page the same moment a reader would.
       */
       await expect
@@ -197,7 +197,7 @@ test.describe("a heading in the rules text", () => {
 
   test("shows its anchor once a keyboard reaches it", async ({ page }) => {
     // The anchor is invisible until hovered, which is right for a page nobody
-    // is trying to edit — and would be a trap if focus did not also reveal it,
+    // is trying to edit, and would be a trap if focus did not also reveal it,
     // because a keyboard user would be sitting on a link with opacity 0.
     await page.goto(CHAPTER);
 

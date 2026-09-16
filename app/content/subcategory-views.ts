@@ -8,7 +8,7 @@
  * "Force" is a value of `powerType` on 233 of the 465 powers; a variant rule is
  * 40 of the 75 rule documents; "Multiclass" is a value of `improvementType` on
  * 10 of the 30 class improvements. A reader could not
- * address any of them at all — `app/routes/type-index.tsx`
+ * address any of them at all. `app/routes/type-index.tsx`
  * reads no search parameters, so the list a reader assembled with the Category
  * dropdown had no URL to share, and a menu entry had nothing to point at.
  *
@@ -19,7 +19,7 @@
  * `/equipment?category=weapon` would be answered with the unfiltered
  * `/equipment/index.html`, so a crawler, a monitor and a reader with
  * JavaScript switched off would each be handed all 505 rows by an address
- * claiming to hold 215 — and the filtering would only ever happen in a browser
+ * claiming to hold 215, and the filtering would only ever happen in a browser
  * that ran the script. A path segment gets its own file. See
  * `react-router.config.ts`, which prerenders one per entry below.
  *
@@ -29,7 +29,7 @@
  * from the source type's entry in `./list-config.tsx`, and the row links go to
  * the same canonical `/equipment/<slug>` addresses they always did. The only
  * things that differ are the address, the words at the top, and which rows
- * qualify — which is exactly what an entry below declares. A twelfth view is
+ * qualify. Which is exactly what an entry below declares. A twelfth view is
  * one more entry: `app/routes.ts` declares a route per entry and
  * `react-router.config.ts` prerenders a path per entry, so neither of them is
  * a step anybody has to remember.
@@ -37,7 +37,7 @@
  * What is deliberately NOT here is a second home for a document. A weapon's
  * page stays at `/equipment/<slug>`; there is no `/weapons/<slug>`. One
  * document with two addresses is two pages competing in search results, and
- * every link into the corpus — the search index, the pager, the source pages —
+ * every link into the corpus (the search index, the pager, the source pages)
  * would have to pick one of them and be wrong on the other.
  */
 
@@ -64,7 +64,7 @@ function equals(value: string | null, expected: string): boolean {
  * The field reads the views need, each guarded by an `in` check.
  *
  * `AnySummary` is the union of all twenty-seven row shapes and most of them
- * have none of these fields — a species has no category — so the guard is what
+ * have none of these fields, a species has no category, so the guard is what
  * makes a predicate total over the union rather than a cast that would quietly
  * return `undefined` if a view were ever pointed at the wrong type.
  */
@@ -90,15 +90,15 @@ function ruleTypeIs(row: AnySummary, ruleType: string): boolean {
 /**
  * Which of the three things a class improvement is.
  *
- * The archive keeps them in three dumps — ClassImprovement,
- * MulticlassImprovement, SplashclassImprovement — of identical shape, and
+ * The archive keeps them in three dumps (ClassImprovement,
+ * MulticlassImprovement, SplashclassImprovement) of identical shape, and
  * `scripts/lib/normalize.mjs` reads all three into one type, stamping each
  * record with the dump it came from because nothing in the record says. So
  * `improvementType` is the only thing separating three unrelated questions:
  * what a class gives you as you advance in it, what it gives you when you
  * multiclass into it, and what a single splashed level is worth.
  *
- * Whole-string equality through `equals`, and the value is the printed one —
+ * Whole-string equality through `equals`, and the value is the printed one.
  * `humanize` turns `splashclass` into "Splashclass" before it reaches a
  * summary, because the column shows prose. Matching the raw enum would pass
  * a hand-written test and select nothing in production.
@@ -122,8 +122,8 @@ function sourceIs(row: AnySummary, code: string): boolean {
 /**
  * The equipment categories that have a view of their own.
  *
- * Written once because `/other-equipment` is defined by exclusion — it is
- * whatever its siblings did not claim — and a hand-kept list of negations
+ * Written once because `/other-equipment` is defined by exclusion, it is
+ * whatever its siblings did not claim, and a hand-kept list of negations
  * would be two lists to keep in step with a silent failure mode. Give
  * ammunition its own view without adding it here and all 50 rows appear on
  * both indexes; neither page looks broken, and nothing goes red.
@@ -146,8 +146,8 @@ const CUSTOMIZATION_OPTIONS_CRUMB = {
 
 export interface SubcategoryView {
   /**
-   * The path segment, which is also the registry key. A top-level segment —
-   * `/weapons`, not `/equipment/weapons` — because the reader is being sent
+   * The path segment, which is also the registry key. A top-level segment
+   * (`/weapons`, not `/equipment/weapons`) because the reader is being sent
    * here from a menu, and because a nested path would collide with the
    * `:type/:slug` route that owns every address under `/equipment`.
    */
@@ -165,7 +165,7 @@ export interface SubcategoryView {
   /**
    * The type the rows are drawn from, and the type their links point into. It
    * also decides the accent and the icon, so a weapons page reads as an
-   * equipment page rather than as a colour of its own — it is not a new
+   * equipment page rather than as a colour of its own. It is not a new
    * subject, it is a shelf in an existing one.
    */
   type: ContentTypeId;
@@ -177,7 +177,7 @@ export interface SubcategoryView {
    * A shelf normally sits under the type it is a shelf of: `/weapons` crumbs up
    * to `/equipment`, which is where a reader goes when the shelf was the wrong
    * one. That only works while `/<type>` is still an index over the whole type,
-   * and for the class improvements it is not — `/class-improvements` is one of
+   * and for the class improvements it is not. `/class-improvements` is one of
    * the three cuts rather than the thing above them, so the default would make
    * `/multiclass-improvements` crumb up to a sibling that does not contain a
    * single one of its rows, and `/class-improvements` crumb up to itself.
@@ -261,8 +261,8 @@ export const SUBCATEGORY_VIEWS: readonly SubcategoryView[] = [
     switches on; `source` says which book it came from. Variant rules are cut on
     ruleType alone, and that is deliberate rather than lazy: all forty of them
     are Expanded Content today, but a variant rule printed in a future book is
-    still a variant rule — the handbook's own Appendix B recommends a list of
-    them — and adding `source` to this predicate would silently drop it.
+    still a variant rule, the handbook's own Appendix B recommends a list of
+    them, and adding `source` to this predicate would silently drop it.
 
     Expanded rules are cut on both, and have to be. Expanded Content's ten
     chapters are the only chapters in the corpus with no book of their own in
@@ -271,8 +271,8 @@ export const SUBCATEGORY_VIEWS: readonly SubcategoryView[] = [
     already have rather than teaching something new. Without this view they are
     reachable only through `/sources/ec`, which is a page about a book.
 
-    Neither of these covers the rule type on its own and they are not meant to —
-    fifty of the seventy-five rows between them. `/rules` is still the index
+    Neither of these covers the rule type on its own and they are not meant to.
+    Fifty of the seventy-five rows between them. `/rules` is still the index
     that holds all of them, and `nav-groups.test.ts` is what notices if it ever
     stops being offered.
   */
@@ -304,19 +304,19 @@ export const SUBCATEGORY_VIEWS: readonly SubcategoryView[] = [
     was thirty rows answering three different questions, and a reader who
     arrived from the multiclassing rules was handed twenty rows about something
     they had not asked about. The site this one replaces published the three
-    separately — classImprovements, multiclassImprovements and
-    splashclassImprovements, each its own page under Customization Options —
+    separately (classImprovements, multiclassImprovements and
+    splashclassImprovements, each its own page under Customization Options)
     and that split is the reader's expectation as much as the owner's.
 
     Which is why `/class-improvements` is the first of the three rather than
     the index above them. That address is a static segment here and therefore
     outranks the `:type` route, so the thirty-row type index no longer has a
-    published address at all — deliberately, and this is the decision worth
+    published address at all. Deliberately, and this is the decision worth
     stating: the alternative was to leave the index where it was and put the
     class-only cut somewhere else, which would have left two addresses both
     saying "class improvements" and disagreeing about which ten or thirty rows
     that means. One of them would have been wrong on every link, every crumb
-    and every search result. Nothing is lost by dropping the union — the three
+    and every search result. Nothing is lost by dropping the union. The three
     views partition it exactly, `nav-groups.test.ts` proves that against the
     dataset, and no reader ever wanted the merged list. `react-router.config.ts`
     stops prerendering the type index for this one type for the same reason.
@@ -390,7 +390,7 @@ export function selectSubcategoryRows(
  *
  * The fallback lives here rather than in `app/routes/subcategory-index.tsx` so
  * that "which list is above this one" has one answer, and so that the two
- * callers that need it — the shelf page and a document's own page — cannot
+ * callers that need it, the shelf page and a document's own page, cannot
  * drift into disagreeing about where a reader goes when the shelf was wrong.
  */
 export function parentCrumbOf(view: SubcategoryView): {
@@ -405,8 +405,8 @@ export function parentCrumbOf(view: SubcategoryView): {
 /**
  * The view that has taken a type's own path segment, if one has.
  *
- * Exactly one has today — `/class-improvements` is a cut of the class
- * improvements rather than an index over them — and the point of asking rather
+ * Exactly one has today, `/class-improvements` is a cut of the class
+ * improvements rather than an index over them, and the point of asking rather
  * than naming it is that everything downstream keeps working the day somebody
  * puts the union back, or does the same thing to another type.
  */
@@ -422,7 +422,7 @@ function viewClaiming(type: ContentTypeId): SubcategoryView | undefined {
  * twenty-six of the twenty-seven types and actively wrong for the
  * twenty-seventh: a multiclass improvement that crumbed to
  * `/class-improvements` would be offering a reader a list of ten rows that
- * does not include the one they are standing on. So when a view has claimed
+ * does not include the one they are standing on, so when a view has claimed
  * the type's segment, the crumb follows the row instead, to whichever of the
  * views actually holds it.
  *

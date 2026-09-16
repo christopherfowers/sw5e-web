@@ -9,9 +9,9 @@
  * **It must not be in the prerendered markup.** Every page of this site is a
  * static HTML file built once and served to everybody, production included. A
  * banner rendered during the build would be in all ~2,200 of those files, and
- * production would paint it on first byte and then remove it after hydration —
- * a flash of "TEST ENVIRONMENT" on the live site, which is worse than having no
- * banner at all. So the component renders `null` until it has an answer, and
+ * production would paint it on first byte and then remove it after hydration.
+ * A flash of "TEST ENVIRONMENT" on the live site, which is worse than having no
+ * banner at all, so the component renders `null` until it has an answer, and
  * the answer cannot exist during the build.
  *
  * **It must not break hydration.** Same requirement seen from the other side.
@@ -23,7 +23,7 @@
  *
  * **It must be announced.** A notice that appears a moment after the page does
  * is a notice a screen reader has already read past. The live region therefore
- * exists from the very first render — an empty `<div role="status">` that is in
+ * exists from the very first render. An empty `<div role="status">` that is in
  * the prerendered markup, has no text, no border and no height, and is
  * announced by nobody. When the banner's text is inserted into it, assistive
  * technology announces the insertion, which is the whole reason for having a
@@ -32,7 +32,7 @@
  *
  * **It must not cover content or trap focus.** It is in normal document flow at
  * the top of the body, above the skip link, so it displaces the page rather
- * than floating over it — nothing is hidden behind it at any width, and there
+ * than floating over it. Nothing is hidden behind it at any width, and there
  * is no dismiss control, because a dismiss control is a focusable element in
  * front of the skip link and the first thing a keyboard user meets on every
  * page should be "skip to main content". There is nothing focusable in here at
@@ -47,8 +47,8 @@ export function EnvironmentBanner() {
   // Three states in one nullable, and the null is load-bearing: it is "not
   // known yet", which is the state the build and the first client render are
   // both in. `false` is a positive answer of production and looks the same on
-  // screen, but arrives by a different route and must not be confused with it
-  // — writing this as a boolean initialised to `false` would make the two
+  // screen, but arrives by a different route and must not be confused with it.
+  // Writing this as a boolean initialised to `false` would make the two
   // indistinguishable and invite somebody to "simplify" the effect away.
   const [isTest, setIsTest] = useState<boolean | null>(null);
 

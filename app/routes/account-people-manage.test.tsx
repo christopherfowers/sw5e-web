@@ -2,8 +2,8 @@
  * Managing one account, on the page that now does it.
  *
  * These assertions moved here with the code they cover. What changed on the way
- * is the address they start from — `/account/people/manage?user=…` rather than a
- * panel opened underneath the directory — and what they can therefore check:
+ * is the address they start from, `/account/people/manage?user=…` rather than a
+ * panel opened underneath the directory, and what they can therefore check:
  * that the page says whose account this is before it offers to delete it, and
  * that finishing with it puts the reader back on the list rather than nowhere.
  *
@@ -24,8 +24,8 @@
  *                                             account that no longer exists
  *
  * Everything here mounts the real `AuthProvider` against the contract fixture,
- * so the session resolves the way it does in a browser — through a genuine
- * `GET /api/auth/me` — and the administrative stub reads that same session to
+ * so the session resolves the way it does in a browser, through a genuine
+ * `GET /api/auth/me`, and the administrative stub reads that same session to
  * decide what to refuse. A test cannot hand itself an administrator.
  */
 
@@ -81,8 +81,8 @@ function mount(admin: AdminApiStub, session = ADMINISTRATOR, userId = "u") {
  *
  * Only the two refusals use this, and they have to. Mounted in the real tree
  * the directory's own guard answers first, so an assertion that this module
- * refuses somebody would pass whether or not this module refuses anything —
- * which is exactly the shape of test that lets a guard be deleted quietly.
+ * refuses somebody would pass whether or not this module refuses anything.
+ * Which is exactly the shape of test that lets a guard be deleted quietly.
  * Here the route sits alone, so what refuses is the page.
  */
 function mountAlone(admin: AdminApiStub, session = ADMINISTRATOR, userId = "u") {
@@ -185,11 +185,11 @@ describe("who is being managed", () => {
     const page = heading.closest("section");
     expect(page).not.toBeNull();
 
-    // The address, the roles they hold and where they currently stand —
-    // everything an administrator needs before deciding anything, on the same
+    // The address, the roles they hold and where they currently stand.
+    // Everything an administrator needs before deciding anything, on the same
     // screen as the controls that decide it.
     expect(within(page!).getByText("zeb@example.test")).toBeInTheDocument();
-    // The badge, not the checkbox in the role editor further down — the point
+    // The badge, not the checkbox in the role editor further down. The point
     // is that the standing is legible before the reader reaches a control.
     expect(
       within(page!).getByText("Contributor", { selector: "[data-role]" }),
@@ -221,8 +221,8 @@ describe("who is being managed", () => {
     await open(admin);
 
     // Bare. The directory is still mounted behind this page and is holding the
-    // administrator's search; a query string here would be either redundant or
-    // — if it carried the term — the one thing that may not reach a URL.
+    // administrator's search; a query string here would be either redundant or,
+    // if it carried the term, the one thing that may not reach a URL.
     expect(screen.getByRole("link", { name: /back to the directory/i })).toHaveAttribute(
       "href",
       "/account/people",
@@ -414,7 +414,7 @@ describe("an administrator acting on their own account", () => {
   it("cannot suspend, delete or demote themselves", async () => {
     // The companion to the rule the service enforces. With self-demotion,
     // self-suspension and self-deletion all closed, the number of
-    // administrators cannot reach zero — and a page that offered the buttons
+    // administrators cannot reach zero, and a page that offered the buttons
     // anyway would be a page whose three most alarming controls only ever
     // produce a 400.
     const admin = new AdminApiStub({
@@ -531,7 +531,7 @@ describe("what has been done to an account", () => {
     });
 
     // `findBy`, not `getBy`. The section itself is in the markup from the first
-    // render — it draws its own heading and a pending state — so waiting for
+    // render, it draws its own heading and a pending state, so waiting for
     // the region only waits for the page, and the entries arrive a round trip
     // later. A `getBy` here passes on a fast machine and fails on a slow one.
     expect(await within(history).findByText(/roles changed/i)).toBeInTheDocument();
