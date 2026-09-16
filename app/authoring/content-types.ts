@@ -9,14 +9,19 @@
  * copy of the registry, compiled here, would drift the first time a type is
  * added and the symptom would be a type nobody can edit with nothing saying so.
  *
- * The two sets are also not the same size. The service manages thirty-one
- * types; this site browses twenty-seven of them. The four extra are the credit
- * records, the people who made the artwork and the licences it is shown
- * under, which are site metadata rather than game content and have no page of
- * their own. They are editable, and they are the *most* editable: the single
- * most requested correction on this site is an artist's name, and a hundred and
- * fifty pictures are waiting for one. What they do not have is somewhere to
- * link to, which is exactly what {@link publishedPathFor} answers `null` for.
+ * The two sets are also not the same size. The service manages more types than
+ * this site browses, and the difference is everything that is site furniture
+ * rather than game content: the credit records, the files the site hosts, the
+ * community's outbound links, and the words a built page carries itself. All of
+ * them are editable, and the credits are the *most* editable, because the
+ * single most requested correction on this site is an artist's name and a
+ * hundred and fifty pictures are waiting for one. What none of them has is
+ * somewhere to link to, which is exactly what {@link publishedPathFor} answers
+ * `null` for.
+ *
+ * The counts are deliberately not written down here. They were, and they went
+ * stale the first time a type was added, which is the same failure this module
+ * exists to avoid one level up.
  */
 
 import { isContentTypeId } from "~/content/types";

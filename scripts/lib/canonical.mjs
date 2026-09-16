@@ -2072,6 +2072,46 @@ export function shelveResources(resources) {
 }
 
 /**
+ * A built page's own words, keyed by the page they belong to.
+ *
+ * An object rather than a list, because every reader of this looks one page up
+ * by name and never walks the set.
+ *
+ * Only the slots a document actually carries are copied across. An absent slot
+ * has to stay absent rather than become null, because the page distinguishes
+ * the two: absent means "use the wording I was built with", and a null would
+ * have to be checked for separately at every site that reads one.
+ */
+export function shelvePages(pages) {
+  const SLOTS = [
+    "heroLede",
+    "booksHeading",
+    "booksLede",
+    "resourcesHeading",
+    "resourcesLede",
+    "touchHeading",
+    "touchLede",
+  ];
+
+  const shelved = {};
+
+  for (const page of pages) {
+    if (!page?.key) continue;
+
+    const slots = {};
+
+    for (const slot of SLOTS) {
+      const value = typeof page[slot] === "string" ? page[slot].trim() : "";
+      if (value) slots[slot] = value;
+    }
+
+    shelved[page.key] = slots;
+  }
+
+  return shelved;
+}
+
+/**
  * The community's channels, ordered within their groups.
  *
  * Carried through verbatim rather than filtered here. The site drops a channel

@@ -40,6 +40,7 @@ import {
   shelveBooks,
   shelveResources,
   shelveChannels,
+  shelvePages,
   indexSources,
   normalizeAllCanonical,
 } from "./lib/canonical.mjs";
@@ -439,7 +440,7 @@ function tableOfContents(types) {
 async function writeDataset(
   outputDirectory,
   types,
-  { curated, books = [], resources = [], channels = [] },
+  { curated, books = [], resources = [], channels = [], pages = {} },
 ) {
   await rm(outputDirectory, { recursive: true, force: true });
   await mkdir(outputDirectory, { recursive: true });
@@ -491,6 +492,13 @@ async function writeDataset(
     client. Three links is a few hundred bytes.
   */
   await writeJson(outputDirectory, "channels.json", channels);
+
+  /*
+    And the words the pages carry themselves, which is a few hundred bytes and
+    is read while rendering the page rather than in a loader, so it goes with
+    the rest of the small files rather than into the server-only dataset.
+  */
+  await writeJson(outputDirectory, "pages.json", pages);
 }
 
 async function main() {
@@ -548,6 +556,13 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
 
   // The community channels, read the same way and just as optional.
   const channelRecords = await readCanonicalType(contentDirectory, "channel");
+
+  /*
+    And the pages' own words. The most optional of the three: a corpus with no
+    page documents is the state every build was in before this type existed,
+    and it renders the wording each page carries in its own markup.
+  */
+  const pageRecords = await readCanonicalType(contentDirectory, "page");
   if (sourceRecords.length === 0) {
     throw new Error(
       `${contentDirectory} holds no content/source documents, so no item in ` +
@@ -622,6 +637,7 @@ async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
     books: shelveBooks(sources),
     resources: shelveResources(resourceRecords),
     channels: shelveChannels(channelRecords),
+    pages: shelvePages(pageRecords),
   });
 
   process.stdout.write(

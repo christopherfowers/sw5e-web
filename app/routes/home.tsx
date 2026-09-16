@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 
+import { EditControl } from "~/components/edit-control";
 import { AssetImage, MonogramPlate } from "~/components/media";
 import { PlatformIcon } from "~/components/platform-icon";
 import {
@@ -10,6 +11,7 @@ import {
 } from "~/content/dataset.server";
 import { brandImage, resourcePreview, sourceCover } from "~/content/imagery";
 import { BOOKS, coreRulebook } from "~/content/books";
+import { pageCopy } from "~/content/pages";
 import { RESOURCES, resourceHref } from "~/content/resources";
 import {
   CHANNEL_GROUPS,
@@ -218,6 +220,16 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     groups,
   } = loaderData;
 
+  /*
+    The page's own words, where somebody has written any.
+
+    Read here rather than carried through the loader because it is a few
+    hundred bytes and is already in the client bundle: the loader's payload is
+    what gets serialised into every prerendered file, and putting a sentence
+    in it twice would pay for it twice.
+  */
+  const copy = pageCopy("home");
+
   // Whatever the path opens with. Somebody reordering the content moves this
   // button with it, which is the point of authoring the order at all.
   const start = chapters[0];
@@ -276,9 +288,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             more welcoming and more honest about what the rules rest on.
           */}
           <p className="lede">
-            A Star Wars roleplaying game, built on the mechanics of Dungeons
-            &amp; Dragons 5th edition and expanded for the galaxy. Every book of
-            it, searchable in one place.
+            {copy.heroLede ?? (
+              <>
+                A Star Wars roleplaying game, built on the mechanics of Dungeons
+                &amp; Dragons 5th edition and expanded for the galaxy. Every
+                book of it, searchable in one place.
+              </>
+            )}
           </p>
           <p className="home-hero-meta">
             {total.toLocaleString("en-US")} entries across {TYPE_ORDER.length}{" "}
@@ -375,12 +391,20 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         */}
         <section className="home-shelf" aria-labelledby="the-books">
           <h2 className="section-heading" id="the-books">
-            The rulebooks
+            {copy.booksHeading ?? "The rulebooks"}
           </h2>
+          {/*
+            The one lede with a computed fallback. Left alone it counts the
+            shelf, which is a sentence that cannot go stale; an administrator
+            who fills it in owns the wording, including any number in it. That
+            trade is stated on the field in the schema rather than being a
+            surprise after saving.
+          */}
           <p className="section-lede">
-            {books.length === 1
-              ? "Everything in this reference comes from one book."
-              : `Everything in this reference comes from one of these ${books.length} books.`}
+            {copy.booksLede ??
+              (books.length === 1
+                ? "Everything in this reference comes from one book."
+                : `Everything in this reference comes from one of these ${books.length} books.`)}
           </p>
 
           <ul className="shelf">
@@ -463,11 +487,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {resources.length > 0 ? (
           <section className="home-shelf" aria-labelledby="the-resources">
             <h2 className="section-heading" id="the-resources">
-              Sheets and downloads
+              {copy.resourcesHeading ?? "Sheets and downloads"}
             </h2>
             <p className="section-lede">
-              Print them, or fill them in on screen. Hosted here rather than on
-              somebody&rsquo;s drive.
+              {copy.resourcesLede ?? (
+                <>
+                  Print them, or fill them in on screen. Hosted here rather than
+                  on somebody&rsquo;s drive.
+                </>
+              )}
             </p>
 
             <ul className="shelf">
@@ -554,11 +582,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         {groups.length > 0 ? (
           <section className="home-touch" aria-labelledby="getting-in-touch">
             <h2 className="section-heading" id="getting-in-touch">
-              Getting in touch
+              {copy.touchHeading ?? "Getting in touch"}
             </h2>
             <p className="section-lede">
-              Star Wars 5e is made and maintained in the open. These are the
-              places it happens.
+              {copy.touchLede ?? (
+                <>
+                  Star Wars 5e is made and maintained in the open. These are the
+                  places it happens.
+                </>
+              )}
             </p>
 
             <div className="touch-groups">
@@ -592,6 +624,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </div>
           </section>
         ) : null}
+
+        {/*
+          The way in, on the page itself.
+
+          Every content item page carries this line at its foot, and the front
+          page had nothing: an administrator could read the words and have no
+          way to act on them except to remember a URL. It draws nothing for a
+          reader who cannot edit, and nothing at all in the prerendered file,
+          which is the state the served HTML is frozen in.
+
+          It points at the page's own document. The shelves below it are their
+          own documents under their own types, and are reached from the
+          worklist, because a form that edited four documents at once would be
+          a form that could half-save.
+        */}
+        <EditControl type="pages" slug="home" />
       </div>
     </div>
   );
