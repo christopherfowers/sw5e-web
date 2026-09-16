@@ -558,7 +558,7 @@ main:focus {
   }
 
   /* Still the largest thing in the row on a phone, where it is the only thing
-     naming the site — the text beside it is hidden at this width. */
+     naming the site, because the text beside it is hidden at this width. */
   .site-wordmark-logo {
     width: 4.5rem;
   }
@@ -2541,7 +2541,7 @@ th[aria-sort="descending"] .sort-indicator {
 
 /* ============================================================ item details */
 
-/* Heading, picture, text — in that order on a phone, and in two columns on a
+/* Heading, picture, text, in that order on a phone, and in two columns on a
  * wide screen with the picture staying put while the text scrolls. One grid,
  * two area maps, no duplicated markup and no reordered tab sequence. */
 .item-layout {
