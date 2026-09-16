@@ -266,6 +266,16 @@ export class AuthApiContract {
   readonly resendAfterSeconds: number;
 
   /**
+   * How many times this session has proved a factor again without signing out.
+   *
+   * Counted because the administrative stub models three routes that want a
+   * factor proved minutes ago, and the only way to tell a client that confirmed
+   * from one that simply retried is to have watched. A test that checked the
+   * retry alone would pass against a page that quietly re-sent the request.
+   */
+  reauthentications = 0;
+
+  /**
    * Whether the deployment's mail relay is accepting anything.
    *
    * Part of the contract rather than a per-test `fetch` stub, because it is
@@ -720,6 +730,7 @@ export class AuthApiContract {
           authenticationMethod: "passkey",
           strongAuthentication: true,
         };
+        this.reauthentications += 1;
         return { status: 200, body: this.session };
       }
 
@@ -739,6 +750,7 @@ export class AuthApiContract {
           authenticationMethod: "totp",
           strongAuthentication: true,
         };
+        this.reauthentications += 1;
         return { status: 200, body: this.session };
       }
 

@@ -799,8 +799,8 @@ export default function SignIn() {
       {unsupported ? (
         <Banner tone="error" title="This browser does not support passkeys.">
           Passkeys need a current version of Chrome, Edge, Safari or Firefox.
-          You can still sign in with a code sent to your email address, below —
-          your account and everything in it is unaffected. Open this page on a
+          You can still sign in with a code sent to your email address, below.
+          Your account and everything in it is unaffected. Open this page on a
           device that has one to use a passkey.
         </Banner>
       ) : null}

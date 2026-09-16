@@ -13,7 +13,11 @@
 
 import type { ReactNode } from "react";
 
-import { ApiError, STRONG_AUTHENTICATION_REQUIRED } from "~/api/http";
+import {
+  ApiError,
+  RECENT_AUTHENTICATION_REQUIRED,
+  STRONG_AUTHENTICATION_REQUIRED,
+} from "~/api/http";
 
 /** What a fetch-after-hydration section can be showing. */
 export type Load<T> =
@@ -46,6 +50,22 @@ export function describeFailure(error: unknown): string {
  */
 export function needsStrongerSignIn(error: unknown): boolean {
   return error instanceof ApiError && error.code === STRONG_AUTHENTICATION_REQUIRED;
+}
+
+/**
+ * Whether a refusal was "confirm it is you" rather than "you may not".
+ *
+ * The third of the three answers a 403 carries on this surface, and the only
+ * one the reader clears without leaving the page. The account holds the role
+ * and proved a factor to get here; the action it just tried is one that changes
+ * what somebody else may do, and those want the factor proved in the last few
+ * minutes rather than at some point today.
+ *
+ * Branching on the code rather than on the wording, for the same reason as its
+ * neighbour: the sentence is the server's to reword.
+ */
+export function needsRecentConfirmation(error: unknown): boolean {
+  return error instanceof ApiError && error.code === RECENT_AUTHENTICATION_REQUIRED;
 }
 
 /**
