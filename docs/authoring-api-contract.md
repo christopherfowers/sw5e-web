@@ -1,9 +1,9 @@
-# Content authoring API contract — as this client believes it
+# Content authoring API contract: as this client believes it
 
 `docs/account-api-contract.md` exists because two repositories were fully green
 while disagreeing on nearly every endpoint. There was no equivalent document for
-`/api/authoring` when this client was written — the service's source *was* the
-contract — so this is one, written from that source and from
+`/api/authoring` when this client was written (the service's source *was* the
+contract) so this is one, written from that source and from
 `tests/authoring-api-stub.ts`, which enforces everything below.
 
 Read it as a statement of what this client depends on. Anywhere it is wrong, the
@@ -16,7 +16,7 @@ client is wrong.
 - Behind `CrossSiteRequestFilter`, so every unsafe method needs
   `Sec-Fetch-Site: same-origin` or an allow-listed `Origin`. The browser writes
   both and script cannot forge either, so this client sends nothing of its own.
-  A refusal here is a **bodiless 403** — no problem document, no `code`. See
+  A refusal here is a **bodiless 403**: no problem document, no `code`. See
   `app/api/http.ts` for why that had to be readable from the status alone.
 - Rate limited to **120 requests a minute**, fixed window, rejected with 429 and
   a `Retry-After`.
@@ -39,7 +39,7 @@ client is wrong.
 
 **Publishing and reverting need an administrator; drafting needs a
 contributor.** That asymmetry is the reason the interface is two acts rather
-than one save button, and it is not incidental — a contributor proposes a
+than one save button, and it is not incidental. A contributor proposes a
 correction and somebody with the books to hand agrees to it. See
 `app/auth/roles.ts` and `app/routes/authoring-edit.tsx`.
 
@@ -47,7 +47,7 @@ Both policies also carry `StrongAuthenticationRequirement`: the account has to
 hold the role *and* the session has to have used a passkey or an authenticator
 code. An account that signed in with an emailed code is refused with **403 and
 `code: "strong-authentication-required"`**, which is a different sentence from
-a plain role refusal because it is a different situation — it clears in about a
+a plain role refusal because it is a different situation. It clears in about a
 minute. Branch on `code`, never on wording.
 
 ## Content types
@@ -55,7 +55,7 @@ minute. Branch on `code`, never on wording.
 `{type}` is the service's **canonical key**, which is singular:
 `armor-property`, `class`, `species`. The service also accepts the plural route
 segment and matches case-insensitively, and always answers with the canonical
-key — so a client that asks with one spelling and compares with another decides
+key, so a client that asks with one spelling and compares with another decides
 every draft belongs to a different document. This client sends canonical keys
 everywhere.
 
@@ -86,7 +86,7 @@ still editable, and are the most edited thing here.
                 "createdAt": "…", "updatedAt": "…" } ] }
 ```
 
-`GET /api/authoring/drafts/{type}/{key}` answers a **different shape** — the
+`GET /api/authoring/drafts/{type}/{key}` answers a **different shape**. The
 document, and `baseRevisionId` rather than `baseRevisionIsCurrent`:
 
 ```jsonc
@@ -121,8 +121,8 @@ Three things about it that the interface is built around:
 ## Publishing
 
 `POST /api/authoring/drafts/{type}/{key}/publish` answers **200** with a
-revision summary. A body is **always** sent — `{ "reason": null }` if there is
-nothing to say — because the handler answers 415 to a request with no
+revision summary. A body is **always** sent (`{ "reason": null }` if there is
+nothing to say) because the handler answers 415 to a request with no
 `Content-Type`.
 
 ```jsonc
@@ -146,14 +146,14 @@ existed is unaffected.
 
 **Branch on `code`, never on `message`.** Today the only code is
 `unresolved-reference`: the document names content the catalogue does not hold,
-or names it ambiguously — both resolve to nothing by the same route, which is
+or names it ambiguously. Both resolve to nothing by the same route, which is
 why the wording says "or is not uniquely named" rather than "does not exist".
 `jsonPath` locates it in the document, or is null when the notice is about the
 document as a whole.
 
 A notice is **not** a refusal. The document is live. Naming content that does
-not exist yet is a normal way to author — the weapon before its property, the
-creature before its power — and the service resolves such an edge on its own
+not exist yet is a normal way to author (the weapon before its property, the
+creature before its power) and the service resolves such an edge on its own
 when the target is published later. Refusing would make the corpus buildable in
 exactly one order.
 
@@ -162,8 +162,8 @@ to an older version can reintroduce a reference to something since renamed or
 deleted, which is exactly when nobody thinks to look.
 
 Only the published document's **own** edges are reported. Publishing can leave
-other documents' edges unresolved — a rename orphans whatever pointed at the old
-name — but those belong to somebody else's document, and reporting them here
+other documents' edges unresolved, a rename orphans whatever pointed at the old
+name, but those belong to somebody else's document, and reporting them here
 would hand a stranger's problem to whoever happened to publish next.
 
 If the draft carried `resolvesFlagId` **and** that report is in `accepted`, the
@@ -179,7 +179,7 @@ transactional with the publish: a 200 does not guarantee the report closed.
 ```
 
 **It carries nothing else.** No current revision id, no current document, no
-base revision id — and there is no endpoint that re-bases a draft. Recovering
+base revision id, and there is no endpoint that re-bases a draft. Recovering
 from it is a second round trip the client makes for itself, and re-saving the
 draft is the only way to move its base. That is exactly why publishing in this
 interface never quietly saves first: a save-then-publish would recapture the
@@ -187,7 +187,7 @@ base and erase the check.
 
 ## Revisions
 
-`GET …/revisions?limit=` — `limit` defaults to 25, minimum 1, **maximum 100**.
+`GET …/revisions?limit=`: `limit` defaults to 25, minimum 1, **maximum 100**.
 There is no cursor and no offset, so a document with a longer history cannot be
 read past its hundredth most recent change; the history page says so rather than
 presenting a truncated list as a complete one. Newest first, bodies excluded.
@@ -197,8 +197,8 @@ not 404. That is how this client tells "new document" from "unknown type".
 
 `GET …/revisions/{id}` answers the summary plus `schemaVersion` and `document`.
 
-**Diffs are deliberately not computed server-side.** Fetch two and compare them
-— see `app/authoring/diff.ts` for what "changed" is taken to mean for a list.
+**Diffs are deliberately not computed server-side.** Fetch two and compare them.
+See `app/authoring/diff.ts` for what "changed" is taken to mean for a list.
 
 `POST …/revert` requires a body, answers 200 with a **new** revision whose
 `action` is `reverted` and whose `revertedFromId` names what was restored.
@@ -229,8 +229,8 @@ A refused write answers **400**, `application/problem+json`, with:
 
 Two shapes of the same failures, in the same order, and both are sent.
 
-**`schemaViolations`** is the one to read. `instanceLocation` is a JSON Pointer
-— empty for the document root — and it is what lets an error be put beside the
+**`schemaViolations`** is the one to read. `instanceLocation` is a JSON Pointer,
+empty for the document root, and it is what lets an error be put beside the
 control that caused it. `keyword` is a JSON Schema vocabulary term, so a client
 can key its own wording off it rather than off prose; **it may be the empty
 string**, because `additionalProperties: false` is implemented as a false
@@ -243,15 +243,15 @@ wording where it has one and show this where it does not.
 `{instance location}: {keyword} — {message}`. It predates the structured field
 and is still sent: the browser application and the service are separate images,
 either can be ahead of the other, and a client that only knows the lines has to
-keep working. The array also carries lines with no location behind them at all —
-a document that is not an object, a `key` that disagrees with its address, a
-type with no schema published — and for those `schemaViolations` is empty.
+keep working. The array also carries lines with no location behind them at all
+(a document that is not an object, a `key` that disagrees with its address, a
+type with no schema published) and for those `schemaViolations` is empty.
 
 `app/authoring/violations.ts` prefers the structured field and keeps a parser
 for the lines. That parser treats itself as a bet it might lose: a line it
 cannot read is shown in full, in the service's own words, above the form, so a
 wrong guess puts a message in the wrong *place* and never loses one. It had
-already lost that bet once — the false-schema line above has no keyword, the
+already lost that bet once. The false-schema line above has no keyword, the
 pattern required one, and so a property that does not belong to a content type
 could not be placed on a field.
 
@@ -278,6 +278,6 @@ is what keeps the two from disagreeing.
 
 **A 404 here is an answer, not an error.** A deployment that publishes no
 schemas is one this client still has to open against, so the editor falls back
-to editing the document as JSON — still validated by the service on save. A 403
+to editing the document as JSON. Still validated by the service on save. A 403
 is *not* converted: "this deployment has no schemas" and "your session may not
 read them" are different facts.

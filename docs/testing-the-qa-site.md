@@ -23,7 +23,7 @@ for people who never make an account.
 2. Click **Characters** in the menu bar. A panel opens under it listing Species,
    Classes, Archetypes and the rest.
    - *It should stay open.* A panel that opens and closes again by itself is a
-     fault — say so, and say which page you were on.
+     fault. Say so, and say which page you were on.
 3. Click **Combat**. The Characters panel closes and Combat opens. Only one at a
    time.
 4. Press `Escape`. The panel closes and the keyboard focus goes back to the
@@ -34,20 +34,20 @@ for people who never make an account.
 6. Click any species. You get its page: name, badges, a table of statistics,
    prose below, and a picture on the right for types that have one.
 
-   On a phone the picture moves **below** the statistics. That is deliberate —
-   the numbers are what somebody at a table is looking for, and the
+   On a phone the picture moves **below** the statistics. That is deliberate.
+   The numbers are what somebody at a table is looking for, and the
    illustration used to push them a full screen down.
 
 7. Hover a heading in the prose. A small **#** appears; it is a link to that
    section, and the address in it is stable, so it can be pasted into a
    conversation. On a phone it is faintly visible without hovering.
 
-8. On an index with numeric columns — try **Bestiary** — hover **CR**, **AC**
+8. On an index with numeric columns, try **Bestiary**, hover **CR**, **AC**
    or **HP**. They say what they stand for.
-9. Scroll to the bottom. There is one quiet line — **Something wrong with this
+9. Scroll to the bottom. There is one quiet line. **Something wrong with this
    page?** Click it; a short form opens in place. Do not send one yet.
 10. Type a word into the search field at the top and press `Enter`. On the
-    results page both search fields — the header's and the page's — hold what
+    results page both search fields, the header's and the page's, hold what
     you searched for.
 
 Two things worth trying because they are easy to get wrong and hard to notice:
@@ -62,7 +62,7 @@ Known limits, so they are not reported as faults:
 - Search matches headings, statistics, entry names, and the **first 240
   characters** of prose. A word buried deep in a long rules chapter will not be
   found. Full-text search is not built yet.
-- Some pictures say **Artist not recorded**. That is accurate — 149 images came
+- Some pictures say **Artist not recorded**. That is accurate. 149 images came
   across from the original site with no artist attached, and the caption says
   so rather than inventing a credit.
 
@@ -77,7 +77,7 @@ Known limits, so they are not reported as faults:
    mail service and you will never see the message.
 
 3. You are told a message is on its way. **You get the same answer whether or
-   not the address already has an account** — that is deliberate, so nobody can
+   not the address already has an account**. That is deliberate, so nobody can
    use this page to find out who is registered.
 4. Check the inbox, including spam. The message comes from
    `noreply@cfowers.io`.
@@ -95,10 +95,10 @@ If your device cannot do passkeys, skip step 6 and use section 3 instead.
 Three ways in. Try the ones your device supports.
 
 **Passkey.** Click **Sign in**, then the passkey button. No email address is
-asked for — the browser offers whichever passkeys it holds for this site.
+asked for. The browser offers whichever passkeys it holds for this site.
 
 **Emailed code.** Enter your address, ask for a code, and type the six digits
-from the message. Codes expire, and a code can only be spent once — asking for a
+from the message. Codes expire, and a code can only be spent once. Asking for a
 second one kills the first.
 
 **Authenticator app.** Only if you have switched one on (section 5). After the
@@ -123,7 +123,7 @@ a field for an authenticator code if you have one.
    This is not a refusal. A code sent to your mailbox proves you can read that
    mailbox and nothing about the device in front of you, and administrator tools
    are not handed to a mailbox. Press the button, answer your device, and the
-   directory appears — **you are not signed out and do not sign in again**.
+   directory appears. **You are not signed out and do not sign in again**.
 
    *If it tells you to go and add a passkey when you already have one, that is a
    fault.* Report it with a screenshot of your Passkeys page.
@@ -131,7 +131,7 @@ a field for an authenticator code if you have one.
 3. The directory lists accounts. Open one to see its roles, whether it has a
    second factor, and what has been done to it.
 4. Change a role. If the account has neither a passkey nor an authenticator, you
-   are told the role cannot be used yet — the grant still lands, and that person
+   are told the role cannot be used yet. The grant still lands, and that person
    is emailed about what to enrol.
 5. Open **Audit log**. Your change is there, with who made it and when. Nothing
    in this log can be edited or deleted.
@@ -146,7 +146,7 @@ no reason to test the refusal on the account you are using.
 From your account page:
 
 - **Passkeys** lists every credential with the date it was added, and removes
-  any of them — except the last one, which is kept so the account cannot be
+  any of them. Except the last one, which is kept so the account cannot be
   stranded.
 - **Two-factor** enrols an authenticator app. You get a QR code and the same
   secret as text, for a device with no camera. Once a code from it is accepted,
@@ -163,12 +163,12 @@ reporting immediately.
 ## 6. Editing content
 
 You need Contributor or Administrator, and a session that proved a passkey or an
-authenticator — section 4 explains why, and how to clear it without signing out.
+authenticator. Section 4 explains why, and how to clear it without signing out.
 
 1. Open any content page and scroll to the bottom. Under the report line there
    is **Edit this page · History**.
 2. Click **Edit this page**. The editor opens with the document loaded, and the
-   form is built from that content type's schema — so the fields are the fields
+   form is built from that content type's schema, so the fields are the fields
    that type actually has.
 3. Change something and **Save draft**. The draft is yours; the published page
    is untouched until somebody publishes it.
@@ -191,7 +191,7 @@ open drafts, and reports waiting to be answered.
 2. As a contributor, open **Your account → Reports**. The report is in the
    queue with the page it came from.
 3. Accepting one opens the editor on the document it names, with the report
-   attached — publishing the fix closes the report.
+   attached. Publishing the fix closes the report.
 
 Reporters see the status of their own reports and never see a reviewer's note.
 
@@ -201,7 +201,7 @@ Reporters see the status of their own reports and never see a reviewer's note.
 
 - The page address.
 - What you clicked and what you expected.
-- Whether you were signed in, and if so how — passkey, emailed code, or
+- Whether you were signed in, and if so how. Passkey, emailed code, or
   authenticator. This matters more than anything else on the list; several
   behaviours differ by sign-in method on purpose, and a report that leaves it
   out cannot be reproduced.
