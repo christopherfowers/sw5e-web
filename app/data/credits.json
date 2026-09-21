@@ -1,0 +1,4558 @@
+{
+  "categories": [
+    {
+      "key": "creator",
+      "title": "The creator",
+      "description": "Star Wars 5e is a conversion of fifth-edition D&D made by Galiphile, in accordance with Wizards of the Coast's Fan Content Policy. It is unofficial content.",
+      "note": null,
+      "people": [
+        {
+          "key": "creator-galiphile",
+          "name": "Galiphile",
+          "contribution": "for creating the Star Wars 5e conversion",
+          "link": null
+        }
+      ]
+    },
+    {
+      "key": "personal-thanks",
+      "title": "Personal thanks",
+      "description": "The credits open with the people who came before the project did. In Galiphile's words: \"First and foremost, I have to thank the person who got me into D&D: my buddy, Ross.\" and \"Second, I have to thank the original guinea pigs of this conversion: Drew, Eric, and Rickey.\"",
+      "note": null,
+      "people": [
+        {
+          "key": "personal-thanks-ross",
+          "name": "Ross",
+          "contribution": "for getting Galiphile into D&D in the first place",
+          "link": null
+        },
+        {
+          "key": "personal-thanks-drew",
+          "name": "Drew",
+          "contribution": "one of the original guinea pigs of this conversion",
+          "link": null
+        },
+        {
+          "key": "personal-thanks-eric",
+          "name": "Eric",
+          "contribution": "one of the original guinea pigs of this conversion",
+          "link": null
+        },
+        {
+          "key": "personal-thanks-rickey",
+          "name": "Rickey",
+          "contribution": "one of the original guinea pigs of this conversion",
+          "link": null
+        }
+      ]
+    },
+    {
+      "key": "jedi-council",
+      "title": "The SW5e Jedi Council",
+      "description": "Collaborators who each took on a whole piece of the conversion. These are the credits that record what somebody actually did, which is why they are reproduced here word for word.",
+      "note": null,
+      "people": [
+        {
+          "key": "jedi-council-aeryn",
+          "name": "Aeryn",
+          "contribution": "for the awesome new podcast (with toddmoonbounce, of course)",
+          "link": null
+        },
+        {
+          "key": "jedi-council-bob-the-builder",
+          "name": "Bob the Builder",
+          "contribution": "for his work on strongholds and feats",
+          "link": null
+        },
+        {
+          "key": "jedi-council-darkmesa",
+          "name": "DarkMesa",
+          "contribution": "for writing almost as many archetypes as I have at this point",
+          "link": null
+        },
+        {
+          "key": "jedi-council-drakeryzer",
+          "name": "DrakeRyzer",
+          "contribution": "for his work on polishing factions and ships",
+          "link": null
+        },
+        {
+          "key": "jedi-council-fynikz",
+          "name": "Fynikz",
+          "contribution": "for his help overhauling and implementing new powers",
+          "link": null
+        },
+        {
+          "key": "jedi-council-grelite",
+          "name": "Grelite",
+          "contribution": "for all his help with editing and creation",
+          "link": null
+        },
+        {
+          "key": "jedi-council-heresy",
+          "name": "Heresy",
+          "contribution": "for their excellent work with species",
+          "link": null
+        },
+        {
+          "key": "jedi-council-hugehuman",
+          "name": "Hugehuman",
+          "contribution": "for his awesome help with archetypes and content",
+          "link": null
+        },
+        {
+          "key": "jedi-council-karbacca",
+          "name": "Karbacca",
+          "contribution": "for the *epic* cover and SW5e logo",
+          "link": null
+        },
+        {
+          "key": "jedi-council-legobis",
+          "name": "Legobis",
+          "contribution": "for creating a whole bunch of monsters",
+          "link": null
+        },
+        {
+          "key": "jedi-council-lordaelfric",
+          "name": "LordAelfric",
+          "contribution": "for the awesome theme",
+          "link": null
+        },
+        {
+          "key": "jedi-council-mishy",
+          "name": "Mishy",
+          "contribution": "for his excellent work on the Dawn of Defiance conversion",
+          "link": null
+        },
+        {
+          "key": "jedi-council-playking57",
+          "name": "Playking57",
+          "contribution": "for his help with the artwork",
+          "link": null
+        },
+        {
+          "key": "jedi-council-speedreeder",
+          "name": "Speedreeder",
+          "contribution": "for the epic new website",
+          "link": null
+        },
+        {
+          "key": "jedi-council-stormchaser6",
+          "name": "Stormchaser6",
+          "contribution": "for his help with the Starships book",
+          "link": null
+        },
+        {
+          "key": "jedi-council-toddmoonbounce",
+          "name": "Toddmoonbounce",
+          "contribution": "for his help getting the book ready for printing",
+          "link": null
+        },
+        {
+          "key": "jedi-council-tomato-andrew",
+          "name": "Tomato-andrew",
+          "contribution": "for his immense help with the enhanced items",
+          "link": null
+        },
+        {
+          "key": "jedi-council-tyrzaphir",
+          "name": "Tyrzaphir",
+          "contribution": "for the epic new character creator",
+          "link": null
+        },
+        {
+          "key": "jedi-council-vesh",
+          "name": "Vesh",
+          "contribution": "for making monsters and answering questions",
+          "link": null
+        },
+        {
+          "key": "jedi-council-zheadings",
+          "name": "Zheadings",
+          "contribution": "for his help with content review and subreddit moderation",
+          "link": null
+        }
+      ]
+    },
+    {
+      "key": "website-team",
+      "title": "The Website Team",
+      "description": "The people who built and ran the original sw5e.com.",
+      "note": null,
+      "people": [
+        {
+          "key": "website-team-speedreeder",
+          "name": "Speedreeder",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "website-team-tyrzaphir",
+          "name": "Tyrzaphir",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "website-team-november",
+          "name": "November",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "website-team-james",
+          "name": "James",
+          "contribution": "Tyr's friend, who is not in this server but wanted to help",
+          "link": null
+        }
+      ]
+    },
+    {
+      "key": "contributor",
+      "title": "The Contributors",
+      "description": "All of the contributors who have been greatly helpful in developing and reviewing new content.",
+      "note": "The original credits end this list with an open invitation, which still stands: \"If I missed you and you feel you deserve credit please let me know.\"",
+      "people": [
+        {
+          "key": "contributor-a-dnd-guy",
+          "name": "a_dnd_guy",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-absoluteherasy",
+          "name": "AbsoluteHerasy",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-atrolllol",
+          "name": "ATrolllol",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-aziz",
+          "name": "Aziz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-big-d-mcgee",
+          "name": "Big_D_McGee",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-bioremnant",
+          "name": "BioRemnant",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-butts-are-butts",
+          "name": "Butts_Are_Butts",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-charrmeleon",
+          "name": "Charrmeleon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-coldplacentasandwich",
+          "name": "ColdPlacentaSandwich",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-creator",
+          "name": "Creator",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-croceus",
+          "name": "Croceus",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-dark-lark",
+          "name": "Dark-Lark",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-darkmesa",
+          "name": "DarkMesa",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-deb",
+          "name": "Deb",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-encorre",
+          "name": "Encorre",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-eskrimadornc",
+          "name": "EskrimadorNC",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-fynikz",
+          "name": "fynikz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-gadvance",
+          "name": "GAdvance",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-grelite",
+          "name": "Grelite",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-hugehuman",
+          "name": "hugehuman",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-jawa",
+          "name": "Jawa",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-j-elliot",
+          "name": "J_Elliot",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-jondragonskin",
+          "name": "Jondragonskin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-karbacca",
+          "name": "karbacca",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-lordaelfric",
+          "name": "LordAelfric",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-luijenp",
+          "name": "Luijenp",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-mayb-259",
+          "name": "MayB_259",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-mowliegrowlie",
+          "name": "mowliegrowlie",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-noxlux013",
+          "name": "Noxlux013",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-oberongypsy",
+          "name": "OberonGypsy",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-playking57",
+          "name": "playking57",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-professorpenquin",
+          "name": "Professorpenquin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-reykjavikpersonified",
+          "name": "ReykjavikPersonified",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-rhylith",
+          "name": "Rhylith",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-samuel-l-blackson",
+          "name": "Samuel_L_Blackson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-shock3600",
+          "name": "Shock3600",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-slen",
+          "name": "Slen",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-spacenavy",
+          "name": "spacenavy",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-speedreeder",
+          "name": "speedreeder",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-spiderguy21",
+          "name": "Spiderguy21",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-spiketaildrake",
+          "name": "SpiketailDrake",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-squee755",
+          "name": "Squee755",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-stoneward13",
+          "name": "Stoneward13",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-stormchaser6",
+          "name": "Stormchaser6",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-stygian-emperor",
+          "name": "Stygian Emperor",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-thanny-devitots",
+          "name": "Thanny Devitots",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-thegentgamer",
+          "name": "TheGentGamer",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-tlhikan",
+          "name": "TLHikan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-tomato-andrew",
+          "name": "tomato-andrew",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-xorius5",
+          "name": "Xorius5",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-zepavil",
+          "name": "Zepavil",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "contributor-zodd",
+          "name": "Zodd",
+          "contribution": null,
+          "link": null
+        }
+      ]
+    },
+    {
+      "key": "patron",
+      "title": "The Patrons",
+      "description": "The patrons, who keep the website running.",
+      "note": null,
+      "people": [
+        {
+          "key": "patron-17conzatv23",
+          "name": "17ConzaTV23",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-5thlob",
+          "name": "5thLob",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-aaron-clark",
+          "name": "Aaron Clark",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-aaron-franco",
+          "name": "AARON Franco",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-adam-dahlberg",
+          "name": "Adam Dahlberg",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-adcon",
+          "name": "Adcon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-adriana-armstrong",
+          "name": "Adriana Armstrong",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-alan-volz",
+          "name": "Alan Volz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-alberto-claro",
+          "name": "Alberto Claro",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ale",
+          "name": "Ale",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-alex-macgill",
+          "name": "Alex MacGill",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-aleksandr-yushin",
+          "name": "Aleksandr Yushin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-andrew-boyd",
+          "name": "Andrew Boyd",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-andrew-collas",
+          "name": "Andrew Collas",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-andrew-gonce",
+          "name": "Andrew Gonce",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-andrew-richards",
+          "name": "Andrew Richards",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-andrew-spillone",
+          "name": "Andrew Spillone",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-anthony-snyder",
+          "name": "Anthony Snyder",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-apinya",
+          "name": "Apinya",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-arkturest",
+          "name": "Arkturest",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-armando-fiaschetti",
+          "name": "Armando Fiaschetti",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-austin-atkinson",
+          "name": "Austin Atkinson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-autodave",
+          "name": "AutoDave",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-axel-samudio",
+          "name": "Axel Samudio",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-aziz",
+          "name": "Aziz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ba-umberger",
+          "name": "B.A. Umberger",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-barry-chapman",
+          "name": "Barry Chapman",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-benton-olivares",
+          "name": "Benton Olivares",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-benton-tyler",
+          "name": "Benton Tyler",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-big-malloy",
+          "name": "Big Malloy",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-bill",
+          "name": "Bill",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-bjoern",
+          "name": "Bjoern",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-black-raven",
+          "name": "Black Raven",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-blake-becker",
+          "name": "Blake Becker",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-blues-otters",
+          "name": "Blues_Otters",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-bobby-dallas",
+          "name": "Bobby Dallas",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-booka42",
+          "name": "Booka42",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-braden-younani",
+          "name": "Braden Younani",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brady-wells",
+          "name": "Brady Wells",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-braedon-taylor",
+          "name": "Braedon Taylor",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brandon",
+          "name": "Brandon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brandon-elizondo",
+          "name": "Brandon Elizondo",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brandon-postal",
+          "name": "Brandon Postal",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brandon-rozell",
+          "name": "Brandon Rozell",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brandon-stiffler",
+          "name": "Brandon Stiffler",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-bredwin",
+          "name": "Bredwin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brent-lough",
+          "name": "Brent Lough",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brian-rye",
+          "name": "Brian Rye",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brian-wenger",
+          "name": "Brian Wenger",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-bridget",
+          "name": "Bridget",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-brittany-badertscher",
+          "name": "Brittany Badertscher",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-bruno-santini",
+          "name": "Bruno Santini",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-caleb-boone",
+          "name": "Caleb Boone",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-caleb-goostree",
+          "name": "Caleb Goostree",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-caleb-kauble",
+          "name": "Caleb Kauble",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-callum-sim",
+          "name": "Callum Sim",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-capn-jojo",
+          "name": "Cap'n Jojo",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-captainkirkwood",
+          "name": "CaptainKirkwood",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-carter-woosley",
+          "name": "Carter Woosley",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-casthaz",
+          "name": "Casthaz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cedric-wolf",
+          "name": "Cedric Wolf",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cesar-diaz",
+          "name": "César Díaz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-charles-m-speck",
+          "name": "Charles M Speck",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-chillidann",
+          "name": "ChilliDann",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-chris-glazier",
+          "name": "Chris Glazier",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-chris-p",
+          "name": "Chris P",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-chris-stocum-jr",
+          "name": "Chris Stocum Jr",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-chris-tinsley",
+          "name": "Chris Tinsley",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-chris-walk",
+          "name": "Chris Walk",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-christian-vincent-silhan",
+          "name": "Christian vincent silhan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-christopher-ballinger",
+          "name": "Christopher Ballinger",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-chris-bishop",
+          "name": "Chris Bishop",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-christo-panayiotou",
+          "name": "Christo Panayiotou",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-chuck-langle",
+          "name": "Chuck Langle",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cody23401",
+          "name": "cody23401",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cody-care",
+          "name": "Cody Care",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cody-dinwiddie",
+          "name": "Cody Dinwiddie",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cody-reynoso",
+          "name": "Cody Reynoso",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cole-ceciliani",
+          "name": "Cole Ceciliani",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-colin-harasti",
+          "name": "Colin Harasti",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-conor",
+          "name": "Conor",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-corey-lando",
+          "name": "Corey Lando",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-corp23",
+          "name": "Corp23",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cory-brooks",
+          "name": "Cory Brooks",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cory-laidlaw",
+          "name": "Cory Laidlaw",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cpt-cariboux",
+          "name": "Cpt Cariboux",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-craig-barber",
+          "name": "Craig Barber",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cthulhuhoop",
+          "name": "Cthulhuhoop",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-cyril-tang",
+          "name": "Cyril Tang",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dallas-gawlick",
+          "name": "Dallas Gawlick",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-daniel-dimick",
+          "name": "Daniel Dimick",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-daniel-goodwin",
+          "name": "Daniel Goodwin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dan-lyman",
+          "name": "Dan Lyman",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dan-weiss",
+          "name": "Dan Weiss",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-darrin-drader",
+          "name": "Darrin Drader",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-darthrevan1128",
+          "name": "Darthrevan1128",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dave-peterson",
+          "name": "dave peterson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-david-ayland",
+          "name": "David Ayland",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-david-ontermaa",
+          "name": "David Ontermaa",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-david-white",
+          "name": "David White",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-darius-coal",
+          "name": "darius coal",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dashgamerx95",
+          "name": "DashGamerX95",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-david-fortin",
+          "name": "David Fortin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-derek-donley",
+          "name": "Derek Donley",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-derin-hota",
+          "name": "Derin Hota",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-devin-knight",
+          "name": "Devin Knight",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-devinwarburton",
+          "name": "DevinWarburton",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dillon-herbert",
+          "name": "Dillon Herbert",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dj-blake",
+          "name": "DJ Blake",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-djy333",
+          "name": "DJY333",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dominic-gervais",
+          "name": "Dominic Gervais",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dont-forget-a-towel",
+          "name": "Don't Forget a Towel",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dont-wanna-end-up-like-no-pooh-bear",
+          "name": "Don't Wanna End Up Like No Pooh Bear!",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-doug-koglin",
+          "name": "Doug Koglin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dr-awesome",
+          "name": "Dr. Awesome",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dr-hollywood",
+          "name": "Dr. Hollywood",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-drake-fate",
+          "name": "Drake Fate",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-drew-bywater",
+          "name": "Drew Bywater",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-drew-stremer",
+          "name": "Drew Stremer",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dromlex",
+          "name": "Dromlex",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dudebrodudet",
+          "name": "DudeBroDudet",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-dylan-erwin",
+          "name": "Dylan Erwin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-elias-luna-partida",
+          "name": "Elias Luna-Partida",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-eric-deans",
+          "name": "Eric Deans",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-eric-phillips",
+          "name": "Eric Phillips",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ethan-sorscher",
+          "name": "Ethan Sorscher",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-evan-booze",
+          "name": "Evan Booze",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-fake-name",
+          "name": "Fake Name",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ferno",
+          "name": "Ferno",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-firefly-fun-houses-new-puppet-gatlin-t",
+          "name": "Firefly fun house's new puppet Gatlin T.",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-finessedexe",
+          "name": "finessed.exe",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-forcedragon",
+          "name": "ForceDragon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-forrest-garner",
+          "name": "Forrest Garner",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-frank-smith",
+          "name": "Frank Smith",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-frankto-vinneti",
+          "name": "Frankto Vinneti",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-fuskinari",
+          "name": "Fuskinari",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-garrett-wingfield",
+          "name": "Garrett Wingfield",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-gary-tomlin",
+          "name": "Gary Tomlin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-gern-blanston",
+          "name": "Gern Blanston",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-gerrorism",
+          "name": "Gerrorism",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ghonz711",
+          "name": "ghonz711",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-golden-tree-ink",
+          "name": "Golden Tree Ink",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-greg-albright",
+          "name": "Greg Albright",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-greyscriber",
+          "name": "GreyScriber",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-gustavo-la-pasta",
+          "name": "Gustavo La Pasta",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-henry-atticus-young",
+          "name": "Henry Atticus Young",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-henry-franke",
+          "name": "Henry Franke",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-higashi-genso",
+          "name": "Higashi Genso",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-hyvem1nd",
+          "name": "Hyvem1nd",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ian-fiebig",
+          "name": "Ian Fiebig",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ian-lowry",
+          "name": "Ian Lowry",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ian-nelson",
+          "name": "Ian Nelson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ian-odell",
+          "name": "Ian Odell",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ian-sullivan",
+          "name": "Ian Sullivan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-infexious",
+          "name": "Infexious",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ivan-kalugin",
+          "name": "ivan kalugin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jack",
+          "name": "Jack",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jackgeary",
+          "name": "Jackgeary",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jacob",
+          "name": "Jacob",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jacob-buckland-seward",
+          "name": "Jacob Buckland-Seward",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jacob-ingalis",
+          "name": "Jacob Ingalis",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jacob-lowder",
+          "name": "Jacob Lowder",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jacob-stablein",
+          "name": "Jacob Stablein",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jacob-tremblay-veilleux",
+          "name": "Jacob Tremblay-Veilleux",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-james",
+          "name": "James",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-james-graham",
+          "name": "James Graham",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-james-wells",
+          "name": "James Wells",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jamey-macisaac",
+          "name": "Jamey MacIsaac",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jason-hettmansperger",
+          "name": "Jason Hettmansperger",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jason-malina",
+          "name": "Jason Malina",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jason-mcdonald",
+          "name": "Jason McDonald",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jason-smith",
+          "name": "Jason Smith",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-javan-spencer",
+          "name": "Javan Spencer",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jay-cunningham",
+          "name": "Jay Cunningham",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jeff-ricker",
+          "name": "Jeff Ricker",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jeremy-m-cooper",
+          "name": "Jeremy M Cooper",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jeremy-serasinghe-watson",
+          "name": "Jeremy Serasinghe Watson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jerome",
+          "name": "Jerome",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jerome-ricchetti",
+          "name": "Jerome Ricchetti",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jerry-alderman",
+          "name": "Jerry Alderman",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jesiah-mccann",
+          "name": "Jesiah McCann",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jessica-abood",
+          "name": "Jessica Abood",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jess-torres",
+          "name": "Jess Torres",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jm",
+          "name": "J.M.",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-joao-lira",
+          "name": "João Lira",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-joel-farley",
+          "name": "Joel Farley",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-joel-hallet",
+          "name": "Joel Hallet",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-john",
+          "name": "John",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-john-chambers-iv",
+          "name": "John Chambers IV",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-john-owens",
+          "name": "John Owens",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-john-parrington-jr",
+          "name": "John Parrington Jr",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-john-ruth",
+          "name": "John Ruth",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-john-t-dylan",
+          "name": "john t. dylan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jon-carper",
+          "name": "Jon Carper",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jon-childress",
+          "name": "Jon Childress",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jon-gagnon",
+          "name": "Jon Gagnon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-joris-janssen",
+          "name": "Joris Janssen",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-josh",
+          "name": "Josh",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-joshua",
+          "name": "Joshua",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-joshua-andrews",
+          "name": "Joshua Andrews",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-joshua-scott",
+          "name": "Joshua Scott",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jp-morey",
+          "name": "JP Morey",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-jrooks92",
+          "name": "Jrooks92",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-juan-munoz",
+          "name": "Juan Munoz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-julien-brun",
+          "name": "Julien Brun",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-julius-pavlas-iii",
+          "name": "Julius Pavlas III",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-justin",
+          "name": "Justin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-justin-boese",
+          "name": "Justin Boese",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-justin-mcdonald-schwartz",
+          "name": "Justin McDonald-Schwartz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-justin-pfaff",
+          "name": "Justin Pfaff",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-kairn-bloodwolf",
+          "name": "Kairn Bloodwolf",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-kalle-van-est",
+          "name": "kalle van est",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-katen-burgess",
+          "name": "Katen Burgess",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-keintol-solo",
+          "name": "Keintol Solo",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-keith",
+          "name": "Keith",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-keith-whitney",
+          "name": "keith whitney",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-kellen-yee",
+          "name": "Kellen Yee",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-kenneth-payne",
+          "name": "Kenneth Payne",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-keonj96",
+          "name": "KeonJ96",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-khvri-mc",
+          "name": "KHVRI Mc",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-klivian",
+          "name": "Klivian",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-kyle-hastings",
+          "name": "Kyle Hastings",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-kyle-knapp",
+          "name": "Kyle Knapp",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-l4s3n",
+          "name": "L4s3n",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-lars-hermes",
+          "name": "Lars Hermes",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-leah-myers",
+          "name": "Leah Myers",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-locoroco",
+          "name": "Locoroco",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-logan-corsetti",
+          "name": "Logan Corsetti",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-lucas-lesage",
+          "name": "Lucas Lesage",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-luiggi-reffatti",
+          "name": "Luiggi Reffatti",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mad-madam-mimosa",
+          "name": "Mad Madam Mimosa",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-manuel-llano",
+          "name": "Manuel Llano",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-marcellus-stills",
+          "name": "marcellus stills",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-marder301",
+          "name": "Marder301",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mari-t",
+          "name": "Mari T",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mark-creighton",
+          "name": "Mark Creighton",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mark-dillon",
+          "name": "Mark Dillon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-markus",
+          "name": "Markus",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-markus-zelinka",
+          "name": "Markus Zelinka",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-martin",
+          "name": "Martin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mason-anthony-martel",
+          "name": "Mason Anthony Martel",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-matt-johnny",
+          "name": "Matt Johnny",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-matt-zimmerman",
+          "name": "Matt Zimmerman",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-matthew-curtiss",
+          "name": "Matthew Curtiss",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-matthew-sharkey",
+          "name": "Matthew Sharkey",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-max-marder",
+          "name": "Max Marder",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mericanjoe",
+          "name": "MericanJoe",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-merrali",
+          "name": "Merrali",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-michael",
+          "name": "Michael",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-michael-d-coots",
+          "name": "Michael D Coots",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-michael-g-matasso",
+          "name": "Michael G Matasso",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-michael-magarino",
+          "name": "Michael Magarino",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-michael-micco",
+          "name": "Michael Micco",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mike",
+          "name": "Mike",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mike-hegger",
+          "name": "Mike Hegger",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mikyle-meyer",
+          "name": "Mikyle Meyer",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-minimumfalcon",
+          "name": "MinimumFalcon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-miska-fredman",
+          "name": "Miska Fredman",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mitchel-werner",
+          "name": "Mitchel Werner",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mkl-j-fxx",
+          "name": "MkL_J_FxX",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-morgan-faulknor",
+          "name": "Morgan Faulknor",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mr-warrick-j-voyzey",
+          "name": "Mr Warrick J Voyzey",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-mydogisbestdog",
+          "name": "mydogisbestdog",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-narcie-ferreira",
+          "name": "Narcie Ferreira",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nate-snider",
+          "name": "Nate Snider",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nathan",
+          "name": "Nathan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-neal-scott",
+          "name": "Neal Scott",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-neat-idea-media",
+          "name": "Neat Idea Media",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nemeangladiator",
+          "name": "NemeanGladiator",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nicholas",
+          "name": "Nicholas",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nick",
+          "name": "Nick",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nick-andreozzi",
+          "name": "Nick Andreozzi",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nick-edwardsen",
+          "name": "Nick Edwardsen",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nicolas-schlarb",
+          "name": "Nicolas Schlarb",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nikki-pratte",
+          "name": "Nikki Pratte",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ninjaduckie",
+          "name": "NinjaDuckie",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-nolan-curtiss",
+          "name": "Nolan Curtiss",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-odiergosum",
+          "name": "OdiErgoSum",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-olivia-sonell",
+          "name": "Olivia Sonell",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-onoja",
+          "name": "Onoja",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-orphan",
+          "name": "Orphan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-owen-soto",
+          "name": "Owen Soto",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-parker-wing",
+          "name": "Parker Wing",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-patrick-carson",
+          "name": "Patrick Carson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-patrick-joynt",
+          "name": "Patrick Joynt",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-peter-case",
+          "name": "Peter Case",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-petr-cooper",
+          "name": "Petr Cooper",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-phillip-hunting",
+          "name": "Phillip Hunting",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-preston-vanderfinch",
+          "name": "Preston Vanderfinch",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-python-40",
+          "name": "Python 4.0",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-raez1138",
+          "name": "Raez1138",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ralph-thomassen",
+          "name": "Ralph Thomassen",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-randall-krok",
+          "name": "Randall Krok",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ray-hlnkle",
+          "name": "Ray Hlnkle",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-raymond-moore",
+          "name": "raymond moore",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-redleg8791",
+          "name": "redleg8791",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-reece-willy",
+          "name": "Reece Willy",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-reznor",
+          "name": "Reznor",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ricardo",
+          "name": "Ricardo",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rich-glover",
+          "name": "Rich Glover",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-richard-watkins",
+          "name": "Richard Watkins",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rick-sharp",
+          "name": "Rick sharp",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rick-williams",
+          "name": "Rick Williams",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rickey-williams",
+          "name": "Rickey Williams",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rjh-123",
+          "name": "RJH 123",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rmlarue",
+          "name": "RMLaRue",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-robert",
+          "name": "Robert",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-robert-hartshorne",
+          "name": "robert hartshorne",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-robert-hutcheson",
+          "name": "Robert Hutcheson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-robert-reid-sloan",
+          "name": "Robert Reid sloan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-robert-w-thomson",
+          "name": "Robert W. Thomson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-roberto-paiz",
+          "name": "Roberto Paiz",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rogueenterprise",
+          "name": "RogueEnterprise",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ronnie-sullivan",
+          "name": "Ronnie Sullivan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rory-collier",
+          "name": "Rory Collier",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rose-bailey",
+          "name": "Rose Bailey",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ross",
+          "name": "Ross",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-rsilver",
+          "name": "RSilver",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-runo",
+          "name": "Runo",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ryan-brennan",
+          "name": "Ryan Brennan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ryan-gerbig",
+          "name": "Ryan Gerbig",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ryan-henderson",
+          "name": "Ryan Henderson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ryan-johnson",
+          "name": "Ryan Johnson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ryan-kendy",
+          "name": "Ryan Kendy",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-ryan-stredny",
+          "name": "Ryan Stredny",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-scott-anderson",
+          "name": "Scott Anderson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-scott-kendrick",
+          "name": "Scott Kendrick",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-scotty-truax",
+          "name": "Scotty Truax",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-sean-mclean",
+          "name": "Sean Mclean",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-sean-smith",
+          "name": "Sean Smith",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-seth-reynolds",
+          "name": "seth reynolds",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-shades-of-kin",
+          "name": "Shades of Kin",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-shadow-wolf2025",
+          "name": "Shadow_Wolf2025",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-shalashaska",
+          "name": "Shalashaska",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-shannon-deland",
+          "name": "Shannon Deland",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-shannon-lenihan",
+          "name": "Shannon Lenihan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-simmyown",
+          "name": "simmyown",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-simone-borgatti",
+          "name": "Simone borgatti",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-simon-lawrence",
+          "name": "Simon Lawrence",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-skip-stephenson",
+          "name": "Skip Stephenson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-s-lindsey",
+          "name": "S. Lindsey",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-socalashez",
+          "name": "SoCalAshez",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-soso-ddox",
+          "name": "Soso Ddox",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-spawnochaos",
+          "name": "SpawnoChaos",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-stephen-mcbath",
+          "name": "Stephen McBath",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-steven-e-burchett",
+          "name": "Steven E. Burchett",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-stewart-hanley",
+          "name": "Stewart Hanley",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tamira-cooper",
+          "name": "Tamira Cooper",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tcab-sampson",
+          "name": "Tcab Sampson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-teddy-warren",
+          "name": "Teddy Warren",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-terryal",
+          "name": "Terryal",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-the-timewalker",
+          "name": "The Timewalker",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-the-toering",
+          "name": "The Toering",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-they-call-him-xd",
+          "name": "They Call Him XD",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tiago-filipe",
+          "name": "Tiago Filipe",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tito-b",
+          "name": "tito b",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tj-harnung",
+          "name": "TJ Harnung",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tom-cunningham",
+          "name": "Tom Cunningham",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tom-jackson",
+          "name": "Tom Jackson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tomasz-chmielewski",
+          "name": "Tomasz Chmielewski",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-toni-tisch",
+          "name": "Toni Tisch",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tony-grandinettl",
+          "name": "ToNY Grandinettl",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-traivon",
+          "name": "Traivon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-travis-kraemer",
+          "name": "Travis Kraemer",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-trev-madd",
+          "name": "Trev Madd",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-trevisus",
+          "name": "Trevisus",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tyler",
+          "name": "Tyler",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-tyler-panush",
+          "name": "Tyler Panush",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-vinicius-souza",
+          "name": "Vinicius Souza",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-vorcha-boy",
+          "name": "Vorcha Boy",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-welo-niheu",
+          "name": "Welo Niheu",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-wibba",
+          "name": "Wibba",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-will-harris",
+          "name": "Will Harris",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-william-l-barnes",
+          "name": "William L Barnes",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-william-merrill",
+          "name": "William Merrill",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-william-robertson",
+          "name": "William Robertson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-windsor-pipes",
+          "name": "Windsor Pipes",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-wisp",
+          "name": "Wisp",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-xarius-quintus",
+          "name": "Xarius Quintus",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-xen",
+          "name": "Xen",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-yuno-fromtivi",
+          "name": "Yuno Fromtivi",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-yuri-valiente",
+          "name": "Yuri Valiente",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-yuval-jacob",
+          "name": "Yuval Jacob",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "patron-zachary-headings",
+          "name": "Zachary Headings",
+          "contribution": null,
+          "link": null
+        }
+      ]
+    },
+    {
+      "key": "art-asset",
+      "title": "Art Assets",
+      "description": "The artists, studios and published works the original site drew its imagery from. The archive recorded these as one list and never recorded which picture came from which name, so this page can credit the pool but cannot yet credit any single image to anyone in it.",
+      "note": "Listed alphabetically, as the original credits listed them.",
+      "people": [
+        {
+          "key": "art-asset-admyrrek",
+          "name": "AdmYrrek",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-andrew-johanson",
+          "name": "Andrew Johanson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-anna-christenson",
+          "name": "Anna Christenson",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-arden-beckwith",
+          "name": "Arden Beckwith",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-art-of-bartlett",
+          "name": "Art of Bartlett",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-audrey-wright",
+          "name": "Audrey Wright",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-av-6r7",
+          "name": "AV-6R7",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-brandon-harris",
+          "name": "Brandon Harris",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-ben-newman",
+          "name": "Ben Newman",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-brian-rood",
+          "name": "Brian Rood",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-canuckcrazed007",
+          "name": "canuckcrazed007",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-chris-trevas",
+          "name": "Chris Trevas",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-clonecommanderneyo",
+          "name": "CloneCommanderNeyo",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-cristi-balanescu",
+          "name": "Cristi Balanescu",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-dangerous-covenants",
+          "name": "Dangerous Covenants",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-dark-arcanine",
+          "name": "Dark Arcanine",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-dark-dream",
+          "name": "Dark Dream",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-darren-tan",
+          "name": "Darren Tan",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-dave-seeley",
+          "name": "Dave Seeley",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-david-kegg",
+          "name": "David Kegg",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-david-nash",
+          "name": "David Nash",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-diogo-saito",
+          "name": "Diogo Saito",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-echostain",
+          "name": "echostain",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-eiluvision",
+          "name": "Eiluvision",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-entar0178",
+          "name": "Entar0178",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-fantasy-flight-games",
+          "name": "Fantasy Flight Games",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-gregory-vlasenko",
+          "name": "Gregory Vlasenko",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-hui-zou",
+          "name": "Hui Zou",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-jacob-blackmon",
+          "name": "Jacob Blackmon",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-jake-murray",
+          "name": "Jake Murray",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-jason-edmiston",
+          "name": "Jason Edmiston",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-jhomar-soriano",
+          "name": "Jhomar Soriano",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-joel-hustak",
+          "name": "Joel Hustak",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-knight-of-malta",
+          "name": "Knight of Malta",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-matt-difa",
+          "name": "Matt Difa",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-metropolis-hero1125",
+          "name": "Metropolis-Hero1125",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-mike-nash",
+          "name": "Mike Nash",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-muurf",
+          "name": "Muurf",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-ramartwork",
+          "name": "RamArtwork",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-ron-faure",
+          "name": "Ron-faure",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-sam-wood",
+          "name": "Sam Wood",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-skip-skyhook",
+          "name": "Skip Skyhook",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-smokeh",
+          "name": "Smokeh",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-somarinoa",
+          "name": "Somarinoa",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-solo-a-star-wars-story-the-official-guide",
+          "name": "Solo: A Star Wars Story The Official Guide",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-sperasoft",
+          "name": "Sperasoft",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-star-wars-battlefront",
+          "name": "Star Wars Battlefront",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-star-wars-character-encyclopedia",
+          "name": "Star Wars Character Encyclopedia",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-star-wars-encyclopedia-of-starfighters-and-other-vehicles",
+          "name": "Star Wars Encyclopedia of Starfighters and Other Vehicles",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-stu-cunningham",
+          "name": "Stu Cunningham",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-terryl-whitlatch",
+          "name": "Terryl Whitlatch",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-the-new-essential-guide-to-droids",
+          "name": "The New Essential Guide to Droids",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-the-new-essential-guide-to-vehicles-and-vessels",
+          "name": "The New Essential Guide to Vehicles and Vessels",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-weasyl",
+          "name": "Weasyl",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-whitelight369",
+          "name": "Whitelight369",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-william-oconnor",
+          "name": "William O'Connor",
+          "contribution": null,
+          "link": null
+        },
+        {
+          "key": "art-asset-zodd",
+          "name": "Zodd",
+          "contribution": null,
+          "link": null
+        }
+      ]
+    },
+    {
+      "key": "rights-holder",
+      "title": "Star Wars itself",
+      "description": "Star Wars, and everything in it, belongs to its rights holders. This site is unofficial and claims none of it.",
+      "note": null,
+      "people": [
+        {
+          "key": "rights-holder-lucasfilm-and-lucasarts",
+          "name": "Lucasfilm and Lucasarts",
+          "contribution": "for Star Wars itself",
+          "link": null
+        }
+      ]
+    }
+  ],
+  "assets": {
+    "brand/hero-dark": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "brand/hero-light": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "brand/logo": {
+      "status": "cited",
+      "artist": "Karbacca",
+      "workTitle": "SW5e logo",
+      "provenance": "Made for the original sw5e.com and credited to Karbacca in that site's credits, which name them \"for the epic cover and SW5e logo\". The file is the archive's sw5e-logo.png.",
+      "basis": "fan-content-policy",
+      "basisNote": "Part of the Star Wars 5e fan conversion, published under Wizards of the Coast's Fan Content Policy as the original site states.",
+      "link": null
+    },
+    "classes/berserker": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/consular": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/engineer": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/fighter": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/guardian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/monk": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/operative": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/scholar": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/scout": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "classes/sentinel": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "sources/phb": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "sources/snv": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "sources/wh": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/abyssin": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/advozse": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/aing-tii": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/aleena": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/anomid": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/anzellan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/aqualish": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/arcona": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/ardennian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/arkanian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/balosar": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/barabel": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/baragwin": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/besalisk": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/bith": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/bothan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/caamasi": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/cathar": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/cerean": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/chadra-fan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/chagrian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/chevin": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/chironian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/chiss": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/clawdite": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/codru-ji": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/colicoid": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/culisetto": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/dashade": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/defel": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/devaronian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/diathim": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/draethos": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/droid-class-i": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/droid-class-ii": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/droid-class-iii": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/droid-class-iv": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/droid-class-v": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/dug": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/duros": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/echani": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/esh-kha": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/ewok": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/falleen": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/felucian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/flesh-raider": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/gamorrean": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/gand": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/gank": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/geonosian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/givin": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/gormak": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/gotal": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/gran": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/gungan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/harch": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/herglic": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/ho-din": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/houk": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/human": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/hutt-adolescent": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/iktotchi": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/ithorian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/jawa": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kage": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kaleesh": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kalleran": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kaminoan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/karkarodon": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kel-dor": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kiffar": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/killik": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/klatooinian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kubaz": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kushiban": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/kyuzo": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/lannik": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/lasat": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/lurmen": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/massassi": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/mikkian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/miraluka": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/mirialan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/mon-calamari": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/mustafarian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/muun": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/nautolan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/neimoidian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/nikto": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/noghri": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/ortolan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/pa-lowick": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/pantoran": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/patrolian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/pau-an": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/pyke": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/quarren": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/rakata": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/rattataki": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/rishii": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/rodian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/ryn": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/selkath": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/selonian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/shistavanen": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/sith-pureblood": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/squib": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/ssi-ruu": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/sullustan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/talz": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/tarasin": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/taung": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/theelin": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/thisspiasian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/tiss-shar": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/tognath": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/togorian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/togruta": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/toydarian": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/trandoshan": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/tusken": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/twi-lek": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/ugnaught": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/umbaran": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/verpine": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/voss": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/vurk": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/weequay": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/wookiee": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/xexto": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/yevetha": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/zabrak": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/zeltron": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    },
+    "species/zilkin": {
+      "status": "inherited-unattributed",
+      "artist": null,
+      "workTitle": null,
+      "provenance": "Inherited from the original sw5e.com art pool. That site credited its artists as a single alphabetical list and never recorded which artist made which image, so the author of this particular picture is not known from the archive.",
+      "basis": "unrecorded",
+      "basisNote": null,
+      "link": null
+    }
+  }
+}

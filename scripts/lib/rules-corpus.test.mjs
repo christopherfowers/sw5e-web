@@ -1,0 +1,872 @@
+import { existsSync } from "node:fs";
+import { readFile, readdir } from "node:fs/promises";
+import path from "node:path";
+import { describe, expect, it, vi } from "vitest";
+
+import {
+  CANONICAL_DIRECTORIES,
+  buildClassGraph,
+  indexSources,
+  normalizeAllCanonical,
+} from "./canonical.mjs";
+import { CONTENT_TYPES, normalizeAll, splitIntoSections } from "./normalize.mjs";
+import { REPLACEMENT } from "./repair-text.mjs";
+
+/**
+ * The five content types imported wholesale from the legacy archive: the
+ * enhanced items, the two property glossaries, the rules prose and the
+ * reference tables.
+ *
+ * Two things are being pinned down here, and they are different.
+ *
+ * The first is the mapping itself, tested against records taken verbatim from
+ * the archive. A trimmed inline record proves the code runs; a real one proves
+ * it copes with what the corpus actually contains. A prerequisite with a
+ * leading space, a chapter numbered -2, a body that opens by repeating its own
+ * title.
+ *
+ * The second is that the two source paths agree. The site can be built from
+ * the canonical content set or straight from the archive, and the whole point
+ * of keeping both alive is that they publish the same site. For the rules that
+ * is not automatic: chapter titles repeat across books, so the two paths have
+ * to arrive at the same book-qualified slug by different routes. One reading
+ * a document's key, the other deriving it from the file the record came from.
+ */
+
+/*
+  Five seconds is the default for a unit test, and nothing in this file is one.
+
+  Every assertion here reads the real corpus off disk and pushes 7,191 documents
+  through the full mapping, which takes seconds on an idle machine and longer on
+  a busy one. At the default these passed alone and failed intermittently in the
+  full suite. A flake that reads as "the corpus is broken" when it means "the
+  machine was busy", and the worst kind to leave in a suite because people learn
+  to re-run rather than read it.
+
+  Set at the file rather than per test so a slow assertion added later inherits
+  it rather than reintroducing the same flake.
+*/
+vi.setConfig({ testTimeout: 60_000 });
+
+const sources = indexSources([
+  { key: "phb", abbreviation: "PHB", title: "Star Wars 5e Player's Handbook" },
+  { key: "wh", abbreviation: "WH", title: "Wretched Hives" },
+  { key: "ec", abbreviation: "EC", title: "Expanded Content" },
+]);
+
+/**
+ * Both corpora are checked out beside this repository on a development machine
+ * and neither exists in CI. Which "beside" means depends on how the four
+ * repositories were cloned, so the same candidates the sibling repository's
+ * test helper tries are tried here.
+ *
+ * At module scope because two suites below need it.
+ */
+function locate(variable, candidates) {
+  const configured = process.env[variable];
+  if (configured) return path.resolve(configured);
+  return (
+    candidates.map((each) => path.resolve(each)).find((each) => existsSync(each)) ??
+    path.resolve(candidates[0])
+  );
+}
+
+async function readJson(file) {
+  return JSON.parse(await readFile(file, "utf8"));
+}
+
+function canonical(type, record) {
+  return normalizeAllCanonical(type, [record], sources)[0];
+}
+
+function fromArchive(type, record, graph = {}) {
+  return normalizeAll(type, [record], new Set(), graph)[0];
+}
+
+/* ------------------------------------------------------------ enhanced items */
+
+describe("enhanced items", () => {
+  // content/enhanced-item/ab-75-bo-rifle.json, verbatim.
+  const boRifle = {
+    key: "ab-75-bo-rifle",
+    name: "AB-75 Bo-Rifle",
+    sourceKey: "wh",
+    contentSet: "core",
+    itemType: "weapon",
+    rarity: "prototype",
+    requiresAttunement: false,
+    subtype: "bo-rifle",
+    description:
+      "You have a +2 bonus to attack and damage rolls with this enhanced weapon.",
+  };
+
+  it("carries the two facets a 1,918-row list is unusable without", () => {
+    const item = canonical("enhanced-items", boRifle);
+
+    expect(item.summary.rarity).toBe("Prototype");
+    expect(item.summary.itemType).toBe("Weapon");
+    expect(item.summary.subtype).toBe("bo-rifle");
+    expect(item.summary.requiresAttunement).toBe(false);
+  });
+
+  it("ranks rarity by the game's ladder rather than the alphabet", () => {
+    const ranks = [
+      "standard",
+      "premium",
+      "prototype",
+      "advanced",
+      "legendary",
+      "artifact",
+    ].map(
+      (rarity) =>
+        canonical("enhanced-items", { ...boRifle, rarity }).summary.rarityRank,
+    );
+
+    expect(ranks).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
+  it("labels the subtype by what it means for the item's own type", () => {
+    const modification = canonical("enhanced-items", {
+      ...boRifle,
+      itemType: "itemModification",
+      subtype: "wristpad",
+    });
+
+    // A modification's subtype is the equipment it goes into; a weapon's is
+    // the base weapon it is built on. One field, two readings.
+    expect(modification.stats).toContainEqual({
+      label: "Installed in",
+      value: "Wristpad",
+    });
+    expect(canonical("enhanced-items", boRifle).stats).toContainEqual({
+      label: "Kind",
+      value: "Bo-rifle",
+    });
+  });
+
+  it("links to the equipment it is the enhanced form of, when there is one", () => {
+    const graph = buildClassGraph({
+      equipment: [{ name: "Bo-rifle" }, { name: "Wristpad" }],
+    });
+
+    const specific = normalizeAllCanonical(
+      "enhanced-items",
+      [boRifle],
+      sources,
+      graph,
+    )[0];
+
+    expect(specific.stats).toContainEqual({
+      label: "Kind",
+      value: "Bo-rifle",
+      href: "/equipment/bo-rifle",
+    });
+
+    const modification = normalizeAllCanonical(
+      "enhanced-items",
+      [{ ...boRifle, itemType: "itemModification", subtype: "wristpad" }],
+      sources,
+      graph,
+    )[0];
+
+    expect(modification.stats).toContainEqual({
+      label: "Installed in",
+      value: "Wristpad",
+      href: "/equipment/wristpad",
+    });
+  });
+
+  it("links nowhere when the subtype names a family rather than an item", () => {
+    // "Any blaster" is not a piece of equipment and never will be. A link that
+    // resolved to something would be a wrong link, and a wrong link is the kind
+    // nobody notices.
+    const item = normalizeAllCanonical(
+      "enhanced-items",
+      [{ ...boRifle, subtype: "any blaster" }],
+      sources,
+      buildClassGraph({ equipment: [{ name: "Bo-rifle" }] }),
+    )[0];
+
+    expect(item.stats).toContainEqual({ label: "Kind", value: "Any blaster" });
+    expect(item.stats.some((stat) => stat.href)).toBe(false);
+  });
+
+  it("tidies the archive's prerequisites on the way through", () => {
+    // EnhancedItem.json, "Obscured Armoring" and "Berserker's Edge": every
+    // archived prerequisite opens with a stray space, and a third of them
+    // lower-case a first word the rest capitalise.
+    expect(
+      fromArchive("enhanced-items", {
+        name: "Obscured Armoring",
+        type: "ItemModification",
+        rarityOptions: ["Premium"],
+        requiresAttunement: false,
+        prerequisite: " Armor",
+        subtype: "armor",
+        text: "This armor gains the obscured property.",
+        contentSource: "WH",
+      }).summary.prerequisite,
+    ).toBe("Armor");
+
+    expect(
+      fromArchive("enhanced-items", {
+        name: "Berserker's Edge",
+        type: "ItemModification",
+        rarityOptions: ["Advanced"],
+        requiresAttunement: false,
+        prerequisite: " at least 3 levels in berserker",
+        subtype: "vibroweapon",
+        text: "While attuned to this weapon you gain a bonus.",
+        contentSource: "WH",
+      }).summary.prerequisite,
+    ).toBe("At least 3 levels in berserker");
+  });
+});
+
+/* ---------------------------------------------------------------- properties */
+
+describe("the weapon and armour property glossaries", () => {
+  const powerCell = {
+    key: "power-cell",
+    name: "Power Cell",
+    contentSet: "core",
+    description:
+      "Weapons with this property are fueled by power cells, which must be loaded in order to fire the weapon. A power cell fuels a number of attacks equal to the weapon's reload number.",
+  };
+
+  it("publishes no source badge, because the archive records no book", () => {
+    const item = canonical("weapon-properties", powerCell);
+
+    expect(item.source).toBeNull();
+    expect(item.sourceName).toBeNull();
+  });
+
+  it("scans by the opening sentence of the rule", () => {
+    expect(canonical("weapon-properties", powerCell).summary.summaryLine).toBe(
+      "Weapons with this property are fueled by power cells, which must be loaded in order to fire the weapon.",
+    );
+  });
+
+  it("drops the heading the archive repeats above every entry", () => {
+    // WeaponProperty.json stores the rule with its own title on the first
+    // line. The page prints the name as its heading already.
+    const item = fromArchive("weapon-properties", {
+      name: "Power Cell",
+      contentType: "Core",
+      contentSource: "None",
+      content:
+        "#### Power Cell\r\nWeapons with this property are fueled by power cells.",
+    });
+
+    expect(item.sections[0].body).toBe(
+      "Weapons with this property are fueled by power cells.",
+    );
+    expect(item.source).toBeNull();
+  });
+});
+
+/* --------------------------------------------------------------------- rules */
+
+describe("splitting a rules passage into sections", () => {
+  it("divides on the shallowest heading level the passage uses", () => {
+    // The conditions appendix divides at h4 and has no h2 or h3 at all.
+    const sections = splitIntoSections(
+      "Conditions alter a creature's capabilities.\n\n" +
+        "#### Blinded\n- A blinded creature can't see.\n\n" +
+        "#### Charmed\n- A charmed creature can't attack the charmer.",
+    );
+
+    expect(sections.map((section) => section.heading)).toEqual([
+      null,
+      "Blinded",
+      "Charmed",
+    ]);
+    expect(sections[0].body).toBe("Conditions alter a creature's capabilities.");
+  });
+
+  it("keeps deeper headings inside the section they belong to", () => {
+    const sections = splitIntoSections(
+      "## Movement\nintro\n\n### Climbing\ndetail\n\n## Resting\nmore",
+    );
+
+    expect(sections.map((section) => section.heading)).toEqual([
+      "Movement",
+      "Resting",
+    ]);
+    expect(sections[0].body).toContain("### Climbing");
+  });
+
+  it("ignores a stray level-one heading in the middle of a passage", () => {
+    // Two chapters carry one. Splitting on it would give the whole chapter
+    // back as a single section and lose every real division under it.
+    const sections = splitIntoSections(
+      "opening\n\n# The Player's Handbook\n\n## Rests\nbody\n\n## Travel\nbody",
+    );
+
+    expect(sections.map((section) => section.heading)).toEqual([
+      null,
+      "Rests",
+      "Travel",
+    ]);
+  });
+
+  it("gives a passage with no headings back whole", () => {
+    const sections = splitIntoSections("One paragraph and nothing else.");
+
+    expect(sections).toEqual([
+      { heading: null, body: "One paragraph and nothing else." },
+    ]);
+  });
+});
+
+describe("rules", () => {
+  const chapter = {
+    key: "phb-appendix-a-conditions",
+    name: "Appendix A: Conditions",
+    sourceKey: "phb",
+    contentSet: "core",
+    ruleType: "chapter",
+    chapterNumber: 13,
+    body: "Conditions alter a creature's capabilities.\n\n#### Blinded\nbody\n\n#### Charmed\nbody",
+  };
+
+  it("takes its slug from the key, because chapter titles repeat across books", () => {
+    // "Equipment" is a chapter in all three books. A name-derived slug would
+    // hand them the same URL and let directory order decide which one wins.
+    const equipment = { ...chapter, key: "wh-equipment", name: "Equipment", sourceKey: "wh" };
+
+    expect(canonical("rules", chapter).slug).toBe("phb-appendix-a-conditions");
+    expect(canonical("rules", equipment).slug).toBe("wh-equipment");
+  });
+
+  it("reports how many sections a chapter holds, so a reader can judge its size", () => {
+    expect(canonical("rules", chapter).summary.sectionCount).toBe(2);
+  });
+
+  it("places a chapter by the heading it is read under", () => {
+    const placed = { ...chapter, readingGroup: "Reference", order: 14 };
+
+    expect(canonical("rules", placed).tagline).toBe(
+      "Star Wars 5e Player's Handbook · Reference",
+    );
+  });
+
+  /**
+   * The window that used to be necessary here, and no longer is.
+   *
+   * This test previously asserted that a chapter numbered 99 or -2 printed no
+   * position at all: the archive files both changelogs at 99 and the handbook
+   * preface at -2, so the label suppressed anything outside 1..90 rather than
+   * show a reader "Chapter 99". Those numbers are still in the corpus and
+   * still sort correctly, and they are no longer anybody's problem. An
+   * authored heading was written to be read rather than derived from a page
+   * count, so there is nothing to suppress.
+   */
+  it("labels the passages the printed numbering had to hide", () => {
+    for (const chapterNumber of [99, -2]) {
+      expect(
+        canonical("rules", {
+          ...chapter,
+          chapterNumber,
+          readingGroup: "Reference",
+          order: 15,
+        }).tagline,
+      ).toBe("Star Wars 5e Player's Handbook · Reference");
+    }
+  });
+
+  it("gives an unplaced chapter no position rather than a wrong one", () => {
+    // Nothing in the corpus outside the two books is placed yet, and a
+    // fabricated position would be worse than none.
+    expect(canonical("rules", chapter).tagline).toBe(
+      "Star Wars 5e Player's Handbook",
+    );
+  });
+
+  it("marks a variant rule as optional and gives it no position", () => {
+    const variant = canonical("rules", {
+      key: "flanking",
+      name: "Flanking",
+      sourceKey: "ec",
+      contentSet: "expanded-content",
+      ruleType: "variant",
+      body: "When making a melee attack against a creature.",
+    });
+
+    expect(variant.tagline).toBe("Optional variant rule");
+    expect(variant.summary.chapterNumber).toBeNull();
+    expect(variant.slug).toBe("flanking");
+  });
+
+  it("attributes an archive record by the file it came from, since it says nothing itself", () => {
+    // Every rules record in the archive has contentSource "None". The file is
+    // the only evidence of which book printed the chapter.
+    const record = {
+      chapterName: "Equipment",
+      chapterNumber: 5,
+      contentType: "None",
+      contentSource: "None",
+      contentMarkdown: "# Chapter 5: Equipment\r\n\r\nA character's gear.",
+    };
+
+    const phb = fromArchive("rules", { ...record, ruleBook: "phb" });
+    const wh = fromArchive("rules", { ...record, ruleBook: "wh" });
+
+    expect(phb.source).toBe("PHB");
+    expect(phb.slug).toBe("phb-equipment");
+    expect(wh.source).toBe("WH");
+    expect(wh.slug).toBe("wh-equipment");
+
+    // And the chapter's own title, printed at the top of the body, is not
+    // shown a second time under the heading the page already prints.
+    expect(phb.sections[0].body).toBe("A character's gear.");
+  });
+
+  it("refuses a rules record from a file that is not one of the four books", () => {
+    expect(() =>
+      fromArchive("rules", { chapterName: "X", contentMarkdown: "body", ruleBook: "Species" }),
+    ).toThrow(/not one of the four/);
+  });
+});
+
+/* ---------------------------------------------------------- reference tables */
+
+describe("reference tables", () => {
+  it("groups by the subject read off the caption", () => {
+    const cases = {
+      "Starship Size Fuel Capacity": "Starships",
+      "Modification Capacity by Ship Size": "Starships",
+      "Base Hyperspace Travel Times (Hours)": "Starships",
+      "XP and PB by Level": "Character creation",
+      "Multiclassing Prerequisites": "Character creation",
+      "Lifestyle Expenses": "Downtime",
+      "Slowed Level": "Conditions",
+    };
+
+    for (const [name, subject] of Object.entries(cases)) {
+      expect(
+        fromArchive("reference-tables", {
+          name,
+          contentType: "Core",
+          contentSource: "None",
+          content: "|a|b|\n|:--|:--|\n|1|2|",
+        }).summary.subject,
+      ).toBe(subject);
+    }
+  });
+
+  it("keeps the table as markdown rather than shredding it into a grid", () => {
+    const item = canonical("reference-tables", {
+      key: "ability-score-point-cost",
+      name: "Ability Score Point Cost",
+      contentSet: "core",
+      subject: "Character creation",
+      body: "|Score|Cost|\n|:--:|:--:|\n|8|0|\n|9|1|",
+    });
+
+    expect(item.tables).toEqual([]);
+    expect(item.sections[0].body).toContain("|Score|Cost|");
+    expect(item.source).toBeNull();
+  });
+});
+
+/* ------------------------------------------- the two source paths must agree */
+
+describe("the canonical set and the archive publish the same corpus", () => {
+  const archive = locate("SW5E_ARCHIVE", [
+    "../../sw5e-legacy-archive/api",
+    "../sw5e-legacy-archive/api",
+  ]);
+  const content = locate("SW5E_CONTENT", [
+    "../sw5e-database/content",
+    "../../sw5e-database/content",
+  ]);
+
+  // Neither source is present in CI, so the two assertions that read them
+  // announce themselves as skipped rather than passing vacuously.
+  const hasArchive = existsSync(archive);
+  const hasContent = existsSync(path.join(content, "rule"));
+
+  it.runIf(hasArchive)(
+    "derives the same slug for every rules record from either source",
+    async () => {
+      const archiveSlugs = new Set();
+
+      for (const { file, ruleBook } of CONTENT_TYPES.find(
+        (type) => type.id === "rules",
+      ).files) {
+        const records = await readJson(path.join(archive, `${file}.json`));
+        const stamped = records.map((record) => ({ ...record, ruleBook }));
+        for (const item of normalizeAll("rules", stamped)) {
+          archiveSlugs.add(item.slug);
+        }
+      }
+
+      // 76 archived records; the Player's Handbook preface is a title with an
+      // empty body and is not published, but it still has a slug here because
+      // the archive path does not exclude it.
+      expect(archiveSlugs.size).toBe(76);
+
+      if (!hasContent) return;
+
+      const names = await readdir(path.join(content, "rule"));
+      const canonicalSlugs = new Set();
+      for (const name of names.filter((each) => each.endsWith(".json"))) {
+        const record = await readJson(path.join(content, "rule", name));
+        canonicalSlugs.add(canonical("rules", record).slug);
+      }
+
+      expect(canonicalSlugs.size).toBe(75);
+
+      const missing = [...canonicalSlugs].filter(
+        (slug) => !archiveSlugs.has(slug),
+      );
+      expect(missing).toEqual([]);
+    },
+  );
+
+  it.runIf(hasContent)(
+    "maps every imported document without losing a facet",
+    async () => {
+      const expected = {
+        "enhanced-item": 1918,
+        "weapon-property": 46,
+        "armor-property": 30,
+        rule: 75,
+        "reference-table": 30,
+      };
+
+      for (const [directory, count] of Object.entries(expected)) {
+        const typeId = Object.entries(CANONICAL_DIRECTORIES).find(
+          ([, value]) => value === directory,
+        )[0];
+
+        const names = (await readdir(path.join(content, directory))).filter(
+          (name) => name.endsWith(".json"),
+        );
+        expect(names.length, directory).toBe(count);
+
+        const records = await Promise.all(
+          names.map((name) => readJson(path.join(content, directory, name))),
+        );
+        const items = normalizeAllCanonical(typeId, records, sources);
+
+        expect(items.length, directory).toBe(count);
+        // Every document renders something. A mapping that produced a page
+        // with a title and no body would still be the right length.
+        expect(
+          items.filter((item) => item.sections.length === 0).map((item) => item.slug),
+          directory,
+        ).toEqual([]);
+        // And the only documents still carrying the scrape's replacement
+        // character are the five recorded as unrecoverable: a lost character
+        // before a space, ambiguous between an em dash and an ellipsis, and
+        // the accented letters in the Expanded Content species name tables.
+        expect(
+          items
+            .filter((item) => JSON.stringify(item).includes(REPLACEMENT))
+            .map((item) => item.slug)
+            .sort(),
+          directory,
+        ).toEqual(
+          directory === "rule"
+            ? [
+                "ec-archetypes",
+                "ec-backgrounds",
+                "ec-species",
+                "phb-equipment",
+                "wh-step-by-step-factions",
+              ]
+            : [],
+        );
+      }
+    },
+  );
+
+  it.runIf(hasContent)(
+    "resolves every enhanced-item link against the real equipment catalogue",
+    async () => {
+      const equipment = await Promise.all(
+        (await readdir(path.join(content, "equipment")))
+          .filter((name) => name.endsWith(".json"))
+          .map((name) => readJson(path.join(content, "equipment", name))),
+      );
+
+      const graph = buildClassGraph({ equipment });
+
+      const names = (await readdir(path.join(content, "enhanced-item"))).filter(
+        (name) => name.endsWith(".json"),
+      );
+      const records = await Promise.all(
+        names.map((name) => readJson(path.join(content, "enhanced-item", name))),
+      );
+      const items = normalizeAllCanonical(
+        "enhanced-items",
+        records,
+        sources,
+        graph,
+      );
+
+      const linked = items.flatMap((item) =>
+        item.stats.filter((stat) => stat.href),
+      );
+
+      // 321 of the 1,918 enhanced items name a base item the equipment
+      // catalogue actually has, across 20 distinct targets. The exact numbers
+      // are the point: a resolver that matched on a prefix instead of a whole
+      // name would light up far more of the corpus and be wrong about most of
+      // it, and one that silently stopped working would light up none.
+      expect(linked.length).toBe(321);
+      expect(new Set(linked.map((stat) => stat.href)).size).toBe(20);
+
+      // Every target is a page the site publishes. A link that 404s is worse
+      // than the absent link it replaced.
+      const equipmentSlugs = new Set(
+        normalizeAllCanonical("equipment", equipment, sources).map(
+          (item) => item.slug,
+        ),
+      );
+      const dangling = [...new Set(linked.map((stat) => stat.href))].filter(
+        (href) => !equipmentSlugs.has(href.replace("/equipment/", "")),
+      );
+      expect(dangling).toEqual([]);
+
+      // And the ones that are not linked are not linked for a reason: they
+      // name a family, a body slot or a bare noun, none of which is one item.
+      const unlinked = new Set(
+        items
+          .filter((item) => item.summary.subtype && !item.stats.some((s) => s.href))
+          .map((item) => item.summary.subtype),
+      );
+      expect(unlinked).toContain("any blaster");
+      expect(unlinked).toContain("clothing");
+      expect(unlinked).toContain("hands");
+    },
+  );
+
+  it("leaves no dangling cross-reference in the committed fixture", async () => {
+    // The fixture is four items per type and is the only dataset a contributor
+    // without either source can render, so a link in it that points at a
+    // document it did not keep is a dead link on the one build least likely to
+    // be recognised as incomplete.
+    const directory = path.resolve("app/data/fixture");
+    const manifest = await readJson(path.join(directory, "manifest.json"));
+
+    const published = new Set();
+    const linked = [];
+
+    for (const { id } of manifest.types) {
+      const items = await readJson(path.join(directory, `${id}.items.json`));
+      for (const item of items) {
+        published.add(`/${id}/${item.slug}`);
+        for (const stat of item.stats) {
+          if (stat.href) linked.push({ from: `/${id}/${item.slug}`, to: stat.href });
+        }
+      }
+    }
+
+    expect(linked.filter((link) => !published.has(link.to))).toEqual([]);
+  });
+
+  it("declares every new type on both sides of the pipeline", () => {
+    for (const id of [
+      "enhanced-items",
+      "weapon-properties",
+      "armor-properties",
+      "rules",
+      "reference-tables",
+    ]) {
+      expect(CANONICAL_DIRECTORIES[id], id).toBeTruthy();
+      expect(
+        CONTENT_TYPES.find((type) => type.id === id),
+        id,
+      ).toBeTruthy();
+    }
+
+    // The rules type is fed by four archive dumps, and each one stamps the
+    // book onto its records, because nothing inside a record says which book
+    // printed it.
+    expect(
+      CONTENT_TYPES.find((type) => type.id === "rules").files,
+    ).toEqual([
+      { file: "playerHandbookRule", ruleBook: "phb" },
+      { file: "wretchedHivesRule", ruleBook: "wh" },
+      { file: "ExpandedContent", ruleBook: "ec" },
+      { file: "VariantRule", ruleBook: "variant" },
+    ]);
+  });
+});
+
+/**
+ * No anchor from the corpus reaches a page as an anchor.
+ *
+ * The bug this exists for was silent in an unusual way. `rewriteReferences`
+ * was correct and had been for as long as the archive builder existed; the
+ * canonical builder simply never called it, so the path that runs in
+ * production did nothing, the renderer declined to follow a link that was not
+ * site-relative, and three hundred power and table names printed as grey text
+ * that looked like a deliberate choice. No error, no warning, no 404. The
+ * failure mode of a link that is never made is silence.
+ *
+ * Reads the real corpus, because that is the only place these anchors exist.
+ * A hand-written fixture proves the rewriting works, which was never in doubt.
+ */
+describe("the corpus's in-page anchors", () => {
+  const content = locate("SW5E_CONTENT", [
+    "../sw5e-database/content",
+    "../../sw5e-database/content",
+  ]);
+
+  const hasContent = existsSync(path.join(content, "monster"));
+
+  /*
+    Built once and shared.
+
+    Each assertion below needs the whole corpus normalized, and that is 7,191
+    documents through every mapping. Comfortably over the five-second default
+    on its own. Four of them doing it separately did not merely take four times
+    as long; under the load of the full suite they began timing out, which
+    reads as a broken corpus rather than as a slow test. The one that made them
+    slow is the one that made them shared.
+  */
+  let built = null;
+
+  async function buildEverything() {
+    if (built) return built;
+    built = build();
+    return built;
+  }
+
+  async function build() {
+    const records = new Map();
+    for (const type of CONTENT_TYPES) {
+      const directory = CANONICAL_DIRECTORIES[type.id];
+      if (!directory) {
+        records.set(type.id, []);
+        continue;
+      }
+      const where = path.join(content, directory);
+      if (!existsSync(where)) {
+        records.set(type.id, []);
+        continue;
+      }
+      const names = (await readdir(where)).filter((each) => each.endsWith(".json"));
+      records.set(
+        type.id,
+        await Promise.all(names.map((name) => readJson(path.join(where, name)))),
+      );
+    }
+
+    const graph = buildClassGraph({
+      classes: records.get("classes") ?? [],
+      classImprovements: records.get("class-improvements") ?? [],
+      archetypes: records.get("archetypes") ?? [],
+      features: records.get("features") ?? [],
+      equipment: records.get("equipment") ?? [],
+      powers: records.get("powers") ?? [],
+      referenceTables: records.get("reference-tables") ?? [],
+    });
+
+    /*
+      The corpus's own source documents, not the three-book fixture above. The
+      mapping refuses a sourceKey no source declares and the corpus has five
+      books, so a fixture short of one fails on a species rather than on
+      anything this suite is about.
+
+      Read from content/source directly: "source" is not a published content
+      type, so CANONICAL_DIRECTORIES does not carry it.
+    */
+    const sourceDirectory = path.join(content, "source");
+    const corpusSources = indexSources(
+      await Promise.all(
+        (await readdir(sourceDirectory))
+          .filter((each) => each.endsWith(".json"))
+          .map((name) => readJson(path.join(sourceDirectory, name))),
+      ),
+    );
+
+    const items = [];
+    for (const type of CONTENT_TYPES) {
+      const set = records.get(type.id) ?? [];
+      if (set.length === 0) continue;
+      items.push(...normalizeAllCanonical(type.id, set, corpusSources, graph));
+    }
+    return items;
+  }
+
+  function prose(item) {
+    return [
+      ...(item.sections ?? []).map((each) => each.body),
+      ...(item.entries ?? []).map((each) => each.body),
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  it.runIf(hasContent)("are all resolved or reduced to their words", async () => {
+    const items = await buildEverything();
+
+    const leftover = items.filter((item) => /\]\(#/.test(prose(item)));
+
+    expect(leftover.map((item) => `${item.type}/${item.slug}`)).toEqual([]);
+  });
+
+  /**
+   * The empty link is its own case because it survives by a different route.
+   * The inline parser needs at least one character of link text, so `[](#)`
+   * matches no rule and is carried through to the page as those five literal
+   * characters. Which is what a reader could see on the live site, mid stat
+   * block, before this.
+   */
+  it.runIf(hasContent)("leave no empty links behind", async () => {
+    const items = await buildEverything();
+
+    expect(items.filter((item) => prose(item).includes("[](#)"))).toEqual([]);
+  });
+
+  /**
+   * A rewritten link points at a page that exists.
+   *
+   * The half that matters more than the rewriting. Turning an anchor into
+   * `/powers/<slug>` is worse than leaving it alone if that slug is not a
+   * page: a dead-looking word becomes a confident link to a 404. The slugs
+   * come from the same `slugify` that decides each item's URL, so this holds
+   * by construction, and that is exactly the kind of reasoning worth pinning,
+   * since it stops holding the moment either side changes.
+   */
+  it.runIf(hasContent)("point at pages that exist", async () => {
+    const items = await buildEverything();
+
+    const slugsByType = new Map();
+    for (const item of items) {
+      if (!slugsByType.has(item.type)) slugsByType.set(item.type, new Set());
+      slugsByType.get(item.type).add(item.slug);
+    }
+
+    const dangling = [];
+    for (const item of items) {
+      for (const [, type, slug] of prose(item).matchAll(
+        /\]\(\/(powers|reference-tables)\/([a-z0-9-]+)\)/g,
+      )) {
+        if (!slugsByType.get(type)?.has(slug)) dangling.push(`/${type}/${slug}`);
+      }
+    }
+
+    expect([...new Set(dangling)]).toEqual([]);
+  });
+
+  /**
+   * And that the rewriting actually happened at all.
+   *
+   * Every assertion above passes on an empty result: a builder that produced
+   * no prose would leave no anchors, no empty links and no dangling routes.
+   * This is the one that fails if the pass stops running.
+   */
+  it.runIf(hasContent)("produce the links the corpus asks for", async () => {
+    const items = await buildEverything();
+    const all = items.map(prose).join("\n");
+
+    expect(all.match(/\]\(\/powers\//g)?.length ?? 0).toBeGreaterThan(200);
+    expect(all.match(/\]\(\/reference-tables\//g)?.length ?? 0).toBeGreaterThan(70);
+  });
+});

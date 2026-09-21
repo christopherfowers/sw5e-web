@@ -1,0 +1,3361 @@
+@import "tailwindcss";
+
+/* Inter, self-hosted rather than loaded from Google's CDN.
+ *
+ * The CDN version cost two things. It leaked every visitor's IP address to
+ * Google on first paint, which LG Muenchen I held to breach the GDPR
+ * (3 O 17493/20, 20 January 2022), and it forced
+ * `style-src https://fonts.googleapis.com` plus
+ * `font-src https://fonts.gstatic.com` into this app's Content-Security-Policy
+ * for as long as the link existed, permanently widening a policy that should
+ * be able to stay at 'self'.
+ *
+ * The files in ./fonts are Inter's variable weight axis, subset by Fontsource,
+ * under the SIL Open Font License 1.1. See app/fonts/LICENSE. Vite
+ * fingerprints and bundles these URLs, so they cache immutably.
+ *
+ * unicode-range keeps this cheap: an English page downloads only the latin
+ * normal file (~48 KB) and fetches latin-ext or the italics only if a glyph
+ * actually needs them.
+ */
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/inter-latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/inter-latin-wght-italic.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6,
+    U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122,
+    U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/inter-latin-ext-wght-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("./fonts/inter-latin-ext-wght-italic.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F,
+    U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+/* ============================================================ design tokens
+ *
+ * Two palettes, not one palette inverted.
+ *
+ * Dark is the default because that is how this reference gets read: a phone at
+ * a table, in a room someone has dimmed. Its ground is a near-black with a
+ * blue cast, and every surface above it is a step up in lightness rather than
+ * a border drawn on the same colour.
+ *
+ * Light is warm paper. #faf8f4 rather than #ffffff, with warm greys and warm
+ * borders. It is designed against the printed books this material comes from,
+ * not produced by flipping the dark values, which is why the two blocks below
+ * share no arithmetic relationship.
+ *
+ * Every text-and-background pair in use clears WCAG 2.1 AA: 4.5:1 for body
+ * text and 3:1 for large text, interface borders and focus rings. The `--hue-*`
+ * ramp is the one place a component may take a colour from, and every value in
+ * it is checked against `--surface`, the ground a badge most often sits on.
+ *
+ * The site follows the reader's system setting rather than shipping a theme
+ * toggle, because a toggle that avoids a flash of the wrong theme on first
+ * paint needs an inline script, and this app's Content-Security-Policy story
+ * is worth more than that convenience.
+ */
+:root {
+  /* Grounds and surfaces */
+  --bg: #faf8f4;
+  --bg-deep: #efeade;
+  --surface: #f2eee7;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ece7dd;
+  --border: #ded7ca;
+  --border-strong: #a89e8c;
+
+  /* Text */
+  --text: #1a1814;
+  --text-muted: #575043;
+  --text-faint: #6e6759;
+
+  /* The mark this site inherited: the SW5e red. */
+  --brand: #b91120;
+  --brand-text: #a30f1c;
+  --brand-contrast: #ffffff;
+
+  /* Interactive.
+   *
+   * Bronze rather than blue, and the reason is the dark theme's: gold is the
+   * one colour this material's two ancestors both reach for when something
+   * matters. The crawl is gold on black, a rulebook's title is gold foil on
+   * leather, its page edges are gilt. A link should be that, not the blue of a
+   * documentation site.
+   *
+   * Darkened well past the dark theme's brass because it is read on parchment:
+   * 5.9:1 on --bg and 5.4:1 on --surface, against a 4.5 requirement. */
+  --accent: #7d5a0c;
+  --accent-hover: #5f4409;
+  --focus: #7d5a0c;
+
+  --mark-bg: #ffe08a;
+  --mark-text: #1a1814;
+
+  /* The information ramp. Nothing outside this list may be a hue.
+   * clay and rose were added for the rules material and the enhanced items;
+   * both are checked against --surface at the same 4.5:1 as the rest, and both
+   * are far enough from amber and red to stay distinguishable beside them. */
+  --hue-amber: #8a5a06;
+  --hue-clay: #8a4a2a;
+  --hue-cyan: #0d6273;
+  --hue-green: #1f6b34;
+  --hue-indigo: #3a45a8;
+  --hue-red: #ab1c26;
+  --hue-rose: #a51f5b;
+  --hue-steel: #4b5769;
+  --hue-teal: #0c6a58;
+  --hue-violet: #6a35b5;
+
+  --shadow-sm: 0 1px 2px rgb(60 50 30 / 0.09);
+  --shadow-md: 0 1px 2px rgb(60 50 30 / 0.07), 0 6px 18px rgb(60 50 30 / 0.09);
+  --shadow-lg: 0 2px 4px rgb(60 50 30 / 0.08), 0 18px 40px rgb(60 50 30 / 0.14);
+
+  /* How much of a hue is allowed into a badge's fill and edge. Dark and light
+   * need different amounts to land on the same perceived weight. */
+  --hue-fill: 11%;
+  --hue-edge: 34%;
+
+  /* How much ground colour is laid over the hero photograph, left to right.
+   * Light and dark need different amounts: the photograph is a pale wooden
+   * table, so it needs veiling to sit under dark text and almost none to sit
+   * under light text. */
+  /* Even enough that the photograph reads across the whole band rather than
+     fading out of one side of it. */
+  --hero-veil-near: 94%;
+  --hero-veil-mid: 84%;
+  --hero-veil-far: 78%;
+
+  /* Rhythm. One scale, used everywhere, so a page has a beat. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /*
+    Square, everywhere.
+ *
+    The palette study this site's colours came from, brass on a near-black
+    ground, carries no border-radius at all: every panel, button and plate in
+    it is a hard rectangle, and that turned out to be as much of why it read
+    as Star Wars as the gold was. Rounded corners are the house style of
+    software, and a rounded button under a slab serif reads as an app that has
+    been given a costume.
+
+    Kept as tokens set to zero rather than deleted from the forty-one rules
+    that use them. Three numbers is where this decision should live, and
+    somebody who wants a millimetre of softness back should be able to try it
+    in one place rather than reinstating it forty-one times.
+  */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+
+  --measure: 68ch;
+  --page: 78rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* Neutral near-black, with no hue in the ground at all.
+     *
+     * This was #0a0e14. A blue-slate, and the house colour of every developer
+     * tool built since about 2020. It is legible and it belongs to a
+     * documentation site rather than to a space fantasy played with dice.
+     *
+     * Warming it instead was tried and was worse: a brown ground reads as a
+     * saloon, and it fought the category hues, which sit on it. Star Wars is
+     * gold on black, not gold in brown. The crawl scrolls through a void. So
+     * the ground is the void and the warmth is spent entirely on the accent. */
+    --bg: #08090a;
+    --bg-deep: #030405;
+    --surface: #131517;
+    --surface-raised: #1a1d20;
+    --surface-sunken: #0b0c0e;
+    --border: #262a2e;
+    --border-strong: #434a51;
+
+    /* Warm off-white rather than blue-white, so the type sits on the ground
+     * rather than glowing slightly against it. 16.5:1 on --bg. */
+    --text: #ece9e3;
+    --text-muted: #a6a49e;
+    --text-faint: #86847f;
+
+    /* Darkened from #ef2b39, which carried white text at 4.14:1 and so put
+       every primary button on the site ("Browse species", "Continue with a
+       passkey", "Add a passkey") below AA in the dark theme. This is the
+       nearest red to the old one that clears 4.5, and it is safe to change
+       globally because `--brand` is never a text colour: it is a background,
+       a border and a gradient stop, and none of those got worse. */
+    --brand: #e02a3a;
+    --brand-text: #ff6b76;
+    --brand-contrast: #ffffff;
+
+    /* Brass. The single highest-leverage value in this file: it takes the slot
+     * sky blue occupied, and it is the one colour both of this material's
+     * ancestors own. 8.4:1 on --bg. */
+    --accent: #d2a04a;
+    --accent-hover: #e8bd6f;
+    --focus: #e8bd6f;
+
+    --mark-bg: #4a3610;
+    --mark-text: #f0cf86;
+
+    /* Lit rather than pastel: the colours of a blade against darkness, not of
+     * a data-visualisation ramp. Mint, lavender and candy pink belonged to
+     * neither of this material's ancestors. Every one of these clears 4.5:1
+     * against --surface-raised, which is the tightest of the three grounds
+     * they are drawn on; red is the closest at 5.3:1. */
+    --hue-amber: #dca94a;
+    --hue-clay: #d18f62;
+    --hue-cyan: #4aa8bd;
+    --hue-green: #5fbe79;
+    --hue-indigo: #8492e8;
+    --hue-red: #e5686f;
+    --hue-rose: #d97099;
+    --hue-steel: #9ba7b4;
+    --hue-teal: #45b69e;
+    --hue-violet: #a181e8;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.55), 0 24px 48px rgb(0 0 0 / 0.55);
+
+    --hue-fill: 16%;
+    --hue-edge: 42%;
+
+    --hero-veil-near: 93%;
+    --hero-veil-mid: 80%;
+    --hero-veil-far: 72%;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+}
+
+/*
+ * The same palette again, for a reader who chose it rather than inheriting it.
+ *
+ * These 36 lines are a copy of the block above and that is not an oversight.
+ * CSS has no way to share one declaration list between a media query and an
+ * attribute selector, so a site that honours both the operating system and an
+ * explicit choice has to state the palette twice. The alternative is
+ * light-dark(), which would say each value once, and would mean rewriting
+ * every token in the palette at the same time as shipping a toggle, which is
+ * two risks taken together to save a duplication a test can hold.
+ *
+ * That test is `app/theme.test.ts`: it parses this file and fails if the two
+ * blocks stop naming the same tokens with the same values. A palette that
+ * drifts between "dark because the system said so" and "dark because I asked"
+ * is exactly the kind of fault nobody notices, because nobody looks at both.
+ */
+:root[data-theme="dark"] {
+  --bg: #08090a;
+  --bg-deep: #030405;
+  --surface: #131517;
+  --surface-raised: #1a1d20;
+  --surface-sunken: #0b0c0e;
+  --border: #262a2e;
+  --border-strong: #434a51;
+  --text: #ece9e3;
+  --text-muted: #a6a49e;
+  --text-faint: #86847f;
+  --brand: #e02a3a;
+  --brand-text: #ff6b76;
+  --brand-contrast: #ffffff;
+  --accent: #d2a04a;
+  --accent-hover: #e8bd6f;
+  --focus: #e8bd6f;
+  --mark-bg: #4a3610;
+  --mark-text: #f0cf86;
+  --hue-amber: #dca94a;
+  --hue-clay: #d18f62;
+  --hue-cyan: #4aa8bd;
+  --hue-green: #5fbe79;
+  --hue-indigo: #8492e8;
+  --hue-red: #e5686f;
+  --hue-rose: #d97099;
+  --hue-steel: #9ba7b4;
+  --hue-teal: #45b69e;
+  --hue-violet: #a181e8;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.55), 0 24px 48px rgb(0 0 0 / 0.55);
+  --hue-fill: 16%;
+  --hue-edge: 42%;
+  --hero-veil-near: 93%;
+  --hero-veil-mid: 80%;
+  --hero-veil-far: 72%;
+}
+
+/* ===================================================================== base */
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+main:focus {
+  outline: none;
+}
+
+:where(a) {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+
+:where(a):hover {
+  color: var(--accent-hover);
+}
+
+/* One visible focus style for everything, never removed. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 28%, transparent);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The test-environment strip.
+ *
+ * The live region is always in the document and is empty on production. See
+ * app/components/environment-banner.tsx for why it outlives its own contents.
+ * `:empty` strips its padding, border and ground so an empty region is a block
+ * box of zero height: the production page is laid out exactly as it was before
+ * this existed, and there is nothing to flash on first paint.
+ *
+ * Not `display: none`, and this is the one rule here that is not cosmetic. A
+ * `display: none` element is out of the accessibility tree, so a screen reader
+ * is not observing it, so inserting text into it announces nothing. It would
+ * be indistinguishable from mounting the region and its contents together,
+ * which is the failure the always-present region exists to avoid. A zero-height
+ * box is still rendered, still in the tree, and still watched.
+ *
+ * Static, in normal flow, at the top of the body: it displaces the page rather
+ * than covering it, so no content is hidden behind it at any width and the
+ * sticky header below still sticks to the right place. Not `position: fixed`,
+ * which would sit over the content at small heights and would need a body
+ * offset that every page would have to know about.
+ *
+ * The colour is --hue-amber rather than the brand red. Red on this site means
+ * "Star Wars 5e", and the one strip that has to read as "not the real site"
+ * is the last place to borrow the site's own mark. Amber is already the
+ * caution hue in the information ramp, and it is checked against --surface at
+ * 4.5:1 in both schemes. */
+.environment-banner:empty {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.environment-banner {
+  background: color-mix(in oklab, var(--hue-amber) 14%, var(--bg));
+  border-bottom: 2px solid var(--hue-amber);
+  color: var(--text);
+  padding: var(--space-2) var(--space-4);
+  text-align: center;
+  /* Above the sticky header, so scrolling can never slide the header over it. */
+  position: relative;
+  z-index: 40;
+}
+
+.environment-banner-text {
+  margin: 0 auto;
+  max-width: var(--page);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.environment-banner-text strong {
+  color: var(--hue-amber);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-2);
+  top: -3.5rem;
+  z-index: 60;
+  background: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  transition: top 120ms ease-out;
+}
+
+.skip-link:focus {
+  top: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================== site frame */
+
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+/* The one place the inherited red is structural: a hairline that says which
+ * site this is before anything else has painted. */
+.site-header::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--brand) 0%,
+    var(--brand) 38%,
+    color-mix(in oklab, var(--brand) 30%, transparent) 100%
+  );
+}
+
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: var(--space-2) var(--space-4);
+}
+
+.site-wordmark {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: var(--text);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+/*
+  The mark carries the header on its own, so it is sized to be seen.
+
+  It was 2.25rem wide, and at the artwork's 2.5:1 that is about fourteen pixels
+  of actual mark. Smaller than the text beside it and well under half the
+  height of the search field it sits next to. The only thing identifying the
+  site was the least visible thing in the row.
+*/
+.site-wordmark-logo {
+  width: 5.5rem;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.site-wordmark-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.site-wordmark-name {
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  font-size: 1.0625rem;
+}
+
+.site-wordmark-tag {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 34rem) {
+  .site-wordmark-text {
+    display: none;
+  }
+
+  /* Still the largest thing in the row on a phone, where it is the only thing
+     naming the site, because the text beside it is hidden at this width. */
+  .site-wordmark-logo {
+    width: 4.5rem;
+  }
+}
+
+/* ------------------------------------------------------------ navigation */
+
+/* The header used to be one flat strip of every content type. It scrolled
+ * sideways at every width, needed a fade at its edge to say so, and by
+ * twenty-two types it was a list nobody could hold in their head. It is now six
+ * groups, which fit across a phone without scrolling at all.
+ *
+ * The strip that this replaces is gone rather than kept for narrow screens:
+ * a second navigation with a different shape is a second thing to keep working,
+ * and the groups are what a reader is looking for at any width. */
+.site-nav {
+  border-top: 1px solid var(--border);
+}
+
+.site-nav-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.125rem;
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0 var(--space-2);
+  list-style: none;
+}
+
+/* The summary of a group, and the link a one-destination group renders
+ * instead. One rule for both so a group growing past a single type does not
+ * change how the header looks. */
+.nav-group-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+  padding: 0.5rem 0.6875rem;
+  font-size: 0.875rem;
+  font-weight: 550;
+  color: var(--text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  list-style: none;
+}
+
+/* Safari still draws its own disclosure triangle without this, beside the one
+ * drawn below. */
+.nav-group-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.nav-group-trigger:hover {
+  color: var(--text);
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+}
+
+/* The group the current page belongs to, so a reader who arrived from search
+ * can see where they are without opening anything. */
+.nav-group-trigger.is-current {
+  color: var(--text);
+  border-bottom-color: var(--brand);
+}
+
+.nav-group-caret {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  opacity: 0.55;
+}
+
+.nav-group[open] > .nav-group-trigger {
+  color: var(--text);
+  background: var(--surface-raised);
+}
+
+.nav-group[open] > .nav-group-trigger .nav-group-caret {
+  transform: translateY(1px) rotate(225deg);
+}
+
+.nav-group {
+  position: relative;
+}
+
+.nav-group-panel {
+  position: absolute;
+  z-index: 40;
+  top: 100%;
+  left: 0;
+  min-width: 15rem;
+  max-width: min(22rem, calc(100vw - var(--space-4) * 2));
+  padding: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-md);
+}
+
+/* A panel anchored to its own trigger runs off the right edge of a phone:
+ * Starships sits 266px into a 375px viewport and a 240px panel does not fit
+ * beside it, so the document gains 131px of sideways scroll. Below 48rem the
+ * panel is anchored to the bar rather than to the group, `position: static` on
+ * the group hands the containing block to `.site-nav`, and spans it, which
+ * also gives every link a full-width target. */
+@media (max-width: 47.999rem) {
+  .site-nav {
+    position: relative;
+  }
+
+  .nav-group {
+    position: static;
+  }
+
+  .nav-group-panel {
+    left: var(--space-2);
+    right: var(--space-2);
+    min-width: 0;
+    max-width: none;
+  }
+}
+
+.nav-group-blurb {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.nav-group-types,
+.nav-group-supporting {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-type-link {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  padding: 0.375rem 0.4375rem;
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 550;
+  text-decoration: none;
+}
+
+.nav-type-link .type-icon {
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.nav-type-link:hover {
+  background: color-mix(in oklab, var(--text) 7%, transparent);
+  color: var(--text);
+}
+
+.nav-type-link.is-current {
+  color: var(--brand-text);
+}
+
+.nav-type-link.is-current .type-icon {
+  opacity: 1;
+}
+
+/* Supporting types are reachable, not advertised: nobody browses class
+ * improvements, they arrive from the class that grants one. Quieter type and a
+ * rule above them says "these are here if you were sent" without spending a
+ * primary slot on them. */
+.nav-group-subhead,
+.group-rail-subhead {
+  margin: var(--space-3) 0 var(--space-1);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.nav-group-supporting,
+.group-rail-supporting {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8125rem;
+}
+
+.nav-group-supporting a,
+.group-rail-supporting a {
+  display: block;
+  padding: 0.25rem 0.4375rem;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.nav-group-supporting a:hover,
+.group-rail-supporting a:hover {
+  color: var(--text);
+}
+
+/* ------------------------------------------------------------------ rail */
+
+/* `display: contents` is the whole trick: on every page where the rail
+ * declines to render (the home page, search, the account area) this wrapper
+ * disappears from layout entirely and `<main>` is the flex child of `<body>`
+ * it has always been. Only a page that actually has a rail becomes a grid. */
+.site-body {
+  display: contents;
+}
+
+.site-body:has(> .group-rail) {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: var(--page);
+  margin: 0 auto;
+}
+
+.site-body:has(> .group-rail) > main {
+  min-width: 0;
+}
+
+/* Hidden until there is room for it. A phone has none, and the header's group
+ * menus already answer both of the questions this rail answers. */
+.group-rail {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .site-body:has(> .group-rail) {
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    padding-right: var(--space-4);
+  }
+
+  /* Sibling types stay on screen while a long index is scrolled, which is the
+   * orientation a dropdown cannot give: a reader can see where they are in the
+   * group without opening anything. The offset clears the sticky header. */
+  .group-rail {
+    display: block;
+    position: sticky;
+    top: 6.5rem;
+    align-self: start;
+    padding: var(--space-5) 0 var(--space-5) var(--space-4);
+  }
+}
+
+.group-rail-heading {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.group-rail-types {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+/* ------------------------------------------- revealing a long index */
+
+.list-more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.list-more-all {
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.list-more-all:hover {
+  color: var(--text);
+}
+
+/* The complete list, for a crawler, for a reader with no JavaScript, and for
+ * anyone who would rather scan names than rows. Closed by default because it is
+ * a fallback rather than the page's subject. */
+.full-index {
+  margin-top: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.full-index > summary {
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.full-index[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.full-index-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: 0 var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.875rem;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  margin-top: var(--space-8);
+  padding: var(--space-5) var(--space-4) var(--space-7);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+.site-footer-inner {
+  max-width: var(--page);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.site-footer-statement {
+  max-width: 62ch;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.site-footer p {
+  max-width: 62ch;
+}
+
+.site-footer-links {
+  display: flex;
+  gap: var(--space-4);
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+/* ================================================================== credits */
+
+/*
+ * The credits page has two shapes because the categories do. Where the source
+ * recorded what somebody did, the entry is a term and its description; where
+ * it recorded only that somebody took part, it is a roster. Rendering the
+ * rosters as description lists would produce four hundred empty second
+ * columns, and rendering the specific credits as a roster would throw away the
+ * sentence that makes them worth having.
+ */
+.credits-section {
+  margin-bottom: var(--space-6);
+}
+
+.credits-blurb {
+  color: var(--text-muted);
+  max-width: var(--measure);
+  margin-bottom: var(--space-3);
+}
+
+.credits-provenance,
+.credits-note {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+  max-width: var(--measure);
+  margin-top: var(--space-3);
+}
+
+.credit-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.credit-entry {
+  display: grid;
+  grid-template-columns: minmax(8rem, 12rem) 1fr;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.credit-entry dt {
+  font-weight: 650;
+}
+
+.credit-entry dd {
+  color: var(--text-muted);
+}
+
+@media (max-width: 34rem) {
+  .credit-entry {
+    grid-template-columns: 1fr;
+    gap: 0.125rem;
+  }
+}
+
+.credit-unrecorded {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/*
+ * A roster is read by scanning for one name, so it is set as columns that
+ * reflow rather than as a single long list: three hundred and eighty-four
+ * patrons in one column is a page nobody reaches the end of.
+ */
+.credit-roster {
+  list-style: none;
+  columns: 3 13rem;
+  column-gap: var(--space-5);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.credit-roster li {
+  break-inside: avoid;
+  padding: 0.125rem 0;
+}
+
+/*
+ * The per-image credit, shown with the picture. The unattributed form is
+ * deliberately not hidden or greyed into invisibility: it is the visible
+ * worklist, and a reader recognising their own work is how it gets fixed.
+ */
+.image-credit {
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+.image-credit-label {
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+.image-credit-work {
+  font-style: italic;
+}
+
+/* =================================================================== search */
+
+.site-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 30rem;
+  margin-left: auto;
+}
+
+.site-search form {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.site-search input {
+  width: 100%;
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.site-search input::placeholder {
+  color: var(--text-faint);
+}
+
+.site-search kbd {
+  position: absolute;
+  right: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 0.25rem;
+  background: var(--surface);
+}
+
+.site-search-panel {
+  position: absolute;
+  top: calc(100% + 0.375rem);
+  right: 0;
+  left: 0;
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+  z-index: 40;
+}
+
+.site-search-panel[hidden] {
+  display: none;
+}
+
+.site-search-empty {
+  padding: var(--space-2);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.site-search-all {
+  display: block;
+  padding: var(--space-2);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-1);
+}
+
+.search-group-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: var(--space-3) 0 var(--space-1);
+}
+
+.search-group-heading .type-icon {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  color: var(--type-accent, currentColor);
+}
+
+.search-group-count {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.search-group-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-group-list > li {
+  padding: 0.3125rem var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.search-group-list > li:hover {
+  background: var(--surface);
+}
+
+.result-link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.result-link:hover .result-name {
+  text-decoration: underline;
+}
+
+.result-evidence {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: var(--space-2);
+  margin-top: 0.125rem;
+}
+
+.result-evidence-label {
+  flex-shrink: 0;
+  font-weight: 650;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  padding-top: 0.125rem;
+}
+
+mark {
+  background: var(--mark-bg);
+  color: var(--mark-text);
+  border-radius: 0;
+  padding: 0 0.0625rem;
+}
+
+.search-page-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 34rem;
+  margin: var(--space-4) 0;
+}
+
+.search-page-form label {
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.search-page-form input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+}
+
+/* =========================================================== page scaffold */
+
+.page {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) 0;
+}
+
+.page-head {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+/* A page says what kind of thing it is before it says its name. */
+.page-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.4375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--type-accent, var(--text-faint));
+  margin-bottom: 0.375rem;
+}
+
+.page-eyebrow .type-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+h1 {
+  font-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.5rem);
+  font-weight: 780;
+  letter-spacing: -0.028em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.lede {
+  color: var(--text-muted);
+  margin-top: var(--space-2);
+  max-width: 62ch;
+  font-size: 1.0625rem;
+}
+
+.notice {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--hue-amber);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  font-size: 0.875rem;
+  max-width: var(--measure);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.0625rem 0.25rem;
+}
+
+.breadcrumbs {
+  margin-bottom: var(--space-3);
+  font-size: 0.8125rem;
+}
+
+.breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  list-style: none;
+  color: var(--text-muted);
+}
+
+.breadcrumbs li + li::before {
+  content: "/";
+  margin-right: 0.375rem;
+  color: var(--border-strong);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+  margin-bottom: var(--space-3);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.section-heading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8125em;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  padding: 0 0.3125rem;
+  background: var(--surface-raised);
+}
+
+/* =================================================================== badges */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.55;
+  padding: 0.0625rem 0.4375rem;
+  border-radius: 0;
+  white-space: nowrap;
+  color: var(--hue-steel);
+  background: color-mix(in oklab, currentColor var(--hue-fill), transparent);
+  border: 1px solid color-mix(in oklab, currentColor var(--hue-edge), transparent);
+}
+
+.badge[data-accent="amber"] { color: var(--hue-amber); }
+.badge[data-accent="clay"] { color: var(--hue-clay); }
+.badge[data-accent="cyan"] { color: var(--hue-cyan); }
+.badge[data-accent="green"] { color: var(--hue-green); }
+.badge[data-accent="indigo"] { color: var(--hue-indigo); }
+.badge[data-accent="red"] { color: var(--hue-red); }
+.badge[data-accent="rose"] { color: var(--hue-rose); }
+.badge[data-accent="steel"] { color: var(--hue-steel); }
+.badge[data-accent="teal"] { color: var(--hue-teal); }
+.badge[data-accent="violet"] { color: var(--hue-violet); }
+
+.badge-link {
+  text-decoration: none;
+}
+
+.badge-link:hover {
+  background: color-mix(in oklab, currentColor 26%, transparent);
+}
+
+.badge-numeric {
+  font-variant-numeric: tabular-nums;
+  min-width: 2.5rem;
+  justify-content: center;
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3125rem;
+  align-items: center;
+}
+
+/* ============================================================ monogram plate
+ *
+ * The stand-in for a picture that does not exist. It fills the same box as the
+ * image it replaces so nothing reflows, and it is hidden from assistive
+ * technology because the name it abbreviates is already beside it.
+ */
+.monogram-plate {
+  --plate-colour: var(--hue-steel);
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--plate-colour) 12%, transparent) 0 6px,
+      transparent 6px 12px
+    ),
+    color-mix(in oklab, var(--plate-colour) 13%, var(--surface-sunken));
+  color: color-mix(in oklab, var(--plate-colour) 70%, var(--text));
+}
+
+.monogram-plate[data-plate-hue="0"] { --plate-colour: var(--hue-teal); }
+.monogram-plate[data-plate-hue="1"] { --plate-colour: var(--hue-indigo); }
+.monogram-plate[data-plate-hue="2"] { --plate-colour: var(--hue-amber); }
+.monogram-plate[data-plate-hue="3"] { --plate-colour: var(--hue-violet); }
+.monogram-plate[data-plate-hue="4"] { --plate-colour: var(--hue-green); }
+.monogram-plate[data-plate-hue="5"] { --plate-colour: var(--hue-cyan); }
+.monogram-plate[data-plate-hue="6"] { --plate-colour: var(--hue-red); }
+.monogram-plate[data-plate-hue="7"] { --plate-colour: var(--hue-steel); }
+
+.monogram-plate-mark {
+  font-weight: 780;
+  letter-spacing: 0.02em;
+  font-size: clamp(1.25rem, 30cqw, 4rem);
+}
+
+/* ================================================================ home page */
+
+.home-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--bg-deep);
+  /* The edge the band needs to be a band. Stronger than a surface divider,
+     because this is where a photograph stops and a page starts. */
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.home-hero-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 62%;
+  z-index: -2;
+}
+
+/*
+  The photograph is a ground, not a subject: it hands every bit of contrast
+  back to the text sitting on it, in both themes.
+
+  It is also a band, and it used not to be. There was a second gradient here
+  fading the whole thing into `--bg` from the bottom, which meant the hero
+  dissolved into the page rather than ending at it. No edge, no boundary, just
+  a picture that ran out. On the old blue-slate ground that read as a soft
+  transition. On a true black one it reads as a grey smudge in the corner of a
+  black page, because the photograph is a pale one and the ground stopped
+  meeting it halfway.
+
+  So the fade is gone, the veil is even enough across the width that the
+  photograph is present rather than trailing off, and the band ends at a line.
+  The picture is of dice and a character sheet on a table, which is what the
+  game looks like; it was worth showing.
+*/
+.home-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--bg) var(--hero-veil-near), transparent) 0%,
+    color-mix(in oklab, var(--bg) var(--hero-veil-mid), transparent) 46%,
+    color-mix(in oklab, var(--bg) var(--hero-veil-far), transparent) 100%
+  );
+}
+
+.home-hero-inner {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-4) var(--space-6);
+}
+
+.home-hero h1 {
+  font-size: clamp(2.25rem, 1.4rem + 3.6vw, 3.75rem);
+  letter-spacing: -0.035em;
+}
+
+.home-hero .lede {
+  font-size: clamp(1rem, 0.95rem + 0.4vw, 1.1875rem);
+  max-width: 46ch;
+  color: var(--text);
+  margin-top: var(--space-3);
+}
+
+.home-hero-meta {
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+/*
+  The continuity link under the hero buttons. It is sized and coloured like
+  `.home-hero-meta` rather than like a third button on purpose: it answers a
+  question only some arrivals are asking, and a button would make it compete
+  with the two destinations everybody wants.
+*/
+.home-hero-note {
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+}
+
+.home-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5625rem 1.125rem;
+  border-radius: 0;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.button-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-contrast);
+}
+
+.button-primary:hover {
+  background: color-mix(in oklab, var(--brand) 82%, #000);
+  border-color: transparent;
+  color: var(--brand-contrast);
+}
+
+.button .type-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.home-section {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 0 var(--space-4);
+}
+
+/* --- category cards --- */
+
+.type-grid {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+}
+
+.type-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "icon name count"
+    "blurb blurb blurb";
+  align-items: center;
+  gap: 0.375rem 0.6875rem;
+  height: 100%;
+  padding: var(--space-4);
+  padding-left: calc(var(--space-4) + 3px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+  overflow: hidden;
+  transition:
+    border-color 120ms ease-out,
+    transform 120ms ease-out,
+    background 120ms ease-out;
+}
+
+/* The accent is a bar on the leading edge, not a tint over the whole card:
+ * eight tinted cards would fight each other and the reading text. */
+.type-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--type-accent);
+}
+
+.type-card:hover {
+  border-color: var(--type-accent);
+  background: var(--surface-raised);
+  transform: translateY(-1px);
+}
+
+.type-card .type-icon {
+  grid-area: icon;
+  width: 1.375rem;
+  height: 1.375rem;
+  color: var(--type-accent);
+}
+
+.type-card-name {
+  grid-area: name;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  letter-spacing: -0.012em;
+}
+
+.type-card-count {
+  grid-area: count;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+.type-card-blurb {
+  grid-area: blurb;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.type-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+/* Accent plumbing: one attribute on an element, one variable for its subtree. */
+[data-accent="amber"] { --type-accent: var(--hue-amber); }
+[data-accent="clay"] { --type-accent: var(--hue-clay); }
+[data-accent="cyan"] { --type-accent: var(--hue-cyan); }
+[data-accent="green"] { --type-accent: var(--hue-green); }
+[data-accent="indigo"] { --type-accent: var(--hue-indigo); }
+[data-accent="red"] { --type-accent: var(--hue-red); }
+[data-accent="rose"] { --type-accent: var(--hue-rose); }
+[data-accent="steel"] { --type-accent: var(--hue-steel); }
+[data-accent="teal"] { --type-accent: var(--hue-teal); }
+[data-accent="violet"] { --type-accent: var(--hue-violet); }
+
+/* --- the books strip --- */
+
+/* What a book contributes beyond its chapters, as a sentence. This replaced a
+   grid of thirteen cards: the counts are context for the chapters above rather
+   than the point of the page. */
+.source-contains {
+  margin-top: var(--space-5);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  max-width: 62ch;
+}
+
+/* ---------------------------------------------------------------- the shelf */
+
+/*
+  The rulebooks, as books.
+
+  The row this replaces put a 4.25rem thumbnail beside two lines of text in a
+  card, which is a list that happens to have pictures in it. A cover is the most
+  recognisable thing a reader owns about a book, somebody who has the Player's
+  Handbook on a shelf behind them knows it by its spine long before its title,
+  and at that size it was doing none of that work.
+
+  So the cover leads and the text sits under it, and the covers are large enough
+  to read as objects.
+*/
+.shelf {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+
+.shelf-book {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+}
+
+.shelf-cover {
+  width: 100%;
+  aspect-ratio: 176 / 228;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  background: var(--surface-sunken);
+  box-shadow: var(--shadow-md);
+  /* A hairline so a dark cover does not bleed into a dark page, and so the two
+     books with no artwork sit on the same edge as the three with it. */
+  border: 1px solid var(--border);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.shelf-plate {
+  display: block;
+  container-type: inline-size;
+}
+
+.shelf-book:hover .shelf-cover,
+.shelf-book:has(a:focus-visible) .shelf-cover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.shelf-book:has(a:focus-visible) .shelf-cover {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-cover {
+    transition: none;
+  }
+
+  .shelf-book:hover .shelf-cover,
+  .shelf-book:has(a:focus-visible) .shelf-cover {
+    transform: none;
+  }
+}
+
+.shelf-title {
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.shelf-title a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* The whole cover is the target, but only the title is a link, so a keyboard
+   user does not tab past two copies of the same address per book. */
+.shelf-title a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.shelf-book {
+  position: relative;
+}
+
+.shelf-title a:hover {
+  color: var(--accent);
+}
+
+/*
+  The line under a book or a sheet, shown when the tile is pointed at.
+
+  Nine tiles each carrying a sentence is a wall of small text under a row of
+  artwork, and the artwork is what a reader is actually scanning, so the
+  sentence moves onto the cover and waits to be asked for.
+
+  It is laid over the cover rather than expanded below it, because expanding
+  one tile in a grid re-flows the whole row. The thing you were pointing at
+  moves out from under the cursor. Matching the cover's own aspect ratio makes
+  the panel land exactly on it without the markup knowing its height.
+
+  ## Not hidden from everybody
+
+  Only opacity, never `display: none` or `visibility: hidden`, so the sentence
+  stays in the accessibility tree and a screen reader reads it with the rest of
+  the tile. `pointer-events: none` keeps the invisible panel from swallowing
+  the click meant for the cover beneath it. The same fault the theme control's
+  icon had.
+
+  And it reveals on `focus-within` as well as hover, so arriving by keyboard
+  shows it too.
+*/
+.shelf-blurb {
+  position: absolute;
+  inset: 0 0 auto 0;
+  aspect-ratio: 176 / 228;
+  margin: 0;
+  display: grid;
+  align-content: end;
+  padding: var(--space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.shelf-book:hover .shelf-blurb,
+.shelf-book:focus-within .shelf-blurb {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelf-blurb {
+    transition: none;
+  }
+}
+
+/*
+  Where there is no pointer to hover with, the sentence stays where it was.
+
+  A phone has no hover state, so a blurb that only appears on hover is a blurb
+  that never appears. Which would quietly make the site tell mobile readers
+  less than desktop ones. On touch it sits under the tile in the ordinary way,
+  exactly as it did before.
+*/
+@media (hover: none) {
+  .shelf-blurb {
+    position: static;
+    aspect-ratio: auto;
+    display: block;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: var(--text-muted);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.shelf-count {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  margin-top: auto;
+}
+
+/*
+  The line under the downloads that says the files were rebuilt.
+
+  Quiet, because it is a disclosure rather than a warning: a reader is entitled
+  to know the file differs from the author's original, and would be misled by
+  type that implied something was wrong with it. Set at the row's own width so
+  it reads as a footnote to the shelf above rather than as a new section.
+*/
+.shelf-note {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+  margin-top: var(--space-4);
+  max-width: 60ch;
+}
+
+/*
+  Getting in touch: however many groups the corpus describes, side by side.
+
+  `auto-fit` rather than a fixed three columns, because the number of groups is
+  content and not layout. There are two today, because the old funding page
+  belongs to somebody else and no Support channel exists. A hard-coded third
+  column would have left a hole exactly where the thing we deliberately did not
+  carry over used to be.
+*/
+.touch-groups {
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  margin-top: var(--space-4);
+}
+
+.touch-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.touch-heading {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin: 0;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.touch-blurb {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  margin: 0;
+  max-width: 44ch;
+}
+
+.touch-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+}
+
+/*
+  The theme control: three stages, drawn as three lightsaber blades.
+
+  The first version was a segmented switch with a sun, a half-circle and a
+  moon in a system font, and it read as a weather widget bolted to the header.
+  These are the same three states and the same radio group underneath. What
+  changed is that the affordance now belongs to this setting rather than to
+  software in general.
+
+  Left to right: light side, neither, dark side. Read as a slider, the marker
+  travels right as the site darkens, so the position carries the meaning before
+  anybody looks at a colour.
+
+  Square, like everything else. See the radius tokens.
+*/
+.theme-control fieldset {
+  border: 1px solid var(--border);
+  display: flex;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  background: var(--surface-sunken);
+}
+
+.theme-control label {
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  height: 1.875rem;
+  width: 1.75rem;
+  color: var(--text-faint);
+  /*
+    So the clipped input below is positioned against its own label rather than
+    against whatever happens to be the nearest positioned ancestor. Without it
+    the inputs are laid out relative to the page, which works by accident and
+    stops working the moment anything above them gains a position.
+  */
+  position: relative;
+  /* A hairline between stages, and none before the first. */
+  border-left: 1px solid var(--border);
+}
+
+.theme-control label:first-of-type {
+  border-left: 0;
+}
+
+.theme-control input {
+  /*
+    Not `display: none`, which removes it from the accessibility tree and from
+    the tab order along with it. One pixel, clipped, still focusable.
+  */
+  position: absolute;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.theme-control label:hover {
+  background: var(--surface);
+}
+
+.theme-control label:has(input:checked) {
+  background: var(--surface-raised);
+}
+
+/* The focus ring has to be drawn by the label, since the input is clipped. */
+.theme-control label:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+/*
+  The blade.
+
+  `aria-hidden` decoration, so it must never be a click target: it sat over the
+  clipped input and swallowed pointer events aimed at it. A person never
+  noticed, because the click landed on the label and a label forwards to its
+  input, but anything aiming at the control itself got nothing.
+*/
+.theme-blade {
+  pointer-events: none;
+  display: block;
+}
+
+/* The hilt is the same on every stage; only the blade above it changes. */
+.theme-hilt {
+  fill: var(--text-faint);
+}
+
+/*
+  Unlit until chosen. A row of three burning blades would say nothing about
+  which one is in force, which is the only thing this control has to say.
+*/
+.theme-beam {
+  fill: var(--border-strong);
+}
+
+.theme-control label:hover .theme-beam {
+  fill: var(--text-faint);
+}
+
+.theme-control label:has(input:checked) .theme-hilt {
+  fill: var(--text-muted);
+}
+
+/*
+  Lit, in the colour of the side.
+
+  Blue for the light side and red for the dark are the two colours this setting
+  has agreed on for ninety years, and they are doing the work here that a label
+  would otherwise have to. The middle stage lights in the site's own gold: it
+  is a real choice, follow the system, rather than an absence, so it is lit
+  rather than left dark, and gold is neither side.
+
+  The glow is a drop shadow in the blade's own colour, which is what makes it
+  read as lit rather than merely coloured.
+*/
+.theme-control label:has(input[value="light"]:checked) .theme-beam {
+  fill: #5aa9e6;
+  filter: drop-shadow(0 0 2px #5aa9e6);
+}
+
+.theme-control label:has(input[value="system"]:checked) .theme-beam {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 2px var(--accent));
+}
+
+.theme-control label:has(input[value="dark"]:checked) .theme-beam {
+  fill: #e5484d;
+  filter: drop-shadow(0 0 2px #e5484d);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No animation here, but the glow is the kind of thing a reader who asks
+     for less movement is usually also asking for less of. */
+  .theme-beam {
+    filter: none !important;
+  }
+}
+
+@media (max-width: 34rem) {
+  /* The header is tight on a phone; the switch keeps its hit area. */
+  .theme-control label {
+    height: 2.125rem;
+    width: 2rem;
+  }
+}
+
+/*
+  A channel button carries its service's mark before its name.
+
+  The gap is set here rather than inherited from `.button` because the mark is
+  optical rather than textual: it wants slightly less room than a word would.
+*/
+.button-channel {
+  gap: 0.4375rem;
+}
+
+.platform-icon {
+  flex: none;
+  /* Tracks the label's type rather than needing tuning per placement. */
+  font-size: 1.05em;
+}
+
+
+.home-shelf .section-lede {
+  margin-bottom: var(--space-4);
+}
+
+.page-head + .book-grid {
+  margin-top: var(--space-5);
+}
+
+.book-grid {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.book-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  height: 100%;
+}
+
+.book-card:hover {
+  border-color: var(--type-accent, var(--accent));
+  background: var(--surface-raised);
+}
+
+.book-card:has(a:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.book-cover,
+.book-plate {
+  width: 4.25rem;
+  aspect-ratio: 176 / 228;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  object-fit: cover;
+  background: var(--surface-sunken);
+  flex-shrink: 0;
+}
+
+.book-plate {
+  container-type: inline-size;
+}
+
+.book-card-title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+
+.book-card-title a {
+  text-decoration: none;
+  color: var(--text);
+}
+
+/* One card, one target: the whole tile is clickable, but only the title is a
+ * link, so a keyboard user does not tab past several copies of the same URL. */
+.book-card-title a::after,
+.gallery-tile-name a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.book-card-blurb {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  margin-top: 0.25rem;
+}
+
+.book-card-count {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  margin-top: 0.375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================= filters and list chrome */
+
+.list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  min-width: 9rem;
+  flex: 1 1 9rem;
+}
+
+.filter-field label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.filter-field input,
+.filter-field select {
+  padding: 0.4375rem 0.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.filter-reset,
+.sort-direction {
+  padding: 0.5rem 0.8125rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.filter-reset:hover,
+.sort-direction:hover {
+  border-color: var(--accent);
+}
+
+.result-count {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.empty-state {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+/* =================================================================== tables */
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+}
+
+.content-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.content-table th,
+.content-table td {
+  text-align: left;
+  padding: 0.5625rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.content-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.content-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-strong);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 0;
+  z-index: 1;
+}
+
+/* Zebra striping earns its keep on a 500-row equipment table read sideways on
+ * a phone, and is noise on a 60-row one. Types opt in. */
+.content-table[data-striped="true"] tbody tr:nth-child(even) {
+  background: color-mix(in oklab, var(--text) 3.5%, transparent);
+}
+
+.content-table tbody tr:hover {
+  background: color-mix(in oklab, var(--accent) 9%, transparent);
+}
+
+.sort-button {
+  display: flex;
+  align-items: center;
+  gap: 0.3125rem;
+  width: 100%;
+  padding: 0.5625rem 0.875rem;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.is-numeric .sort-button {
+  justify-content: flex-end;
+}
+
+.sort-button:hover {
+  color: var(--text);
+}
+
+.sort-indicator {
+  /*
+    Muted text rather than the border colour, which put this at 2.1:1 in dark
+    and 2.4:1 in light. It is the only thing on screen saying a column can be
+    sorted at all, the rest of that message is in text only a screen reader
+    hears, so it was the affordance that was hardest to see.
+  */
+  color: var(--text-muted);
+  font-size: 0.875em;
+}
+
+th[aria-sort="ascending"],
+th[aria-sort="descending"] {
+  color: var(--text);
+}
+
+th[aria-sort="ascending"] .sort-indicator,
+th[aria-sort="descending"] .sort-indicator {
+  color: var(--brand-text);
+}
+
+.is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.name-cell {
+  font-weight: 650;
+}
+
+.name-cell a {
+  text-decoration: none;
+}
+
+.name-cell a:hover {
+  text-decoration: underline;
+}
+
+/* An archetype's class art, small enough to be a wayfinding cue rather than a
+ * picture: at 28px it says "this is a Guardian one" before the word does. */
+.row-media {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.row-thumb,
+.row-plate {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  object-position: 50% 12%;
+  background: var(--surface-sunken);
+  flex-shrink: 0;
+}
+
+.row-plate {
+  container-type: inline-size;
+}
+
+.compact-line {
+  display: block;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-top: 0.0625rem;
+}
+
+@media (min-width: 40rem) {
+  .compact-line {
+    display: none;
+  }
+}
+
+.cell-muted {
+  color: var(--text-muted);
+}
+
+/* ========================================================== species gallery
+ *
+ * A species index is not a spreadsheet. 141 portraits laid out as tiles can be
+ * scanned by shape and silhouette in a way a column of names cannot, which is
+ * the whole reason the archive's art was worth recovering.
+ */
+/* The rules index: a table of contents rather than a table.
+ *
+ * Two columns on a wide screen, because a book's chapter list is short and
+ * tall and would otherwise leave two thirds of the page empty; one column on a
+ * phone, where a two-column list of long titles is unreadable. The numbering
+ * comes from the `<ol>` rather than from the data. A chapter's printed number
+ * is already in its meta line, and the list's own count is what tells a reader
+ * how far through the book an entry sits. */
+.chapter-list {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-4);
+}
+
+.chapter-book {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  font-size: 1.0625rem;
+  border-bottom: 2px solid var(--type-accent, var(--border-strong));
+}
+
+.chapter-book-count {
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter-entries {
+  margin: 0;
+  padding-left: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+}
+
+@media (min-width: 48rem) {
+  .chapter-entries {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-6);
+  }
+}
+
+.chapter-entries li {
+  break-inside: avoid;
+}
+
+.chapter-entries a {
+  font-weight: 600;
+}
+
+.chapter-entry-meta {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.gallery {
+  list-style: none;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+}
+
+@media (min-width: 48rem) {
+  .gallery {
+    grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  }
+}
+
+.gallery-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+  transition:
+    border-color 120ms ease-out,
+    transform 120ms ease-out;
+}
+
+.gallery-tile:hover {
+  border-color: var(--type-accent, var(--accent));
+  transform: translateY(-1px);
+}
+
+.gallery-tile:has(a:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.gallery-tile-media {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  /* Portraits are full figures of wildly different proportions. Anchoring the
+   * crop near the top keeps the head in frame on a tall one without cutting a
+   * squat one in half. */
+  object-position: 50% 16%;
+  background:
+    radial-gradient(
+      120% 90% at 50% 0%,
+      color-mix(in oklab, var(--type-accent, var(--hue-teal)) 13%, var(--surface-sunken)),
+      var(--surface-sunken)
+    );
+  border-bottom: 1px solid var(--border);
+}
+
+.gallery-tile .monogram-plate {
+  aspect-ratio: 4 / 3;
+  height: auto;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  container-type: inline-size;
+}
+
+.gallery-tile-body {
+  padding: 0.5rem 0.6875rem 0.6875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1875rem;
+  flex: 1;
+}
+
+.gallery-tile-name {
+  font-weight: 650;
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.gallery-tile-name a {
+  text-decoration: none;
+  color: var(--text);
+}
+
+.gallery-tile:hover .gallery-tile-name a {
+  color: var(--accent);
+}
+
+.gallery-tile-meta > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.gallery-tile-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1875rem 0.375rem;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.3125rem;
+}
+
+/* ============================================================ item details */
+
+/* Heading, picture, text, in that order on a phone, and in two columns on a
+ * wide screen with the picture staying put while the text scrolls. One grid,
+ * two area maps, no duplicated markup and no reordered tab sequence. */
+.item-layout {
+  display: grid;
+  /* Row gap only between bands; the glance block and the prose beneath it are
+     one reading column and a full gap between them reads as a section break. */
+  gap: var(--space-5);
+  align-items: start;
+  grid-template-areas:
+    "head"
+    "glance"
+    "body";
+}
+
+/*
+ * Narrow screens put the reference text above the picture, and that ordering
+ * is the point rather than a detail.
+ *
+ * This is a book people read at the table, on a phone, mid-sentence, looking
+ * for one number. The picture used to come second, on the reasoning that
+ * somebody who had just tapped a search result needed to see they had landed
+ * in the right place, but the heading and the breadcrumb already say that,
+ * and the picture is 550px tall on a 375px screen. Measured on a species page,
+ * the statistics began 898px down: a full screen and a bit of scrolling past
+ * decorative art before a single number.
+ *
+ * So the art goes last here, and only here. The wide layout below is
+ * unchanged: there the picture has its own column and costs the text nothing.
+ */
+.item-layout.has-figure {
+  grid-template-areas:
+    "head"
+    "glance"
+    "figure"
+    "body";
+}
+
+.item-header {
+  grid-area: head;
+}
+
+.item-figure {
+  grid-area: figure;
+}
+
+.item-glance {
+  grid-area: glance;
+  max-width: var(--measure);
+  min-width: 0;
+}
+
+.item-body {
+  grid-area: body;
+  max-width: var(--measure);
+  min-width: 0;
+}
+
+@media (min-width: 58rem) {
+  .item-layout.has-figure {
+    /* The text column is capped at its measure rather than filling the page,
+     * so the picture sits beside the words instead of drifting to the far edge
+     * of a wide monitor. */
+    grid-template-columns: minmax(0, var(--measure)) 16rem;
+    grid-template-areas:
+      "head figure"
+      "glance figure"
+      "body figure";
+    justify-content: start;
+    column-gap: var(--space-6);
+    row-gap: var(--space-4);
+  }
+
+  .item-layout.has-figure .item-figure {
+    position: sticky;
+    top: 8rem;
+  }
+}
+
+.item-header {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.item-header h1 {
+  font-size: clamp(1.875rem, 1.4rem + 2vw, 2.625rem);
+}
+
+.item-tagline {
+  margin-top: var(--space-1);
+  color: var(--text-muted);
+  font-size: 1.0625rem;
+}
+
+.item-badges {
+  margin-top: var(--space-3);
+}
+
+/* --- the picture --- */
+
+.item-figure {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(
+      115% 80% at 50% 0%,
+      color-mix(in oklab, var(--type-accent, var(--hue-steel)) 15%, var(--surface)),
+      var(--surface)
+    );
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.item-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 22rem;
+  object-fit: contain;
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.item-figure .monogram-plate {
+  aspect-ratio: 3 / 4;
+  height: auto;
+  border-radius: 0;
+}
+
+.item-figure figcaption {
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  border-top: 1px solid var(--border);
+  margin-top: var(--space-4);
+}
+
+.item-figure .monogram-plate + figcaption {
+  margin-top: 0;
+}
+
+@media (max-width: 57.99rem) {
+  .item-figure {
+    max-width: 16rem;
+  }
+}
+
+/* --- the stat block ---
+ *
+ * A reference is read in glances, so the block a reader glances at gets its
+ * own frame: a heavier ground, a rule in the type's colour along the top, and
+ * label/value pairs on a fixed grid so the eye can drop straight down the
+ * values. Deliberately not the cream-and-red plate of another publisher's
+ * books. This is the site's own frame in its own palette.
+ */
+.stat-block {
+  margin-top: var(--space-4);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--type-accent, var(--brand));
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 12rem) 1fr;
+  gap: 0.25rem var(--space-4);
+  padding: 0.4375rem var(--space-4);
+  font-size: 0.9375rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 65%, transparent);
+}
+
+.stat-block dl > div:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 32rem) {
+  .stat-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+.stat-row dt {
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding-top: 0.25rem;
+}
+
+.stat-row dd {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- ability scores --- */
+
+.ability-scores {
+  margin-top: var(--space-5);
+}
+
+.ability-scores h2 {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: var(--space-2);
+}
+
+.ability-scores ul {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
+  gap: 0.375rem;
+}
+
+.ability-scores li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.ability-name {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.ability-score {
+  font-size: 1.375rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+
+.ability-modifier {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- prose sections --- */
+
+.item-section {
+  margin-top: var(--space-6);
+}
+
+.item-section > h2 {
+  font-size: 1.1875rem;
+  font-weight: 720;
+  letter-spacing: -0.015em;
+  padding-bottom: 0.3125rem;
+  border-bottom: 2px solid
+    color-mix(in oklab, var(--type-accent, var(--brand)) 45%, transparent);
+  margin-bottom: var(--space-3);
+}
+
+.entry-list .entry {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.entry-list .entry:last-child {
+  border-bottom: 0;
+}
+
+.entry-list dt {
+  font-weight: 700;
+  margin-bottom: 0.125rem;
+}
+
+.roll-table,
+.prose-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  margin: var(--space-3) 0;
+}
+
+.roll-table caption,
+.prose-body table caption {
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  padding-bottom: var(--space-2);
+}
+
+.roll-table th,
+.roll-table td,
+.prose-body th,
+.prose-body td {
+  text-align: left;
+  padding: 0.4375rem 0.625rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.roll-table thead th,
+.prose-body thead th {
+  border-bottom: 1px solid var(--border-strong);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+
+.roll-table tbody th {
+  width: 3.5rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.roll-table tbody tr:nth-child(even),
+.prose-body tbody tr:nth-child(even) {
+  background: color-mix(in oklab, var(--text) 3.5%, transparent);
+}
+
+/* ==================================================================== prose */
+
+.prose-body {
+  max-width: var(--measure);
+}
+
+.prose-body > * + * {
+  margin-top: var(--space-3);
+}
+
+.prose-body h2,
+.prose-body h3,
+.prose-body h4,
+.prose-body h5,
+.prose-body h6 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: var(--space-5);
+  letter-spacing: -0.01em;
+}
+
+.prose-body h2 {
+  font-size: 1.0625rem;
+}
+
+.prose-body h3 {
+  font-size: 1rem;
+}
+
+.prose-body h4,
+.prose-body h5,
+.prose-body h6 {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+}
+
+.prose-body ul,
+.prose-body ol {
+  padding-left: 1.25rem;
+}
+
+.prose-body ul {
+  list-style: disc;
+}
+
+.prose-body ol {
+  list-style: decimal;
+}
+
+.prose-body li + li {
+  margin-top: var(--space-1);
+}
+
+.prose-body blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: var(--space-4);
+  color: var(--text-muted);
+}
+
+.prose-body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: var(--space-4) 0;
+}
+
+/* ====================================================== corruption markers */
+
+.lost-character {
+  display: inline-block;
+  min-width: 0.5em;
+  text-align: center;
+  color: var(--text-muted);
+  border-bottom: 1px dotted var(--border-strong);
+  cursor: help;
+}
+
+.lost-value {
+  color: var(--text-muted);
+  font-style: italic;
+  border-bottom: 1px dotted var(--border-strong);
+  cursor: help;
+}
+
+/* ==================================================================== pager */
+
+.pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin: var(--space-7) 0 var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+
+.pager-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  background: var(--surface);
+}
+
+.pager-link:hover {
+  border-color: var(--accent);
+  background: var(--surface-raised);
+}
+
+.pager-next {
+  text-align: right;
+}
+
+.pager-direction {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pager-name {
+  font-weight: 650;
+  color: var(--text);
+}
+
+/* ============================================================ source pages */
+
+.source-hero {
+  display: grid;
+  gap: var(--space-5);
+  align-items: start;
+  margin-top: var(--space-5);
+}
+
+@media (min-width: 46rem) {
+  .source-hero {
+    grid-template-columns: 12rem minmax(0, 1fr);
+  }
+}
+
+.source-cover,
+.source-plate {
+  width: 100%;
+  max-width: 12rem;
+  height: auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  background: var(--surface-sunken);
+}
+
+/* Expanded Content has no cover anywhere in the archive, so it gets a plate
+ * drawn from its own initials rather than an empty rectangle. */
+.source-plate {
+  aspect-ratio: 176 / 228;
+  container-type: inline-size;
+}
+
+.source-breakdown {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  margin-top: var(--space-4);
+}
+
+.source-breakdown a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.9375rem;
+}
+
+.source-breakdown a:hover {
+  border-color: var(--type-accent, var(--accent));
+  background: var(--surface-raised);
+}
+
+.source-breakdown .type-icon {
+  color: var(--type-accent);
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.source-breakdown-count {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+
+/* ====================================================== account and sign-in
+ *
+ * The account area is built from the same tokens as everything else â€” the same
+ * surfaces, the same border weights, the same card shapes â€” because it is the
+ * same site. Nothing below introduces a colour, a radius or a spacing value
+ * that the reference pages do not already use.
+ */
+
+/* --- the header control ---
+ *
+ * The three states share a box on purpose. `is-pending` is what the
+ * prerendered HTML carries for every visitor, and the moment the session
+ * resolves it is replaced by a link; if the two were different sizes, the
+ * search field beside them would jump sideways on every page load. See
+ * app/components/account-control.tsx.
+ */
+.account-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4375rem;
+  flex-shrink: 0;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 0;
+  background: var(--surface-raised);
+  color: var(--text);
+  font-size: 0.8125rem;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.account-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.account-chip.is-pending {
+  border-style: dashed;
+  border-color: var(--border);
+  background: var(--surface);
+  /* No spinner and no shimmer: this sits on every page of the site, and a
+   * permanent animation in the corner of a reference someone is reading at a
+   * table is a distraction that buys nothing. */
+  opacity: 0.5;
+}
+
+.account-avatar {
+  display: block;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 999px;
+  overflow: hidden;
+  container-type: inline-size;
+  flex-shrink: 0;
+}
+
+.account-chip-name {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 48rem) {
+  .account-chip-name {
+    display: none;
+  }
+}
+
+/*
+ * The link on a heading.
+ *
+ * A rules chapter carries forty-odd headings and, until now, no way to address
+ * any of them: the only link anybody could send was the whole chapter with
+ * "scroll down" after it. This is what turns a heading into something you can
+ * paste into a conversation.
+ *
+ * Quiet until wanted, and never hidden from a keyboard. `opacity` rather than
+ * `display: none` so the anchor keeps its place in the layout and the heading
+ * does not shift when it appears.
+ *
+ * `:focus` rather than `:focus-visible`, deliberately. `:focus-visible` is the
+ * usual advice and it is wrong here: it is up to the browser whether focus
+ * counts as visible, and anything it decides against leaves a keyboard user
+ * on a link with `opacity: 0`. There is no cost to showing it for a click,
+ * because a click has already hovered it.
+ */
+.heading-anchor {
+  margin-left: 0.4em;
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 120ms ease-in-out;
+
+  /* Comfortably tappable without changing where the heading sits. */
+  padding-inline: 0.15em;
+}
+
+h1:hover > .heading-anchor,
+h2:hover > .heading-anchor,
+h3:hover > .heading-anchor,
+h4:hover > .heading-anchor,
+h5:hover > .heading-anchor,
+h6:hover > .heading-anchor,
+.heading-anchor:focus {
+  opacity: 1;
+}
+
+.heading-anchor:hover,
+.heading-anchor:focus {
+  color: var(--accent);
+}
+
+/*
+ * On a touch screen there is no hover, so an anchor that only appears on one
+ * is an anchor a phone reader never sees. It stays faintly visible there
+ * instead, which is also where sharing a section is most likely to happen.
+ */
+@media (hover: none) {
+  .heading-anchor {
+    opacity: 0.45;
+  }
+}
+
+/*
+ * A heading landed on from a fragment link sits under the sticky header
+ * otherwise. This is the whole reason the anchors are worth having, so the
+ * scroll offset is not optional.
+ *
+ * On the element rather than on `:target`, which is where this started and did
+ * not work. A fragment typed into the address bar was fine; clicking a search
+ * result inside the site left the heading at the very top, under the header.
+ * The router scrolls the element into view itself on a client-side navigation,
+ * and `scroll-margin-top` is read from the element at the moment it scrolls.
+ * Before `:target` has anything to say. Putting it on every heading that has
+ * an id removes the timing from the question entirely.
+ */
+main :where(h1, h2, h3, h4, h5, h6)[id],
+:target {
+  scroll-margin-top: 7rem;
+}
+
+/*
+ * An abbreviated column header.
+ *
+ * Browsers underline `<abbr title>` with a dotted line by default, which is a
+ * useful signal that there is something to hover, but inside a sort button
+ * that already underlines on hover it reads as two states of the same
+ * control. The dots stay, quieter, and the cursor says the rest.
+ */
+.column-abbr {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--border);
+  text-underline-offset: 0.25em;
+  cursor: help;
+}
+
+/*
+ * The line that appears when search fell back to the downloaded index.
+ *
+ * Stated rather than hidden. Quietly returning fewer results is the version of
+ * this that wastes somebody's afternoon: they search for a rule they know is
+ * in the books, find nothing, and conclude the site does not have it.
+ */
+.search-degraded {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
+
+/*
+  The front page's three parts: how to play, what else there is, and the lists.
+
+  The ordering is Drake's and it is editorial rather than visual. A reader
+  should meet the game before the catalogue. These rules only give each part
+  enough separation to read as a part; the cards inside them are the same cards
+  the site already uses.
+*/
+
+.section-lede {
+  margin-top: calc(-1 * var(--space-2));
+  margin-bottom: var(--space-4);
+  max-width: 60ch;
+  color: var(--text-muted);
+}
+
+/*
+  The handbook's table of contents. A numbered list, because it is one: the
+  numbers are the book's own and a reader cites them.
+*/
+.chapter-list {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.chapter-link {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.chapter-link:hover,
+.chapter-link:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--surface-raised);
+}
+
+/*
+  One step of the reading path: a heading and the passages read under it.
+
+  Tighter above than a section heading and looser below, because the heading
+  belongs to the list under it rather than dividing the page. The whole point
+  of grouping was to make four shapes a reader can take in, and four headings
+  spaced like sections would read as four sections.
+*/
+.path-step {
+  margin-top: var(--space-5);
+}
+
+.path-step-heading {
+  margin-bottom: var(--space-2);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.chapter-name {
+  font-weight: 500;
+}
+
+.home-variants {
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+}
+
+/*
+  A group of categories. The heading is smaller than the section headings above
+  it: these are subdivisions of "Categories", not peers of "How to play".
+*/
+.type-group {
+  margin-top: var(--space-6);
+}
+
+.type-group-heading {
+  margin-bottom: var(--space-1);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.type-group-blurb {
+  margin-bottom: var(--space-3);
+  color: var(--text-muted);
+}
+
+/* Findable, and deliberately not competing with the cards above them. */
+.type-group-supporting {
+  margin-top: var(--space-3);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/*
+  The host on an off-site link in the header.
+  
+  Quieter than the label, because the label is the thing being offered and the
+  host is a warning about where it lives. It is real text rather than a title
+  attribute or an icon: this site's Content-Security-Policy names no external
+  host anywhere, so a link that leaves is unusual enough to say out loud, and a
+  reader deciding whether to follow one mid-session should not have to hover to
+  find out it opens Google Drive.
+*/
+.nav-external-host {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+}

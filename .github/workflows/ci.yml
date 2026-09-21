@@ -1,0 +1,818 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      # The same interaction specs against the development server, because a
+      # bug got all the way to a deployed site with every other gate green.
+      # The header's group menus would not open under `react-router dev` and
+      # opened correctly in a production build; the fault was a race that
+      # development and production resolve differently, and nothing here ran
+      # the second one. See playwright.dev.config.ts.
+      - name: End-to-end tests against the development server
+        run: npm run test:e2e:dev
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+  # The container is not built anywhere else before it is released, so this is
+  # the only place the Dockerfile and the nginx config are exercised. It builds
+  # the image without pushing, then runs it and checks the routing rules that
+  # nothing else can catch: a prerendered page must answer with its own markup
+  # rather than with the SPA shell.
+  #
+  # It is also the only place that can catch the image rendering the wrong
+  # dataset. The Dockerfile builds the site from the canonical content image,
+  # and a failed copy or a reverted generator would fall back to the committed
+  # four-per-type fixture without erroring, so the assertions below compare
+  # what the container actually publishes against the content it was built
+  # from.
+  # The job that exists because both repositories were green while disagreeing.
+  #
+  # Everything else in this workflow tests this client against
+  # tests/auth-api-contract.ts, which is our own idea of the account API. The
+  # service was tested against its own idea of us. Two mocks agreeing with the
+  # code that wrote them proves nothing, and it is exactly how a client that
+  # read `body.user` from an unenveloped response, compared roles against the
+  # wrong capitalisation, and treated every problem document as an outage went
+  # to main with a full green tick.
+  #
+  # So this job pulls the API image that the sibling repository publishes from
+  # its own main, runs it against a real PostgreSQL, points the shipped client
+  # module at it, and asserts on the bytes that come back — including a direct
+  # comparison of the fixture's answers against the service's. When the two
+  # sides drift apart again, this is what goes red.
+  contract:
+    name: Contract against the published API
+    runs-on: ubuntu-latest
+
+    env:
+      # The image the sibling repository publishes from main. Deliberately a
+      # moving tag: this job is meant to notice when the service changes shape
+      # under us, and pinning a digest would defeat the entire purpose.
+      SW5E_API_IMAGE: ghcr.io/christopherfowers/sw5e-api:latest
+
+      # The origin the client pretends to be served from. It has to be on the
+      # API's allow-list, or every state-changing request is refused by the
+      # cross-site filter — which is itself one of the things under test.
+      SW5E_CONTRACT_ORIGIN: http://localhost:4173
+      SW5E_CONTENT_IMAGE: ghcr.io/christopherfowers/sw5e-database
+      SW5E_CONTENT_TAG: latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Start the account API and its database
+        run: |
+          set -euo pipefail
+
+          docker network create sw5e-contract
+
+          docker run --detach --name sw5e-contract-db --network sw5e-contract \
+            --env POSTGRES_DB=sw5e_identity \
+            --env POSTGRES_USER=sw5e \
+            --env POSTGRES_PASSWORD=ci-only-not-a-secret \
+            postgres:17-alpine
+
+          for _ in $(seq 1 30); do
+            if docker exec sw5e-contract-db pg_isready -U sw5e >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          docker exec sw5e-contract-db pg_isready -U sw5e
+
+          # Production configuration in every respect that this test is about:
+          # the real cross-site filter, the real cookie policy, the real problem
+          # documents. Only the mail provider is stood down, because nothing
+          # here follows an emailed link.
+          # The search half of the contract suite needs a catalogue to
+          # search. The API image ships none — in every deployment the corpus
+          # is a mounted volume — so it is taken from the content image here,
+          # the same way the image job takes it. It has to be in place before
+          # the API starts: the file-backed store builds its index once at
+          # start-up and never reloads.
+          docker create --name sw5e-contract-content \
+            "$SW5E_CONTENT_IMAGE:$SW5E_CONTENT_TAG" > /dev/null
+          docker cp sw5e-contract-content:/opt/sw5e/content ./contract-content
+          docker rm sw5e-contract-content > /dev/null
+
+          # Read by the container as uid 65532, which is not the runner.
+          chmod -R a+rX ./contract-content
+          echo "content documents: $(find contract-content -name '*.json' | wc -l)"
+
+          docker run --detach --name sw5e-contract-api --network sw5e-contract \
+            --volume "$PWD/contract-content:/srv/content:ro" \
+            --publish 127.0.0.1:8080:8080 \
+            --env 'ConnectionStrings__Sw5eIdentity=Host=sw5e-contract-db;Port=5432;Database=sw5e_identity;Username=sw5e;Password=ci-only-not-a-secret' \
+            --env Identity__InitializeDatabaseAtStartup=true \
+            --env Identity__RelyingPartyId=localhost \
+            --env "Identity__PublicSiteUrl=${SW5E_CONTRACT_ORIGIN}" \
+            --env "Identity__AllowedOrigins__0=${SW5E_CONTRACT_ORIGIN}" \
+            --env Email__Provider=Capture \
+            --env Email__FromAddress=noreply@sw5e.test \
+            "${SW5E_API_IMAGE}"
+
+          for _ in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:8080/health/ready >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl --fail --silent --show-error http://127.0.0.1:8080/health/ready
+          echo
+
+      - name: Contract tests
+        run: npm run test:contract
+        env:
+          SW5E_CONTRACT_API: http://127.0.0.1:8080
+
+      - name: API logs
+        if: always()
+        run: docker logs sw5e-contract-api 2>&1 | tail -100
+
+      - name: Stop the API
+        if: always()
+        run: |
+          docker rm --force sw5e-contract-api sw5e-contract-db >/dev/null 2>&1 || true
+          docker rm --force sw5e-contract-content >/dev/null 2>&1 || true
+          docker network rm sw5e-contract >/dev/null 2>&1 || true
+
+  image:
+    name: Container image
+    runs-on: ubuntu-latest
+    env:
+      # The one place the content revision is named. Both the build and the
+      # assertions read it, so they can never check the site against a
+      # different content set than the one it was built from.
+      SW5E_CONTENT_IMAGE: ghcr.io/christopherfowers/sw5e-database
+      SW5E_CONTENT_TAG: latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: false
+          load: true
+          tags: sw5e-web:ci
+          build-args: |
+            SW5E_CONTENT_TAG=${{ env.SW5E_CONTENT_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Take the canonical content the image was built from
+        run: |
+          docker create --name sw5e-content \
+            "$SW5E_CONTENT_IMAGE:$SW5E_CONTENT_TAG" > /dev/null
+          docker cp sw5e-content:/opt/sw5e/content ./canonical-content
+          docker rm sw5e-content > /dev/null
+          find canonical-content -name '*.json' | wc -l
+
+      - name: Start container
+        run: |
+          docker run --detach --name sw5e-web --publish 8080:8080 sw5e-web:ci
+          for _ in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/healthz > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "the container never became healthy"
+          docker logs sw5e-web
+          exit 1
+
+      - name: The rendered catalogue is the canonical one, not the fixture
+        run: |
+          # This is the assertion the whole job exists for. The site used to
+          # ship the committed fixture — four species — while the API served
+          # the canonical set, and nothing failed. A count that is merely
+          # "more than zero" would pass on both, so this compares the rendered
+          # index against the content the image was built from, and refuses
+          # anything at or below fixture size outright.
+          canonical=$(ls canonical-content/species/*.json | wc -l)
+          rendered=$(curl --fail --silent http://127.0.0.1:8080/species \
+            | grep -o 'href="/species/[a-z0-9-]*"' | sort -u | wc -l)
+
+          echo "canonical species: $canonical, rendered species: $rendered"
+
+          # An absolute floor as well as the derived count: if the content
+          # image itself ever shrank, the two numbers would still agree, and
+          # this job must not agree with a fixture-sized catalogue.
+          #
+          # The floors are the full published corpus, not a token above zero.
+          # Every one of these types spent a release rendering a dozen sample
+          # documents, which is a site that looks broken rather than one that
+          # fails, so the number that matters is the whole set. Raise a floor
+          # when the corpus genuinely grows.
+          for entry in species:141 background:61 feat:118 power:465 \
+                       equipment:505 monster:271; do
+            type=${entry%:*}
+            floor=${entry#*:}
+            have=$(ls "canonical-content/$type"/*.json 2>/dev/null | wc -l)
+
+            if [ "$have" -lt "$floor" ]; then
+              echo "the canonical content set has $have $type document(s)," \
+                "below the published corpus of $floor"
+              exit 1
+            fi
+          done
+          if [ "$rendered" -ne "$canonical" ]; then
+            echo "the image renders $rendered species; the content it was" \
+              "built from has $canonical. A fixture-sized catalogue (4) means" \
+              "the canonical content never reached the build."
+            exit 1
+          fi
+
+      - name: Every canonical item is prerendered as its own route
+        run: |
+          # One page per document, plus 62 pages that do not come from content:
+          # the home page, the about page, the search page, the sources index,
+          # five source pages, the credits page, the customization options hub,
+          # twenty-six type indexes, the eleven subcategory views listed in
+          # app/content/subcategory-views.ts, the eleven account routes listed
+          # in ACCOUNT_PATHS in react-router.config.ts, and the three authoring
+          # routes listed in AUTHORING_PATHS beside them. `source` is the only
+          # directory that is not a browsable type, so the other twenty-seven
+          # contribute item pages.
+          #
+          # It went from 60 to 62 when the class improvements were split into
+          # the three things they actually are — what advancing in a class
+          # grants, what multiclassing into it grants, what one splashed level
+          # is worth — which the site this one replaces published as three
+          # pages. Three new views less one type index: `/class-improvements`
+          # is the class-only cut now rather than an index over all thirty, so
+          # there are twenty-six type indexes rather than twenty-seven. None of
+          # the three adds a document; an improvement is still one page, at
+          # /class-improvements/<slug>.
+          #
+          # It went from 57 to 60 when the header was rebuilt to the structure
+          # the site's owner specified. Two of the three are `/variant-rules`
+          # and `/expanded-rules`, which cut the rule text the way /weapons cuts
+          # equipment: the menu names both and neither is a content type. The
+          # third is `/customization-options`, one address standing for the
+          # seven types the Player's Handbook introduces in that chapter, so
+          # that a menu offering them as one entry has somewhere to lead. None
+          # of the three adds a document.
+          #
+          # It went from 51 to 57 when the subcategory views landed —
+          # /weapons, /armor, /other-equipment, /force-powers, /tech-powers and
+          # /starship-weapons. Six real files rather than six query strings on
+          # two existing pages: a query string does not change which file nginx
+          # serves, so `/equipment?category=weapon` would answer with all 505
+          # equipment rows to everything that does not run the script. None of
+          # the six adds a document — a weapon is still one page, at
+          # /equipment/<slug> — so they are content-free pages by this count's
+          # arithmetic even though every one of them is full of rows.
+          #
+          # It went from 50 to 51 when managing an account became its own page
+          # rather than a panel underneath the directory. One address —
+          # `/account/people/manage` — and not one per account: a dynamic
+          # segment could not be prerendered, so the account being managed
+          # travels in the query string, which does not change which file nginx
+          # serves. That query string carries an opaque GUID and nothing else;
+          # the directory's search term is somebody's email address and stays
+          # out of the URL entirely.
+          #
+          # It went from 47 to 50 when the authoring workspace landed. Three
+          # routes rather than one per editable document, and deliberately: the
+          # document being edited travels in the query string, so the worklist,
+          # the editor and the history are one file each no matter how large the
+          # corpus grows. A path segment would have meant a prerendered file per
+          # document — and no file at all for a document that does not exist
+          # yet, which is precisely what the editor has to be able to open.
+          #
+          # It went from 45 to 47 when administrator-facing account management
+          # added `/account/people` and `/account/audit`. Two static addresses
+          # rather than one per account: a dynamic administrative route could
+          # not be prerendered at all, and neither page has a loader, so what
+          # lands on disk is the signed-out skeleton — no directory of
+          # addresses, no audit trail, nothing identity-shaped in a file behind
+          # a CDN.
+          #
+          # It went from 44 to 45 when content flagging added
+          # `/account/flags`. One route rather than one per report, and for the
+          # same reason the credits page is one route: what it shows arrives
+          # after hydration. Prerendering a moderation queue would bake one
+          # build machine's view of it — including the display name of everyone
+          # who had reported anything — into a file served to every visitor.
+          #
+          # The credits page is one page rather than one per credit: the
+          # credit, credit-category and asset-credit directories in the
+          # canonical set are read into a single document by
+          # scripts/build-credits.mjs and are deliberately not browsable types,
+          # so they add nothing to the loop below.
+          #
+          # The count went from 42 to 43 when `/about` was added. It is a
+          # content-free page — the site explaining what it is and whose work it
+          # continues — so it is one route flat rather than one per anything.
+          #
+          # The account routes are prerendered deliberately, as signed-out
+          # skeletons: nothing in that area has a loader, so there is no
+          # identity for the build to bake into a file every visitor shares.
+          # Leaving them out would send them through the SPA fallback below,
+          # which answers 404.
+          items=0
+          for type in species class class-improvement archetype feature \
+                      background feat power \
+                      maneuver fighting-style fighting-mastery \
+                      lightsaber-form weapon-focus weapon-supremacy \
+                      equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
+            items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
+          done
+          expected=$((items + 62))
+
+          rendered=$(docker exec sw5e-web \
+            find /usr/share/nginx/html -name index.html | wc -l)
+
+          echo "expected $expected prerendered routes, found $rendered"
+          if [ "$rendered" -ne "$expected" ]; then
+            echo "the prerendered route count does not match the canonical set"
+            exit 1
+          fi
+
+      - name: Every starship type renders the whole of what the content image holds
+        run: |
+          set -euo pipefail
+
+          # Starships are half of SW5e and the site published none of them, so
+          # each of the six types is compared against the content the image was
+          # built from rather than merely checked for a 200. A mapping that
+          # dropped a category - ammunition, say, or the ten launchers that
+          # carry no damage of their own - would still render a long, plausible
+          # list, and only this comparison would notice.
+          #
+          # Each carries an absolute floor as well as the derived count, for the
+          # same reason species does: two numbers that agree on zero would pass
+          # against a content image with no starships in it at all, which is
+          # precisely the state this work exists to end. That does mean this job
+          # stays red until sw5e-database has merged and published its content
+          # image, because the site is built from that image.
+          set -- \
+            "starship-base-size:starship-base-sizes:6" \
+            "starship-deployment:starship-deployments:6" \
+            "starship-equipment:starship-equipment:104" \
+            "starship-modification:starship-modifications:257" \
+            "starship-venture:starship-ventures:67" \
+            "starship-rule:starship-rules:13"
+
+          for entry in "$@"; do
+            directory=${entry%%:*}
+            rest=${entry#*:}
+            segment=${rest%%:*}
+            floor=${rest##*:}
+
+            canonical=$(ls "canonical-content/$directory"/*.json | wc -l)
+            rendered=$(curl --fail --silent "http://127.0.0.1:8080/$segment" \
+              | grep -o "href=\"/$segment/[a-z0-9-]*\"" | sort -u | wc -l)
+
+            echo "$segment: canonical $canonical, rendered $rendered"
+
+            if [ "$canonical" -lt "$floor" ]; then
+              echo "::error::content/$directory has shrunk to $canonical documents"
+              exit 1
+            fi
+            if [ "$rendered" -ne "$canonical" ]; then
+              echo "::error::/$segment renders $rendered items; the content it" \
+                "was built from has $canonical"
+              exit 1
+            fi
+          done
+
+      - name: The largest type in the corpus is rendered whole
+        run: |
+          # Enhanced items are 1,918 of the roughly 2,200 documents this site
+          # publishes, and they are the type most likely to be silently
+          # truncated: a build that ran out of memory partway through the
+          # prerender, or a generator that quietly dropped a directory, still
+          # produces a site that looks finished. The species check above cannot
+          # catch either, because species are fourteen documents.
+          canonical=$(ls canonical-content/enhanced-item/*.json | wc -l)
+          rendered=$(docker exec sw5e-web \
+            find /usr/share/nginx/html/enhanced-items -name index.html | wc -l)
+
+          # One page per item, plus the type's own index page.
+          echo "canonical enhanced items: $canonical, rendered pages: $rendered"
+          if [ "$rendered" -ne "$((canonical + 1))" ]; then
+            echo "the image renders $rendered enhanced-item pages; the content" \
+              "it was built from has $canonical items, which should give" \
+              "$((canonical + 1)) pages including the index."
+            exit 1
+          fi
+
+      - name: A rules chapter serves its prose, not just its heading
+        run: |
+          # The rules are the one content type that is prose rather than a
+          # catalogue row, and the only one whose body is large enough to be
+          # dropped by a size limit somewhere in the pipeline without anything
+          # failing. A page that renders its title and none of its text is
+          # indistinguishable from a working one at the status-line level.
+          body=$(curl --fail --silent \
+            http://127.0.0.1:8080/rules/phb-appendix-a-conditions)
+
+          grep -q '<h1>Appendix A: Conditions</h1>' <<< "$body"
+
+          # Every condition is a section heading in that chapter. If the body
+          # survived, these did.
+          for condition in Blinded Charmed Frightened Prone Restrained Stunned; do
+            if ! grep -q ">$condition<" <<< "$body"; then
+              echo "the conditions chapter rendered without its $condition section"
+              exit 1
+            fi
+          done
+
+      - name: The longest index is a page, not the whole catalogue as rows
+        run: |
+          set -euo pipefail
+
+          # /features published all 2,682 of its rows as 2.1 MB of HTML. The
+          # transfer was the smaller half: it was 40,342 elements for the
+          # browser to parse and lay out and for React to hydrate in one block
+          # on the main thread, so the page arrived and then stopped
+          # responding. Enhanced items, 1,918 rows, is the next type to land.
+          #
+          # The index now draws one window of rows and publishes the rest as a
+          # plain link list that is not hydrated. Both halves are asserted
+          # here, because either alone is satisfied by a broken page: a size
+          # budget passes on an index that has quietly dropped its catalogue,
+          # and a link count passes on the 2.1 MB page this replaced.
+          #
+          # This is the only place the real numbers can be seen. CI's e2e suite
+          # builds the four-per-type fixture, where no index is long enough to
+          # window at all.
+          html=$(curl --fail --silent http://127.0.0.1:8080/features)
+          bytes=$(printf '%s' "$html" | wc -c)
+          canonical=$(ls canonical-content/feature/*.json | wc -l)
+          rendered=$(grep -o 'href="/features/[a-z0-9-]*"' <<< "$html"             | sort -u | wc -l)
+
+          echo "/features: $bytes bytes, $rendered of $canonical entries linked"
+
+          if [ "$bytes" -gt 1000000 ]; then
+            echo "::error::/features is $bytes bytes. It was 2,128,468 and"               "froze the browser; the budget is one megabyte."
+            exit 1
+          fi
+          if [ "$rendered" -ne "$canonical" ]; then
+            echo "::error::/features links $rendered of $canonical entries."               "Every entry must stay in the markup: it is what a crawler and"               "a reader without JavaScript see."
+            exit 1
+          fi
+
+      - name: A type with no source in the archive publishes no source badge
+        run: |
+          # The property glossaries and the reference tables carry no
+          # sourceKey, because the archive records none and guessing a book
+          # would put a false citation on a rules page. This asserts the
+          # decision survived the pipeline rather than being quietly filled in
+          # with a default.
+          body=$(curl --fail --silent http://127.0.0.1:8080/weapon-properties)
+
+          grep -q '<h1>Weapon properties</h1>' <<< "$body"
+
+          # Narrowed to the page from the whole document. The header names the
+          # source books in its Rules menu now, so every page in the site links
+          # to /sources/phb, and the old whole-body grep failed here on a page
+          # that cites nothing. The claim is about what this index says about
+          # its own entries, and <main> is where it says it: the header and the
+          # rail are siblings of <main>, not children of it.
+          page=$(awk 'BEGIN { RS = "<main" } NR == 2' <<< "$body" \
+               | awk 'BEGIN { RS = "</main>" } NR == 1')
+
+          if [ -z "$page" ]; then
+            echo "could not find the page's <main>; the check below would pass" \
+              "by looking at nothing."
+            exit 1
+          fi
+
+          if grep -qE 'href="/sources/(phb|ec|wh|snv)"' <<< "$page"; then
+            echo "the weapon-property index cites a source book; the archive" \
+              "records none for any of these entries."
+            exit 1
+          fi
+
+      - name: The maneuver index publishes maneuvers
+        run: |
+          # This step used to assert the opposite: that /maneuvers rendered
+          # "No maneuvers in this build". The type was in the site's
+          # navigation with nothing behind it, and the page it published was
+          # a working, 200-answering apology. Now it has content, and the
+          # count is compared against the canonical set for the same reason
+          # the species count is — "more than zero" would pass on a build
+          # that lost 118 of the 119.
+          canonical=$(ls canonical-content/maneuver/*.json | wc -l)
+          rendered=$(curl --fail --silent http://127.0.0.1:8080/maneuvers \
+            | grep -o 'href="/maneuvers/[a-z0-9-]*"' | sort -u | wc -l)
+
+          echo "canonical maneuvers: $canonical, rendered: $rendered"
+
+          if [ "$canonical" -lt 119 ]; then
+            echo "the canonical content set has shrunk to $canonical maneuvers"
+            exit 1
+          fi
+          if [ "$rendered" -ne "$canonical" ]; then
+            echo "the image renders $rendered maneuvers out of $canonical"
+            exit 1
+          fi
+
+          curl --fail --silent http://127.0.0.1:8080/maneuvers \
+            | grep -q '<h1>Maneuvers</h1>'
+
+      - name: Every combat-option index publishes its whole list
+        run: |
+          # The five smaller combat-option types, checked the same way. They
+          # are small enough that a broken import could plausibly still
+          # produce a page with a couple of rows on it, so each is compared
+          # against the directory it was built from rather than against zero.
+          set -- \
+            "fighting-style:fighting-styles:32" \
+            "fighting-mastery:fighting-masteries:32" \
+            "lightsaber-form:lightsaber-forms:20" \
+            "weapon-focus:weapon-focuses:8" \
+            "weapon-supremacy:weapon-supremacies:8"
+
+          for entry in "$@"; do
+            directory=${entry%%:*}
+            rest=${entry#*:}
+            segment=${rest%%:*}
+            floor=${rest##*:}
+
+            canonical=$(ls "canonical-content/$directory"/*.json | wc -l)
+            rendered=$(curl --fail --silent "http://127.0.0.1:8080/$segment" \
+              | grep -o "href=\"/$segment/[a-z0-9-]*\"" | sort -u | wc -l)
+
+            echo "$segment: canonical $canonical, rendered $rendered"
+
+            if [ "$canonical" -lt "$floor" ]; then
+              echo "content/$directory has shrunk to $canonical documents"
+              exit 1
+            fi
+            if [ "$rendered" -ne "$canonical" ]; then
+              echo "/$segment renders $rendered of $canonical"
+              exit 1
+            fi
+          done
+
+      - name: A type with no canonical content would still have an index page
+        run: |
+          # Every type the site publishes now has content behind it, so the
+          # empty index cannot be observed against this image. The behaviour
+          # is still load-bearing — CANONICAL_DIRECTORIES may carry a null
+          # again, and a header link that 404s is worse than one that explains
+          # itself — so what is asserted here is that the empty-state string
+          # the code would render still exists in the shipped bundle. The
+          # rendering itself is covered by app/routes/type-index.test.tsx.
+          if ! docker exec sw5e-web sh -c \
+               'grep -rqF "in this build of the reference yet" /usr/share/nginx/html'; then
+            echo "the empty-type index state is no longer in the bundle;" \
+              "a type the canonical set cannot feed would render nothing at all"
+            exit 1
+          fi
+
+      - name: A prerendered content page serves its own markup
+        run: |
+          # Taken from the canonical content the image was built from rather
+          # than hard-coded, so this keeps working as the content set grows.
+          # The slug is derived the same way the generator derives it: the
+          # display name, lowercased, with every run of other characters
+          # collapsed to a hyphen.
+          name=$(jq -r .name canonical-content/species/*.json | sort | head -1)
+          slug=$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+
+          body=$(curl --fail --silent "http://127.0.0.1:8080/species/$slug")
+
+          # nginx has to resolve /species/<slug> to species/<slug>/index.html
+          # before reaching for the SPA fallback. If it falls back instead, the
+          # response is the shell: still a 200, still fine once JavaScript
+          # runs, and completely empty to a crawler that does not run it.
+          if ! grep -q "<h1>$name</h1>" <<< "$body"; then
+            echo "expected the prerendered <h1>$name</h1>; got the SPA shell"
+            exit 1
+          fi
+
+      - name: The image is promotable, and says nothing about its environment
+        run: |
+          set -euo pipefail
+
+          # The banner that tells a reader they are on QA is drawn after
+          # hydration, from what the API says about the deployment — see
+          # app/site/environment.ts for why it cannot be baked in here. This is
+          # the step that proves it was not baked in anyway.
+          #
+          # The image has no environment configuration and must not acquire any:
+          # QA and production are handed the identical artifact, and the only
+          # thing that differs is a variable on a service in front of it. So the
+          # words the banner would use must appear in none of the ~2,200
+          # prerendered files. If they did, production would paint
+          # "TEST ENVIRONMENT" on first byte, on every page, and take it away
+          # again once JavaScript ran.
+          #
+          # Every prerendered file rather than one page: this is the one
+          # assertion where checking a sample would miss a single route having
+          # picked it up.
+          #
+          # Restricted to *.html, and that restriction is load-bearing rather
+          # than an optimisation. The banner's words are of course in
+          # /assets/root-*.js — they are the component's own copy, and they have
+          # to ship or QA could not draw anything. What must never happen is
+          # that they reach the *markup*, because markup is what is served
+          # before JavaScript runs and is therefore what would paint on
+          # production's first byte. Widen this to the whole document root and
+          # it fails on a correct build.
+          if docker exec sw5e-web sh -c \
+               'grep -rliE --include="*.html" "test environment|not the live site" \
+                  /usr/share/nginx/html'; then
+            echo "::error::The published image carries the test-environment" \
+              "banner in its prerendered markup. The same image is promoted to" \
+              "production, so this would tell every reader of the live site" \
+              "that their data is temporary."
+            exit 1
+          fi
+
+          # And the other half: the live region the banner is inserted into has
+          # to be in that markup, empty. A region that arrives together with its
+          # text is often not announced at all, so a reader using a screen
+          # reader would get no warning on QA.
+          #
+          # Fetched into a variable rather than piped into `grep -q`, like the
+          # other body assertions in this job. `grep -q` exits on its first
+          # match and closes the pipe under it, so curl can die of SIGPIPE and
+          # `pipefail` would then fail the step on a page that was perfectly
+          # correct.
+          home=$(curl --fail --silent http://127.0.0.1:8080/)
+
+          if ! grep -q '<div class="environment-banner" role="status"></div>' <<< "$home"; then
+            echo "::error::The empty live region is missing from the" \
+              "prerendered markup; the QA banner would be inserted into a" \
+              "region nothing is watching."
+            exit 1
+          fi
+
+          # The same hazard, for the same reason, one feature along. The account
+          # screens stop promising mail when the service reports that the relay
+          # is refusing everything, and that panel is drawn from an answer which
+          # cannot exist at build time. If its words reach the markup, every
+          # reader of a healthy site is told on first byte that email is broken
+          # and it is taken away again once JavaScript runs — which is worse
+          # than the promise it replaced, because it is false in the ordinary
+          # case rather than in the rare one.
+          #
+          # Same *.html restriction, same reason as above: the copy is of course
+          # in the route chunks, because that is where it has to be for a
+          # browser to ever draw it.
+          if docker exec sw5e-web sh -c \
+               'grep -rliE --include="*.html" "not being delivered|is not going out" \
+                  /usr/share/nginx/html'; then
+            echo "::error::The published image carries the mail-outage wording" \
+              "in its prerendered markup. Every reader would be told the site's" \
+              "email is broken before JavaScript runs."
+            exit 1
+          fi
+
+      - name: A prerendered index page serves its own markup
+        run: |
+          curl --fail --silent http://127.0.0.1:8080/species | grep -q "<h1>Species</h1>"
+
+      - name: The home page serves its own markup
+        run: |
+          curl --fail --silent http://127.0.0.1:8080/ | grep -q "<h1>Star Wars 5e</h1>"
+
+      - name: A single-fetch payload is served next to its route
+        run: |
+          name=$(jq -r .name canonical-content/species/*.json | sort | head -1)
+          slug=$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')
+          curl --fail --silent --head "http://127.0.0.1:8080/species/$slug.data" > /dev/null
+
+      - name: An unpublished path answers 404 with the app shell
+        run: |
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            http://127.0.0.1:8080/not-a-published-path)
+          if [ "$status" != "404" ]; then
+            echo "expected 404 for an unpublished path, got $status"
+            exit 1
+          fi
+
+      - name: Assets are immutable and HTML is not
+        run: |
+          asset=$(curl --fail --silent http://127.0.0.1:8080/ \
+            | grep -o '/assets/[A-Za-z0-9._-]*\.css' | head -1)
+          curl --fail --silent --head "http://127.0.0.1:8080$asset" \
+            | grep -qi 'cache-control: public, max-age=31536000, immutable'
+          curl --fail --silent --head http://127.0.0.1:8080/ \
+            | grep -qi 'cache-control: no-cache'
+
+      - name: Security headers are present and name no external origin
+        run: |
+          headers=$(curl --fail --silent --head http://127.0.0.1:8080/)
+          grep -qi 'content-security-policy:' <<< "$headers"
+          grep -qi 'x-content-type-options: nosniff' <<< "$headers"
+          grep -qi 'referrer-policy:' <<< "$headers"
+          grep -qi 'x-frame-options: DENY' <<< "$headers"
+
+          # The project rule is that nothing is loaded from a third party, so
+          # no host may appear in the policy at all.
+          csp=$(grep -i 'content-security-policy:' <<< "$headers")
+          if grep -qiE '(https?:)?//[a-z0-9.-]+' <<< "$csp"; then
+            echo "the CSP names an external origin: $csp"
+            exit 1
+          fi
+
+          # nginx must not advertise its version.
+          if grep -qiE '^server: nginx/' <<< "$headers"; then
+            echo "server_tokens is not off"
+            exit 1
+          fi
+
+      - name: WebAuthn is permitted for this origin and nobody else
+        run: |
+          # Permissions-Policy denies every feature this site does not use, and
+          # `publickey-credentials-get=()` was among them until passkeys
+          # landed. Restoring that value would break every sign-in in
+          # production and nowhere else: the browser refuses the ceremony with
+          # the same NotAllowedError it raises when a reader dismisses the
+          # prompt, so it reads as "everyone cancelled". Nothing served without
+          # this header — dev, `vite preview`, the e2e suite — can catch it,
+          # which is why it is asserted against the running container.
+          policy=$(curl --fail --silent --head http://127.0.0.1:8080/ \
+            | grep -i 'permissions-policy:')
+
+          for feature in publickey-credentials-create publickey-credentials-get; do
+            if ! grep -qF "$feature=(self)" <<< "$policy"; then
+              echo "$feature must be allowed for 'self'; passkeys cannot work" \
+                "without it. Policy was: $policy"
+              exit 1
+            fi
+          done
+
+          # `(self)` and nothing wider: no third-party origin may run a
+          # credential ceremony on this site's behalf.
+          if grep -qE 'publickey-credentials-[a-z]+=\(\*|publickey-credentials-[a-z]+=\*' <<< "$policy"; then
+            echo "WebAuthn must not be delegated beyond 'self': $policy"
+            exit 1
+          fi
+
+      - name: Container runs as a non-root user on 8080
+        run: |
+          uid=$(docker exec sw5e-web id -u)
+          if [ "$uid" = "0" ]; then
+            echo "the container is running as root"
+            exit 1
+          fi
+
+      - name: Container logs
+        if: always()
+        run: docker logs sw5e-web || true
+
+      - name: Stop container
+        if: always()
+        run: docker rm --force sw5e-web || true

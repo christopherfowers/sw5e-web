@@ -1,0 +1,39 @@
+.DS_Store
+.env
+/node_modules/
+
+# React Router
+/.react-router/
+/build/
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Tooling directories that must never be published
+.claude/
+CLAUDE.md
+AGENTS.md
+.agents/
+.cursor/
+.aider*
+.github/copilot-instructions.md
+
+# Test output
+/playwright-report/
+/test-results/
+/coverage/
+
+# Generated content dataset. Built from the legacy archive by
+# scripts/build-content-fixture.mjs; the committed fixture in app/data/fixture
+# is what CI and contributors without the archive render from.
+/app/data/generated/
+
+# The downloadable sheets, which belong to the content repository and are
+# copied in by the Docker build from the content image. Committing them here
+# too would be a second copy of two megabytes of somebody else's artwork, kept
+# in step by hand. Populate a checkout with:
+#
+#   cp ../sw5e-database/assets/resource/*.pdf public/resources/
+/public/resources/

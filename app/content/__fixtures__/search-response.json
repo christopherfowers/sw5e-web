@@ -1,0 +1,98 @@
+{
+  "query": "difficult",
+  "totalMatches": 240,
+  "groups": [
+    {
+      "type": "rule",
+      "name": "Rule",
+      "pluralName": "Rules",
+      "routeSegment": "rules",
+      "totalMatches": 21,
+      "results": [
+        {
+          "item": {
+            "type": "rule",
+            "key": "phb-combat",
+            "name": "Combat",
+            "sourceKey": "phb",
+            "contentSet": "core",
+            "summary": "The shriek of blaster fire flying overhead. The clash of a gamorrean's axe strik…",
+            "facets": {
+              "chapterNumber": "9",
+              "ruleType": "chapter"
+            }
+          },
+          "matchedIn": "heading",
+          "matchedField": null,
+          "snippet": "…d walk 20 feet, then fly 10 feet, and then land to walk 10 feet more. Difficult Terrain Combat rarely takes place in ba…",
+          "score": 36.4
+        },
+        {
+          "item": {
+            "type": "rule",
+            "key": "phb-adventuring",
+            "name": "Adventuring",
+            "sourceKey": "phb",
+            "contentSet": "core",
+            "summary": "Delving into an ancient Sith tomb, slipping through the Black Sun territory of C…",
+            "facets": {
+              "chapterNumber": "8",
+              "ruleType": "chapter"
+            }
+          },
+          "matchedIn": "heading",
+          "matchedField": null,
+          "snippet": "…t 3 miles 24 miles Slow 200 feet 2 miles 18 miles Able to use stealth Difficult Terrain The travel speeds given in the …",
+          "score": 36.39
+        }
+      ]
+    },
+    {
+      "type": "archetype",
+      "name": "Archetype",
+      "pluralName": "Archetypes",
+      "routeSegment": "archetypes",
+      "totalMatches": 19,
+      "results": [
+        {
+          "item": {
+            "type": "archetype",
+            "key": "kro-var-order",
+            "name": "Kro Var Order",
+            "sourceKey": "ec",
+            "contentSet": "expanded-content",
+            "summary": "Monks of the Kro Var Order—known as shapers—utilize a unique power to bend the f…",
+            "facets": {
+              "casterType": "none",
+              "classCasterType": "none",
+              "className": "Monk"
+            }
+          },
+          "matchedIn": "text",
+          "matchedField": null,
+          "snippet": "…wet a 5-foot square within your weapon's reach. The affected area is difficult terrain. Each creature who starts its tu…",
+          "score": 25.82
+        },
+        {
+          "item": {
+            "type": "archetype",
+            "key": "path-of-witchcraft",
+            "name": "Path of Witchcraft",
+            "sourceKey": "ec",
+            "contentSet": "expanded-content",
+            "summary": "The Force connects all living things. Those sentinels who follow the Path of Wit…",
+            "facets": {
+              "casterType": "none",
+              "classCasterType": "force",
+              "className": "Sentinel"
+            }
+          },
+          "matchedIn": "text",
+          "matchedField": null,
+          "snippet": "…e in nature, you gain the following benefits for 1 hour: - You ignore difficult terrain caused by nature. - You can und…",
+          "score": 25.7
+        }
+      ]
+    }
+  ]
+}
