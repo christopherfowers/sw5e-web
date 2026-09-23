@@ -144,6 +144,7 @@ async function loadSubject(
   key: string,
   descriptor: ContentTypeDescriptor | null,
   signal: AbortSignal,
+  seed: Record<string, unknown> = {},
 ): Promise<Subject> {
   // Three requests that do not depend on each other, so three at once. The
   // service allows 120 a minute; this is four per document opened.
@@ -216,7 +217,15 @@ async function loadSubject(
     };
   }
 
-  // Genuinely not here yet. This is what creating a document looks like.
+  /*
+    Genuinely not here yet. This is what creating a document looks like.
+
+    `seed` is whatever the control that sent us here already asked for. A new
+    book is started from a control that asks its name and whether it is
+    homebrew, because those decide where it may appear and whether it leaves
+    the database, and a question that important is not one to leave somebody
+    to find partway down a form of forty fields.
+  */
   return {
     type,
     key,
@@ -226,7 +235,7 @@ async function loadSubject(
     draft: null,
     currentRevisionId: null,
     baseRevisionId: null,
-    document: blankDocument(control, key),
+    document: { ...(blankDocument(control, key) as object), ...seed },
   };
 }
 
@@ -772,6 +781,7 @@ function DocumentWorkspace({
   type,
   contentKey,
   descriptor,
+  seed,
   flagId,
   canPublish,
   onPublished,
@@ -780,6 +790,7 @@ function DocumentWorkspace({
   type: string;
   contentKey: string;
   descriptor: ContentTypeDescriptor | null;
+  seed: Record<string, unknown>;
   flagId: string | null;
   canPublish: boolean;
   onPublished: (revision: PublishResult) => void;
@@ -790,7 +801,7 @@ function DocumentWorkspace({
   useEffect(() => {
     const controller = new AbortController();
 
-    loadSubject(type, contentKey, descriptor, controller.signal).then(
+    loadSubject(type, contentKey, descriptor, controller.signal, seed).then(
       (subject) => {
         if (!controller.signal.aborted) setLoad({ state: "ready", value: subject });
       },
@@ -862,6 +873,19 @@ export default function AuthoringEdit() {
   const requestedType = params.get("type") ?? "";
   const key = params.get("key") ?? "";
   const flagId = params.get("flag");
+
+  /*
+    Answers a create control already collected, so the form opens with them
+    filled in rather than asking twice. Only read when the document does not
+    exist yet: these never override anything stored.
+  */
+  const seed = useMemo(() => {
+    const fields: Record<string, unknown> = {};
+    const title = params.get("title");
+    if (title) fields.title = title;
+    if (params.get("homebrew") === "1") fields.homebrew = true;
+    return fields;
+  }, [params]);
 
   /*
    * The canonical key, once the registry is available.
@@ -983,6 +1007,7 @@ export default function AuthoringEdit() {
         type={type}
         contentKey={key}
         descriptor={descriptor}
+        seed={seed}
         flagId={flagId}
         canPublish={canPublish}
         onPublished={(revision) => {

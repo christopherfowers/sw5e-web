@@ -2022,6 +2022,7 @@ export function shelveBooks(sources) {
       accent: source.accent ?? null,
       order: source.order ?? null,
       showOnHomePage: source.showOnHomePage !== false,
+      homebrew: source.homebrew === true,
       isCoreRulebook: source.isCoreRulebook === true,
     }))
     .sort((left, right) => {

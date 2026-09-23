@@ -158,7 +158,13 @@ export async function loader() {
       point. Adding a book, renaming one or reordering the shelf is an edit to
       content and needs no deploy.
     */
-    books: BOOKS.filter((book) => book.showOnHomePage),
+    /*
+      Canon only, and homebrew is excluded here rather than left to whoever
+      arranges the shelf. Somebody's table material appearing on the front
+      page of the reference would be a mistake nobody made on purpose, and
+      the arranging screen can only offer what this would draw.
+    */
+    books: BOOKS.filter((book) => book.showOnHomePage && !book.homebrew),
     /*
       The community's channels, grouped as the columns are read. Resolved here
       rather than in the component because the label comes from the platform

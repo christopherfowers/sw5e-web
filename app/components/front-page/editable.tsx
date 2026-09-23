@@ -113,6 +113,14 @@ export interface ListEditing<T extends Arrangeable> {
    * find it in a worklist.
    */
   hrefFor?(key: string): string;
+  /**
+   * A control for making one that does not exist yet.
+   *
+   * Sits in the same menu as the things currently off the page, because
+   * "put the handbook back" and "start a new supplement" are the same
+   * intention arriving at the same moment: this shelf is missing something.
+   */
+  create?: React.ReactNode;
 }
 
 /**
@@ -131,7 +139,7 @@ export function AddToList<T extends Arrangeable>({
   const menuId = useId();
   const { available, noun } = editing;
 
-  if (available.length === 0) {
+  if (available.length === 0 && !editing.create) {
     return (
       <p className="fp-add-empty">
         Everything the corpus holds is already on the page.
@@ -151,22 +159,31 @@ export function AddToList<T extends Arrangeable>({
         Add {noun}
       </button>
       {open ? (
-        <ul className="fp-add-menu" id={menuId}>
-          {available.map((candidate) => (
-            <li key={candidate.key}>
-              <button
-                type="button"
-                className="fp-add-option"
-                onClick={() => {
-                  editing.onAdd(candidate.key);
-                  setOpen(false);
-                }}
-              >
-                {candidate.name}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="fp-add-menu" id={menuId}>
+          {available.length > 0 ? (
+            <ul>
+              {available.map((candidate) => (
+                <li key={candidate.key}>
+                  <button
+                    type="button"
+                    className="fp-add-option"
+                    onClick={() => {
+                      editing.onAdd(candidate.key);
+                      setOpen(false);
+                    }}
+                  >
+                    {candidate.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="fp-add-empty">
+              Everything the corpus holds is already on the page.
+            </p>
+          )}
+          {editing.create}
+        </div>
       ) : null}
     </div>
   );

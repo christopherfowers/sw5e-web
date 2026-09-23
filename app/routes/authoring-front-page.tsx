@@ -37,6 +37,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { RequireSession } from "~/auth/guard";
 import { getDraft, getPublishedDocument, saveDraft } from "~/authoring/api";
+import { NewBook } from "~/authoring/new-book";
 import { editorPath } from "~/authoring/paths";
 import { BookCard, ResourceCard } from "~/components/front-page/cards";
 import type { Arrangeable, ListEditing } from "~/components/front-page/editable";
@@ -266,6 +267,12 @@ function Editor() {
               ...listEditing("a book", "source", state.books, (next) =>
                 setState((was) => (was ? { ...was, books: next } : was)),
               ),
+              /*
+                A shelf missing something is one intention, whether the book
+                exists and is hidden or does not exist yet, so both answers
+                live behind the same control.
+              */
+              create: <NewBook />,
               onHeadingChange: editCopy("booksHeading"),
               onLedeChange: editCopy("booksLede"),
             }}
