@@ -244,23 +244,19 @@ function singularise(label: string): string {
 /**
  * Whether a string field holds prose rather than a value.
  *
- * The schemas say so themselves. Every long-form field in this corpus opens its
- * description with the word "Markdown", it is the convention the schema
- * authors used to mark the difference between "the rules text of this feature"
- * and "the name of this feature", so that is what is read, rather than a list
- * of field names compiled here that would have to grow with every new type.
+ * The schema says so, with `contentMediaType: "text/markdown"`. That keyword
+ * is annotation-only, so declaring it cannot change what the corpus validates
+ * against, and it puts the decision where a schema author can see it.
  *
- * The test is deliberately forgiving: the word anywhere in the description, not
- * only at the front. The two failures are not equally bad. A false positive
- * gives a name field a text area, which is untidy. A false negative puts three
- * paragraphs of rules text in a control one line high, which is close to
- * unusable, and the renderer widens the net further by refusing to put a value
- * that already contains a line break into a single-line control at all.
+ * This used to search the description for the word "markdown", which made the
+ * control a side effect of help text: reword the help and the editor changed
+ * underneath the author. It also read the wrong node for a list of prose. The
+ * control for an array is built from the array's items, and items carry no
+ * description, so a fighting style's benefits promised markdown in their help
+ * and gave single-line inputs.
  */
 function readsAsProse(node: SchemaNode): boolean {
-  const description = readString(node, "description");
-  if (!description) return false;
-  return /\bmarkdown\b/i.test(description);
+  return readString(node, "contentMediaType") === "text/markdown";
 }
 
 function typeOf(node: SchemaNode): string | null {
