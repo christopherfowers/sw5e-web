@@ -120,6 +120,7 @@ const AUTHORING_PATHS = [
   "/authoring",
   "/authoring/edit",
   "/authoring/history",
+  "/authoring/front-page",
 ] as const;
 
 /**

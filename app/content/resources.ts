@@ -53,6 +53,8 @@ export interface Resource {
   credit: string | null;
   /** Where it sits among the others. */
   order: number;
+  /** Whether the front page offers this download. Absent means it does. */
+  showOnHomePage: boolean;
 }
 
 /*
@@ -71,7 +73,14 @@ const fixture: Record<string, unknown> = import.meta.glob(
 
 function read(): Resource[] {
   const found = Object.values(generated)[0] ?? Object.values(fixture)[0];
-  return Array.isArray(found) ? (found as Resource[]) : [];
+  if (!Array.isArray(found)) return [];
+
+  // Absent means shown. See `app/content/books.ts` for why a missing hide
+  // flag must not empty the shelf.
+  return (found as Resource[]).map((resource) => ({
+    ...resource,
+    showOnHomePage: resource.showOnHomePage !== false,
+  }));
 }
 
 /** Every described resource, in the order the corpus puts them. */

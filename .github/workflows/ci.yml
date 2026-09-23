@@ -371,7 +371,7 @@ jobs:
                       equipment enhanced-item weapon-property armor-property                       monster                       starship-base-size starship-deployment starship-equipment                       starship-modification starship-venture starship-rule                       rule reference-table; do
             items=$((items + $(ls "canonical-content/$type"/*.json | wc -l)))
           done
-          expected=$((items + 62))
+          expected=$((items + 63))
 
           rendered=$(docker exec sw5e-web \
             find /usr/share/nginx/html -name index.html | wc -l)
