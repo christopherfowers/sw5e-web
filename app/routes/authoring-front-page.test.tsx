@@ -134,6 +134,16 @@ describe("arranging it", () => {
     ).toBeGreaterThan(0);
   });
 
+  it("opens each book's own document, for the fields this screen does not own", async () => {
+    mount(contributor(), withHandbook());
+
+    // Where a book sits is this screen's; its name, blurb and cover are the
+    // book's own document. Somebody looking at the shelf who spots a wrong
+    // blurb should not have to go and find it in a worklist.
+    const open = await screen.findByRole("link", { name: "Edit Player's Handbook" });
+    expect(open).toHaveAttribute("href", "/authoring/edit?type=source&key=phb");
+  });
+
   it("counts a removal as one change, and writes one document", async () => {
     const stub = withHandbook();
     mount(contributor(), stub);

@@ -39,6 +39,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Link } from "react-router";
 
 import type { Arrangeable, ListEditing } from "./editable";
 
@@ -158,6 +159,22 @@ function SortableItem<T extends Arrangeable>({
       >
         <span aria-hidden="true">⠿</span>
       </button>
+
+      {/*
+        Straight to the document behind the card, because the two edits sit
+        next to each other in a person's head: this book is in the wrong
+        place, and also its blurb is wrong.
+      */}
+      {editing.hrefFor ? (
+        <Link
+          className="fp-open"
+          to={editing.hrefFor(item.key)}
+          aria-label={`Edit ${item.name}`}
+          title={`Edit ${item.name}`}
+        >
+          <span aria-hidden="true">✎</span>
+        </Link>
+      ) : null}
 
       <button
         type="button"

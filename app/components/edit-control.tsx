@@ -42,6 +42,16 @@ import { useSession } from "~/auth/session";
 
 interface EditControlProps {
   /**
+   * Where the edit link goes, when the generic form is the wrong tool.
+   *
+   * The front page is the case this exists for. Its document is eight slots
+   * with names like `booksLede`, and the arrangement a reader sees is not in
+   * that document at all: it is spread across every book, download and link
+   * on it. A stack of labelled boxes cannot express that, so the front page
+   * has a screen of its own and this points at it.
+   */
+  editorHref?: string;
+  /**
    * The site's own route segment for this kind of thing (`species`,
    * `enhanced-items`) which is what the authoring screens address documents
    * by, so no mapping table has to be kept in step here.
@@ -51,7 +61,7 @@ interface EditControlProps {
   slug: string;
 }
 
-export function EditControl({ type, slug }: EditControlProps) {
+export function EditControl({ type, slug, editorHref }: EditControlProps) {
   const session = useSession();
 
   if (session.status !== "authenticated" || !canUploadContent(session.user)) {
@@ -60,7 +70,7 @@ export function EditControl({ type, slug }: EditControlProps) {
 
   return (
     <p className="edit-control">
-      <Link className="edit-control-link" to={editorPath(type, slug)}>
+      <Link className="edit-control-link" to={editorHref ?? editorPath(type, slug)}>
         Edit this page
       </Link>
       <span aria-hidden="true"> · </span>
