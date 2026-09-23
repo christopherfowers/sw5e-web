@@ -158,7 +158,8 @@ export const ARMOR_PROPERTY_SCHEMA = {
     description: {
       type: "string",
       minLength: 1,
-      description: "Markdown giving the property's rules.",
+      description: "The property's rules.",
+      contentMediaType: "text/markdown",
     },
   },
 } as const;

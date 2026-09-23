@@ -45,6 +45,15 @@ export interface Book {
   /** Where it sits on the shelf. Absent means nobody has placed it. */
   order: number | null;
   /**
+   * Whether the front page shelves this book.
+   *
+   * Off is not the same as gone. The book keeps its page, stays searchable
+   * and stays linked to from every item that cites it; only its place on the
+   * front page goes away. Absent means shown, so a book added to the corpus
+   * appears without anybody editing the front page.
+   */
+  showOnHomePage: boolean;
+  /**
    * True for the one book that teaches the game.
    *
    * The front page opens with this book and walks a new reader down its
@@ -75,7 +84,23 @@ function read(): Book[] {
 
   // An archive build ships no shelf at all, which is a supported state rather
   // than a broken one: every book falls back to a plain badge.
-  return Array.isArray(found) ? (found as Book[]) : [];
+  if (!Array.isArray(found)) return [];
+
+  /*
+    `showOnHomePage` is normalised here rather than trusted, because a dataset
+    built before the flag existed carries no such field and a missing hide flag
+    has to mean shown.
+
+    The two failure directions are not symmetrical. Read as "not shown", one
+    stale dataset empties the shelf and the page announces that it draws on
+    none of these 0 books. Read as "shown", the worst case is that a book
+    somebody took off the shelf comes back.
+  */
+
+  return (found as Book[]).map((book) => ({
+    ...book,
+    showOnHomePage: book.showOnHomePage !== false,
+  }));
 }
 
 /** Every described book, in the order the corpus shelves them. */

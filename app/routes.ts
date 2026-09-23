@@ -73,6 +73,9 @@ export default [
     index("routes/authoring-worklist.tsx"),
     route("edit", "routes/authoring-edit.tsx"),
     route("history", "routes/authoring-history.tsx"),
+    // The front page, arranged on a copy of the front page rather than in a
+    // form. See `app/routes/authoring-front-page.tsx`.
+    route("front-page", "routes/authoring-front-page.tsx"),
   ]),
 
   // The subcategory views: `/weapons`, `/armor`, `/force-powers`, `/variant-rules`

@@ -184,7 +184,7 @@ describe("the form drawn from the schema", () => {
     expect(set).toHaveValue("core");
     expect(within(set as HTMLSelectElement).getByText("Expanded content")).toBeInTheDocument();
 
-    // The schema says this field is Markdown, so it gets room to be prose.
+    // The schema declares this field as markdown, so it gets room to be prose.
     expect(screen.getByLabelText("Description").tagName).toBe("TEXTAREA");
   });
 

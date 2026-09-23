@@ -50,7 +50,8 @@ export interface Channel {
   url: string;
   blurb: string | null;
   order: number;
-  enabled: boolean;
+  /** Whether the front page draws this link. Absent means it does. */
+  showOnHomePage: boolean;
 }
 
 /**
@@ -141,8 +142,16 @@ function read(): Channel[] {
   const found = Object.values(generated)[0] ?? Object.values(fixture)[0];
   if (!Array.isArray(found)) return [];
 
+  /*
+    Every channel, including the ones taken off the front page, because the
+    front page editor has to be able to offer them back. What the page draws
+    is decided by `channelGroup`.
+  */
   return (found as Channel[])
-    .filter((channel) => channel.enabled !== false)
+    .map((channel) => ({
+      ...channel,
+      showOnHomePage: channel.showOnHomePage !== false,
+    }))
     .filter((channel) => LABELS[channel.platform] !== undefined)
     .filter((channel) => isAllowedChannelUrl(channel.platform, channel.url))
     .sort((left, right) => left.order - right.order);
@@ -172,7 +181,9 @@ export function groupHeading(group: ChannelGroup): string {
 export function channelGroup(
   group: ChannelGroup,
 ): { heading: string; blurb: string | null; channels: Channel[] } | null {
-  const channels = CHANNELS.filter((channel) => channel.group === group);
+  const channels = CHANNELS.filter(
+    (channel) => channel.group === group && channel.showOnHomePage,
+  );
   if (channels.length === 0) return null;
 
   return {

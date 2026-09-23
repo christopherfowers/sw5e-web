@@ -1,18 +1,20 @@
 import { Link } from "react-router";
 
 import { EditControl } from "~/components/edit-control";
-import { AssetImage, MonogramPlate } from "~/components/media";
-import { PlatformIcon } from "~/components/platform-icon";
+import { BookCard, ResourceCard } from "~/components/front-page/cards";
+import { Hero } from "~/components/front-page/hero";
+import { Shelf } from "~/components/front-page/shelf";
+import { Touch } from "~/components/front-page/touch";
 import {
   getManifest,
   getSummaries,
   isCuratedDataset,
   totalForSource,
 } from "~/content/dataset.server";
-import { brandImage, resourcePreview, sourceCover } from "~/content/imagery";
+import { brandImage } from "~/content/imagery";
 import { BOOKS, coreRulebook } from "~/content/books";
 import { pageCopy } from "~/content/pages";
-import { RESOURCES, resourceHref } from "~/content/resources";
+import { RESOURCES } from "~/content/resources";
 import {
   CHANNEL_GROUPS,
   channelGroup,
@@ -156,13 +158,7 @@ export async function loader() {
       point. Adding a book, renaming one or reordering the shelf is an edit to
       content and needs no deploy.
     */
-    books: BOOKS.map((book) => ({
-      key: book.key,
-      code: book.code,
-      name: book.name,
-      blurb: book.blurb,
-      accent: book.accent,
-    })),
+    books: BOOKS.filter((book) => book.showOnHomePage),
     /*
       The community's channels, grouped as the columns are read. Resolved here
       rather than in the component because the label comes from the platform
@@ -178,6 +174,12 @@ export async function loader() {
         channels: group.channels.map((channel) => ({
           key: channel.key,
           url: channel.url,
+          /*
+            The service's own name, for the reorder controls to say out loud.
+            A screen reader announcing "moved discord" wants the word a person
+            would use, and the key is a slug.
+          */
+          name: channelLabel(channel.platform),
           /*
             Carried through so the button can draw the service's own mark. It
             comes from the platform rather than the document for the same
@@ -195,16 +197,7 @@ export async function loader() {
       properly, and repeating one name under four tiles would crowd the row
       without telling a reader anything the sentence below it does not.
     */
-    resources: RESOURCES.map((resource) => ({
-      key: resource.key,
-      name: resource.name,
-      blurb: resource.blurb,
-      file: resource.file,
-      pages: resource.pages,
-      fillable: resource.fillable,
-      sanitized: resource.sanitized,
-      accent: resource.accent,
-    })),
+    resources: RESOURCES.filter((resource) => resource.showOnHomePage),
   };
 }
 
@@ -234,129 +227,31 @@ export default function Home({ loaderData }: Route.ComponentProps) {
   // button with it, which is the point of authoring the order at all.
   const start = chapters[0];
 
-  const heroLight = brandImage("hero-light");
-  const heroDark = brandImage("hero-dark");
 
   return (
     <div className="page-home">
-      {/*
-        The hero photograph is a ground, not a subject. A table with dice on
-        it, behind a scrim heavy enough that the type above it keeps its
-        contrast in either theme. It carries no information a reader needs, so
-        it is marked decorative rather than described.
-
-        There was a wordmark above the heading as well, and it has gone. It
-        drew the same four characters the heading draws, directly under a
-        header that already carries the mark on every page of the site. Three
-        statements of the name before a single sentence about what the site is.
-      */}
-      <section className="home-hero">
-        {heroLight && heroDark ? (
-          <picture>
-            <source
-              media="(prefers-color-scheme: dark)"
-              srcSet={heroDark.srcSet}
-              sizes="100vw"
-            />
-            <img
-              className="home-hero-media"
-              src={heroLight.src}
-              srcSet={heroLight.srcSet}
-              sizes="100vw"
-              width={heroLight.width}
-              height={heroLight.height}
-              alt=""
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-            />
-          </picture>
-        ) : null}
-
-        <div className="home-hero-inner">
-          <h1>Star Wars 5e</h1>
-          {/*
-            What the game is, before what this site does.
-
-            This used to read "every book of the Star Wars 5e conversion,
-            searchable in one place", which is true and tells somebody who does
-            not already know absolutely nothing: it never says what the game is,
-            and "conversion" carries the whole explanation without unpacking it.
-            The site it replaces opened by saying plainly that this is an
-            overhaul of Dungeons & Dragons 5th edition for a Star Wars
-            campaign, built on the same mechanics and expanded. Which is both
-            more welcoming and more honest about what the rules rest on.
-          */}
-          <p className="lede">
-            {copy.heroLede ?? (
-              <>
-                A Star Wars roleplaying game, built on the mechanics of Dungeons
-                &amp; Dragons 5th edition and expanded for the galaxy. Every
-                book of it, searchable in one place.
-              </>
-            )}
-          </p>
-          <p className="home-hero-meta">
-            {total.toLocaleString("en-US")} entries across {TYPE_ORDER.length}{" "}
-            categories. Press <kbd>/</kbd> anywhere to search all of them.
-          </p>
-          {/*
-            These used to be "Browse species" and "Creature stat blocks", which
-            sent every arrival straight into a list of options. That is the
-            complaint the page was rebuilt for: readers jump around and never
-            learn the system. The first action is now the book that teaches it,
-            and browsing is still one click away for the people who came here
-            knowing what they wanted.
-          */}
-          <div className="home-hero-actions">
-            {start ? (
-              <Link className="button button-primary" to={`/rules/${start.slug}`}>
-                Start with the Player&rsquo;s Handbook
-              </Link>
-            ) : null}
-            <Link className="button" to="/species">
-              Browse species
-            </Link>
-          </div>
-          {/*
-            Below the buttons rather than beside them, and phrased as the
-            question the reader is actually holding. Somebody who followed a
-            dead bookmark is not looking for an "About" link. They are looking
-            for an answer to "is this the same site, and is my stuff here". The
-            two browse buttons stay first because most arrivals do not need
-            this sentence at all.
-
-            It used to ask "here is what happened", which framed the move as an
-            event that befell somebody else. It is a change of address, so it
-            now reads as one. The old domain is still named, because that is the
-            word the reader is holding in their head and a redirect notice that
-            will not say where you came from is no use to anybody.
-          */}
-          <p className="home-hero-note">
-            <Link to="/about">
-              Arrived from an sw5e.com link? Here is what moved, and what did
-              not.
-            </Link>
-          </p>
-        </div>
-      </section>
+      <Hero
+        light={brandImage("hero-light")}
+        dark={brandImage("hero-dark")}
+        lede={copy.heroLede ?? null}
+        start={start ?? null}
+        total={total}
+        categories={TYPE_ORDER.length}
+      />
 
       <div className="home-section">
         {/*
           The command in this notice has to be one the reader can actually run.
-
-          It said "against the legacy archive", which is a private directory
-          almost nobody reading it has, so the honest next step looked
-          impossible and the sample looked broken instead of small. The content
-          repository is public and sits beside this one, and building from it
-          produces the whole library.
+          The content repository is public and sits beside this one; the legacy
+          archive it used to name is a private directory almost nobody reading
+          it has, which made the honest next step look impossible and the
+          sample look broken rather than small.
 
           Worth knowing while looking at a sample build: the shipped
-          `book-contents.json` lists every chapter of every book, while the rest
-          of the sample is four items per type, so a book's rail offers chapters
-          whose pages are not in the sample and answers 404. That is the sample
-          being small rather than the site being wrong, and the command below is
-          the cure.
+          `book-contents.json` lists every chapter of every book, while the
+          rest of the sample is four items per type, so a book's rail offers
+          chapters whose pages are not in the sample and answers 404. That is
+          the sample being small, and the command below is the cure.
         */}
         {curated ? (
           <p className="notice">
@@ -371,96 +266,41 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         ) : null}
 
         {/*
-          The books, first and whole.
-
-          The order of this page used to be how to play, then the other books,
-          then the lists. The books are now the first thing under the hero,
-          which is how the site this replaces opened and what its owner asked
-          for: somebody arriving wants to see what this is made of before they
-          are told where to start.
+          The books, first and whole, which is how the site this replaces
+          opened and what its owner asked for: somebody arriving wants to see
+          what this is made of before they are told where to start.
 
           All of them, including the handbook. The old arrangement called this
-          "Supplemental rules" and left the handbook out, because the section
-          above it was the handbook. Which made the row a list of leftovers
-          rather than a shelf. A reader looking for the Player's Handbook
-          should find it among the books.
-
-          The covers carry this rather than the text. Two of the five have no
-          artwork and fall back to a monogram plate, which is the same shape and
-          holds the row's rhythm.
+          "Supplemental rules" and left the handbook out, which made the row a
+          list of leftovers rather than a shelf.
         */}
-        <section className="home-shelf" aria-labelledby="the-books">
-          <h2 className="section-heading" id="the-books">
-            {copy.booksHeading ?? "The rulebooks"}
-          </h2>
-          {/*
-            The one lede with a computed fallback. Left alone it counts the
-            shelf, which is a sentence that cannot go stale; an administrator
-            who fills it in owns the wording, including any number in it. That
-            trade is stated on the field in the schema rather than being a
-            surprise after saving.
-          */}
-          <p className="section-lede">
-            {copy.booksLede ??
-              (books.length === 1
-                ? "Everything in this reference comes from one book."
-                : `Everything in this reference comes from one of these ${books.length} books.`)}
-          </p>
-
-          <ul className="shelf">
-            {books.map((book) => {
-              const cover = sourceCover(book.code);
-              const entries = sourceTotals[book.code] ?? 0;
-              return (
-                <li key={book.code}>
-                  <div className="shelf-book" data-accent={book.accent ?? undefined}>
-                    {cover ? (
-                      <AssetImage
-                        className="shelf-cover"
-                        image={cover}
-                        alt={`Cover of ${book.name}`}
-                        sizes="(max-width: 40rem) 40vw, 12rem"
-                      />
-                    ) : (
-                      <span className="shelf-cover shelf-plate">
-                        <MonogramPlate name={book.name} />
-                      </span>
-                    )}
-                    <p className="shelf-title">
-                      <Link to={`/sources/${book.key}`}>{book.name}</Link>
-                    </p>
-                    {book.blurb ? <p className="shelf-blurb">{book.blurb}</p> : null}
-                    <p className="shelf-count">
-                      {entries.toLocaleString("en-US")}{" "}
-                      {entries === 1 ? "entry" : "entries"}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+        <Shelf
+          id="the-books"
+          heading={copy.booksHeading ?? null}
+          headingFallback="The rulebooks"
+          lede={copy.booksLede ?? null}
+          ledeFallback={
+            books.length === 1
+              ? "Everything in this reference comes from one book."
+              : `Everything in this reference comes from one of these ${books.length} books.`
+          }
+          items={books}
+        >
+          {(book) => (
+            <BookCard book={book} entries={sourceTotals[book.code] ?? 0} />
+          )}
+        </Shelf>
 
         {/*
-          The optional rules, which are the only thing left of what used to be
-          a "How to play" section here.
-
-          That section reproduced all fifteen chapters of the Player's
-          Handbook, grouped by heading. It was the right answer while a book's
-          own page was a grid of content-type counts and there was nowhere else
-          to read a table of contents. Now the handbook's page is its chapters,
-          and the hero's first button goes straight there, so the front page
-          was saying the same thing twice, at length, above the books it was
-          describing.
+          The optional rules, which are all that is left of what used to be a
+          "How to play" section reproducing all fifteen chapters of the
+          handbook. The handbook's own page is its chapters now, and the hero's
+          first button goes straight there, so the front page was saying the
+          same thing twice, at length, above the books it was describing.
 
           The variants stay because they belong to no single book's path: they
           are rules a group may choose to play with, spread across the corpus,
           and the front page is the only place that speaks for the whole of it.
-
-          The sentence used to end "a table can turn on", which is how somebody
-          who writes software thinks about an optional rule and not how anybody
-          plays one. Nothing is switched on at a table: a group reads a rule and
-          decides to use it, or does not, and may change its mind next week.
         */}
         {variantRules > 0 ? (
           <p className="home-variants">
@@ -472,172 +312,67 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         ) : null}
 
         {/*
-          The sheets, in the books' form factor, under the books.
+          The sheets, in the books' form factor, under the books. They were
+          four links to a Google Drive nobody here controlled; the site holds
+          them now, which is what lets it say how many pages a file has and
+          draw its first page. A letter page and a book cover are the same
+          shape, so these need no layout of their own.
 
-          They were four links to a Google Drive nobody here controlled. The
-          site now holds them, which is what lets it say how many pages a file
-          has and draw its first page, and a first page is the right cover for
-          a character sheet in a way a generic icon never was. A letter page and
-          a book cover are the same shape, so these sit beside the shelf above
-          without a layout of their own.
-
-          Drawn only when the corpus carries some. A build with no resources
-          gets no heading rather than an empty one, exactly as the shelf does.
+          Drawn only when the corpus carries some, exactly as the shelf is.
         */}
         {resources.length > 0 ? (
-          <section className="home-shelf" aria-labelledby="the-resources">
-            <h2 className="section-heading" id="the-resources">
-              {copy.resourcesHeading ?? "Sheets and downloads"}
-            </h2>
-            <p className="section-lede">
-              {copy.resourcesLede ?? (
-                <>
-                  Print them, or fill them in on screen. Hosted here rather than
-                  on somebody&rsquo;s drive.
-                </>
-              )}
-            </p>
-
-            <ul className="shelf">
-              {resources.map((resource) => {
-                const preview = resourcePreview(resource.key);
-                return (
-                  <li key={resource.key}>
-                    <div
-                      className="shelf-book"
-                      data-accent={resource.accent ?? undefined}
-                    >
-                      {preview ? (
-                        <AssetImage
-                          className="shelf-cover"
-                          image={preview}
-                          alt={`First page of ${resource.name}`}
-                          sizes="(max-width: 40rem) 40vw, 12rem"
-                        />
-                      ) : (
-                        <span className="shelf-cover shelf-plate">
-                          <MonogramPlate name={resource.name} />
-                        </span>
-                      )}
-                      <p className="shelf-title">
-                        {/*
-                          A plain anchor, not a Link: this leaves the router
-                          entirely. `download` asks the browser to save rather
-                          than hand the file to its PDF viewer, which is the
-                          same decision the hosting design makes for uploads.
-                          A PDF the site serves is never opened in a tab on
-                          this origin.
-                        */}
-                        <a href={resourceHref(resource.file)} download>
-                          {resource.name}
-                        </a>
-                      </p>
-                      {resource.blurb ? (
-                        <p className="shelf-blurb">{resource.blurb}</p>
-                      ) : null}
-                      <p className="shelf-count">
-                        {resource.pages
-                          ? `${resource.pages} ${resource.pages === 1 ? "page" : "pages"}`
-                          : "PDF"}
-                        {resource.fillable ? " · fillable" : null}
-                      </p>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-
-            {/*
-              Said once, under the row, rather than on every sheet that carries
-              it. Four near-identical notices would be noise; one sentence is
-              the disclosure the design asks for. A reader is told the file
-              differs from the author's original before they download it.
-            */}
-            {resources.some((resource) => resource.sanitized) ? (
-              <p className="shelf-note">
-                These files are rebuilt from the originals before they are
-                published here, with anything that could run on your machine
-                removed. The pages and the form fields are unchanged.{" "}
-                <Link to="/credits">Who made them</Link>.
-              </p>
-            ) : null}
-          </section>
+          <Shelf
+            id="the-resources"
+            heading={copy.resourcesHeading ?? null}
+            headingFallback="Sheets and downloads"
+            lede={copy.resourcesLede ?? null}
+            ledeFallback={
+              <>
+                Print them, or fill them in on screen. Hosted here rather than
+                on somebody&rsquo;s drive.
+              </>
+            }
+            items={resources}
+            note={
+              /*
+                Said once, under the row, rather than on every sheet that
+                carries it. Four near-identical notices would be noise; one
+                sentence is the disclosure the design asks for, and a reader is
+                told the file differs from the author's original before they
+                download it.
+              */
+              resources.some((resource) => resource.sanitized) ? (
+                <p className="shelf-note">
+                  These files are rebuilt from the originals before they are
+                  published here, with anything that could run on your machine
+                  removed. The pages and the form fields are unchanged.{" "}
+                  <Link to="/credits">Who made them</Link>.
+                </p>
+              ) : null
+            }
+          >
+            {(resource) => <ResourceCard resource={resource} />}
+          </Shelf>
         ) : null}
 
-        {/*
-          Getting in touch, last, as the site this replaces had it.
-
-          The channels are content rather than markup, and that is not a
-          convenience: this is a community project whose leadership is expected
-          to change hands, and the day the Discord moves the fix should not be
-          a code edit and a deploy by whoever still holds commit rights.
-
-          A group nothing is filed under renders nothing at all. That is why
-          there is no Support column and no toggle for one. The old Patreon
-          belongs to the previous maintainer and is shared with another
-          project, so no Support channel exists. "Off by default with nothing
-          filled in" turned out not to be a setting; it is the absence of a
-          channel.
-        */}
-        {groups.length > 0 ? (
-          <section className="home-touch" aria-labelledby="getting-in-touch">
-            <h2 className="section-heading" id="getting-in-touch">
-              {copy.touchHeading ?? "Getting in touch"}
-            </h2>
-            <p className="section-lede">
-              {copy.touchLede ?? (
-                <>
-                  Star Wars 5e is made and maintained in the open. These are the
-                  places it happens.
-                </>
-              )}
-            </p>
-
-            <div className="touch-groups">
-              {groups.map((group) => (
-                <div className="touch-group" key={group.heading}>
-                  <h3 className="touch-heading">{group.heading}</h3>
-                  {group.blurb ? (
-                    <p className="touch-blurb">{group.blurb}</p>
-                  ) : null}
-                  <ul className="touch-links">
-                    {group.channels.map((channel) => (
-                      <li key={channel.key}>
-                        {/*
-                          `noreferrer` as well as `noopener`: these leave the
-                          site, and where a reader came from is not this
-                          project's to hand to somebody else's analytics.
-                        */}
-                        <a
-                          href={channel.url}
-                          rel="noopener noreferrer"
-                          className="button button-channel"
-                        >
-                          <PlatformIcon platform={channel.platform} />
-                          {channel.label}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
+        <Touch
+          heading={copy.touchHeading ?? null}
+          lede={copy.touchLede ?? null}
+          ledeFallback={
+            <>
+              Star Wars 5e is made and maintained in the open. These are the
+              places it happens.
+            </>
+          }
+          groups={groups}
+        />
 
         {/*
-          The way in, on the page itself.
-
-          Every content item page carries this line at its foot, and the front
-          page had nothing: an administrator could read the words and have no
-          way to act on them except to remember a URL. It draws nothing for a
-          reader who cannot edit, and nothing at all in the prerendered file,
-          which is the state the served HTML is frozen in.
-
-          It points at the page's own document. The shelves below it are their
-          own documents under their own types, and are reached from the
-          worklist, because a form that edited four documents at once would be
-          a form that could half-save.
+          The way in, on the page itself. Every content item page carries this
+          line at its foot and the front page had nothing, so an administrator
+          could read the words and have no way to act on them except to
+          remember a URL. It draws nothing for a reader who cannot edit, and
+          nothing at all in the prerendered file.
         */}
         <EditControl type="pages" slug="home" />
       </div>

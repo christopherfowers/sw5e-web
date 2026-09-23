@@ -637,3 +637,200 @@
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
+
+/* ------------------------------------------------- arranging the front page */
+
+/*
+ * The front page editor draws the front page, so almost everything here is
+ * restraint: the canvas inherits `page-home` and every rule below exists to
+ * add an affordance without moving what is underneath it.
+ *
+ * The one thing worth stating is why the cards are not visibly boxed. An
+ * editor that redraws its subject in a chrome of its own stops being a view of
+ * the page and becomes a diagram of it, and then nobody can tell whether the
+ * spacing they are looking at is the page's or the editor's.
+ */
+
+.fp-editor-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.fp-editor-title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.fp-editor-note {
+  margin: 0.35rem 0 0;
+  max-width: 44rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/*
+ * The canvas is inert to pointer events it should not receive. Inside the
+ * editor a book's title is still an anchor to its page, and following it
+ * midway through an unsaved arrangement would lose the arrangement.
+ */
+.fp-editor-canvas a:not(.button) {
+  pointer-events: none;
+  text-decoration: none;
+}
+
+/* ------------------------------------------------------------- editable text */
+
+.fp-editable {
+  display: block;
+  margin: 0 0 0.75rem;
+}
+
+.fp-editable-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+/*
+ * The control inherits the typography of whatever it is standing in for, so a
+ * lede being edited wraps where the lede wraps. Only the ground changes.
+ */
+.fp-editable-input {
+  display: block;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  resize: vertical;
+}
+
+.fp-editable-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.fp-editable-fallback {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.fp-editable-fallback span {
+  font-style: italic;
+}
+
+/* ---------------------------------------------------------------- sortables */
+
+.fp-sortable {
+  position: relative;
+  touch-action: none;
+}
+
+.fp-sortable[data-dragging] {
+  z-index: 2;
+  opacity: 0.85;
+}
+
+.fp-drag-handle,
+.fp-remove {
+  position: absolute;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.fp-drag-handle {
+  top: 0.35rem;
+  left: 0.35rem;
+  cursor: grab;
+  font-size: 1rem;
+}
+
+.fp-sortable[data-dragging] .fp-drag-handle {
+  cursor: grabbing;
+}
+
+.fp-remove {
+  top: 0.35rem;
+  right: 0.35rem;
+  font-size: 1.1rem;
+}
+
+.fp-remove:hover,
+.fp-remove:focus-visible {
+  border-color: var(--hue-red);
+  color: var(--hue-red);
+}
+
+.fp-drag-handle:focus-visible,
+.fp-remove:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* -------------------------------------------------------------------- adding */
+
+.fp-add {
+  position: relative;
+  margin-top: 0.85rem;
+}
+
+.fp-add-empty {
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.fp-add-menu {
+  position: absolute;
+  z-index: 3;
+  margin: 0.3rem 0 0;
+  padding: 0.25rem;
+  list-style: none;
+  min-width: 14rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 18%);
+}
+
+.fp-add-option {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fp-add-option:hover,
+.fp-add-option:focus-visible {
+  background: color-mix(in oklab, var(--text) 8%, transparent);
+  outline: none;
+}

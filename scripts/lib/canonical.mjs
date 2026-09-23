@@ -2021,6 +2021,7 @@ export function shelveBooks(sources) {
       blurb: source.blurb ?? null,
       accent: source.accent ?? null,
       order: source.order ?? null,
+      showOnHomePage: source.showOnHomePage !== false,
       isCoreRulebook: source.isCoreRulebook === true,
     }))
     .sort((left, right) => {
@@ -2067,6 +2068,7 @@ export function shelveResources(resources) {
       accent: resource.accent ?? null,
       credit: resource.credit ?? null,
       order: resource.order,
+      showOnHomePage: resource.showOnHomePage !== false,
     }))
     .sort((left, right) => left.order - right.order);
 }
@@ -2128,7 +2130,7 @@ export function shelveChannels(channels) {
       url: channel.url,
       blurb: channel.blurb ?? null,
       order: channel.order,
-      enabled: channel.enabled !== false,
+      showOnHomePage: channel.showOnHomePage !== false,
     }))
     .sort((left, right) => left.order - right.order);
 }

@@ -15,7 +15,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { bookAccent, bookFor, bookName, type Book } from "./books";
+import { bookAccent, BOOKS, bookFor, bookName, type Book } from "./books";
 
 describe("a book the corpus describes", () => {
   it("is found by the code on a content row", () => {
@@ -89,5 +89,16 @@ describe("the shelf", () => {
       .sort((left, right) => left.localeCompare(right, "en"));
 
     expect(BOOKS.map((book: Book) => book.code)).not.toEqual(alphabetical);
+  });
+});
+describe("a dataset built before the flag existed", () => {
+  it("shelves every book, because a missing hide flag means shown", () => {
+    // The committed fixture predates `showOnHomePage` and carries no such
+    // field. Read as falsy it empties the shelf completely, and the front page
+    // announces that it draws on none of these 0 books, which is what happened
+    // the first time this ran in a browser. The two failure directions are not
+    // symmetrical, so absent has to mean shown.
+    expect(BOOKS.length).toBeGreaterThan(0);
+    expect(BOOKS.every((book) => book.showOnHomePage)).toBe(true);
   });
 });

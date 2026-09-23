@@ -4,8 +4,8 @@
  * The schemas these run against are the shapes that actually appear in
  * `sw5e-database/schemas`: enums without a `type`, `$ref` into `$defs`,
  * object-level `oneOf` used as a condition rather than as alternative shapes,
- * and prose fields marked by the word "Markdown" at the front of their
- * description.
+ * and prose fields declared with contentMediaType rather than inferred from
+ * their description.
  *
  * The most important test in the file is the last one in "nothing is ever
  * dropped". A generated form that skips what it does not understand deletes
@@ -41,7 +41,8 @@ const ARMOR_PROPERTY: SchemaNode = {
     description: {
       type: "string",
       minLength: 1,
-      description: "Markdown giving the property's rules.",
+      description: "The property's rules.",
+      contentMediaType: "text/markdown",
     },
   },
 };
@@ -94,8 +95,9 @@ describe("a whole content type", () => {
   });
 
   it("gives prose a control it fits in", () => {
-    // Read from the schemas themselves: every long-form field in this corpus
-    // opens its description with the word "Markdown".
+    // Read from the schema, which declares it. This used to be inferred from
+    // the description containing the word "markdown", so rewording help text
+    // silently changed the control an author was given.
     expect(propertyNamed(control, "description").control.kind).toBe("prose");
     expect(propertyNamed(control, "name").control.kind).toBe("line");
   });
