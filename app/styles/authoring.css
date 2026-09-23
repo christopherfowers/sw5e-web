@@ -745,6 +745,7 @@
 }
 
 .fp-drag-handle,
+.fp-open,
 .fp-remove {
   position: absolute;
   z-index: 1;
@@ -785,6 +786,7 @@
 }
 
 .fp-drag-handle:focus-visible,
+.fp-open:focus-visible,
 .fp-remove:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
@@ -833,4 +835,20 @@
 .fp-add-option:focus-visible {
   background: color-mix(in oklab, var(--text) 8%, transparent);
   outline: none;
+}
+
+/*
+ * The pencil sits between the handle and the cross, so the three controls read
+ * left to right as move, edit, remove.
+ */
+.fp-open {
+  top: 0.35rem;
+  right: 2.3rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+/* The canvas makes anchors inert; these are controls, not content. */
+.fp-editor-canvas a.fp-open {
+  pointer-events: auto;
 }

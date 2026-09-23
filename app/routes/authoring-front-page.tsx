@@ -37,6 +37,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { RequireSession } from "~/auth/guard";
 import { getDraft, getPublishedDocument, saveDraft } from "~/authoring/api";
+import { editorPath } from "~/authoring/paths";
 import { BookCard, ResourceCard } from "~/components/front-page/cards";
 import type { Arrangeable, ListEditing } from "~/components/front-page/editable";
 import { Hero } from "~/components/front-page/hero";
@@ -147,6 +148,7 @@ function Editor() {
     return {
       noun,
       available: rows.filter((row) => !row.showOnHomePage).slice().sort(byName),
+      hrefFor: (key: string) => editorPath(type, key),
       onReorder(keys) {
         const position = new Map(keys.map((key, index) => [key, index + 1]));
         for (const row of shown) {

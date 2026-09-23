@@ -374,7 +374,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           remember a URL. It draws nothing for a reader who cannot edit, and
           nothing at all in the prerendered file.
         */}
-        <EditControl type="pages" slug="home" />
+        <EditControl type="pages" slug="home" editorHref="/authoring/front-page" />
       </div>
     </div>
   );

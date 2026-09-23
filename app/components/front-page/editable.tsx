@@ -104,6 +104,15 @@ export interface ListEditing<T extends Arrangeable> {
   available: readonly T[];
   /** Put one back on the page. */
   onAdd(key: string): void;
+  /**
+   * Where this row's own document is edited.
+   *
+   * This screen owns only where a thing sits and whether it is drawn. A
+   * book's name, blurb and cover are the book's own document, and somebody
+   * looking at the shelf wanting to fix a blurb should not have to go and
+   * find it in a worklist.
+   */
+  hrefFor?(key: string): string;
 }
 
 /**

@@ -125,6 +125,14 @@ function Frame({ user }: { user: CurrentUser }) {
                 History
               </NavLink>
             </li>
+            <li>
+              {/* Named for the page rather than for its document, because it
+                  arranges several: the page's words, and where every book,
+                  download and link sits on it. */}
+              <NavLink to="/authoring/front-page" className={navClass}>
+                Front page
+              </NavLink>
+            </li>
           </ul>
           <p className="auth-note">
             Everything published here is checked against the content type&apos;s
