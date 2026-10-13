@@ -43,9 +43,9 @@ import {
   shelvePages,
   indexSources,
   normalizeAllCanonical,
-} from "./lib/canonical.mjs";
-import { CONTENT_TYPES, normalizeAll, slugify } from "./lib/normalize.mjs";
-import { REPLACEMENT, countRepairs } from "./lib/repair-text.mjs";
+} from "../app/content/transform/canonical.mjs";
+import { CONTENT_TYPES, normalizeAll, slugify } from "../app/content/transform/normalize.mjs";
+import { REPLACEMENT, countRepairs } from "../app/content/transform/repair-text.mjs";
 
 const TYPE_LABELS = {
   species: { singular: "Species", plural: "Species" },
@@ -523,7 +523,7 @@ async function main() {
  *
  * Nothing here repairs text or strips legacy fields, because the canonical set
  * has neither problem. What it does have is a shape of its own, mapped in
- * `scripts/lib/canonical.mjs`.
+ * `app/content/transform/canonical.mjs`.
  */
 async function buildFromCanonicalContent(contentDirectory, outputDirectory) {
   const present = await readDirectoryNames(contentDirectory);
