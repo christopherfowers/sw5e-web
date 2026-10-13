@@ -19,7 +19,7 @@
  * row.
  *
  * The values matched are the printed ones. "Weapon", not `weapon`. The
- * archive's enums are expanded by `humanize` in `scripts/lib/normalize.mjs`
+ * archive's enums are expanded by `humanize` in `app/content/transform/normalize.mjs`
  * before they reach a summary, because a Category column has to show prose, so
  * the printed form is the only form these predicates ever see. The fixtures
  * below are written that way on purpose; matching the raw enum would pass a
