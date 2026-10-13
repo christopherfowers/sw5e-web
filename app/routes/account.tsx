@@ -150,6 +150,12 @@ function AccountFrame({ user }: { user: CurrentUser }) {
                 Reports
               </NavLink>
             </li>
+
+            <li>
+              <NavLink to="/account/notifications" className={navClass}>
+                Notifications
+              </NavLink>
+            </li>
             {canUploadContent(user) ? (
               <li>
                 <NavLink to="/account/contributions" className={navClass}>
