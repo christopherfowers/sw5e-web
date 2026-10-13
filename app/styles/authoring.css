@@ -852,3 +852,47 @@
 .fp-editor-canvas a.fp-open {
   pointer-events: auto;
 }
+
+/* -------------------------------------------------------- starting a book */
+
+.fp-add-menu ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fp-new-book {
+  min-width: 22rem;
+  max-width: 30rem;
+  padding: 0.75rem 0.55rem 0.35rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.35rem;
+}
+
+.fp-add-menu:has(.fp-new-book) {
+  min-width: 24rem;
+}
+
+/*
+ * The two kinds of book are a choice somebody has to read before answering,
+ * so each option carries its consequences rather than a bare label. Stacked
+ * and full width, because side by side they would be two columns of small
+ * print nobody reads.
+ */
+.fp-choice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.4rem 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.fp-choice input {
+  margin-top: 0.2rem;
+}
+
+.fp-choice strong {
+  display: block;
+}

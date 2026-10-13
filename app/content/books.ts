@@ -61,6 +61,18 @@ export interface Book {
    * saying so. Neither failure is loud enough to notice otherwise.
    */
   isCoreRulebook: boolean;
+  /**
+   * Whether somebody wrote this for their own table.
+   *
+   * Not the same question as `isOfficial`, which asks whether this is a
+   * licensed Star Wars product and is false for every book here, the
+   * Player's Handbook included. Star Wars 5e is community work built on the
+   * 5e SRD; none of it is licensed, and all but homebrew is canon.
+   *
+   * Content inherits this from the book it cites, so a feat in a homebrew
+   * book is homebrew without being marked one at a time.
+   */
+  homebrew: boolean;
 }
 
 /*
@@ -100,6 +112,10 @@ function read(): Book[] {
   return (found as Book[]).map((book) => ({
     ...book,
     showOnHomePage: book.showOnHomePage !== false,
+    // Absent means canon, for the same reason absent means shown: a dataset
+    // built before the field existed must not turn all five books into
+    // somebody's homebrew.
+    homebrew: book.homebrew === true,
   }));
 }
 
