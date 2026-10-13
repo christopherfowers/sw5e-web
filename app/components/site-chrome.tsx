@@ -14,6 +14,8 @@
 import { Link } from "react-router";
 
 import { brandImage } from "~/content/imagery";
+import { NotificationBell } from "~/notifications/bell";
+
 import { AccountControl } from "./account-control";
 import { ThemeControl } from "./theme-control";
 import { AssetImage } from "./media";
@@ -70,6 +72,12 @@ export function SiteHeader() {
           the same reason.
         */}
         <ThemeControl />
+        {/*
+          Before the account chip, so the reading order is what has happened
+          and then who you are. It draws nothing at all for a signed-out
+          reader, which is the state every prerendered file is frozen in.
+        */}
+        <NotificationBell />
         <AccountControl />
       </div>
       <GroupedNav />

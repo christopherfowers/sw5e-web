@@ -40,6 +40,8 @@ export default [
     route("security", "routes/account-security.tsx"),
     route("contributions", "routes/account-contributions.tsx"),
     route("flags", "routes/account-flags.tsx"),
+    // Everybody has one, so it sits here rather than under authoring.
+    route("notifications", "routes/account-notifications.tsx"),
 
     // The administration screens. Static segments beneath `/account`, and
     // deliberately no `:userId` among them: a dynamic administrative route
