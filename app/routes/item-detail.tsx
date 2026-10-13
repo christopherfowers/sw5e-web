@@ -5,6 +5,7 @@ import { getItem, getNeighbours, getSummaries } from "~/content/dataset.server";
 import { listHolding } from "~/content/subcategory-views";
 import { TYPE_META } from "~/content/type-meta";
 import { isContentTypeId, type AnySummary } from "~/content/types";
+import { useLiveItem } from "~/content/use-live-item";
 import type { Route } from "./+types/item-detail";
 
 /** A plain-text summary for search engines, drawn from whatever the item has. */
@@ -100,15 +101,23 @@ export default function ItemDetailRoute({ loaderData }: Route.ComponentProps) {
   const { type, item, artCredit, list, previous, next } = loaderData;
   const meta = TYPE_META[type];
 
+  /*
+    What the loader read was written when the site was built. Anything
+    published since then is in the database and nowhere else, which is why a
+    correction could sit unseen for a week while its author published it
+    again. This asks for the current version and swaps it in.
+  */
+  const current = useLiveItem(type, item.slug, item);
+
   return (
     <div className="page" data-accent={meta.accent}>
       <Breadcrumbs
         trail={[
           list ?? { label: meta.plural, to: `/${type}` },
-          { label: item.name },
+          { label: current.name },
         ]}
       />
-      <ItemDetail item={item} artCredit={artCredit} />
+      <ItemDetail item={current} artCredit={artCredit} />
       <Pager
         type={type}
         typeLabel={meta.plural}

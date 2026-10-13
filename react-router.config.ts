@@ -69,6 +69,7 @@ const ACCOUNT_PATHS = [
   // .github/workflows/ci.yml adds a fixed number of content-free pages to the
   // document count, and that number went from 43 to 44 with this line.
   "/account/flags",
+  "/account/notifications",
 
   // Administration. Three more content-free skeletons, for the same reason as
   // every other address here: leaving them to the SPA fallback would make them

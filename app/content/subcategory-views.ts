@@ -48,7 +48,7 @@ import type { AnySummary, ContentTypeId } from "./types";
  * The archive's enum values reach a summary already expanded into prose:
  * `weapon` is stored as "Weapon" and `WeaponOrArmorAccessory` as "Weapon or
  * armor accessory", because that is the string the Category column and the
- * facet dropdown put on screen. See `humanize` in `scripts/lib/normalize.mjs`.
+ * facet dropdown put on screen. See `humanize` in `app/content/transform/normalize.mjs`.
  *
  * So matching happens on the printed value, lower-cased, and on the whole
  * string. Whole-string rather than a prefix or a substring test: "Weapon or
@@ -92,7 +92,7 @@ function ruleTypeIs(row: AnySummary, ruleType: string): boolean {
  *
  * The archive keeps them in three dumps (ClassImprovement,
  * MulticlassImprovement, SplashclassImprovement) of identical shape, and
- * `scripts/lib/normalize.mjs` reads all three into one type, stamping each
+ * `app/content/transform/normalize.mjs` reads all three into one type, stamping each
  * record with the dump it came from because nothing in the record says. So
  * `improvementType` is the only thing separating three unrelated questions:
  * what a class gives you as you advance in it, what it gives you when you
