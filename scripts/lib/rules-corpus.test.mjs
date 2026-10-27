@@ -515,27 +515,19 @@ describe("the canonical set and the archive publish the same corpus", () => {
           items.filter((item) => item.sections.length === 0).map((item) => item.slug),
           directory,
         ).toEqual([]);
-        // And the only documents still carrying the scrape's replacement
-        // character are the five recorded as unrecoverable: a lost character
-        // before a space, ambiguous between an em dash and an ellipsis, and
-        // the accented letters in the Expanded Content species name tables.
+        // And no document carries the scrape's replacement character any
+        // more. Five rule chapters did until the last 42 were settled against
+        // the books themselves: 26 em dashes, and the accented letters in the
+        // Expanded Content species name tables, which no pattern could have
+        // recovered and which `NAMES_FROM_SOURCE` quotes from that chapter's
+        // own source document.
         expect(
           items
             .filter((item) => JSON.stringify(item).includes(REPLACEMENT))
             .map((item) => item.slug)
             .sort(),
           directory,
-        ).toEqual(
-          directory === "rule"
-            ? [
-                "ec-archetypes",
-                "ec-backgrounds",
-                "ec-species",
-                "phb-equipment",
-                "wh-step-by-step-factions",
-              ]
-            : [],
-        );
+        ).toEqual([]);
       }
     },
   );

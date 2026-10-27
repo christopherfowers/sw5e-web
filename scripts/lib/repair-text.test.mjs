@@ -69,24 +69,50 @@ describe("repairing the archive's encoding damage", () => {
     );
   });
 
-  describe("what it deliberately leaves alone", () => {
-    it("keeps accented letters inside proper nouns unrepaired", () => {
-      // The letter is unrecoverable. Guessing would fabricate a species name.
-      for (const name of [
-        "Gliconn, Orcas, L�vern, Seelv�n",
-        "Asha, Derriphan, H�sk, Jen",
-        "Midwan, Siqsa, Ty�k",
-        "Dhess, Gooti, J�nsone, Qylett",
-      ]) {
-        expect(repairText(name)).toContain("�");
+  describe("the shapes only the source could settle", () => {
+    it("spells accented names out of the species chapter's source", () => {
+      // No pattern can tell you which vowel was lost, so these come from the
+      // document the chapter is printed from rather than from the context.
+      const expected = {
+        "Gliconn, Orcas, L�vern, Seelv�n": "Gliconn, Orcas, Lávern, Seelván",
+        "Asha, Derriphan, H�sk, Jen": "Asha, Derriphan, Hâsk, Jen",
+        "Midwan, Siqsa, Ty�k": "Midwan, Siqsa, Tyûk",
+        "Dhess, Gooti, J�nsone, Qylett": "Dhess, Gooti, Jánsone, Qylett",
+        "Cybele, F�ress, Numarin": "Cybele, Fáress, Numarin",
+        "F�niss, Diva, Prystill": "Fániss, Diva, Prystill",
+        "Grai, Ian�, Kinnas": "Grai, Iané, Kinnas",
+      };
+      for (const [archived, repaired] of Object.entries(expected)) {
+        expect(repairText(archived)).toBe(repaired);
       }
     });
 
-    it("keeps a lost character before a space unrepaired", () => {
-      // Ambiguous between an em dash and an ellipsis, and both read naturally.
-      expect(repairText("I am a free spirit� no one tells me")).toContain(
-        "�",
+    it("reads a lost character before a space as an em dash", () => {
+      // Long left alone here as ambiguous between an em dash and an ellipsis.
+      // It is an em dash, and the space after it is the source's own.
+      expect(repairText("I am a free spirit� no one tells me")).toBe(
+        "I am a free spirit— no one tells me",
       );
+      expect(repairText("I can't help it� I'm a perfectionist.")).toBe(
+        "I can't help it— I'm a perfectionist.",
+      );
+    });
+
+    it("welds a dash to markdown emphasis and to a digit", () => {
+      expect(repairText("**insignia**�the *Kyr'bes*�features")).toBe(
+        "**insignia**—the *Kyr'bes*—features",
+      );
+      expect(repairText("the final three scores�12, 10, and 8�to Charisma")).toBe(
+        "the final three scores—12, 10, and 8—to Charisma",
+      );
+    });
+  });
+
+  describe("what it still leaves alone", () => {
+    it("keeps a lost letter in a name the source does not list", () => {
+      // A single letter on the right of the dash is never a welded em dash,
+      // which is what keeps the rule out of names the lookup cannot answer.
+      expect(repairText("Alash, Byss�k, Estair")).toContain("�");
     });
   });
 

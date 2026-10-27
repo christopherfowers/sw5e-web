@@ -500,6 +500,7 @@ async function buildFromArchive(options, outputDirectory) {
     apostrophes: 0,
     spacedDashes: 0,
     weldedDashes: 0,
+    names: 0,
     unrepaired: 0,
     totalLoss: 0,
   };
@@ -544,9 +545,10 @@ async function buildFromArchive(options, outputDirectory) {
   process.stdout.write(
     "encoding repairs: " +
       `${repairs.apostrophes} apostrophes, ${repairs.quotes} quotation marks, ` +
-      `${repairs.spacedDashes + repairs.weldedDashes} em dashes; ` +
+      `${repairs.spacedDashes + repairs.weldedDashes} em dashes, ` +
+      `${repairs.names} accented letters in species names; ` +
       `${repairs.totalLoss} fields dropped as total losses; ` +
-      `${repairs.unrepaired} characters left unrepaired as ambiguous\n`,
+      `${repairs.unrepaired} characters left unrepaired\n`,
   );
 }
 
